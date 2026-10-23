@@ -577,6 +577,25 @@ describe("SessionStore: lobby, saved seats and storage", () => {
     },
   );
 
+  it("ignores and removes a V1.4 saved seat on the first load after cutover", async () => {
+    const { harness } = await started({ humans: 1, computers: 1 });
+    const storage = new MemoryStorage();
+    // What the V1.4 app left on this origin: its seat (a live V1.4-shaped credential) and its
+    // Form V2 draft. The language preference is shared and survives.
+    storage.setItem("kiln-opening:last-seat", JSON.stringify({ roomCode: harness.roomCode, seatToken: harness.host.seatToken }));
+    storage.setItem("kiln-opening:playtest-draft-v2", JSON.stringify({ formVersion: 2 }));
+    storage.setItem("kiln-opening:language", "zh-CN");
+    const api = new ServiceGameApi(harness.service, harness.store);
+    const store = new SessionStore({ api, storage, clock: new FakeClock() });
+    expect(store.getSnapshot().savedRoomCode).toBeNull();
+    expect(await store.restore()).toBeNull();
+    expect(api.calls).toEqual([]);
+    expect(storage.getItem("kiln-opening:last-seat")).toBeNull();
+    expect(storage.getItem("kiln-opening:playtest-draft-v2")).toBeNull();
+    expect(storage.getItem("kiln-opening:language")).toBe("zh-CN");
+    expect(store.getSnapshot()).toMatchObject({ room: null, view: null, savedRoomCode: null, status: { error: null } });
+  });
+
   it("keeps the saved seat after a transport failure and reports offline", async () => {
     const { harness } = await started({ humans: 1, computers: 1 });
     const storage = storageWithSeat(harness.host);

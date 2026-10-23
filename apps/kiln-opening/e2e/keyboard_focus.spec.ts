@@ -77,7 +77,7 @@ test("the focus ring stays in view while the other players' turn toasts open abo
   await resetBackend(request, { seed: 720, policy: "canonical" });
   const errors = collectErrors(page);
 
-  await page.goto("next/");
+  await page.goto("./");
   await page.locator('input[name="displayName"]').fill("Lin");
   await page.locator('[data-action="create-room"]').click();
   await expect(page.locator("[data-room-code]")).toBeVisible();

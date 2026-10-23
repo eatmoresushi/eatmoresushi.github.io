@@ -1,9 +1,10 @@
 /**
  * The V1.6.1 local in-memory backend for `npm run dev:local` and the Playwright specs
- * (UI plan §3.9, K11). A port of `tools/localBackend.ts`, which serves the V1.4 app at
- * `/test-api`; this one serves the V1.6.1 app at `/test-api-v161` until cutover. The file and
+ * (UI plan §3.9, K11). A port of the V1.4 `tools/localBackend.ts`, which is no longer mounted
+ * since the cutover (§10.4 C2.1) and goes in the deletion commit (C2.2); that commit also
+ * renames this file and moves it from `/test-api-v161` to `/test-api`. Until then the file and
  * path names stay; the service it runs is the current engine (rules 1.6.2, schema 9, `r32-`;
- * ENGINE_V1.6.2_DELTA.md §9, §15.16).
+ * ENGINE_V1.6.2_DELTA.md §9, §15.16), and the app at `/kiln-opening/` talks to it.
  *
  * It runs the real `AuthoritativeGameService` over `InMemoryMultiplayerStore`, with:
  * - every operation of `TestHttpGameApi` in `src/multiplayer/client.ts`, including

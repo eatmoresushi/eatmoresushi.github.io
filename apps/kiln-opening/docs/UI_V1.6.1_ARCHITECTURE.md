@@ -25,7 +25,7 @@ Phase 5 (motion) and phase 6 (WebGL) are out of scope. This plan leaves only the
 
 | # | Decision |
 | --- | --- |
-| K1 | **Build in a fresh `src/app/`.** Do not rewrite `src/ui` in place. A dev-only entry, `next/index.html`, runs it during phase 4 (it is also built, `noindex`). A two-commit cutover swaps the entry points and then deletes `src/ui`, `src/game-v14`, `src/multiplayer-v14`, `src/playtest-v14`, `test/v14` and `test/v127`. |
+| K1 | **Build in a fresh `src/app/`.** Do not rewrite `src/ui` in place. A dev-only entry, `next/index.html`, runs it during phase 4 (it is also built, `noindex`). A two-commit cutover swaps the entry points and then deletes `src/ui`, `src/game-v14`, `src/multiplayer-v14`, `src/playtest-v14`, `test/v14` and `test/v127`. **The swap (C2.1) is done** (2026-10-24, §10.4 "Cutover status"): the app is at `/kiln-opening/`, and `next/` is gone, with no page and no redirect left at `/kiln-opening/next/` (owner instruction, 2026-10-24). |
 | K2 | **Every file has one creator and one owner.** A1 and A3 land small contract commits first. A2 then creates typed stubs for every file that is not A1's or A3's. Phase B agents edit only the files they own. Composition files, contracts and the i18n index are frozen after phase A and change only through B6, the contracts owner. |
 | K3 | **One `GameSource` interface** has two implementations:<br>• `RemoteGameSource`: the multiplayer client or the local in-memory backend;<br>• `FixtureGameSource`: JSON engine fixtures for SSR tests and the scenario gallery.<br>Components read state only through typed hooks. The raw `PlayerView` is reachable only through `useEngineView()`, and only in `decision/**`, `state/**` and `dev/**`. |
 | K4 | **No optimistic UI.** Confirm sends one command. The decision pane stays pending until the server's `CommandSuccess` replaces the view. `validateAction` gates Confirm locally; the server stays authoritative. One `commandId` is kept per pending submission and reused on retry, so a lost response cannot turn into a false failure. |
@@ -66,14 +66,14 @@ Phase 5 (motion) and phase 6 (WebGL) are out of scope. This plan leaves only the
 1. **Gates stay green.**
    - `src/ui` keeps compiling against the pinned V1.4 copies.
    - `src/app` is in the root `tsconfig.json` (`src/**`), so `typecheck` and `build` cover it from its first commit.
-   - `next/index.html` is a build input, so the root `build` proves the new app bundles.
+   - `next/index.html` is a build input, so the root `build` proves the new app bundles (since the cutover, `index.html` and `playtest/index.html` are the only inputs).
    - `test/v14` and `test/v127` keep passing until they are deleted.
 2. **No collisions.** Every new file has one creator and one owner (§4.2). Nothing in `src/ui` is edited, so the V1.4 suites never break mid-phase.
 3. **Clean revert.** The cutover is two small commits (§10.4), each green.
 
 **Rejected: rewriting `src/ui` in place.** It interleaves V1.4 and V1.6.1 types in the same files. The 20 V1.4/V1.2.7 `.tsx` render tests would fail on the first edit, which breaks "green at every commit". It also forces agents to share the 2,111-line `ActionPanel.tsx`.
 
-**Merge note.** `master` deploys `dist/` to Pages. This branch must not merge to `master` before cutover while `next/` is a build input. If an earlier merge is required, drop the `next` inputs from `vite.config.ts` in that merge.
+**Merge note.** `master` deploys `dist/` to Pages. This branch must not merge to `master` before cutover while `next/` is a build input. If an earlier merge is required, drop the `next` inputs from `vite.config.ts` in that merge. (History: PR #24 merged with the `next` inputs, so the app was live at `/kiln-opening/next/` while `/kiln-opening/` still served V1.4 against the V1.6.2 backend; the swap of §10.4 fixed that and removed `next/`.)
 
 ### 1.3 End state and deletions
 
@@ -89,7 +89,7 @@ Deleted at cutover (V1.4 stays in git history):
 - `src/game-v14/**`, `src/multiplayer-v14/**`, `src/playtest-v14/**`;
 - `test/v14/**`, `test/v127/**`;
 - `tools/localBackend.ts` (V1.4). `tools/localBackendV161.ts` is renamed to it.
-- `next/` and its `vite.config.ts` inputs.
+- `next/` and its `vite.config.ts` inputs (done in C2.1: the pages and inputs are gone, the gallery moved to `gallery/index.html`).
 
 Ports required **before** the deletion commit, so no still-valid check disappears:
 
@@ -1125,7 +1125,7 @@ There are a few files under `test/v161/ui/interaction/`, each marked `// @vitest
 
 ### 9.5 Scenario gallery (dev-only, tracked)
 
-- **`next/gallery.html` → `src/app/dev/gallery-main.tsx` → `ScenarioGallery`.**
+- **`gallery/index.html` → `src/app/dev/gallery-main.tsx` → `ScenarioGallery`** (served at `/kiln-opening/gallery/`; it was `next/gallery.html` until the cutover).
   - It lists every scripted scenario and every played moment from the JSON fixtures, the shell states and every `dev/*.gallery.tsx` page (A3's `kit.gallery.tsx` included), discovered through `import.meta.glob`.
   - Each fixture renders the **full `GameScreen`** on a `FixtureGameSource`. Confirm shows "Would send …" after `validateAction`.
   - The URL hash selects the view: `#<id>?lang=zh-CN&theme=dark&board=p2`.
@@ -1193,7 +1193,7 @@ Until the owner approves the workflow, `npm run ci:ui` (`tools/ci-ui-local.sh`) 
 | --- | --- | --- |
 | Engine | `npm run typecheck:engine && npm run test:engine` | every commit |
 | Platform | `npm run typecheck:platform && npm run test:platform`. It now also type-checks `tools/localBackendV161.ts`, `tools/uiFixtures.ts` and `tools/fixturePrivacy.ts`, and `tsconfig_includes.test.ts` fails on any include that matches nothing | every commit |
-| Root | `npm run typecheck && npm run typecheck:edge && npm test && npm run build`. The `build` includes `next/index.html` and `next/playtest.html`, so it bundles the new app | every commit; the deploy workflow runs the same on `master` |
+| Root | `npm run typecheck && npm run typecheck:edge && npm test && npm run build`. The `build` includes `index.html` and `playtest/index.html` (until the cutover, `next/index.html` and `next/playtest.html`), so it bundles the app and the playtest form | every commit; the deploy workflow runs the same on `master` |
 | UI (subset of Root) | `npm run test:ui` (= `vitest run test/v161/ui`), including the happy-dom tier | every commit |
 | Fixtures | `npm run fixtures:check` (regenerate, byte-diff, privacy verify) | end of phases A, B and C |
 | UI CI | the `kiln-opening-ui.yml` job (§9.6), or `npm run build:e2e && npm run test:e2e:ci` locally until it is approved | every PR from phase B on |
@@ -1336,6 +1336,13 @@ All six depend on phase A only. Inside phase B, the only cross-package link is B
      - a superseded note atop `UI_UX_SPEC.md` pointing to §1.5;
      - phase 4 marked done in the implementation plan;
      - the DESIGN §9.1 note.
+
+**Cutover status (2026-10-24).** C2.1 is done. As planned, the `next/index.html` and `next/playtest.html` inputs are removed and `next/gallery.html` moved to `gallery/index.html` (dev-only, never built; the gallery specs open `gallery/#…`). The owner asked for `/next/` to be removed outright (2026-10-24), so the whole `next/` folder is gone and the built site has no `/kiln-opening/next/` page and no redirect from it. Two deviations keep the swap small and reversible:
+
+- The V1.6.2 local backend keeps `/test-api-v161` and the `localEndpoint` option; the V1.4 backend is no longer mounted. The move to `/test-api` goes with the file rename in C2.2.
+- The V1.4 keys are removed by the game page (`SessionStore.restore` → `SavedSeatStore.removeLegacyKeys`, both keys); the playtest page does not read or remove them.
+
+`tsconfig_includes.test.ts` guards the result: exactly two built pages, `index.html` and `playtest/index.html`, both loading `src/app`; no `next/` folder, file or input; no page loads a V1.4 entry; the gallery is never built. The e2e specs open `./` (the app); `smoke.spec.ts` also checks the playtest form at `playtest/`. C2.2 (the deletions) is still to do.
 
 **Phase C exit (= phase 4 exit):**
 

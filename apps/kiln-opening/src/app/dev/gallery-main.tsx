@@ -7,7 +7,7 @@ import { ScenarioGallery, parseGalleryHash } from "./ScenarioGallery.tsx";
 import type { FixtureFile, GalleryPageModule } from "./ScenarioGallery.tsx";
 
 /**
- * The scenario gallery entry (UI_V1.6.1_ARCHITECTURE §9.5): `next/gallery.html`, dev only.
+ * The scenario gallery entry (UI_V1.6.1_ARCHITECTURE §9.5): `gallery/index.html`, dev only.
  *
  * - Pages: every `dev/*.gallery.tsx` (A3's kit gallery included), discovered here and loaded
  *   lazily: an eager glob is hoisted above the stylesheet import, which would declare the

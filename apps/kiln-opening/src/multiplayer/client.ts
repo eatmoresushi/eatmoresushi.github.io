@@ -361,8 +361,8 @@ class SupabaseGameApi implements GameApi {
 export interface CreateGameApiOptions {
   /**
    * The local test backend's path, used only when `VITE_E2E_LOCAL_BACKEND=1`. Defaults to
-   * `/test-api`. The V1.6.1 app passes `/test-api-v161` until cutover (UI plan §3.9), when
-   * this option is removed again.
+   * `/test-api`. The V1.6.2 app passes `/test-api-v161`; the deletion commit after the cutover
+   * (UI plan §3.9, §10.4 C2.2) moves the backend to `/test-api` and removes this option again.
    */
   localEndpoint?: string;
 }

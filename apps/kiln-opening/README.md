@@ -1,40 +1,49 @@
-# Kiln Opening / 开窑 — V1.4
+# Kiln Opening / 开窑 — V1.6.2
 
 A server-authoritative, 2–4 player online adaptation of the Song Dynasty ceramic workshop board game, built with TypeScript, React, Vite and Supabase.
 
+- Game: `https://luyuan.me/kiln-opening/`
+- Playtest form: `https://luyuan.me/kiln-opening/playtest/`
+
+Browser floor: Safari and iOS 16.4, Chrome and Edge 111, Firefox 121. The UI relies on container queries, `@layer`, `dvh` and `inert` (UI architecture §7.1).
+
 ## Rules authority
 
-The [V1.4 Player Rulebook](docs/KILN_OPENING_v1.4_EN_SOURCE.md) is the source of truth. The [V1.4 audit](docs/RULEBOOK_AUDIT_V1.4.md) records the original source hash, owner-approved corrections and implementation validation. Earlier rulebooks, component copy and audits remain historical references. The archived Chinese source supplies terminology only; current English and Chinese gameplay text follows V1.4.
+The [V1.6.2 Player Rulebook](docs/KILN_OPENING_v1.6.2_EN_SOURCE.md) is the only mechanical source of truth. The [V1.6.2 audit](docs/RULEBOOK_AUDIT_V1.6.2.md) records its checksums, owner amendments, rulings and interpretations. Older rulebooks and audits are history.
 
-Read [AGENTS.md](AGENTS.md), the rulebook and audit before changing mechanics. Structured data in `data/` drives the engine and localized component reminders. Artwork in `assets/current_v04/` is visual reference only and never overrides rules.
+Read [AGENTS.md](AGENTS.md), the rulebook and the audit before changing mechanics. Structured data in `data/` drives the engine and the localized component text. Artwork in `assets/current_v04/` is visual reference only and never overrides rules.
 
 ## Development
 
 ```bash
 npm ci
-cp .env.example .env.local
-npm run dev
+cp .env.example .env.local   # Supabase URL and anon key, for online play
+npm run dev                  # http://localhost:5173/kiln-opening/
 ```
 
-Use `npm run dev:local` for an in-memory multiplayer backend that requires no Supabase credentials. Its rooms last only as long as the development server.
+`npm run dev:local` serves the app against an in-memory multiplayer backend (`tools/localBackendV161.ts`) that needs no Supabase credentials. Its rooms last only as long as the development server.
+
+The gates that the Pages workflow runs:
 
 ```bash
-npm test
 npm run typecheck
 npm run typecheck:edge
+npm test
 npm run build
 ```
 
-The historical `test/v127/` directory name is retained; its active assertions now follow V1.4. Seeded full-game tests cover 2, 3 and 4 players.
+Browser tests (Playwright, outside `npm test`): `npm run test:e2e` against `npm run dev:local`, and `npm run ci:ui` for the typecheck, unit and build gates plus a Chromium smoke test and a short full game against the built bundle.
 
 ## Implementation
 
-- `src/game/`: pure, deterministic rules engine and explicit decision windows.
+- `index.html` → `src/app/main.tsx`: the game UI. `playtest/index.html` → `src/app/playtest/main.tsx`: the playtest form (Form V3). `gallery/index.html` → `src/app/dev/gallery-main.tsx`: the scenario gallery, served by the dev server at `/kiln-opening/gallery/` and never built.
+- `src/game/`: the pure, deterministic V1.6.2 rules engine and its decision windows.
 - `src/multiplayer/`: authenticated commands, private projections, persistence and computer players.
-- `src/ui/`: English/Simplified Chinese interface using stable IDs.
-- `supabase/`: server functions and ordered database migrations.
-- [Implementation decisions](docs/IMPLEMENTATION_DECISIONS.md): digital timing and privacy details.
-- [Online specification](docs/ONLINE_GAME_SPEC.md): multiplayer behavior.
-- [Deployment](docs/DEPLOYMENT.md): separate backend and GitHub Pages rollout.
+- `src/playtest/`: the Form V3 model, schema and client.
+- `supabase/`: Edge Functions (`game-action`, `playtest-submit`) and ordered database migrations.
+- `test/v161/`: the engine, platform and UI suites.
+- [UI architecture](docs/UI_V1.6.1_ARCHITECTURE.md), [online specification](docs/ONLINE_GAME_SPEC.md), [implementation decisions](docs/IMPLEMENTATION_DECISIONS.md) and [deployment](docs/DEPLOYMENT.md).
 
-V1.4 uses Workshop → optional Decoration → paid Glaze & Load → Firing, 4/6/8 Shared-Kiln spaces, three starting Coins, reduced Commercial and Starting Order Coin rewards, three Starting Tech choices, four selectable Kilns (Ru, Guan, Ge and Jun), and permanent Ge Crackle separate from Decoration. Ding is disabled for new online games. New rooms use schema 5 and the `r28` rules fingerprint. Older rooms are preserved but cannot continue under the new rules.
+Rooms are stamped rules `1.6.2`, schema 9 and an `r32-` rules fingerprint. Rooms and saves from older versions are refused.
+
+The V1.4 UI and its pinned copies (`src/ui`, `src/main.tsx`, `src/playtest-main.tsx`, `src/game-v14`, `src/multiplayer-v14`, `src/playtest-v14`, `tools/localBackend.ts`) and their suites (`test/v14`, `test/v127`) are no longer built or served. They stay in the tree only until the deletion commit of the cutover (UI architecture §10.4 C2.2).

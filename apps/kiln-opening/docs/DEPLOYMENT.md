@@ -45,19 +45,27 @@ In the repository settings, choose **GitHub Actions** as the Pages source. A pus
 
 The workflow deliberately does not run the browser test because GitHub-hosted runners would need a separate Chromium download. Use `npm run dev:local` for a browser smoke test before publishing UI changes.
 
+## V1.6.2 rollout
 
-## V1.4 rollout
+The SQL migrations, both Edge Functions and the client are one release: the V1.6.2 server answers only with V1.6.2 rooms, and each client refuses rooms of another rules version.
 
-Apply `202609260001_v14_rules.sql`, `202609260002_playtest_v14.sql`, `202609270001_v14_starting_orders.sql`, `202609280001_v14_court_ge_amendment.sql`, `202609280002_v14_forming_techs.sql`, `202609300001_v14_economy.sql` and `202610020001_v14_disable_ding.sql` after the existing migrations, deploy the current `game-action` and `playtest-submit` Edge Functions, then rebuild/publish the client. New rooms require rules/content version 1.4, schema 5 and an `r28` fingerprint. Historical room and playtest rows remain intact; older games, including pre-Ding-disable `r27` rooms, cannot resume under the updated rules.
+1. Apply `202610150001_v161_rules.sql` and `202610150002_playtest_v161.sql` after the existing migrations (`supabase db push`). Despite their names they are the V1.6.2 migrations: they were written for V1.6.1 and edited in place for V1.6.2 before their first deployment (`supabase/README.md`).
+2. Deploy both Edge Functions from the same tree:
 
-The migrations add Fuel Ledger's separate `BANK_2`/`STOKE_2` card values and the V1.4 computer policy, and update playtest reporting. The old Fuel Ledger database column remains only for historical records. The 2026-09-28 amendment migration updates all five authoritative RPC write gates for the 5-Coin Imperial Court cost and Ge Glaze substitution. The later Forming Tech migration updates those gates again for Measuring Calipers and Dipping Vats. The 2026-09-30 economy migration updates those gates for 3 starting Coins, reduced Commercial and Starting Order rewards, and removal of Kiln Tending. The 2026-10-02 Ding availability migration updates those gates again for the four selectable Kilns (Ru, Guan, Ge and Jun). Ding’s historical definition and room rows remain intact. The economy and Ding availability migrations are prepared locally and have not been deployed. Historical rollout status belongs to each release; migration files do not deploy themselves.
+   ```sh
+   supabase functions deploy game-action
+   supabase functions deploy playtest-submit
+   ```
 
-The client also rejects successful multiplayer responses with older room rules or
-game schemas. An older Edge Function can accept its own old rooms, including
-ceramics with `decoration: "crackle"`, which the V1.4 artwork cannot render.
-Starting another game on that older service does not upgrade its rules. Deploy
-the matching server and client; do not relabel old snapshots or guess a replacement
-Decoration. Current Ge preserves the actual Glaze and Decoration and adds the
-separate permanent `crackle: true` property.
+3. Publish the client: merge to `master`, and the Pages workflow runs the gates and deploys the game at `/kiln-opening/` and the Form V3 playtest form at `/kiln-opening/playtest/`. The site has no `/kiln-opening/next/` page.
+4. Open `https://luyuan.me/kiln-opening/` and create a room. The room code appears with no version error.
+
+New rooms carry rules/content version `1.6.2`, state schema 9 and an `r32-` rules fingerprint; the playtest form submits Form V3 for rules `1.6.2`. Older rooms (V1.4 and earlier) and Form V2 submissions stay in the database as readable history and cannot be resumed or resubmitted.
+
+Status: by the owner's report of 2026-10-24, steps 1 and 2 are done on the live project. Until step 3 (the UI cutover, UI architecture §10.4 C2.1) is published, `/kiln-opening/` serves the V1.4 client, which fails against the V1.6.2 server with "does not match V1.4". Reverting the client alone does not bring V1.4 play back, because the V1.4 client cannot use the V1.6.2 server.
+
+The client refuses a successful multiplayer response whose room or saved game is not rules `1.6.2` and schema 9 ("The multiplayer service returned a room or saved game that does not match V1.6.2 …"). An older Edge Function still accepts its own older rooms, and starting another game on it does not upgrade its rules. Deploy the matching server and client; do not relabel old snapshots.
+
+Earlier rollouts are history. V1.4 applied `202609260001_v14_rules.sql` … `202610020001_v14_disable_ding.sql` (rules 1.4, schema 5, `r28`); those files stay in `supabase/migrations/` because migrations apply in order.
 
 The public game projection contains only Order-hand counts. The authenticated seat response supplies its private hand and choices. Never persist that combined client view into public snapshots or Realtime events.
