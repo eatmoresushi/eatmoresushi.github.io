@@ -96,6 +96,13 @@ export interface TableSelectionData {
   /** The Guild Hall chooser on the Tech display, while the pane's draft has a Guild Hall placement
    * or the viewer's Shifu takes a Tech after inspecting. */
   techChooser: TechChooser | null;
+  /**
+   * The viewer's own Flawed ceramics they may sell now (change 30, R20: `sellFlawedOptions`, only
+   * in their own turn), each with whether the open draft has chosen it. The viewer's board, the
+   * Finished ceramics strip and (in the after-Quality turn) the kiln drawing draw a Sell button on
+   * each (`data-act="sell"`).
+   */
+  sellTargets: ReadonlyMap<CeramicId, { pressed: boolean }>;
 }
 
 /** A click on a table target. */
@@ -106,7 +113,9 @@ export type TableAction =
   /** A face-up Tech on the Tech display (the Guild Hall chooser, buy and take modes). */
   | { type: "tech"; techId: TechId }
   /** A discipline's deck on the Tech display (the Guild Hall chooser, inspect mode). */
-  | { type: "inspect"; discipline: TechDiscipline };
+  | { type: "inspect"; discipline: TechDiscipline }
+  /** A Sell button on one of the viewer's Flawed ceramics (`sellTargets`). */
+  | { type: "sell"; ceramicId: CeramicId };
 
 /** A window spec's table adapter. Both members are pure. */
 export interface TableAdapter<D, A extends DraftActionBase = never> {
@@ -134,6 +143,7 @@ export const INERT_SELECTION: TableSelectionData = Object.freeze({
   orderTargets: EMPTY_MAP,
   highlightedCeramicIds: EMPTY_SET,
   techChooser: null,
+  sellTargets: EMPTY_MAP,
 });
 
 /** A selection with only the fields an adapter sets; the rest stay inert. */

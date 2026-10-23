@@ -209,7 +209,7 @@ describe("the work turn: workers are placed on the table", () => {
   });
 
   it("an entry the engine refuses has no shortcut; the card gives the reason", () => {
-    mount(new ControlledSource("m1_work_phase_r2_3p"), <Table />);
+    mount(new ControlledSource("w-before-the-worker-action-rich-4-player-start"), <Table />);
     const guild = $('article[data-location-id="guild_hall"]');
     expect(guild.querySelector('[data-act="place"]')).toBeNull();
     expect(guild.textContent).toContain("Can’t place here");
@@ -225,8 +225,8 @@ describe("the work turn: workers are placed on the table", () => {
     expect(container.querySelector('input[name="clay"]')).toBeNull();
     click(placeButton("materials_yard", "shifu"));
     expect(radio("clay", "1").checked).toBe(true);
-    // The Shifu effect gains 6 in any split (v1.6.2 L165).
-    expect(summary()).toMatch(/Materials Yard — 1 Clay \+ 5 Wood/);
+    // The Shifu effect gains 8 in any split (rev. 4).
+    expect(summary()).toMatch(/Materials Yard — 1 Clay \+ 7 Wood/);
   });
 
   it("a language switch keeps the draft and re-renders the sentence", () => {
@@ -473,7 +473,7 @@ describe("the Colour Samples swap (v1.6.2 L617)", () => {
 
 describe("Kiln selection", () => {
   it("a Kiln another player took is focusable but cannot be chosen; a free one is sent", () => {
-    const source = new ControlledSource("w-kiln-selection");
+    const source = new ControlledSource("w-kiln-and-main-order-choice");
     mount(source, <DecisionPane />);
     const taken = [...container.querySelectorAll<HTMLInputElement>('input[name="kilnId"]')].find((input) => input.getAttribute("aria-disabled") === "true");
     if (taken !== undefined) {
@@ -483,7 +483,14 @@ describe("Kiln selection", () => {
     const free = [...container.querySelectorAll<HTMLInputElement>('input[name="kilnId"]')].find((input) => input.getAttribute("aria-disabled") !== "true");
     if (free === undefined) throw new Error("no free Kiln");
     click(free);
+    // A Kiln alone is not enough: the pick also takes a face-up Main Order (rev. 4 change 32, R23).
+    expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
+    const order = container.querySelector<HTMLInputElement>('input[name="mainOrder"]');
+    if (order === null) throw new Error("no Main Order to choose");
+    click(order);
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "SELECT_KILN", kilnId: free.value }]);
+    const slotIndex = Number(order.value);
+    const orderId = fixture("w-kiln-and-main-order-choice").playerView.game.market.display[slotIndex];
+    expect(source.submitted).toEqual([{ type: "SELECT_KILN", kilnId: free.value, mainOrder: { slotIndex, orderId } }]);
   });
 });

@@ -105,16 +105,16 @@ describe("Tech tiles (TechCard, Tech slots)", () => {
   });
 
   it("an owned Tech on a Kiln Player Board opens no rules details: its tile prints the short text (owner review, 2026-10-17)", () => {
-    // m1's viewer owns Connoisseur's Cabinet (T19).
-    expect(render(M1, <TechSlots playerId="p3" />)).toContain('data-tech-id="T19"');
+    // m1's viewer (Zhao, p2) owns Connoisseur's Cabinet (T19).
+    expect(render(M1, <TechSlots playerId="p2" />)).toContain('data-tech-id="T19"');
     for (const locale of ["en", "zh-CN"] as const) {
       const t = locale === "en" ? EN : ZH;
-      const slots = render(M1, <TechSlots playerId="p3" />, locale);
+      const slots = render(M1, <TechSlots playerId="p2" />, locale);
       expect(panels(slots)).toEqual([]);
       expect(slots).not.toContain("kit-detail-trigger");
       // On the whole board too: no panel for the owned Tech (the face-up display keeps its own, D10).
-      const board = render(M1, <PlayerBoard playerId="p3" />, locale);
-      expect(panels(board).some((entry) => entry.label === t("rules.label", { name: techText("T18", locale).name }))).toBe(false);
+      const board = render(M1, <PlayerBoard playerId="p2" />, locale);
+      expect(panels(board).some((entry) => entry.label === t("rules.label", { name: techText("T19", locale).name }))).toBe(false);
     }
   });
 });

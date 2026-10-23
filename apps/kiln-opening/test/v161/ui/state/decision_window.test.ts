@@ -11,11 +11,12 @@ import { allFixtures, fixture } from "../support/fixtures.ts";
 
 /** The window each fixture opens for its viewer. */
 const EXPECTED: Record<string, DecisionWindowKind> = {
-  "w-kiln-selection": "kiln_selection",
+  "w-kiln-and-main-order-choice": "kiln_selection",
   "w-setters-mark-window": "setters_mark",
   "w-before-the-worker-action-rich-4-player-start": "work",
   "w-before-the-worker-action-colour-samples-swap-imperial-priority-with-reworking-table-ding": "work",
   "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice": "work",
+  "w-before-the-worker-action-kiln-master-at-loading-the-magistrates-hall-shifus-crown-order-the-kiln-fuel": "work",
   "w-commission-market-shifu-top-3-look-2-reservations": "commission",
   "w-commission-market-apprentice-top-2-look-1-reservation": "commission",
   "w-guild-hall-shifu-inspection": "guild_inspection",
@@ -25,11 +26,10 @@ const EXPECTED: Record<string, DecisionWindowKind> = {
   "w-secret-contributions-with-fuel-ledger": "contributions",
   "w-test-pieces-decision": "test_pieces",
   "w-test-pieces-bury": "test_pieces",
-  "w-heat-marker-step-with-a-face-down-marker-and-kiln-master": "heat_markers",
   "w-jun-heat-adjustment": "jun",
   "w-after-quality-saggars-and-ge": "after_quality",
   "w-second-firing-choice-with-jun-r7": "second_firing",
-  "w-salvage": "salvage",
+  "w-order-phase-sell-a-flawed-ceramic": "orders",
   "w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard": "orders",
   "w-cleanup-hand-limit": "hand_limit",
   "t-firing-skipped": "waiting",
@@ -44,22 +44,25 @@ const EXPECTED: Record<string, DecisionWindowKind> = {
   "t-glaze-load-imperial-furniture": "work",
   "t-colour-samples-select-face-up": "work",
   "t-fuel-ledger-reveal": "waiting",
+  "t-after-quality-sale": "after_quality",
+  "t-work-turn-sale": "work",
+  "t-cleanup-sale": "hand_limit",
   m1_work_phase_r2_3p: "work",
   m2_commission_market_look_r3_4p: "commission",
-  m3_heat_marker_step_3p: "heat_markers",
+  m3_kiln_master_marker_3p: "jun",
   m4_after_quality_3p: "after_quality",
   m5_two_player_board_2p: "work",
   m6_order_phase_crackle_3p: "orders",
   m7_cleanup_hand_limit_3p: "hand_limit",
-  m8_final_results_4p: "final",
+  m8_final_results_3p: "final",
   m9_contributions_step1_3p: "contributions",
   m10a_setters_mark_window: "setters_mark",
-  m10b_setters_mark_on_space: "waiting",
+  m10b_setters_mark_on_space: "work",
   m11a_test_pieces_decision: "test_pieces",
   m11b_test_pieces_bury: "test_pieces",
   m12_guild_shifu_inspection: "guild_inspection",
   m13_jun_heat_adjustment: "jun",
-  m14_salvage: "salvage",
+  m14_sell_flawed: "orders",
   m15_kiln_selection: "kiln_selection",
   m16_colour_samples: "colour_samples",
   m17_after_action: "work",
@@ -69,6 +72,10 @@ const EXPECTED: Record<string, DecisionWindowKind> = {
   m21_guild_shifu_second_take: "guild_inspection",
   m22_saggars_upgrade: "after_quality",
   m23_order_phase_s07: "orders",
+  m24_glaze_load_fuel_kiln_master: "work",
+  m25_magistrates_hall_crown_order: "work",
+  m26_ge_crackle_fine: "after_quality",
+  m27_crackle_vp_completion: "orders",
 };
 
 /** A view of another seat at the same table (`own` cleared: what a spectator would see). */
@@ -100,15 +107,15 @@ describe("decisionWindow", () => {
     expect(after.kind === "work" && after.step).toBe("after_action");
   });
 
-  it("names Second Firing's choice and its ceramic; Jun is step 8 only (v1.6.2 L631, R7)", () => {
+  it("names Second Firing's choice and its ceramic; Jun is firing step 3 only (rev. 4 L627, L661)", () => {
     const view = fixture("w-second-firing-choice-with-jun-r7").playerView;
     const window = decisionWindow(view);
     expect(window.kind).toBe("second_firing");
     const phase = view.game.phase as { ceramicId: string };
     expect(window.kind === "second_firing" && window.ceramicId).toBe(phase.ceramicId);
     expect(window.openKey).toContain(phase.ceramicId);
-    const step8 = decisionWindow(fixture("w-jun-heat-adjustment").playerView);
-    expect(step8.kind).toBe("jun");
+    const step3 = decisionWindow(fixture("w-jun-heat-adjustment").playerView);
+    expect(step3.kind).toBe("jun");
   });
 
   it("carries the Commission Market step's Select: N, the reservation limit, the display (v1.6.2 L64, L201–202, change 25)", () => {
@@ -154,7 +161,9 @@ describe("decisionWindow", () => {
     expect(contributions.kind === "contributions" && contributions.windowId).toBe(
       (fixture("w-secret-contributions-with-fuel-ledger").playerView.game.phase as { windowId: string }).windowId,
     );
-    expect(decisionWindow(fixture("w-salvage").playerView).mode).toBe("parallel");
+    // The hand trim is the only parallel window since revision 4 (the salvage step is gone).
+    expect(decisionWindow(fixture("w-cleanup-hand-limit").playerView).mode).toBe("parallel");
+    expect(decisionWindow(fixture("w-order-phase-sell-a-flawed-ceramic").playerView).mode).toBe("single");
   });
 });
 
@@ -174,8 +183,8 @@ describe("open keys (§3.5)", () => {
     expect(key(next)).not.toBe(key(view));
   });
 
-  it("use openedAtRevision for Salvage and the hand trim", () => {
-    for (const id of ["w-salvage", "w-cleanup-hand-limit"]) {
+  it("use openedAtRevision for the hand trim", () => {
+    for (const id of ["w-cleanup-hand-limit", "m7_cleanup_hand_limit_3p"]) {
       const view = fixture(id).playerView;
       const phase = view.game.phase as { openedAtRevision: number };
       const reopened: PlayerView = { ...view, game: { ...view.game, phase: { ...view.game.phase, openedAtRevision: phase.openedAtRevision + 7 } as typeof view.game.phase } };
@@ -184,7 +193,7 @@ describe("open keys (§3.5)", () => {
   });
 
   it("use the queue index for queued firing steps and the Setter's Mark", () => {
-    for (const id of ["w-heat-marker-step-with-a-face-down-marker-and-kiln-master", "w-jun-heat-adjustment", "w-after-quality-saggars-and-ge", "w-test-pieces-decision", "w-setters-mark-window"]) {
+    for (const id of ["w-jun-heat-adjustment", "w-after-quality-saggars-and-ge", "w-test-pieces-decision", "w-setters-mark-window"]) {
       const view = fixture(id).playerView;
       const phase = view.game.phase as { queue: { actorIds: string[]; index: number } };
       const moved: PlayerView = { ...view, game: { ...view.game, phase: { ...view.game.phase, queue: { ...phase.queue, index: phase.queue.index + 1 } } as typeof view.game.phase } };
@@ -196,8 +205,8 @@ describe("open keys (§3.5)", () => {
     expect(key(fixture("w-test-pieces-decision").playerView)).not.toBe(key(fixture("w-test-pieces-bury").playerView));
   });
 
-  it("use the selection index for Kiln selection", () => {
-    const view = fixture("w-kiln-selection").playerView;
+  it("use the selection index for the Setup choice", () => {
+    const view = fixture("w-kiln-and-main-order-choice").playerView;
     const phase = view.game.phase as { index: number };
     const next: PlayerView = { ...view, game: { ...view.game, phase: { ...view.game.phase, index: phase.index + 1 } as typeof view.game.phase } };
     expect(key(next)).not.toBe(key(view));

@@ -1,7 +1,7 @@
 /**
  * TestPieces (UI_V1.6.1_ARCHITECTURE §3.4 `test_pieces`). Owner: B5.
  *
- * Firing step 4. The decision (pay Wood and peek privately, or decline), then — after a peek —
+ * The end of firing step 1 (after Base Heat, before the Fire card). The decision (pay Wood and peek privately, or decline), then — after a peek —
  * the bury decision with the viewer's private card ("only you"). Others see only whether the
  * card was buried, never the card (the public Test Pieces record). Renders only from
  * `testPiecesDraft.options()`.
@@ -42,7 +42,7 @@ export function TestPieces() {
   };
   return (
     <div className="dw-form">
-      <Lead step={stepLabel(model, t)}>
+      <Lead step={stepLabel(model, t, false)}>
         <ShortText text={tech.short} />
       </Lead>
       <Section heading={t("firing.queue")}>

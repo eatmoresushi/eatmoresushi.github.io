@@ -1,16 +1,18 @@
 /**
  * ActionWindow (UI_V1.6.1_ARCHITECTURE §3.4, §4.3 rule 3). Owner: B4.
  *
- * The before- and after-action window of a Work turn: Imperial Priority and the Colour Samples
- * swap (v1.6.2 L622), plus End turn after the action. Before the action, `WorkTurn` shows the
- * choice of step and this component shows the chosen ability's form; after the action it shows
- * the choice too. Both abilities' drafts live in the work draft.
+ * The before- and after-action window of a Work turn: Imperial Priority, the Colour Samples swap
+ * (v1.6.2 L622) and selling a Flawed ceramic (change 30, R20; not a worker action), plus End turn
+ * after the action. Before the action, `WorkTurn` shows the choice of step and this component
+ * shows the chosen ability's form; after the action it shows the choice too. Their drafts live in
+ * the work draft.
  */
 import { RULE_NUMBERS } from "../../i18n/content.ts";
 import { useT } from "../../i18n/I18nProvider.tsx";
 import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
 import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
+import { SellFlawed } from "../sale/SellFlawed.tsx";
 import { ColourSamplesSwap } from "./ColourSamplesSwap.tsx";
 import { ImperialPriority } from "./ImperialPriority.tsx";
 import { workDraft } from "./workDraft.ts";
@@ -25,6 +27,7 @@ const TITLES = {
   place: "work.work.mode.place",
   imperial_priority: "work.work.mode.imperialPriority",
   colour_samples_swap: "work.work.mode.colourSamplesSwap",
+  sell_flawed: "work.work.mode.sellFlawed",
   end_turn: "work.work.mode.endTurn",
 } as const satisfies Record<WorkMode, string>;
 
@@ -55,7 +58,9 @@ export function ActionWindow({ source }: ActionWindowProps) {
                 ? t("work.work.mode.endTurnHint")
                 : mode === "colour_samples_swap"
                   ? t("work.work.mode.swapHint", { n: RULE_NUMBERS.swapSelect })
-                  : t("work.work.mode.after")
+                  : mode === "sell_flawed"
+                    ? t("work.work.mode.sellHint")
+                    : t("work.work.mode.after")
             }
           />
         ))}
@@ -66,6 +71,18 @@ export function ActionWindow({ source }: ActionWindowProps) {
       {choice}
       {draft.mode === "imperial_priority" ? <ImperialPriority /> : null}
       {draft.mode === "colour_samples_swap" ? <ColourSamplesSwap brief={source === "after_action" || options.stepChoices.length > 0} /> : null}
+      {draft.mode === "sell_flawed" && options.sale !== null ? (
+        <SellFlawed
+          model={model}
+          engine={engine}
+          options={options.sale}
+          value={draft.sell}
+          name="work.sell"
+          // The heading already names the sale when it is open alone before the action.
+          hideLegend={source === "before_action" && options.heading === "sell_flawed"}
+          onChange={(ceramicId) => dispatch({ type: "sell", ceramicId })}
+        />
+      ) : null}
     </div>
   );
 }

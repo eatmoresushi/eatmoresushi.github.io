@@ -20,10 +20,11 @@
  * engine. `KILN_UI_FUZZ_GAMES` plays more games per player count (like `test:fuzz:long`).
  *
  * A steered game also reaches the optional abilities a random autopilot rarely meets — the
- * Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master and
- * Fuel Ledger's own Contribution cards — through their real form controls: a short preference list
- * (Ge at Kiln selection, the Guild Hall and those Techs when offered, then the ability's own option
- * or card) is tried once per decision before
+ * Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master's
+ * marker chosen at loading (owner revision 4, R22), the Magistrate's Hall Shifu's Crown Order
+ * (change 33), the sale of a Flawed ceramic (R20) and Fuel Ledger's own Contribution cards —
+ * through their real form controls: a short preference list (Ge at Kiln selection, the Guild Hall
+ * and those Techs when offered, then the ability's own option or card) is tried once per decision before
  * the autopilot's own pick. The forms still build every command, and the engine still accepts
  * each one.
  */
@@ -141,12 +142,18 @@ interface GameReport {
   table: Map<string, number>;
 }
 
-/** The optional abilities a game's forms used: the command types, and Kiln Master inside RESOLVE_HEAT_MARKERS. */
+/**
+ * The optional abilities a game's forms used: the command types, Kiln Master's marker inside a
+ * loading command (Glaze & Load or Imperial Priority, rev. 4 R22) and the Magistrate's Hall
+ * Shifu's Crown Order (change 33).
+ */
 function abilitiesUsed(report: GameReport): Set<string> {
   const used = new Set<string>();
   for (const { command } of report.sent) {
-    if (command.type === "USE_COLOUR_SAMPLES_SWAP" || command.type === "USE_PROTECTIVE_SAGGARS" || command.type === "USE_GE_CRACKLE" || command.type === "SECOND_FIRING_CHOOSE") used.add(command.type);
-    if (command.type === "RESOLVE_HEAT_MARKERS" && command.kilnMaster !== undefined) used.add("RESOLVE_HEAT_MARKERS.kilnMaster");
+    if (command.type === "USE_COLOUR_SAMPLES_SWAP" || command.type === "USE_PROTECTIVE_SAGGARS" || command.type === "USE_GE_CRACKLE" || command.type === "SECOND_FIRING_CHOOSE" || command.type === "SELL_FLAWED") used.add(command.type);
+    if (command.type === "PLACE_GLAZE_LOAD" && command.loads.some((load) => load.kilnMaster !== undefined)) used.add("kilnMaster");
+    if (command.type === "USE_IMPERIAL_PRIORITY" && command.kilnMaster !== undefined) used.add("kilnMaster");
+    if (command.type === "PLACE_MAGISTRATES_HALL" && command.crownOrder !== undefined) used.add("PLACE_MAGISTRATES_HALL.crownOrder");
     // Fuel Ledger's own Contribution cards (v1.6.2 change 26).
     if (command.type === "SUBMIT_CONTRIBUTION" && (command.card === "FUEL_LEDGER_BANK" || command.card === "FUEL_LEDGER_STOKE")) used.add("SUBMIT_CONTRIBUTION.fuelLedgerCard");
   }
@@ -167,7 +174,13 @@ const ABILITY_PREFERENCES: readonly string[] = [
   'input[name="afterQuality"][value^="protective_saggars:"]',
   'input[name="afterQuality"][value^="second_firing:"]',
   'input[name="afterQuality"][value^="ge_crackle:"]',
-  'input[name="kilnMasterCeramicId"]:not([value="none"])',
+  // Kiln Master's side, chosen when loading (rev. 4 R22).
+  'input[name="kilnMaster"]:not([value="none"])',
+  // The Magistrate's Hall Shifu's optional Crown Order (change 33), and a Flawed ceramic's sale (R20).
+  'input[name="crownOrder"]:not([value="none"])',
+  '[data-pane-opener="sell_flawed"]',
+  'input[name="orders.sell"]',
+  'input[name="afterQuality.sell"]',
   'input[name="take"][value="T10"]',
   'input[name="take"][value="T11"]',
   'input[name="take"][value="T14"]',
@@ -288,7 +301,7 @@ describe("full games played only through the decision forms (§9.4)", () => {
     expect([...tableActs].sort()).toEqual(["inspect", "place", "tech"]);
   });
 
-  it("together, the games used every placement form, the Commission and Guild steps, Contributions, Orders and the trim", () => {
+  it("together, the games used every placement form, the Commission and Guild steps, Contributions, Orders, a sale and the trim", () => {
     for (const type of [
       "PLACE_MATERIALS_YARD",
       "PLACE_FORM_DECORATE",
@@ -303,6 +316,8 @@ describe("full games played only through the decision forms (§9.4)", () => {
       "SUBMIT_CONTRIBUTION",
       "COMPLETE_ORDER",
       "DISCARD_TO_HAND_LIMIT",
+      // Owner revision 4 (R20): a Flawed ceramic sold.
+      "SELL_FLAWED",
     ]) {
       expect(used.has(type), type).toBe(true);
     }
@@ -310,8 +325,9 @@ describe("full games played only through the decision forms (§9.4)", () => {
 });
 
 describe("steered games reach the optional abilities through their forms", () => {
-  // Seeds found by playing steered games under V1.6.2 revision 3 (3 and 4 players, seeds
-  // 5000–5009 and the earlier sets): together they use all five abilities and a Fuel Ledger card.
+  // Seeds found by playing steered games (3 and 4 players, seeds 5000–5009 and the earlier sets),
+  // checked again under owner revision 4: together they use all five abilities, Kiln Master's
+  // marker at loading, a Crown Order at the Magistrate's Hall, a sale and a Fuel Ledger card.
   // `KILN_UI_STEER_SEEDS="4:5000,3:5001"` plays other steered games (to search for seeds).
   const override = process.env["KILN_UI_STEER_SEEDS"];
   const steered: ReadonlyArray<readonly [2 | 3 | 4, number]> =
@@ -339,8 +355,17 @@ describe("steered games reach the optional abilities through their forms", () =>
     }
   }, 600_000);
 
-  it("together, the Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master and a Fuel Ledger card were sent from their forms", () => {
+  it("together, the Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master, a Crown Order, a sale and a Fuel Ledger card were sent from their forms", () => {
     if (override !== undefined) return;
-    expect([...used].sort()).toEqual(["RESOLVE_HEAT_MARKERS.kilnMaster", "SECOND_FIRING_CHOOSE", "SUBMIT_CONTRIBUTION.fuelLedgerCard", "USE_COLOUR_SAMPLES_SWAP", "USE_GE_CRACKLE", "USE_PROTECTIVE_SAGGARS"]);
+    expect([...used].sort()).toEqual([
+      "PLACE_MAGISTRATES_HALL.crownOrder",
+      "SECOND_FIRING_CHOOSE",
+      "SELL_FLAWED",
+      "SUBMIT_CONTRIBUTION.fuelLedgerCard",
+      "USE_COLOUR_SAMPLES_SWAP",
+      "USE_GE_CRACKLE",
+      "USE_PROTECTIVE_SAGGARS",
+      "kilnMaster",
+    ]);
   });
 });

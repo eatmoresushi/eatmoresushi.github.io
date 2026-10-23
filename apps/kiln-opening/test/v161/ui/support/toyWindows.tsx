@@ -3,33 +3,50 @@
  * form, built only from engine selectors, with a table adapter, so the harness, the draft store
  * and table selection can be tested before B4 and B5 land the real windows. Test code only.
  */
-import { contributionOptions, handLimitStatus, kilnSelectionOptions, settersMarkOptions } from "../../../../src/game/index.ts";
+import { contributionOptions, handLimitStatus, kilnSelectionOptions, settersMarkOptions, setupChoiceOptions } from "../../../../src/game/index.ts";
 import type { ContributionCardId, KilnId, KilnSpaceId, OrderId } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { useDraft, useGame } from "../../../../src/app/state/hooks.ts";
 import { defineWindow } from "../../../../src/app/state/draftStore.ts";
 import type { DraftModel, WindowRegistry } from "../../../../src/app/state/draftStore.ts";
 import { tableSelection } from "../../../../src/app/state/tableSelection.ts";
+import type { EngineView } from "../../../../src/app/state/model.ts";
 import { msg } from "../../../../src/app/i18n/translator.ts";
 
 // ── Kiln selection ────────────────────────────────────────────────────────────────────────
 
+/**
+ * The Setup pick (rev. 4 change 32, R23): a Kiln and a face-up Main Order. The toy starts on the
+ * first face-up Order, so choosing a Kiln is enough to confirm; a slot can still be changed.
+ */
 export interface KilnDraft {
   kilnId: KilnId | null;
+  slotIndex: number | null;
 }
 
-export type KilnAction = { readonly type: "pick"; readonly kilnId: KilnId };
+export type KilnAction = { readonly type: "pick"; readonly kilnId: KilnId } | { readonly type: "slot"; readonly slotIndex: number };
 
-export const kilnDraft: DraftModel<KilnDraft, KilnAction, readonly KilnId[]> = {
-  initial: () => ({ kilnId: null }),
+const offeredKilns = (engine: EngineView): KilnId[] => kilnSelectionOptions(engine.view).filter((option) => option.available).map((option) => option.kilnId);
+const offeredSlots = (engine: EngineView): number[] => setupChoiceOptions(engine.view)?.faceUpSlots ?? [];
+
+export const kilnDraft: DraftModel<KilnDraft, KilnAction, readonly string[]> = {
+  initial: (_model, engine) => ({ kilnId: null, slotIndex: offeredSlots(engine)[0] ?? null }),
   reduce(draft, action, _model, engine) {
-    const offered = kilnSelectionOptions(engine.view).filter((option) => option.available).map((option) => option.kilnId);
-    if (action.type === "revalidate") return draft.kilnId !== null && !offered.includes(draft.kilnId) ? { kilnId: null } : draft;
-    return offered.includes(action.kilnId) ? { kilnId: action.kilnId } : draft;
+    if (action.type === "revalidate") {
+      const kilnId = draft.kilnId !== null && offeredKilns(engine).includes(draft.kilnId) ? draft.kilnId : null;
+      const slotIndex = draft.slotIndex !== null && offeredSlots(engine).includes(draft.slotIndex) ? draft.slotIndex : null;
+      return kilnId === draft.kilnId && slotIndex === draft.slotIndex ? draft : { kilnId, slotIndex };
+    }
+    if (action.type === "pick") return offeredKilns(engine).includes(action.kilnId) ? { ...draft, kilnId: action.kilnId } : draft;
+    return offeredSlots(engine).includes(action.slotIndex) ? { ...draft, slotIndex: action.slotIndex } : draft;
   },
-  options: (_draft, _model, engine) => kilnSelectionOptions(engine.view).filter((option) => option.available).map((option) => option.kilnId),
-  build: (draft) => (draft.kilnId === null ? null : { type: "SELECT_KILN", kilnId: draft.kilnId }),
-  fromCommand: (command) => (command.type === "SELECT_KILN" ? { kilnId: command.kilnId } : null),
+  options: (_draft, _model, engine) => [...offeredKilns(engine), ...offeredSlots(engine).map(String)],
+  build(draft, _model, engine) {
+    const orderId = draft.slotIndex === null ? null : (engine.view.game.market.display[draft.slotIndex] ?? null);
+    if (draft.kilnId === null || draft.slotIndex === null || orderId === null) return null;
+    return { type: "SELECT_KILN", kilnId: draft.kilnId, mainOrder: { slotIndex: draft.slotIndex, orderId } };
+  },
+  fromCommand: (command) => (command.type === "SELECT_KILN" ? { kilnId: command.kilnId, slotIndex: command.mainOrder.slotIndex } : null),
   summary: (draft) => (draft.kilnId === null ? null : msg("common.verb.confirm")),
 };
 
@@ -41,6 +58,12 @@ export function ToyKilnForm() {
         <label key={kilnId}>
           <input type="radio" name="kilnId" value={kilnId} checked={draft.kilnId === kilnId} onChange={() => dispatch({ type: "pick", kilnId })} />
           {kilnId}
+        </label>
+      ))}
+      {[0, 1, 2, 3, 4, 5].map((slotIndex) => (
+        <label key={slotIndex}>
+          <input type="radio" name="mainOrder" value={String(slotIndex)} checked={draft.slotIndex === slotIndex} onChange={() => dispatch({ type: "slot", slotIndex })} />
+          {slotIndex}
         </label>
       ))}
     </fieldset>

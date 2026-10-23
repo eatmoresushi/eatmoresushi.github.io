@@ -100,7 +100,7 @@ async function flushMutations(): Promise<void> {
 
 const m1 = (): GameSnapshot => fixtureSnapshot(structuredClone(fixture("m1_work_phase_r2_3p")));
 /** A window whose pane always shows (Kiln selection, the viewer choosing). */
-const kilns = (): GameSnapshot => fixtureSnapshot(structuredClone(fixture("w-kiln-selection")));
+const kilns = (): GameSnapshot => fixtureSnapshot(structuredClone(fixture("w-kiln-and-main-order-choice")));
 
 /** The UI state for a fixture's open window (choices are kept per window, §3.3). */
 function uiState(ui: UiStore, id = "m1_work_phase_r2_3p"): UiState {
@@ -248,7 +248,7 @@ describe("skip link", () => {
     const link = $<HTMLAnchorElement>(".skip-link");
     act(() => link.focus());
     act(() => link.click());
-    expect(uiState(view.ui, "w-kiln-selection").sheet).toBe("open");
+    expect(uiState(view.ui, "w-kiln-and-main-order-choice").sheet).toBe("open");
     await act(async () => {
       await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
     });

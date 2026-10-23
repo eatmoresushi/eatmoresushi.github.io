@@ -2,16 +2,19 @@
  * A ceramic in the Shared Kiln, an Imperial Kiln, the recap or the results (wireframe `cchip`).
  * Owner: B3.
  *
- * The chip is the picture (art, owner ring, Quality, Crackle and Heat-marker badges); its name is
+ * The chip is the picture (art, owner ring, Quality, Crackle and Kiln Master badges); its name is
  * the ceramic in words (`ceramicLabel`, D9). Wrapped in `PieceDetail` (§7.4, §8.1), it opens a
- * panel with the full description, its place, marker, Quality (and, when Protective Saggars kept
+ * panel with the full description, its place, Kiln Master's marker, Quality (and, when Protective Saggars kept
  * it Standard, that fact, as the game log records it) and Second Firing card. Inside a
- * kiln target button it renders as a plain chip (no nested controls).
+ * kiln target button it renders as a plain chip (no nested controls). In its owner's own turn
+ * (the after-Quality turn, R20), a Flawed ceramic of this firing the open window may sell carries
+ * a Sell button under it (`SellButton`, `useTableSelection().sellTargets`), as on the owner's
+ * board, since the firing stage takes over the column (D3).
  *
  * A ceramic the model holds no attributes for (see `tableCeramics.ts`) is shown in words only:
  * "Lin's ceramic · Fine".
  */
-import type { CeramicHeatMarker, CeramicId, FireModifier, PlayerId, Quality } from "../../game/index.ts";
+import type { CeramicId, FireModifier, HeatDelta, PlayerId, Quality } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";
 import { techName, qualityName } from "../i18n/content.ts";
 import { KILN_TECHS } from "../i18n/catalog/kiln.ts";
@@ -21,9 +24,10 @@ import type { Translator } from "../i18n/translator.ts";
 import { PieceDetail } from "../kit/PieceDetail.tsx";
 import { CeramicChip } from "../pieces/CeramicChip.tsx";
 import { FireCard } from "../pieces/FireCard.tsx";
-import { heatMarkerWords } from "../pieces/HeatMarkerBadge.tsx";
+import { kilnMasterMarkerWords } from "../pieces/KilnMasterMarker.tsx";
 import { QualityChip } from "../pieces/QualityChip.tsx";
 import { useTableSelection } from "../state/hooks.ts";
+import { SellButton } from "../table/SellButton.tsx";
 import { useTableCeramics } from "./tableCeramics.ts";
 import type { TableCeramics } from "./tableCeramics.ts";
 import { seatVar } from "./cssVars.ts";
@@ -33,8 +37,8 @@ export interface KilnCeramicProps {
   id: CeramicId;
   /** Shown when the model holds no attributes for the ceramic. */
   ownerId: PlayerId;
-  /** The marker on the ceramic while it is loaded. */
-  marker?: CeramicHeatMarker | null;
+  /** Kiln Master's face-up marker on the ceramic while it is loaded (T24, rev. 4 L628). */
+  marker?: HeatDelta | null;
   /** A Quality to show when the model holds none (a recap or results record). */
   quality?: Quality | null;
   crackle?: boolean;
@@ -136,7 +140,7 @@ export function KilnCeramic({
   if (place !== null) lines.push(t("kiln.detail.place", { place: placeName(place, facts?.ownerId === ceramics.view.viewerId, t) }));
   const shownQuality = facts?.quality ?? quality ?? null;
   lines.push(shownQuality === null ? t("kiln.detail.noQuality") : t("kiln.detail.quality", { quality: qualityName(shownQuality, t.locale) }));
-  if (marker !== null) lines.push(t("kiln.detail.marker", { marker: heatMarkerWords(marker, t) }));
+  if (marker !== null) lines.push(t("kiln.detail.marker", { marker: kilnMasterMarkerWords(marker, t) }));
   if (saggarsFloor) {
     lines.push(t("kiln.detail.saggarsFloor", { tech: techName(KILN_TECHS.protectiveSaggars, t.locale), standard: qualityName("standard", t.locale), flawed: qualityName("flawed", t.locale) }));
   }
@@ -153,6 +157,9 @@ export function KilnCeramic({
         </ul>
       </PieceDetail>
       {fire}
+      {facts === null || !selection.sellTargets.has(id) ? null : (
+        <SellButton ceramicId={id} label={ceramicLabel(facts, ceramics.view, { locale: t, withOwner: false, withPlace: true })} selection={selection} />
+      )}
     </span>
   );
 }

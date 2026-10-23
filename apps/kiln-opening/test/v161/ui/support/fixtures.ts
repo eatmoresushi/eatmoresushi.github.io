@@ -40,7 +40,7 @@ export function scenarios(): readonly UiFixture[] {
   return all().scenarios;
 }
 
-/** Every played moment (`m1` … `m23`). */
+/** Every played moment (`m1` … `m27`). */
 export function moments(): readonly UiFixture[] {
   return all().moments;
 }
@@ -83,8 +83,8 @@ const DERIVED: Readonly<Record<string, { base: string; edit: (entry: UiFixture) 
     },
   },
   /** m2 right after the Shifu's SELECT_CHOOSE reserved display #1 (v1.6.2 L197): the position
-   * stays empty until the turn ends, the 3 looked cards went under the deck, and the turn is in
-   * its after-action step (5 Orders held, over the limit). */
+   * stays empty until the turn ends, the 3 looked cards were discarded face down (owner ruling
+   * R25), and the turn is in its after-action step. */
   "d-commission-after-face-up-reservation": {
     base: "m2_commission_market_look_r3_4p",
     edit: (entry) => {
@@ -101,7 +101,7 @@ const DERIVED: Readonly<Record<string, { base: string; edit: (entry: UiFixture) 
       own.pendingLook = null;
       game.counts = {
         ...game.counts,
-        mainDeck: game.counts.mainDeck + looked,
+        mainDiscard: game.counts.mainDiscard + looked,
         pendingLook: null,
         orderHands: { ...game.counts.orderHands, [entry.viewerId]: own.orderHand.length },
       };

@@ -9,15 +9,24 @@
  * or the Imperial Kiln with its −1/0/+1 modifier. A later load's lists are queried with the
  * earlier complete loads of this action (R8), and never repeat a vessel an earlier load has
  * chosen, complete or not. The second load is offered only while some other Shaped vessel can
- * still be loaded after the first. The Shifu may put the Heat marker face down on one of
- * `heatMarkerTargets(view, pid, loads)`.
+ * still be loaded after the first.
+ *
+ * Kiln fuel (rev. 4 L197, changes 34–35, R24): the action costs 1 Wood when any of its loads goes
+ * into the Shared Kiln, whether it loads 1 vessel or 2; loading only into the Imperial Kiln is
+ * free. The engine's quote (`quoteGlazeLoad`, its `kiln_fuel` line) prices the draft; without the
+ * Wood the engine offers no Shared Kiln destination (`loadDestinationOptions`). There is no Heat
+ * marker since revision 4 (changes 28, 31).
+ *
+ * Kiln Master (T24, rev. 4 L628, R22): once per round, as a ceramic is loaded, its owner may place
+ * the +1 or −1 marker on it, face up (`kilnMasterOption`: owned and ready, its faces). At most one
+ * load of the action carries it; declining is choosing none (R4).
  *
  * The destination is chosen in two steps: a place (a kiln space or the Imperial Kiln), then,
  * when that place offers more than one way in, its modifier. A place with a single way in takes
  * it at once.
  */
-import { glazeLoadVesselOptions, heatMarkerTargets, loadDestinationOptions, placementLimits } from "../../../../game/index.ts";
-import type { CeramicId, CeramicState, Glaze, KilnSpaceId, LoadDestinationOption, LoadSpec, Shape } from "../../../../game/index.ts";
+import { glazeLoadVesselOptions, kilnMasterOption, loadDestinationOptions, placementLimits, quoteGlazeLoad } from "../../../../game/index.ts";
+import type { CeramicId, CeramicState, CostQuote, Glaze, HeatDelta, KilnSpaceId, LoadDestinationOption, LoadSpec, ResourceState, Shape } from "../../../../game/index.ts";
 import { kilnSpaceName } from "../../../i18n/ceramicLabel.ts";
 import { glazeName, shapeName } from "../../../i18n/content.ts";
 import { list } from "../../../i18n/format.ts";
@@ -25,12 +34,13 @@ import { msg } from "../../../i18n/translator.ts";
 import type { Deferred, MessageParam, RichMessage } from "../../../i18n/translator.ts";
 import { keepIfSame, keyOf, viewMemo } from "../context.ts";
 import type { LocationDraftModel, PlacementCommandOf, PlacementContext } from "./editor.ts";
-import { signedModifier, vesselLabel, vesselParam } from "./shared.ts";
+import { resourcesPlus, signedModifier, vesselLabel, vesselParam } from "./shared.ts";
 
 const REWORKING_TABLE = "T05" as const;
 const KILN_FURNITURE = "T15" as const;
 const INVERTED_FIRING = "T21" as const;
 const SETTERS_MARK = "T22" as const;
+const KILN_MASTER = "T24" as const;
 
 export type Destination = LoadSpec["destination"];
 
@@ -43,9 +53,16 @@ export interface LoadDraft {
   readonly destination: Destination | null;
 }
 
+/** Kiln Master's marker on one load of the action (its index) with its face. */
+export interface KilnMasterChoice {
+  readonly index: number;
+  readonly value: HeatDelta;
+}
+
 export interface GlazeLoadDraft {
   readonly loads: readonly LoadDraft[];
-  readonly marker: CeramicId | null;
+  /** Kiln Master's marker (T24, R22), or null for none. */
+  readonly kilnMaster: KilnMasterChoice | null;
 }
 
 export type GlazeLoadAction =
@@ -55,7 +72,7 @@ export type GlazeLoadAction =
   | { readonly type: "place"; readonly index: number; readonly place: string }
   | { readonly type: "destination"; readonly index: number; readonly key: string }
   | { readonly type: "second"; readonly on: boolean }
-  | { readonly type: "marker"; readonly ceramicId: CeramicId | null }
+  | { readonly type: "kilnMaster"; readonly choice: KilnMasterChoice | null }
   | { readonly type: "kilnSpace"; readonly spaceId: KilnSpaceId };
 
 export type VariantKind = "zone" | "furniture" | "inverted" | "imperial";
@@ -90,13 +107,27 @@ export interface GlazeLoadOptions {
    */
   second: boolean;
   loads: readonly LoadOptions[];
-  /** The Shifu's Heat marker targets, or null when this placement places no marker. */
-  marker: { targets: readonly CeramicId[] } | null;
-  techs: { reworkingTable: typeof REWORKING_TABLE; kilnFurniture: typeof KILN_FURNITURE; invertedFiring: typeof INVERTED_FIRING; settersMark: typeof SETTERS_MARK };
+  /**
+   * Kiln Master (T24, R22): null without the tile or once used this round; else its faces and the
+   * loads (indexes) that have a vessel chosen, any one of which may carry the marker.
+   */
+  kilnMaster: { techId: typeof KILN_MASTER; values: readonly HeatDelta[]; loads: readonly number[] } | null;
+  /**
+   * Kiln fuel (R24): the Wood this action pays now (the quote's `kiln_fuel` line, 0 while no load
+   * goes into the Shared Kiln), what an action into the Shared Kiln costs (`sharedKilnWood`), the
+   * Wood held; `free` once the quote is known and pays no Wood (the loads go only into the
+   * Imperial Kiln), `short` when the Wood held cannot pay for the Shared Kiln.
+   */
+  fuel: { wood: number; perAction: number; have: number; free: boolean; short: boolean };
+  /** The engine's quote of the loads with a destination (`quoteGlazeLoad`), or null with none. */
+  quote: CostQuote | null;
+  /** Resources after paying the quote, or null while it is not known. */
+  after: ResourceState | null;
+  techs: { reworkingTable: typeof REWORKING_TABLE; kilnFurniture: typeof KILN_FURNITURE; invertedFiring: typeof INVERTED_FIRING; settersMark: typeof SETTERS_MARK; kilnMaster: typeof KILN_MASTER };
 }
 
 const BLANK_LOAD: LoadDraft = Object.freeze({ ceramicId: null, glaze: null, rework: null, place: null, destination: null });
-const BLANK: GlazeLoadDraft = Object.freeze({ loads: Object.freeze([BLANK_LOAD]), marker: null });
+const BLANK: GlazeLoadDraft = Object.freeze({ loads: Object.freeze([BLANK_LOAD]), kilnMaster: null });
 
 export function destinationKey(destination: Destination): string {
   if (destination.kiln === "imperial") return `imperial:${destination.imperialModifier}`;
@@ -121,14 +152,40 @@ function maxLoads(context: PlacementContext): number {
   return placementLimits(context.view, "glaze_load", context.worker.effect).maxLoads;
 }
 
-function placesMarker(context: PlacementContext): boolean {
-  const limits = placementLimits(context.view, "glaze_load", context.worker.effect);
-  return "placesHeatMarker" in limits && limits.placesHeatMarker;
+/** The Wood one Glaze & Load action pays when it loads into the Shared Kiln (R24). */
+function fuelPerAction(context: PlacementContext): number {
+  return placementLimits(context.view, "glaze_load", context.worker.effect).sharedKilnWood;
+}
+
+/** Kiln Master's option for this player when it may be used now (owned and ready), else null. */
+function kilnMasterReady(context: PlacementContext): { values: readonly HeatDelta[] } | null {
+  const option = viewMemo(context.view, `kilnMasterOption:${context.playerId}`, () => kilnMasterOption(context.view, context.playerId));
+  return option === null || !option.ready ? null : { values: option.values };
 }
 
 function completeLoad(load: LoadDraft): LoadSpec | null {
   if (load.ceramicId === null || load.glaze === null || load.destination === null) return null;
   return { ceramicId: load.ceramicId, glaze: load.glaze, destination: load.destination, ...(load.rework === null ? {} : { reworkShape: load.rework }) };
+}
+
+/**
+ * The loads with a destination, for the fuel quote: a load whose Glaze is not chosen yet uses its
+ * first offered Glaze (the fuel depends only on the destinations).
+ */
+function quotedLoads(draft: GlazeLoadDraft, context: PlacementContext): LoadSpec[] {
+  return draft.loads.flatMap((load, index): LoadSpec[] => {
+    if (load.ceramicId === null || load.destination === null) return [];
+    const glaze = load.glaze ?? loadOptions(draft, index, context).glazes[0] ?? null;
+    if (glaze === null) return [];
+    return [{ ceramicId: load.ceramicId, glaze, destination: load.destination, ...(load.rework === null ? {} : { reworkShape: load.rework }) }];
+  });
+}
+
+function quoteOf(draft: GlazeLoadDraft, context: PlacementContext): CostQuote | null {
+  const loads = quotedLoads(draft, context);
+  if (loads.length === 0) return null;
+  const action = { type: "PLACE_GLAZE_LOAD" as const, workerId: context.worker.workerId, loads };
+  return viewMemo(context.view, `quoteGlazeLoad:${keyOf(action)}`, () => quoteGlazeLoad(context.actor, action));
 }
 
 /** The complete loads before `index` (a later load's lists are queried after them, R8). */
@@ -206,18 +263,9 @@ function loadOptions(draft: GlazeLoadDraft, index: number, context: PlacementCon
   };
 }
 
-/** The pseudo-loads naming each chosen vessel, so marker targets include a vessel being loaded. */
-function chosenVessels(loads: readonly LoadDraft[]): LoadSpec[] {
-  return loads.flatMap((load) => {
-    const complete = completeLoad(load);
-    if (complete !== null) return [complete];
-    return load.ceramicId === null ? [] : [{ ceramicId: load.ceramicId, glaze: load.glaze ?? "white", destination: load.destination ?? { kiln: "imperial", imperialModifier: 0 } }];
-  });
-}
-
-function markerTargets(loads: readonly LoadDraft[], context: PlacementContext): readonly CeramicId[] {
-  const pending = chosenVessels(loads);
-  return viewMemo(context.view, `heatMarkerTargets:${keyOf(pending.map((load) => load.ceramicId))}`, () => heatMarkerTargets(context.view, context.playerId, pending));
+/** The loads that have a vessel chosen: each may carry Kiln Master's marker. */
+function kilnMasterLoads(loads: readonly LoadDraft[]): number[] {
+  return loads.flatMap((load, index) => (load.ceramicId === null ? [] : [index]));
 }
 
 function revalidateLoad(load: LoadDraft, options: LoadOptions, context: PlacementContext, earlier: readonly LoadSpec[]): LoadDraft {
@@ -242,15 +290,17 @@ function revalidate(draft: GlazeLoadDraft, context: PlacementContext): GlazeLoad
   let loads: LoadDraft[] = (draft.loads.length > max ? draft.loads.slice(0, max) : [...draft.loads]);
   if (loads.length === 0) loads = [BLANK_LOAD];
   for (let index = 0; index < loads.length; index += 1) {
-    const current = { loads, marker: draft.marker };
+    const current = { loads, kilnMaster: draft.kilnMaster };
     const load = loads[index] ?? BLANK_LOAD;
     const next = revalidateLoad(load, loadOptions(current, index, context), context, earlierOf(loads, index));
     if (next !== load) loads = loads.map((item, at) => (at === index ? next : item));
   }
   // No other vessel can follow the first load: the second load goes.
   if (loads.length > 1 && !secondOffered(loads, context)) loads = loads.slice(0, 1);
-  const marker = draft.marker !== null && placesMarker(context) && markerTargets(loads, context).includes(draft.marker) ? draft.marker : null;
-  return keepIfSame(draft, { loads, marker });
+  const ready = kilnMasterReady(context);
+  const km = draft.kilnMaster;
+  const kilnMaster = km !== null && ready !== null && ready.values.includes(km.value) && kilnMasterLoads(loads).includes(km.index) ? km : null;
+  return keepIfSame(draft, { loads, kilnMaster });
 }
 
 function setLoad(draft: GlazeLoadDraft, index: number, patch: Partial<LoadDraft>): GlazeLoadDraft {
@@ -261,11 +311,11 @@ function setLoad(draft: GlazeLoadDraft, index: number, patch: Partial<LoadDraft>
 function command(draft: GlazeLoadDraft, context: PlacementContext): PlacementCommandOf<"glaze_load"> | null {
   const loads = draft.loads.map(completeLoad);
   if (loads.some((load) => load === null)) return null;
+  const km = draft.kilnMaster;
   return {
     type: "PLACE_GLAZE_LOAD",
     workerId: context.worker.workerId,
-    loads: loads as LoadSpec[],
-    ...(draft.marker === null ? {} : { heatMarkerCeramicId: draft.marker }),
+    loads: (loads as LoadSpec[]).map((load, index) => (km !== null && km.index === index ? { ...load, kilnMaster: km.value } : load)),
   };
 }
 
@@ -331,8 +381,8 @@ export const glazeLoadDraft: LocationDraftModel<"glaze_load", GlazeLoadDraft, Gl
         if (draft.loads.length >= maxLoads(context) || !secondOffered(draft.loads, context)) return draft;
         return revalidate({ ...draft, loads: [...draft.loads, BLANK_LOAD] }, context);
       }
-      case "marker":
-        return revalidate({ ...draft, marker: action.ceramicId }, context);
+      case "kilnMaster":
+        return revalidate({ ...draft, kilnMaster: action.choice }, context);
       case "kilnSpace": {
         const offers = (index: number) => loadOptions(draft, index, context).places.some((place) => place.key === action.spaceId);
         const indexes = draft.loads.map((_, index) => index).filter((index) => draft.loads[index]?.ceramicId !== null && offers(index));
@@ -343,17 +393,30 @@ export const glazeLoadDraft: LocationDraftModel<"glaze_load", GlazeLoadDraft, Gl
     }
   },
   options(draft, context) {
+    const ready = kilnMasterReady(context);
+    const quote = quoteOf(draft, context);
     return {
       maxLoads: maxLoads(context),
       second: secondOffered(draft.loads, context),
       loads: draft.loads.map((_, index) => loadOptions(draft, index, context)),
-      marker: placesMarker(context) ? { targets: markerTargets(draft.loads, context) } : null,
-      techs: { reworkingTable: REWORKING_TABLE, kilnFurniture: KILN_FURNITURE, invertedFiring: INVERTED_FIRING, settersMark: SETTERS_MARK },
+      kilnMaster: ready === null ? null : { techId: KILN_MASTER, values: ready.values, loads: kilnMasterLoads(draft.loads) },
+      fuel: {
+        wood: quote?.pay.wood ?? 0,
+        perAction: fuelPerAction(context),
+        have: context.me.resources.wood,
+        free: quote !== null && quote.pay.wood === 0,
+        short: context.me.resources.wood < fuelPerAction(context),
+      },
+      quote,
+      after: quote === null ? null : resourcesPlus(context.me.resources, quote.gain, quote.pay),
+      techs: { reworkingTable: REWORKING_TABLE, kilnFurniture: KILN_FURNITURE, invertedFiring: INVERTED_FIRING, settersMark: SETTERS_MARK, kilnMaster: KILN_MASTER },
     };
   },
   build: (draft, context) => command(draft, context),
   fromCommand(cmd, context) {
     if (cmd.loads.length === 0 || cmd.loads.length > maxLoads(context)) return null;
+    const marked = cmd.loads.flatMap((load, index): KilnMasterChoice[] => (load.kilnMaster === undefined ? [] : [{ index, value: load.kilnMaster }]));
+    if (marked.length > 1) return null;
     return {
       loads: cmd.loads.map((load) => ({
         ceramicId: load.ceramicId,
@@ -362,7 +425,7 @@ export const glazeLoadDraft: LocationDraftModel<"glaze_load", GlazeLoadDraft, Gl
         place: placeKeyOf(load.destination),
         destination: load.destination,
       })),
-      marker: cmd.heatMarkerCeramicId ?? null,
+      kilnMaster: marked[0] ?? null,
     };
   },
   detail(draft, context): MessageParam | null {
@@ -377,10 +440,15 @@ export const glazeLoadDraft: LocationDraftModel<"glaze_load", GlazeLoadDraft, Gl
       else parts.push(msg("work.gl.detailLoadRework", { vessel, shape: (t) => shapeName(rework, t.locale), glaze: (t) => glazeName(glaze, t.locale), place }));
     });
     if (parts.length === 0) return null;
+    const km = draft.kilnMaster;
+    const kmCeramic = km === null ? null : draft.loads[km.index]?.ceramicId ?? null;
+    if (km !== null && kmCeramic !== null) {
+      parts.push(msg("work.gl.detailKilnMaster", { value: signedModifier(km.value), ceramic: vesselParam(context.view, kmCeramic) }));
+    }
+    const wood = quoteOf(draft, context)?.pay.wood ?? 0;
+    if (wood > 0) parts.push(msg("work.gl.detailFuel", { wood: (t) => t("common.amount.wood", { n: wood }) }));
     const loads: Deferred = (t) => parts.map((part) => t.message(part)).join(t.locale === "zh-CN" ? "；" : "; ");
-    if (draft.marker === null) return loads;
-    const marker = draft.marker;
-    return msg("work.gl.detailMarker", { loads, ceramic: vesselParam(context.view, marker) });
+    return loads;
   },
 };
 

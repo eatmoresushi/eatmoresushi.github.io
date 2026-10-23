@@ -9,8 +9,9 @@ import { GLOSSARY_LINES, ROOT, cellsOf } from "../../support/glossary.ts";
  * §5 gap 1: the location summaries match their sources cell by cell — English from the V1.6.2
  * rulebook Appendix E "Action Summary", Chinese from the same table of the Chinese rulebook
  * (行动一览), which the short column (短) of glossary §4.1–4.7 repeats. The Magistrate's Hall Shifu
- * cell ("Pay 3 Coins → same" / 付3铜钱，同上) is spelled out with the Apprentice cell's result; that
- * is the only editorial change.
+ * cell ("Pay 4 Coins → same, and reserve 1 face-up Crown Order …" / 付4铜钱，同上，并承接…, owner
+ * revision 4) has its "same" (同上) spelled out with the Apprentice cell's result; that is the only
+ * editorial change.
  */
 const RULEBOOK = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_EN_SOURCE.md"), "utf8").split("\n");
 const RULEBOOK_ZH = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8").split("\n");
@@ -37,10 +38,11 @@ function tableAfter(lines: readonly string[], heading: string): Array<Record<str
   return rows;
 }
 
+/** "→ same" (at the end of the cell or before a further clause) spelled out with the Apprentice cell's result. */
 function expandSame(cell: string, apprentice: string): string {
-  if (!/→ same$/.test(cell)) return cell;
+  if (!/→ same(?=,|$)/.test(cell)) return cell;
   const result = apprentice.slice(apprentice.indexOf("→"));
-  return cell.replace(/→ same$/, result);
+  return cell.replace(/→ same(?=,|$)/, result);
 }
 
 describe("location summary parity", () => {
@@ -63,7 +65,7 @@ describe("location summary parity", () => {
     const row = tableAfter(RULEBOOK_ZH, "### 行动一览").find((candidate) => candidate["地点"] === LOCATIONS[id].nameZh);
     expect(row, id).toBeDefined();
     const apprentice = row?.["学徒"] ?? "";
-    const shifu = (row?.["师傅"] ?? "").replace(/，同上$/, apprentice.slice(apprentice.indexOf("，")));
+    const shifu = (row?.["师傅"] ?? "").replace(/，同上(?=，|$)/, apprentice.slice(apprentice.indexOf("，")));
     expect(locationSummary.zh[`${id}.apprentice`]).toBe(apprentice);
     expect(locationSummary.zh[`${id}.shifu`]).toBe(shifu);
   });

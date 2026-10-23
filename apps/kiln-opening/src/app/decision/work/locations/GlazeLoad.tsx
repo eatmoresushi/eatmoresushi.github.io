@@ -4,28 +4,37 @@
  * Per load: the Shaped vessel (named in words, D9), Reworking Table's Shape change, the Glaze,
  * and the destination — a Shared Kiln space (also choosable on the kiln, `TableSelection`), or
  * the Imperial Kiln — then, when a place offers several ways in, its modifier (zone, Kiln
- * Furniture −1/0/+1, Inverted Firing, or the Imperial modifier −1/0/+1). The Shifu may place the
- * Heat marker face down. Lists come from the selectors through `options`.
+ * Furniture −1/0/+1, Inverted Firing, or the Imperial modifier −1/0/+1). Kiln Master's optional
+ * +1/−1 marker goes on one load, face up (T24, rev. 4 L628, R22). The kiln fuel block says what
+ * the action pays (rev. 4 L197, R24: 1 Wood when any load goes into the Shared Kiln, 1 vessel or
+ * 2; nothing when it loads only into the Imperial Kiln), from the engine's quote, with the
+ * resulting resources. There is no Heat marker since revision 4. Lists come from the selectors
+ * through `options`.
  */
 import type { CSSProperties } from "react";
 import type { CeramicId, Glaze, Shape } from "../../../../game/index.ts";
 import { kilnSpaceName } from "../../../i18n/ceramicLabel.ts";
-import { IMPERIAL_KILN_RECOGNITION, glazeName, shapeName, techName, workerKindName } from "../../../i18n/content.ts";
+import { IMPERIAL_KILN_RECOGNITION, glazeName, shapeName, techName } from "../../../i18n/content.ts";
 import { useT } from "../../../i18n/I18nProvider.tsx";
 import type { Translator } from "../../../i18n/translator.ts";
 import { OptionCard } from "../../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../../kit/OptionGroup.tsx";
 import { CeramicArt } from "../../../pieces/CeramicArt.tsx";
-import { FormNote } from "../pieces.tsx";
+import { FormNote, ResourceDelta } from "../pieces.tsx";
 import { RulesDetail } from "../../../rules/RulesDetail.tsx";
 import { destinationKey } from "./GlazeLoad.draft.ts";
 import type { DestinationVariant, GlazeLoadAction, GlazeLoadDraft, GlazeLoadOptions, PlaceOption } from "./GlazeLoad.draft.ts";
 import type { LocationEditorProps } from "./editor.ts";
-import { signedModifier, vesselLabel } from "./shared.ts";
+import { amountText, signedModifier, vesselLabel } from "./shared.ts";
 
 export type GlazeLoadProps = LocationEditorProps<GlazeLoadDraft, GlazeLoadAction, GlazeLoadOptions>;
 
 const NO_MARKER = "none";
+
+/** The radio value of Kiln Master's marker on one load (`<load index>:<face>`). */
+function kilnMasterValue(index: number, value: number): string {
+  return `${String(index)}:${String(value)}`;
+}
 const KEEP_SHAPE = "keep";
 
 function placeTitle(place: PlaceOption, t: Translator): string {
@@ -169,23 +178,54 @@ export function GlazeLoad({ draft, options, dispatch, context }: GlazeLoadProps)
       {options.maxLoads > 1 && (options.second || two) ? (
         <OptionCard type="checkbox" name="secondLoad" value="true" checked={two} onChange={(_, checked) => dispatch({ type: "second", on: checked })} title={t("work.gl.second")} />
       ) : null}
-      {options.marker === null || options.marker.targets.length === 0 ? null : (
+      {options.kilnMaster === null || options.kilnMaster.loads.length === 0 ? null : (
         <div className="b4-sub-block">
           <OptionGroup
-            legend={t("work.gl.marker", { shifu: workerKindName("shifu", t.locale) })}
-            name="heatMarkerCeramicId"
+            legend={t("work.gl.kilnMaster", { tech: techName(options.techs.kilnMaster, t.locale) })}
+            description={t("work.gl.kilnMasterNote")}
+            name="kilnMaster"
             layout="pills"
-            value={draft.marker ?? NO_MARKER}
-            onChange={(value) => dispatch({ type: "marker", ceramicId: value === NO_MARKER ? null : value })}
+            value={draft.kilnMaster === null ? NO_MARKER : kilnMasterValue(draft.kilnMaster.index, draft.kilnMaster.value)}
+            onChange={(value) => {
+              const km = options.kilnMaster;
+              const choice = km?.loads.flatMap((index) => km.values.map((face) => ({ index, value: face }))).find((entry) => kilnMasterValue(entry.index, entry.value) === value) ?? null;
+              dispatch({ type: "kilnMaster", choice });
+            }}
           >
-            {options.marker.targets.map((ceramicId) => (
-              <OptionCard key={ceramicId} variant="pill" value={ceramicId} title={vesselName(ceramicId)} />
-            ))}
-            <OptionCard variant="pill" value={NO_MARKER} title={t("work.gl.noMarker")} />
+            <OptionCard variant="pill" value={NO_MARKER} title={t("work.gl.kilnMasterNone")} />
+            {options.kilnMaster.loads.flatMap((index) => {
+              const ceramicId = draft.loads[index]?.ceramicId ?? null;
+              return (options.kilnMaster?.values ?? []).map((face) => (
+                <OptionCard
+                  key={kilnMasterValue(index, face)}
+                  variant="pill"
+                  value={kilnMasterValue(index, face)}
+                  title={
+                    two && ceramicId !== null
+                      ? t("work.gl.kilnMasterOn", { value: signedModifier(face), vessel: vesselName(ceramicId) })
+                      : t("common.verb.placeKilnMaster", { value: signedModifier(face) })
+                  }
+                />
+              ));
+            })}
           </OptionGroup>
-          <FormNote>{t("work.gl.markerNote")}</FormNote>
+          <RulesDetail subject={{ kind: "tech", id: options.techs.kilnMaster }} />
         </div>
       )}
+      <div className="b4-quote" role="group" aria-label={t("work.gl.fuel")} data-b4="kiln-fuel">
+        <p className="b4-sub-title">{t("work.gl.fuel")}</p>
+        {options.fuel.wood > 0 ? (
+          <div className="b4-quote-line">
+            <span>{t("work.gl.fuelLine")}</span>
+            <span className="num">{amountText(t, "wood", options.fuel.wood)}</span>
+          </div>
+        ) : options.fuel.free ? (
+          <p className="b4-note b4-note--muted">{t("work.gl.fuelFree")}</p>
+        ) : null}
+        <p className="b4-note b4-note--muted">{t("work.gl.fuelRule", { wood: amountText(t, "wood", options.fuel.perAction) })}</p>
+        {options.fuel.short ? <FormNote>{t("work.gl.fuelNone")}</FormNote> : null}
+      </div>
+      <ResourceDelta before={context.me.resources} after={options.after} />
     </div>
   );
 }

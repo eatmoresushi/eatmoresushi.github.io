@@ -9,7 +9,7 @@ import { CardBack } from "../../../../src/app/pieces/CardBack.tsx";
 import { CeramicChip } from "../../../../src/app/pieces/CeramicChip.tsx";
 import { CrownIcon } from "../../../../src/app/pieces/CrownIcon.tsx";
 import { FireCard } from "../../../../src/app/pieces/FireCard.tsx";
-import { HeatMarkerBadge } from "../../../../src/app/pieces/HeatMarkerBadge.tsx";
+import { KilnMasterMarker } from "../../../../src/app/pieces/KilnMasterMarker.tsx";
 import { KilnDie } from "../../../../src/app/pieces/KilnDie.tsx";
 import { QualityChip } from "../../../../src/app/pieces/QualityChip.tsx";
 import { ResourceRow } from "../../../../src/app/pieces/ResourceRow.tsx";
@@ -60,12 +60,14 @@ describe("ceramic chips", () => {
     }
   });
 
-  it("reads like the table: owner, Glaze, Shape, Decoration, Quality, Crackle, marker", () => {
+  it("reads like the table: owner, Glaze, Shape, Decoration, Quality, Crackle, Kiln Master marker", () => {
     const ceramic = { id: "c12", ownerId: "p2", shape: "bowl", decoration: "carved", glaze: "celadon", quality: "fine", crackle: true } as const;
-    const en = render(<CeramicChip ceramic={ceramic} seat={1} view={VIEW} marker={{ source: "own", faceDown: true }} />, "en");
-    expect(accessibleText(en)).toBe("Zhao’s Celadon Bowl, Carved · Fine · Crackle, Heat marker, face down");
-    const zh = render(<CeramicChip ceramic={ceramic} seat={1} view={VIEW} marker={{ source: "kiln_master", faceDown: false, value: -1 }} />, "zh-CN");
+    const en = render(<CeramicChip ceramic={ceramic} seat={1} view={VIEW} marker={1} />, "en");
+    expect(accessibleText(en)).toBe("Zhao’s Celadon Bowl, Carved · Fine · Crackle, Kiln Master marker +1");
+    const zh = render(<CeramicChip ceramic={ceramic} seat={1} view={VIEW} marker={-1} />, "zh-CN");
     expect(accessibleText(zh)).toBe("Zhao的青釉碗 · 刻花 · 上品 · 开片，窑工标−1");
+    // Rev. 4 has no Heat marker: without Kiln Master's marker the chip names none.
+    expect(accessibleText(render(<CeramicChip ceramic={ceramic} seat={1} view={VIEW} marker={null} />, "en"))).toBe("Zhao’s Celadon Bowl, Carved · Fine · Crackle");
     expect(en).toContain('data-motion="ceramic"');
     expect(en).toContain("--pc:var(--seat-1)");
   });
@@ -91,9 +93,8 @@ describe("Quality never relies on colour", () => {
 describe("markers, cards, die, workers and resources", () => {
   it.each(LOCALES)("have words in %s", (locale) => {
     const texts = [
-      render(<HeatMarkerBadge marker={{ source: "own", faceDown: true }} />, locale),
-      render(<HeatMarkerBadge marker={{ source: "own", faceDown: false, value: 1 }} />, locale),
-      render(<HeatMarkerBadge marker={{ source: "kiln_master", faceDown: false, value: -1 }} />, locale),
+      render(<KilnMasterMarker value={1} />, locale),
+      render(<KilnMasterMarker value={-1} />, locale),
       ...([-2, -1, 0, 1, 2] as FireModifier[]).map((value) => render(<FireCard value={value} />, locale)),
       render(<FireCard value={null} />, locale),
       render(<KilnDie value={2} />, locale),
@@ -114,7 +115,8 @@ describe("markers, cards, die, workers and resources", () => {
   it("writes Fire cards and markers with a true minus sign", () => {
     expect(accessibleText(render(<FireCard value={-2} />, "en"))).toBe("Fire card −2");
     expect(accessibleText(render(<FireCard value={2} />, "zh-CN"))).toBe("窑火牌+2");
-    expect(accessibleText(render(<HeatMarkerBadge marker={{ source: "own", faceDown: false, value: -1 }} />, "en"))).toBe("Heat marker −1");
+    expect(accessibleText(render(<KilnMasterMarker value={-1} />, "en"))).toBe("Kiln Master marker −1");
+    expect(accessibleText(render(<KilnMasterMarker value={1} />, "zh-CN"))).toBe("窑工标+1");
   });
 
   it("labels workers in words, never by ID", () => {
@@ -146,7 +148,7 @@ describe("motion hooks (§8.4)", () => {
       [<QualityChip quality="fine" motionKey="quality:c4" />, "quality", "quality:c4"],
       [<FireCard value={1} motionKey="fire:0" />, "fire", "fire:0"],
       [<KilnDie value={2} motionKey="die" />, "die", "die"],
-      [<HeatMarkerBadge marker={{ source: "own", faceDown: true }} motionKey="marker:c4" />, "marker", "marker:c4"],
+      [<KilnMasterMarker value={1} motionKey="marker:c4" />, "marker", "marker:c4"],
     ];
     for (const [element, motion, key] of cases) {
       const markup = render(element, "en");
@@ -164,7 +166,7 @@ describe("motion hooks (§8.4)", () => {
 
   it("a ceramic chip keys its marker and Quality badges from its own key", () => {
     const ceramic = { id: "c12", ownerId: "p2", shape: "bowl", decoration: "carved", glaze: "celadon", quality: "fine", crackle: false } as const;
-    const markup = render(<CeramicChip ceramic={ceramic} seat={1} view={VIEW} marker={{ source: "own", faceDown: true }} />, "en");
+    const markup = render(<CeramicChip ceramic={ceramic} seat={1} view={VIEW} marker={1} />, "en");
     expect(markup).toContain('data-motion-key="c12"');
     expect(markup).toContain('data-motion-key="marker:c12"');
     expect(markup).toContain('data-motion-key="quality:c12"');

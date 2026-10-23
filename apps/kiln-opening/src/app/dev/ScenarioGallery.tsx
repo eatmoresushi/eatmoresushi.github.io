@@ -5,7 +5,9 @@
  * It lists every scripted scenario and played moment of `test/v161/ui/fixtures/*.json`, the shell
  * states (home, lobby, reconnecting, offline, computer failure, unsent command, ended), and every
  * `dev/*.gallery.tsx` page. A fixture renders the **full `GameScreen`** on a `FixtureGameSource`;
- * Confirm shows "Would send …" after the same local check ConfirmBar runs.
+ * Confirm shows "Would send …" after the same local check ConfirmBar runs. An entry with a
+ * `draftCommand` opens with that command's draft seeded into the open window (`fromCommand`), so
+ * the form shows its choices made.
  *
  * The URL hash selects the view: `#<id>?lang=zh-CN&theme=dark&board=p2`. `&bare=1` drops the
  * gallery chrome (index, bar), so the entry fills the viewport exactly as the app would: the
@@ -32,7 +34,10 @@ import { FixtureGameSource } from "../session/fixtureSource.ts";
 import type { FixtureEntry, FixtureSourceOptions } from "../session/fixtureSource.ts";
 import { EMPTY_SNAPSHOT } from "../session/gameSource.ts";
 import type { GameSnapshot, GameSource, SubmitOutcome } from "../session/gameSource.ts";
+import { decisionWindow, windowDraftKey } from "../state/decisionWindow.ts";
+import { DraftStore } from "../state/draftStore.ts";
 import { GameProvider } from "../state/hooks.ts";
+import { buildGameModel, engineViewOf } from "../state/model.ts";
 import { browserLayoutSource } from "../state/layoutMode.ts";
 import { BROWSER_UI_EFFECTS, UiStore } from "../state/uiStore.ts";
 import { applyTheme, isThemeChoice } from "../theme.ts";
@@ -70,6 +75,8 @@ export interface GameEntry {
   screen: ScreenKind;
   makeSource: () => GameSource;
   players: readonly { playerId: PlayerId; name: string }[];
+  /** The fixture's seeded draft (`FixtureEntry.draftCommand`), if any. */
+  draftCommand?: AuthoritativeCommand;
 }
 
 export interface PageEntry {
@@ -183,6 +190,7 @@ function fixtureEntries(file: FixtureFile, group: (entry: FixtureFile["entries"]
     screen: "game",
     makeSource: () => new FixtureGameSource(entry),
     players: playersOf(entry),
+    ...(entry.draftCommand === undefined ? {} : { draftCommand: entry.draftCommand }),
   }));
 }
 
@@ -264,8 +272,28 @@ function Submissions({ source }: { source: GameSource }) {
   );
 }
 
+/**
+ * A draft store with the entry's `draftCommand` seeded as the open window's draft (the window's
+ * own `fromCommand`), or an empty one. The draft is revalidated against the first model it is
+ * read with, so a command the form cannot express simply leaves the window as it opens.
+ */
+export function seededDrafts(entry: GameEntry, source: GameSource): DraftStore {
+  const drafts = new DraftStore();
+  const command = entry.draftCommand;
+  const snapshot = source.getSnapshot();
+  const view = snapshot.view;
+  if (command === undefined || view === null) return drafts;
+  const model = buildGameModel(view, snapshot.seats);
+  const engine = engineViewOf(view);
+  const window = decisionWindow(view);
+  const draft = WINDOWS[window.kind].draft.fromCommand(command, model, engine);
+  if (draft !== null) drafts.seed(windowDraftKey(window), draft);
+  return drafts;
+}
+
 function GameEntryView({ entry, location }: { entry: GameEntry; location: GalleryLocation }) {
   const source = useMemo(() => entry.makeSource(), [entry]);
+  const drafts = useMemo(() => seededDrafts(entry, source), [entry, source]);
   const layout = useMemo(() => browserLayoutSource(), []);
   const ui = useMemo(
     () => new UiStore({ layout, effects: BROWSER_UI_EFFECTS, theme: location.theme, initial: location.board === null ? {} : { boardShown: location.board } }),
@@ -274,7 +302,7 @@ function GameEntryView({ entry, location }: { entry: GameEntry; location: Galler
   const Screen = entry.screen === "home" ? HomeScreen : entry.screen === "lobby" ? LobbyScreen : entry.screen === "ended" ? EndedScreen : GameScreen;
   const stage = (
     <div className="gallery-stage" data-gallery-entry={entry.id}>
-      <GameProvider source={source} registry={WINDOWS} ui={ui} layout={layout} devTools={false}>
+      <GameProvider source={source} registry={WINDOWS} drafts={drafts} ui={ui} layout={layout} devTools={false}>
         <Screen />
       </GameProvider>
     </div>

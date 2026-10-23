@@ -4,8 +4,10 @@
  *
  * One full Kiln Player Board, from `playerSummary` (public information only). The viewer's own
  * hand shows its count (no "Only you can see" pill, owner review 2026-10-18); another player's hand shows card backs and a
- * count, never a card. Score is the score-track value `recordedVp` (Orders, Kiln abilities,
- * Crowns and Imperial Audience; a Tech scores nothing, v1.6.2 change 27), never a projection.
+ * count, never a card. Score is the score-track value `recordedVp` (Orders, Kiln abilities with Ge's
+ * Crackle VP, Crowns and Imperial Audience; a Tech scores nothing, v1.6.2 change 27), never a
+ * projection. A completed Order shows its printed VP, and Ge's Crackle VP when it delivered a
+ * Crackle ceramic (rev. 4 L465).
  */
 import { useId } from "react";
 import type { CSSProperties } from "react";
@@ -102,7 +104,14 @@ export function PlayerBoard({ playerId }: PlayerBoardProps) {
                 <RulesDetail
                   subject={{ kind: "order", id: record.orderId }}
                   className="kpb-order"
-                  trigger={<span className="kpb-order-face">{t("boards.board.completedOrder", { order: record.orderId, vp: t("common.vpN", { n: record.vp }) })}</span>}
+                  trigger={
+                    <span className="kpb-order-face">
+                      {/* Ge's Crackle VP for the Crackle ceramics delivered with it (rev. 4 L465); a record without it means 0. */}
+                      {(record.crackleVp ?? 0) > 0
+                        ? t("boards.board.completedOrderCrackle", { order: record.orderId, vp: t("common.vpN", { n: record.vp }), n: record.crackleVp ?? 0 })
+                        : t("boards.board.completedOrder", { order: record.orderId, vp: t("common.vpN", { n: record.vp }) })}
+                    </span>
+                  }
                 />
               </li>
             ))}

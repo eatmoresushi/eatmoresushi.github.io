@@ -79,7 +79,7 @@ describe("the open Fire discard (D4)", () => {
     expect(screen).not.toMatch(/Fire discard \(open\)\s+none yet/);
   });
 
-  it.each(["m1_work_phase_r2_3p", "m2_commission_market_look_r3_4p", "m3_heat_marker_step_3p", "m4_after_quality_3p", "m7_cleanup_hand_limit_3p", "m18_jun_second_firing"])(
+  it.each(["m1_work_phase_r2_3p", "m2_commission_market_look_r3_4p", "m3_kiln_master_marker_3p", "m4_after_quality_3p", "m7_cleanup_hand_limit_3p", "m18_jun_second_firing"])(
     "%s: every discard list on the game screen is the public discard, in both languages",
     (id) => {
       const discard = fixture(id).playerView.game.fireDiscard;
@@ -93,7 +93,7 @@ describe("the open Fire discard (D4)", () => {
   );
 
   it("is shown during a firing (the heat equation) and between firings (behind the Kiln section's button)", () => {
-    const firing = renderScreen(fixtureSource("m3_heat_marker_step_3p"));
+    const firing = renderScreen(fixtureSource("m3_kiln_master_marker_3p"));
     expect(elementAt(firing, /<section id="sec-firing"/)).toContain('class="fdiscard-list"');
     const idle = elementAt(renderScreen(fixtureSource("m7_cleanup_hand_limit_3p")), /<section id="sec-kiln"/);
     const button = elementAt(idle, /<button[^>]*class="kit-btn[^"]*kstrip-discard"/);

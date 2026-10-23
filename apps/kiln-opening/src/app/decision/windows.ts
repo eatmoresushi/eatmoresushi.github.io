@@ -6,8 +6,8 @@
  * - `decision/work/windows.work.ts` (B4): Kiln selection, Setter's Mark, the work turn (before
  *   and after the worker action), the Commission Market steps, the Guild Hall inspection and
  *   Colour Samples;
- * - `decision/windows.firing.ts` (B5): Contributions, Test Pieces, Heat markers, Jun, after-Quality,
- *   Salvage, the Order Phase, the hand trim, the final summary and waiting.
+ * - `decision/windows.firing.ts` (B5): Contributions, Test Pieces, Jun, after-Quality, Second
+ *   Firing's choice, the Order Phase, the hand trim, the final summary and waiting.
  *
  * The registry is injected into `GameProvider` (`state/hooks.ts`), so `state/**` never imports
  * `decision/**`. The type below fails `typecheck` if a kind is missing or covered twice.

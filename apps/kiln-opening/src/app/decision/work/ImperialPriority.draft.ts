@@ -2,16 +2,17 @@
  * The draft model of Imperial Priority (UI_V1.6.1_ARCHITECTURE §3.4, §5 gap 16). Owner: B4.
  *
  * Before or after the worker action (L293, R10): spend the token to give one Shaped vessel a
- * Glaze and load it into your empty Imperial Kiln with a public −1/0/+1 Imperial modifier, free;
- * Reworking Table may change its Shape first (P1). Every list comes from
+ * Glaze and load it into your empty Imperial Kiln with a public −1/0/+1 Imperial modifier, free (no
+ * Wood, rev. 4 L291); Reworking Table may change its Shape first (P1), and Kiln Master's +1/−1
+ * marker may go on it, face up (T24, rev. 4 L628, R22: any loading). Every list comes from
  * `imperialPriorityOptions(view).ceramics` (per vessel: Glazes, Imperial modifiers, rework
  * Shapes); the combination is checked by `validateAction` in ConfirmBar.
  *
  * Composed by the work draft (`workDraft.ts`) as its `imperialPriority` sub-draft; it is a full
  * `DraftModel`, so it can be tested on its own.
  */
-import { imperialPriorityOptions } from "../../../game/index.ts";
-import type { CeramicId, CeramicState, Glaze, ImperialModifier, ImperialPriorityOptions as SelectorOptions, Shape } from "../../../game/index.ts";
+import { imperialPriorityOptions, kilnMasterOption } from "../../../game/index.ts";
+import type { CeramicId, CeramicState, Glaze, HeatDelta, ImperialModifier, ImperialPriorityOptions as SelectorOptions, Shape } from "../../../game/index.ts";
 import { glazeName, shapeName } from "../../i18n/content.ts";
 import { msg } from "../../i18n/translator.ts";
 import type { RichMessage } from "../../i18n/translator.ts";
@@ -26,13 +27,16 @@ export interface ImperialPriorityDraft {
   readonly modifier: ImperialModifier | null;
   /** Reworking Table's new Shape, or null to keep the vessel's. */
   readonly rework: Shape | null;
+  /** Kiln Master's marker on this load (T24, R22), or null for none. */
+  readonly kilnMaster: HeatDelta | null;
 }
 
 export type ImperialPriorityAction =
   | { readonly type: "vessel"; readonly ceramicId: CeramicId }
   | { readonly type: "glaze"; readonly glaze: Glaze }
   | { readonly type: "modifier"; readonly modifier: ImperialModifier }
-  | { readonly type: "rework"; readonly shape: Shape | null };
+  | { readonly type: "rework"; readonly shape: Shape | null }
+  | { readonly type: "kilnMaster"; readonly value: HeatDelta | null };
 
 export interface ImperialPriorityOptions {
   usable: boolean;
@@ -41,12 +45,23 @@ export interface ImperialPriorityOptions {
   modifiers: readonly ImperialModifier[];
   reworkShapes: readonly Shape[];
   reworkTechId: "T05";
+  /** Kiln Master's faces when its marker may go on this load (owned and ready), else null. */
+  kilnMaster: { techId: "T24"; values: readonly HeatDelta[] } | null;
 }
 
-const BLANK: ImperialPriorityDraft = Object.freeze({ ceramicId: null, glaze: null, modifier: null, rework: null });
+const BLANK: ImperialPriorityDraft = Object.freeze({ ceramicId: null, glaze: null, modifier: null, rework: null, kilnMaster: null });
 
 function selectorOptions(engine: EngineView): SelectorOptions {
   return viewMemo(engine.view, "imperialPriorityOptions", () => imperialPriorityOptions(engine.view));
+}
+
+/** Kiln Master's faces when the selector says its marker may go on this load. */
+function kilnMasterOf(engine: EngineView): ImperialPriorityOptions["kilnMaster"] {
+  const selector = selectorOptions(engine);
+  const viewerId = engine.view.viewerId;
+  if (!selector.kilnMaster || viewerId === null) return null;
+  const option = viewMemo(engine.view, `kilnMasterOption:${viewerId}`, () => kilnMasterOption(engine.view, viewerId));
+  return option === null ? null : { techId: "T24", values: option.values };
 }
 
 function optionsOf(draft: ImperialPriorityDraft, engine: EngineView): ImperialPriorityOptions {
@@ -59,6 +74,7 @@ function optionsOf(draft: ImperialPriorityDraft, engine: EngineView): ImperialPr
     modifiers: chosen?.imperialModifiers ?? [],
     reworkShapes: chosen?.reworkShapes ?? [],
     reworkTechId: "T05",
+    kilnMaster: kilnMasterOf(engine),
   };
 }
 
@@ -71,6 +87,7 @@ function revalidate(draft: ImperialPriorityDraft, engine: EngineView): ImperialP
     glaze: draft.glaze !== null && chosen.glazes.includes(draft.glaze) ? draft.glaze : null,
     modifier: draft.modifier !== null && chosen.imperialModifiers.includes(draft.modifier) ? draft.modifier : null,
     rework: draft.rework !== null && chosen.reworkShapes.includes(draft.rework) ? draft.rework : null,
+    kilnMaster: draft.kilnMaster !== null && kilnMasterOf(engine)?.values.includes(draft.kilnMaster) === true ? draft.kilnMaster : null,
   });
 }
 
@@ -92,6 +109,8 @@ export const imperialPriorityDraft: DraftModel<ImperialPriorityDraft, ImperialPr
         return revalidate({ ...draft, modifier: action.modifier }, engine);
       case "rework":
         return revalidate({ ...draft, rework: action.shape }, engine);
+      case "kilnMaster":
+        return revalidate({ ...draft, kilnMaster: action.value }, engine);
     }
   },
   options: (draft, _model, engine) => optionsOf(draft, engine),
@@ -103,11 +122,12 @@ export const imperialPriorityDraft: DraftModel<ImperialPriorityDraft, ImperialPr
       glaze: draft.glaze,
       imperialModifier: draft.modifier,
       ...(draft.rework === null ? {} : { reworkShape: draft.rework }),
+      ...(draft.kilnMaster === null ? {} : { kilnMaster: draft.kilnMaster }),
     };
   },
   fromCommand(command) {
     if (command.type !== "USE_IMPERIAL_PRIORITY") return null;
-    return { ceramicId: command.ceramicId, glaze: command.glaze, modifier: command.imperialModifier, rework: command.reworkShape ?? null };
+    return { ceramicId: command.ceramicId, glaze: command.glaze, modifier: command.imperialModifier, rework: command.reworkShape ?? null, kilnMaster: command.kilnMaster ?? null };
   },
   summary(draft, _model, engine): RichMessage {
     if (draft.ceramicId === null) return msg("work.summary.chooseVessel");
@@ -117,7 +137,12 @@ export const imperialPriorityDraft: DraftModel<ImperialPriorityDraft, ImperialPr
     const glaze = draft.glaze;
     const modifier = signedModifier(draft.modifier);
     const rework = draft.rework;
-    if (rework === null) return msg("work.summary.imperialPriority", { ceramic, glaze: (t) => glazeName(glaze, t.locale), modifier });
-    return msg("work.summary.imperialPriorityRework", { ceramic, shape: (t) => shapeName(rework, t.locale), glaze: (t) => glazeName(glaze, t.locale), modifier });
+    const base =
+      rework === null
+        ? msg("work.summary.imperialPriority", { ceramic, glaze: (t) => glazeName(glaze, t.locale), modifier })
+        : msg("work.summary.imperialPriorityRework", { ceramic, shape: (t) => shapeName(rework, t.locale), glaze: (t) => glazeName(glaze, t.locale), modifier });
+    const km = draft.kilnMaster;
+    if (km === null) return base;
+    return msg("work.summary.withKilnMaster", { line: (t) => t.message(base), value: signedModifier(km) });
   },
 };

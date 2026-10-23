@@ -62,9 +62,9 @@ describe("step rail scrolls to the open step (390px stage)", () => {
       else delete (Element.prototype as Partial<Element>).scrollIntoView;
     });
     const first = stage("m11b_test_pieces_bury");
-    const later = stage("m3_heat_marker_step_3p");
+    const later = stage("m3_kiln_master_marker_3p");
     expect(first.step).not.toBe(later.step);
-    const setup = harness(fixtureSource("m3_heat_marker_step_3p"));
+    const setup = harness(fixtureSource("m3_kiln_master_marker_3p"));
     act(() => root.render(setup.wrap(<StepRail stage={first} />)));
     const rail = container.querySelector<HTMLOListElement>("ol.steps")!;
     const expected = (step: number) => Math.max(0, (step - 1) * ITEM_PX - STEP_RAIL_LEAD_PX);

@@ -48,7 +48,7 @@ describe("TableBoardView (D3/D4 by type)", () => {
   });
 
   it("picks the fields of boardView one by one", () => {
-    const view = fixture("m3_heat_marker_step_3p").playerView;
+    const view = fixture("m3_kiln_master_marker_3p").playerView;
     const picked = tableBoardView({ ...buildGameModel(view, []).board, firing: null, counts: { ...buildGameModel(view, []).board.counts, fireDeck: 9 } } as never);
     expect("firing" in picked).toBe(false);
     expect("fireDeck" in picked.counts).toBe(false);
@@ -78,7 +78,7 @@ describe("buildGameModel", () => {
   });
 
   it("gives the firing stage during a firing and the recap between firings", () => {
-    expect(buildGameModel(fixture("m3_heat_marker_step_3p").playerView, []).firingStage).not.toBeNull();
+    expect(buildGameModel(fixture("m3_kiln_master_marker_3p").playerView, []).firingStage).not.toBeNull();
     expect(buildGameModel(fixture("m1_work_phase_r2_3p").playerView, []).firingStage).toBeNull();
     expect(buildGameModel(fixture("m1_work_phase_r2_3p").playerView, []).firingRecap).not.toBeNull();
   });

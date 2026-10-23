@@ -1,17 +1,17 @@
 - complementary "你的决断":
   - paragraph: 派工阶段·轮到你了
   - heading "派工" [level=2]
-  - region "Wen（你）":
-    - heading "Wen（你）" [level=3]
+  - region "Zhao（你）":
+    - heading "Zhao（你）" [level=3]
     - group "资源":
-      - strong: "2"
+      - strong: "4"
       - text: 泥
       - strong: "2"
       - text: 柴
-      - strong: "0"
+      - strong: "4"
       - text: 铜钱
     - img "你的师傅"
-    - text: 手中4张委托 声望0／4 0分
+    - text: 手中4张委托 声望0／4 4分
   - form "派工":
     - paragraph: 你还有1名工人未派（共4名）。派工阶段不能跳过。
     - paragraph: 请选择可派的地点。

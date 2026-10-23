@@ -2,11 +2,12 @@
  * FormDecorate (UI_V1.6.1_ARCHITECTURE §3.4, §5 gap 6; wireframe `subEditor` form_decorate).
  * Owner: B4.
  *
- * Shape and Decoration pills per vessel (with each choice's printed cost; a choice the engine
- * does not allow now is unavailable, with the engine's reason), a second vessel for the Shifu
+ * Shape and Decoration pills per vessel (each Shape with a vessel's printed cost, its Clay and 2
+ * Coins whatever the Decoration, rev. 4 L183, change 30; a Decoration has no cost of its own; a
+ * choice the engine does not allow now is unavailable, with the engine's reason), a second vessel for the Shifu
  * when a two-vessel command is legal, the Workshop discounts the engine offers (Large Throwing Wheel, Decorator's Kit),
- * Ding's extra vessel, and the engine's live quote with its lines, total, reason and the
- * resulting resources.
+ * Ding's extra vessel, and the engine's live quote with its lines (Ding's Clay and Coin as one row
+ * naming the Shape it copies, `quoteRows`), total, reason and the resulting resources.
  */
 import type { CostLine, Decoration, GameRuleError, Shape } from "../../../../game/index.ts";
 import { decorationName, kilnText, shapeName, techName, workerKindName } from "../../../i18n/content.ts";
@@ -17,6 +18,7 @@ import { OptionGroup } from "../../../kit/OptionGroup.tsx";
 import { CeramicArt } from "../../../pieces/CeramicArt.tsx";
 import { FormNote, ResourceDelta, useRuleErrorText } from "../pieces.tsx";
 import { RulesDetail } from "../../../rules/RulesDetail.tsx";
+import { quoteRows } from "./FormDecorate.draft.ts";
 import type { FormDecorateAction, FormDecorateDraft, FormDecorateOptions } from "./FormDecorate.draft.ts";
 import type { LocationEditorProps } from "./editor.ts";
 import { amountText, amountsText } from "./shared.ts";
@@ -30,16 +32,14 @@ function lineLabel(line: CostLine, draft: FormDecorateDraft, t: Translator): str
   switch (line.kind) {
     case "shape_clay":
       return vessel?.shape == null ? t("work.fd.line.other") : shapeName(vessel.shape, t.locale);
-    case "decoration":
-      return vessel?.decoration == null ? t("work.fd.line.other") : decorationName(vessel.decoration, t.locale);
-    case "shifu_decoration_discount":
+    case "vessel_coins":
+      return vessel?.shape == null ? t("work.fd.line.other") : t("work.fd.line.vesselCoins", { shape: shapeName(vessel.shape, t.locale) });
+    case "shifu_discount":
       return t("work.fd.line.shifuDiscount", { shifu: workerKindName("shifu", t.locale) });
     case "decorators_kit":
       return t("work.fd.line.tech", { tech: techName("T16", t.locale) });
     case "large_throwing_wheel":
       return t("work.fd.line.tech", { tech: techName("T01", t.locale) });
-    case "ding_extra":
-      return kilnText("DI", t.locale).abilityName;
     case "prepared_clay_surcharge":
       return t("work.fd.line.surcharge", { tech: techName("T17", t.locale) });
     default:
@@ -81,13 +81,20 @@ export function FormDecorate({ draft, options, dispatch, context }: FormDecorate
                   disabled={!entry.available}
                   reason={entry.available ? undefined : reasonOf(entry.reason)}
                   title={shapeName(entry.shape, t.locale)}
-                  description={entry.clay === null ? undefined : amountText(t, "clay", entry.clay)}
+                  description={
+                    entry.clay === null
+                      ? undefined
+                      : options.vesselCoins === null
+                        ? amountText(t, "clay", entry.clay)
+                        : t("work.fd.vesselCost", { clay: amountText(t, "clay", entry.clay), coins: amountText(t, "coins", options.vesselCoins) })
+                  }
                   leading={<CeramicArt shape={entry.shape} decoration={vessel.decoration ?? "plain"} size={22} />}
                 />
               ))}
             </OptionGroup>
             <OptionGroup
               legend={t("work.fd.decoration")}
+              description={index === 0 ? t("work.fd.decorationFree") : undefined}
               name={`vessels.${index}.decoration`}
               layout="pills"
               value={vessel.decoration}
@@ -104,7 +111,6 @@ export function FormDecorate({ draft, options, dispatch, context }: FormDecorate
                   disabled={!entry.available}
                   reason={entry.available ? undefined : reasonOf(entry.reason)}
                   title={decorationName(entry.decoration, t.locale)}
-                  description={entry.coins === null ? undefined : amountText(t, "coins", entry.coins)}
                 />
               ))}
             </OptionGroup>
@@ -210,12 +216,23 @@ export function FormDecorate({ draft, options, dispatch, context }: FormDecorate
       )}
       {quote === null ? null : (
         <div className="b4-quote" role="group" aria-label={t("work.fd.quote")}>
-          {quote.lines.map((line, index) => (
-            <div key={index} className="b4-quote-line">
-              <span>{lineLabel(line, draft, t)}</span>
-              <span className="num">{line.amount < 0 ? t("work.fd.minus", { amount: amountText(t, line.resource, Math.abs(line.amount)) }) : amountText(t, line.resource, line.amount)}</span>
-            </div>
-          ))}
+          {quoteRows(quote, draft).map((row, index) =>
+            row.kind === "ding" ? (
+              <div key={index} className="b4-quote-line" data-quote-row="ding">
+                <span>
+                  {row.shape === null
+                    ? kilnText("DI", t.locale).abilityName
+                    : t("work.fd.line.ding", { ability: kilnText("DI", t.locale).abilityName, shape: shapeName(row.shape, t.locale) })}
+                </span>
+                <span className="num">{amountsText(t, row.amounts)}</span>
+              </div>
+            ) : (
+              <div key={index} className="b4-quote-line">
+                <span>{lineLabel(row.line, draft, t)}</span>
+                <span className="num">{row.line.amount < 0 ? t("work.fd.minus", { amount: amountText(t, row.line.resource, Math.abs(row.line.amount)) }) : amountText(t, row.line.resource, row.line.amount)}</span>
+              </div>
+            ),
+          )}
           <div className="b4-quote-line b4-quote-total">
             <span>{t("work.fd.total")}</span>
             <span className="num">{amountsText(t, quote.pay)}</span>

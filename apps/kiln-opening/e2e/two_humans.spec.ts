@@ -14,7 +14,7 @@
  *   ("only you"); Zhao's waiting pane says only that Lin is looking at 3 cards, and none of those
  *   Order IDs reaches Zhao's page or any payload Zhao's client receives (also checked against
  *   the local backend's `e2e_secret_ids` oracle). Lin reserves one of them (the Shifu's
- *   `reservations` checkboxes); the other two go face down under the Main deck (change 24) and
+ *   `reservations` checkboxes); the other two are discarded face down (owner ruling R25) and
  *   stay secret;
  * - **the turn toasts** (owner review, 2026-10-17): Zhao's page shows Lin's moves (Lin's Shifu
  *   at the Commission Market), never Zhao's own and never a looked-at Order. They show one turn
@@ -35,20 +35,22 @@
  * the top Fire card with Test Pieces.
  * - **the Guild Hall inspection and its bottom order**: neither inspected Tech reaches Zhao's
  *   page or client;
- * - **the Colour Samples look and the deck bottom**: none of the 3 looked-at Orders (one goes to
- *   Lin's hand, two face down under the Main deck, change 24) reaches Zhao;
+ * - **the Colour Samples look and the discard**: none of the 3 looked-at Orders (one goes to
+ *   Lin's hand, two are discarded face down, owner ruling R25) reaches Zhao;
  * - **the Test Pieces peek**: Lin sees the card ("only you"); Zhao's client receives no
  *   `TEST_PIECES_PEEKED` secret, and Zhao's page shows no peeked card;
  * - in both games, no payload Zhao's client receives carries a secret addressed to Lin
  *   (`"visibleTo":"<Lin>"`), while Lin's own client does receive them.
  *
- * The Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master and
- * Fuel Ledger's own Contribution cards are sent from their real forms in the steered
+ * The Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master's
+ * marker at loading, the Magistrate's Hall Shifu's Crown Order, a Flawed ceramic's sale and Fuel
+ * Ledger's own Contribution cards are sent from their real forms in the steered
  * `form_driver_games` games (happy-dom, the real `DecisionPane` over the engine), and in
  * `full_game.spec`'s steered case in a real browser.
  *
- * Parallel Salvage and hand-trim races are not steered through the browser: platform
- * `parallel_windows.test.ts` and the session tests cover them (§9.6, E15).
+ * Owner revision 4 has no salvage window (a Flawed ceramic is sold in its owner's own turn, R20);
+ * hand-trim races are not steered through the browser: platform `parallel_windows.test.ts` and the
+ * session tests cover them (§9.6, E15).
  */
 import { expect, test } from "@playwright/test";
 import type { Browser, Page, TestInfo } from "@playwright/test";
@@ -327,7 +329,7 @@ test("the secret Contribution and the private Commission look stay with their ow
         }
         for (const id of guestSecrets) expect(guestHtml, `secret ${id} on Zhao's page`).not.toMatch(new RegExp(`\\b${id}\\b`));
         // Lin reserves one of them (the Shifu effect may reserve up to 2, from the display and the
-        // look); the other two go face down under the Main deck, still secret.
+        // look); the other two are discarded face down (R25), still secret.
         await choose(host.page, "reservations", `look:${ids[0]!}`);
         await send(host, "confirm");
         lookChecked = true;
@@ -393,12 +395,13 @@ test("the secret Contribution and the private Commission look stay with their ow
 });
 
 /**
- * Seed 1 (two players): the Glazing & Loading display shows Colour Samples (T10, 2 Coins), the
- * Firing display Test Pieces (T13, 3 Coins), and the Glazing & Loading deck has two other Techs on
- * top for the inspection. Lin's first Apprentice earns the 2 Coins that make both takes
- * affordable (3 + 2 = 2 + 3).
+ * Seed 36 (two players, owner revision 4's setup): the Glazing & Loading display shows Colour
+ * Samples (T10, 2 Coins), the Firing display Test Pieces (T13, 3 Coins), and the Glazing & Loading
+ * deck has two other Techs on top for the inspection. Lin's first Apprentice earns the 2 Coins that
+ * make both takes affordable (3 + 2 = 2 + 3). In Round 2 Glaze & Load burns 1 Wood (kiln fuel,
+ * change 35) and Lin still has the Wood Test Pieces costs.
  */
-const LOOKS_SEED = 1;
+const LOOKS_SEED = 36;
 const LOOKS_PLANS: Plans = {
   host: [
     // Round 1: Coins first, then the Shifu's two takes at the Guild Hall (Colour Samples, then Test Pieces).
@@ -493,7 +496,7 @@ test("the Guild Hall inspection and its two takes, the Colour Samples look and t
         lookedFrom = guest.received.length;
         await expect(guest.page.locator('[data-b4="colour-samples"]')).toHaveCount(0);
         await expectHiddenFrom(guest, looked, 0, await secretIdsOf(request, code, 1), "Colour Samples look");
-        // One into Lin's hand, two face down under the Main deck (change 24): all three stay secret for Zhao.
+        // One into Lin's hand, two discarded face down (R25): all three stay secret for Zhao.
         await choose(host.page, "reservations", `look:${looked[0]!}`);
         await send(host, "confirm");
         await guest.page.waitForTimeout(1_500);

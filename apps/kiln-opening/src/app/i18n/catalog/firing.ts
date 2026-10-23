@@ -3,9 +3,10 @@ import { defineNamespace } from "../defineNamespace.ts";
 /**
  * `firing` namespace: firing decision forms. Owned by B5 (UI_V1.6.1_ARCHITECTURE §4.2).
  *
- * Wireframe sources: `decContrib`, `decHeatMarker`, `decAfterQuality`, `submitRow`, `queueRow`,
- * `decWait`, and the windows the wireframe did not design (Test Pieces, Jun, Salvage), in the
- * same pattern. Every rule number is a placeholder (§5 gap 19); Tech and Kiln names and their
+ * Wireframe sources: `decContrib`, `decAfterQuality`, `submitRow`, `queueRow`, `decWait`, and the
+ * windows the wireframe did not design (Test Pieces, Jun, Second Firing's choice), in the same
+ * pattern. Revision 4 has no Heat-marker step and no salvage step (changes 28, 30, 31); selling a
+ * Flawed ceramic is `common.sale.*`. Every rule number is a placeholder (§5 gap 19); Tech and Kiln names and their
  * card text come from data through `i18n/content.ts`. Owner decisions D3/D4: these strings state
  * rule effects only — no Quality previews, odds or Fire-deck counts.
  */
@@ -15,12 +16,9 @@ export const firing = defineNamespace({
     "title.contributions": "Choose your Contribution",
     "title.testPiecesDecide": "Use {tech}?",
     "title.testPiecesBury": "{tech}: the card you saw",
-    "title.heatMarkers": "Decide your Heat marker",
-    "title.heatMarkerStep": "Heat marker step",
     "title.jun": "{kiln} · {ability}",
     "title.afterQuality": "After-Quality abilities",
     "title.secondFiring": "{tech}: choose a Fire card",
-    "title.salvage": "Salvage a Flawed ceramic",
 
     // Shared pieces.
     "step": "Firing step {n}",
@@ -57,7 +55,7 @@ export const firing = defineNamespace({
     "sealed": "Your sealed Contribution: <b>{card}</b>",
     "sealedNote": "All cards are revealed together once everyone has chosen.",
 
-    // Step 4: Test Pieces.
+    // Test Pieces, at the end of step 1 (after Base Heat, before the Fire card).
     "tp.peek": "Pay {wood} and look at the top Fire card",
     "tp.peekNote": "Only you see the card. You then decide whether to put it on the bottom of the Fire deck.",
     "tp.youSaw": "The card you saw",
@@ -69,27 +67,8 @@ export const firing = defineNamespace({
     "tp.sumKeep": "Leave the card you saw on top of the Fire deck",
     "tp.pick": "Choose one.",
 
-    // Step 5: Heat markers and Kiln Master.
-    "hm.lead": "Markers are decided in First Player order; the Fire card is still face down.",
-    "hm.yourMarker": "Your face-down marker",
-    "hm.turnOrReturn": "Turn or return your marker",
-    "hm.turnDesc": "Adds {value} to this ceramic’s Actual Heat.",
-    "hm.returnDesc": "The marker goes back to your supply; this ceramic has no marker.",
-    "hm.rule": "A Heat marker adds its value to that ceramic’s Actual Heat only. It is not a zone modifier: it stacks with Kiln Furniture and stays in place for a Second Firing.",
-    "hm.sumTurn": "Turn the marker on <b>{ceramic}</b> to <b>{value}</b>",
-    "hm.sumReturn": "Return the marker on <b>{ceramic}</b>",
-    "hm.sumBoth": "{first}; {second}",
-    "hm.pick": "Turn your marker or return it.",
-    "km.legend": "{tech} (optional)",
-    "km.none": "Do not place it",
-    "km.target": "Ceramic",
-    "km.side": "Side",
-    "km.afterReturn": "Only once you return your own marker from it",
-    "km.sum": "{tech} marker <b>{value}</b> on <b>{ceramic}</b>",
-    "km.sumNone": "Place no {tech} marker",
-    "km.pickTarget": "Choose a ceramic and a side for the {tech} marker.",
 
-    // Step 8 and R7: Jun.
+    // Step 3 (and an unused Jun in Second Firing, rev. 4 L627): Jun.
     "jun.adjust": "Adjustment",
     "jun.adjustDesc": "Added to that ceramic’s Actual Heat before its Quality is assigned.",
     "jun.declineNote": "If you decline, {ability} stays unused this round.",
@@ -98,17 +77,17 @@ export const firing = defineNamespace({
     "jun.sumDecline": "Do not use {ability}",
     "jun.pick": "Choose a ceramic and an adjustment, or decline.",
 
-    // Step 10: after-Quality abilities.
+    // Step 5: after-Quality abilities.
     "aq.lead": "Use them in any order you like; the options are checked again after each use.",
     "aq.done": "Done — decline the rest",
     "aq.sumSaggars": "Use <b>{ability}</b>: <b>{ceramic}</b> becomes {quality}",
     "aq.sumSecond": "Use <b>{ability}</b> on <b>{ceramic}</b>: turn {n} extra Fire cards face up, then choose one",
-    "aq.sumGe": "Use <b>{ability}</b>: <b>{ceramic}</b> becomes {quality} with a Crackle marker",
+    "aq.sumGe": "Use <b>{ability}</b>: <b>{ceramic}</b> gains a Crackle marker and is {quality}",
     "aq.saggarsFloor": "{tech}: counts as {standard}, not {flawed}",
     "aq.sumEnd": "Finish your after-Quality turn; decline the rest",
     "aq.pick": "Pick an ability, or finish.",
 
-    // Step 10: Second Firing's choice (v1.6.2 L631, R7).
+    // Step 5: Second Firing's choice (rev. 4 L627).
     "sf.lead": "{tech} turned {n} extra Fire cards face up, for everyone to see. Choose the one your ceramic is fired with again.",
     "sf.rule": "The {n} cards then go to the Fire discard, face up.",
     "sf.cards": "Choose a Fire card",
@@ -122,12 +101,6 @@ export const firing = defineNamespace({
     "sf.sum": "Fire <b>{ceramic}</b> again with Fire card <b>{value}</b>",
     "sf.sumJun": "Fire <b>{ceramic}</b> again with Fire card <b>{value}</b>, then {ability} <b>{delta}</b> for {wood}",
 
-    // Step 11: Salvage (parallel).
-    "salvage.lead": "You may discard one still-Flawed ceramic from this firing for {coins}; its Vessel card returns to the supply. Everyone decides at the same time.",
-    "salvage.keep": "Keep it",
-    "salvage.sum": "Discard <b>{ceramic}</b> for {coins}",
-    "salvage.sumKeep": "Salvage nothing",
-    "salvage.pick": "Choose a ceramic to salvage, or keep it.",
 
     // Waiting.
     "wait.lead": "You can browse the table while you wait.",
@@ -137,12 +110,9 @@ export const firing = defineNamespace({
     "title.contributions": "暗选控火",
     "title.testPiecesDecide": "是否使用「{tech}」？",
     "title.testPiecesBury": "「{tech}」：你看到的牌",
-    "title.heatMarkers": "决定你的火标",
-    "title.heatMarkerStep": "翻火标步骤",
     "title.jun": "{kiln}·{ability}",
     "title.afterQuality": "定品后结算",
     "title.secondFiring": "「{tech}」：选一张窑火牌",
-    "title.salvage": "折卖瑕品",
 
     "step": "烧窑步骤{n}",
     "stepAndOrder": "烧窑步骤{n}，按起始玩家顺序",
@@ -188,24 +158,6 @@ export const firing = defineNamespace({
     "tp.sumKeep": "把你看到的牌留在窑火牌堆顶",
     "tp.pick": "请选择一项。",
 
-    "hm.lead": "按起始玩家顺序决定火标；窑火牌尚未翻开。",
-    "hm.yourMarker": "你的暗置火标",
-    "hm.turnOrReturn": "翻定或收回火标",
-    "hm.turnDesc": "该器物实际火候{value}。",
-    "hm.returnDesc": "火标收回，该器物不带火标。",
-    "hm.rule": "火标的数值只计入该器物的实际火候。它不是温区修正：可以与支烧窑具叠加，复烧时仍留在原处。",
-    "hm.sumTurn": "把<b>{ceramic}</b>上的火标翻为<b>{value}</b>",
-    "hm.sumReturn": "收回<b>{ceramic}</b>上的火标",
-    "hm.sumBoth": "{first}；{second}",
-    "hm.pick": "请翻定或收回火标。",
-    "km.legend": "「{tech}」（可选）",
-    "km.none": "不放置",
-    "km.target": "器物",
-    "km.side": "朝向",
-    "km.afterReturn": "要先收回你在它上面的火标",
-    "km.sum": "「{tech}」标<b>{value}</b>放在<b>{ceramic}</b>上",
-    "km.sumNone": "不放「{tech}」标",
-    "km.pickTarget": "请为「{tech}」标选择器物与朝向。",
 
     "jun.adjust": "调整",
     "jun.adjustDesc": "在定品前计入这件器物的实际火候。",
@@ -219,7 +171,7 @@ export const firing = defineNamespace({
     "aq.done": "完成——其余不使用",
     "aq.sumSaggars": "使用「{ability}」：<b>{ceramic}</b>升为{quality}",
     "aq.sumSecond": "对<b>{ceramic}</b>使用「{ability}」：额外翻开{n}张窑火牌，再从中选一张",
-    "aq.sumGe": "使用「{ability}」：<b>{ceramic}</b>开片并升为{quality}",
+    "aq.sumGe": "使用「{ability}」：<b>{ceramic}</b>开片，品质为{quality}",
     "aq.saggarsFloor": "「{tech}」：算作{standard}，不为{flawed}",
     "aq.sumEnd": "结束定品后结算，其余不使用",
     "aq.pick": "选择一项能力，或直接完成。",
@@ -237,11 +189,6 @@ export const firing = defineNamespace({
     "sf.sum": "用窑火牌<b>{value}</b>复烧<b>{ceramic}</b>",
     "sf.sumJun": "用窑火牌<b>{value}</b>复烧<b>{ceramic}</b>，再付{wood}用「{ability}」<b>{delta}</b>",
 
-    "salvage.lead": "你可以从本窑仍为瑕品的器物中弃置一件，获得{coins}；它的器型卡放回供应堆。所有玩家同时决定。",
-    "salvage.keep": "保留",
-    "salvage.sum": "弃置<b>{ceramic}</b>，得{coins}",
-    "salvage.sumKeep": "不折卖",
-    "salvage.pick": "请选择要折卖的器物，或保留。",
 
     "wait.lead": "等候时可以浏览桌面。",
     "wait.looking": "{name}正在私看{n}张牌",

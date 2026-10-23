@@ -90,8 +90,8 @@ describe("CentralBoard and LocationCard", () => {
     expect(visibleText(magistrate)).toContain("1/1 taken");
     expect(magistrate).toContain("loc-count--full");
     expect(visibleText(magistrate)).toContain("Recognition 0–2 only");
-    // The viewer's (Zhao's) Apprentice stands there, named in words (D9).
-    expect(magistrate).toContain('aria-label="Your Apprentice"');
+    // Lin's Apprentice stands there, named in words (D9).
+    expect(magistrate).toContain('aria-label="Lin’s Apprentice"');
     expect(magistrate).not.toMatch(/\bp\d:(shifu|apprentice)/);
     // The Canal Wharf has no limit.
     expect(visibleText(card(html, "canal_wharf"))).toContain("No limit");
@@ -133,8 +133,9 @@ describe("CentralBoard and LocationCard", () => {
     expect(chosen).toMatch(/aria-pressed="false"[^>]*aria-label="Place Apprentice at Materials Yard"/);
     // Without a table adapter the table is inert: no shortcuts.
     expect(render(RICH, <CentralBoard />, { registry: INERT_WINDOWS })).not.toContain('data-act="place"');
-    // m1's viewer has only the Shifu left and the Materials Yard is full: no shortcut there, the reason instead.
-    expect(card(render("m1_work_phase_r2_3p", <CentralBoard />), "materials_yard")).not.toContain('data-act="place"');
+    // m5's Materials Yard is full: no shortcut there, the reason instead.
+    expect(card(render("m5_two_player_board_2p", <CentralBoard />), "materials_yard")).not.toContain('data-act="place"');
+    expect(visibleText(card(render("m5_two_player_board_2p", <CentralBoard />), "materials_yard"))).toContain("Can’t place here");
   });
 
   it("renders Place shortcuts as compact worker pieces, the full sentence only in the accessible name (wireframe `.pbtn`)", () => {
@@ -156,29 +157,30 @@ describe("CentralBoard and LocationCard", () => {
   });
 
   it("shows unavailable reasons through ruleErrorText, with their details (§5 gap 12)", () => {
-    const id = "m1_work_phase_r2_3p";
-    const view = viewOf(id);
-    const html = render(id, <CentralBoard />);
-    const model = gameModelOf(view, []);
-    const options = errorTextOptions(tableCeramics(model).labelView, EN);
     let checked = 0;
-    for (const option of placementOptions(view)) {
-      if (option.locationId === "form_decorate" || option.locationId === "glaze_load") continue;
-      const text = visibleText(card(html, option.locationId as CentralLocationId));
-      if (option.workers.some((worker) => worker.legal)) {
-        expect(text).not.toContain("Can’t place here");
-        continue;
+    for (const id of ["m5_two_player_board_2p", "w-before-the-worker-action-rich-4-player-start"]) {
+      const view = viewOf(id);
+      const html = render(id, <CentralBoard />);
+      const model = gameModelOf(view, []);
+      const options = errorTextOptions(tableCeramics(model).labelView, EN);
+      for (const option of placementOptions(view)) {
+        if (option.locationId === "form_decorate" || option.locationId === "glaze_load") continue;
+        const text = visibleText(card(html, option.locationId as CentralLocationId));
+        if (option.workers.some((worker) => worker.legal)) {
+          expect(text).not.toContain("Can’t place here");
+          continue;
+        }
+        expect(text).toContain("Can’t place here");
+        for (const worker of option.workers) {
+          const error = worker.error ?? (worker.reason === null ? null : { code: worker.reason });
+          if (error !== null) expect(text).toContain(ruleErrorText(error, EN, options));
+        }
+        checked += 1;
       }
-      expect(text).toContain("Can’t place here");
-      for (const worker of option.workers) {
-        const error = worker.error ?? (worker.reason === null ? null : { code: worker.reason });
-        if (error !== null) expect(text).toContain(ruleErrorText(error, EN, options));
-      }
-      checked += 1;
     }
-    expect(checked).toBeGreaterThan(0);
-    // The Magistrate's Hall names the Coins it needs (the error's details).
-    expect(visibleText(card(html, "magistrates_hall"))).toMatch(/Not enough Coins: you need \d and have \d/);
+    expect(checked).toBeGreaterThan(2);
+    // The Magistrate's Hall names the 4 Coins it needs for either worker (the error's details, change 33).
+    expect(visibleText(card(render("w-before-the-worker-action-rich-4-player-start", <CentralBoard />), "magistrates_hall"))).toContain("Not enough Coins: you need 4 and have 3");
   });
 });
 
@@ -227,7 +229,7 @@ describe("KilnMini", () => {
   });
 
   it("gives way to the firing stage during the Firing Phase (D3)", () => {
-    expect(render("m3_heat_marker_step_3p", <KilnMini />)).toBe("");
+    expect(render("m3_kiln_master_marker_3p", <KilnMini />)).toBe("");
   });
 
   it("keeps no hatched covered-cell style in its stylesheet", () => {
@@ -268,7 +270,7 @@ describe("OrderDisplay", () => {
   });
 
   it("prints each face-up Order: number, kind, VP, requirement, quality line, Coins and Crowns", () => {
-    const html = render("m1_work_phase_r2_3p", <OrderDisplay />);
+    const html = render("m17_after_action", <OrderDisplay />);
     const face = visibleText(orderCard(html, "O18"));
     expect(face).toContain("O18");
     expect(face).toContain("Crown");
@@ -279,7 +281,7 @@ describe("OrderDisplay", () => {
     expect(face).toContain("1 Crown");
     expect(orderCard(html, "O18")).toContain('class="ord ord--crown"');
     // A re-valued Main Order prints its V1.6.2 value (change 24): O20 6 VP.
-    expect(visibleText(orderCard(html, "O20"))).toContain("6 VP");
+    expect(visibleText(orderCard(render("t-empty-main-supply", <OrderDisplay />), "O20"))).toContain("6 VP");
   });
 
   it("marks display slots the Commission adapter offers, keyed slot:<i>", () => {
@@ -483,8 +485,8 @@ describe("TechDisplay: the Guild Hall chooser (owner review, 2026-10-17)", () =>
   });
 
   it("a taken Tech's position stays empty until the taker's turn ends (v1.6.2 L209), shown as an empty tile, with no count", () => {
-    // m17: Lin took Colour Samples (Glazing & Loading) this turn and is in the after-action window.
-    const id = "m17_after_action";
+    // Lin took Colour Samples (Glazing & Loading) this turn and is in the after-action window.
+    const id = "t-colour-samples-select-face-up";
     const view = viewOf(id);
     expect(view.game.techDisplay.glazing_loading).toHaveLength(1);
     const html = renderComponent(fixtureSource(id), <TechDisplay />, { registry: WINDOWS });
@@ -625,9 +627,9 @@ describe("RecognitionTrack", () => {
       }
     }
     const html = render("m5_two_player_board_2p", <RecognitionTrack />);
-    // Lin is on 0, Zhao on 2 (m5).
-    expect(html).toMatch(/data-recognition="0"[\s\S]*?Here: Lin[\s\S]*?data-recognition="1"/);
-    expect(html).toMatch(/data-recognition="2"[\s\S]*?Here: Zhao/);
+    // Zhao is on 0, Lin on 2 (m5).
+    expect(html).toMatch(/data-recognition="0"[\s\S]*?Here: Zhao[\s\S]*?data-recognition="1"/);
+    expect(html).toMatch(/data-recognition="2"[\s\S]*?Here: Lin/);
     expect(IMPERIAL_TRACK.track).toHaveLength(5);
   });
 

@@ -17,7 +17,7 @@
  * bar agree in the same render. `focusTable()` is the "back to the table" focus move: the pane
  * uses it when it hides with focus inside, and the skip link while the pane is hidden. Its
  * preferred target is the placement control the player last used (`PANE_RETURN_CONTROL`: a
- * Place shortcut or an opener, never a prompt the code focused on the way, such as the Tech
+ * Place shortcut, a Sell button or an opener, never a prompt the code focused on the way, such as the Tech
  * display's Guild Hall chooser), found again by its data attributes when a re-render replaced it.
  */
 
@@ -88,11 +88,12 @@ export function usePane(): PaneState {
 
 /**
  * The controls focus returns to when the pane hides: the table's Place shortcuts
- * (`LocationCard`'s `PlaceButtons`, `data-act="place"` with `data-location-id` and `data-worker`)
- * and the hidden pane's openers (`data-pane-opener`). `DecisionPane` records the last one the
+ * (`LocationCard`'s `PlaceButtons`, `data-act="place"` with `data-location-id` and `data-worker`),
+ * the Sell buttons on the viewer's Flawed ceramics (`SellButton`, `data-act="sell"` with
+ * `data-ceramic-id`) and the hidden pane's openers (`data-pane-opener`). `DecisionPane` records the last one the
  * player focused or clicked (a click: WebKit does not focus a clicked button).
  */
-export const PANE_RETURN_CONTROL = '[data-act="place"], [data-pane-opener]';
+export const PANE_RETURN_CONTROL = '[data-act="place"], [data-act="sell"], [data-pane-opener]';
 
 function isRendered(element: Element | null | undefined): element is HTMLElement {
   return element instanceof HTMLElement && element.isConnected && element.getClientRects().length > 0;
@@ -123,6 +124,8 @@ function sameControls(document: Document, preferred: Element): Element[] {
   const found: Array<Element | null> = [preferred];
   const opener = keyOf(preferred, "data-pane-opener");
   if (opener !== null) found.push(document.querySelector(`[data-pane-opener="${opener}"]`));
+  const sold = preferred.getAttribute("data-act") === "sell" ? keyOf(preferred, "data-ceramic-id") : null;
+  if (sold !== null) found.push(document.querySelector(`[data-act="sell"][data-ceramic-id="${sold}"]`));
   const location = preferred.getAttribute("data-act") === "place" ? keyOf(preferred, "data-location-id") : null;
   if (location !== null) {
     const worker = keyOf(preferred, "data-worker");

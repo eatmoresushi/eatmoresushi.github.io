@@ -8,8 +8,8 @@
  * ("Only you can see") and the Orders on the display are one choice list each, and both are also
  * choosable on the table: the look row and the display's Choose toggles. A limit of 1 makes the
  * two lists one radio group; the Shifu effect's limit of 2 makes them checkboxes, and once 2 are
- * chosen the others are unavailable, with the reason. The looked cards not reserved go face down
- * to the bottom of the Main Order deck; a display position reserved stays empty until the turn
+ * chosen the others are unavailable, with the reason. The looked cards not reserved are discarded
+ * face down (owner ruling R25); a display position reserved stays empty until the turn
  * ends. A look that showed fewer cards than N says the deck ran short (B1); one that showed none
  * says there was nothing to look at. Others see only that you are looking, and how many cards.
  *

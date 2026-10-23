@@ -30,18 +30,19 @@ describe("tableCeramics (model.ceramics, CR B2-1)", () => {
     expect(Object.values(view.game.ceramics).some((ceramic) => ceramic.stage === "shaped")).toBe(true);
   });
 
-  it("keeps only Vessel-card facts and the Heat markers of loaded ceramics", () => {
-    const view = structuredClone(fixture("m3_heat_marker_step_3p").playerView);
+  it("keeps only Vessel-card facts and Kiln Master's markers of loaded ceramics (public, face up; rev. 4 L628)", () => {
+    const view = structuredClone(fixture("m3_kiln_master_marker_3p").playerView);
     const ceramics = tableCeramics(buildGameModel(view, []));
     const loaded = Object.values(view.game.ceramics).filter((ceramic) => ceramic.stage === "loaded");
     expect(loaded.length).toBeGreaterThan(0);
-    for (const ceramic of loaded) if (ceramic.heatMarker !== null) expect(ceramics.markers.get(ceramic.id)).toEqual(ceramic.heatMarker);
+    for (const ceramic of loaded) expect(ceramics.markers.get(ceramic.id) ?? null).toEqual(ceramic.kilnMasterMarker);
+    expect([...ceramics.markers.values()]).toEqual([1]);
     for (const facts of ceramics.byId.values()) {
       expect(Object.keys(facts).every((key) => ["id", "ownerId", "shape", "decoration", "glaze", "quality", "crackle", "stage", "placement"].includes(key))).toBe(true);
     }
   });
 
-  it("merges this firing's recorded Quality into loaded ceramics (steps 9–11)", () => {
+  it("merges this firing's recorded Quality into loaded ceramics (Appendix D steps 4–5)", () => {
     const model = modelOf("m4_after_quality_3p");
     const stage = model.firingStage;
     expect(stage).not.toBeNull();
@@ -62,8 +63,8 @@ describe("tableCeramics (model.ceramics, CR B2-1)", () => {
 describe("board.refillPendingFor (CR B2-2)", () => {
   it("names the reserving player while a reserved position is empty (m2 after its reservation)", () => {
     const id = "d-commission-after-face-up-reservation";
-    expect(fixture(id).playerView.game.market.refillPendingFor).toBe("p3");
-    expect(modelOf(id).board.refillPendingFor).toBe("p3");
+    expect(fixture(id).playerView.game.market.refillPendingFor).toBe("p1");
+    expect(modelOf(id).board.refillPendingFor).toBe("p1");
     // During the look nothing is reserved yet.
     expect(modelOf("m2_commission_market_look_r3_4p").board.refillPendingFor).toBeNull();
   });
@@ -81,9 +82,12 @@ describe("boardWorkers", () => {
     const model = modelOf("m5_two_player_board_2p");
     const lin = boardWorkers(model, summaryOf(model, "p1")!);
     expect(lin).toHaveLength(4);
-    expect(lin[0]).toEqual({ kind: "shifu", placedAt: "form_decorate", senior: false });
-    expect(lin.filter((worker) => worker.placedAt === null)).toEqual([{ kind: "apprentice", placedAt: null, senior: false }]);
-    expect(lin.map((worker) => worker.placedAt).sort()).toEqual(["form_decorate", "glaze_load", "materials_yard", null].sort());
+    expect(lin[0]).toEqual({ kind: "shifu", placedAt: "canal_wharf", senior: false });
+    expect(lin.filter((worker) => worker.placedAt === null)).toEqual([]);
+    expect(lin.map((worker) => worker.placedAt).sort()).toEqual(["canal_wharf", "form_decorate", "magistrates_hall", "materials_yard"].sort());
+    const zhao = boardWorkers(model, summaryOf(model, "p2")!);
+    expect(zhao[0]).toEqual({ kind: "shifu", placedAt: "glaze_load", senior: false });
+    expect(zhao.filter((worker) => worker.placedAt === null)).toEqual([{ kind: "apprentice", placedAt: null, senior: false }]);
     expect(JSON.stringify(lin)).not.toMatch(/p\d:/);
   });
 
@@ -98,11 +102,13 @@ describe("boardWorkers", () => {
 describe("nextFreePersonalSpace", () => {
   it("is the first added, empty space", () => {
     const model = modelOf("m1_work_phase_r2_3p");
-    const wen = summaryOf(model, "p3")!;
-    // Wen's Apprentice stands on the first Form & Decorate space; the second, added by a Tech, is free.
-    expect(wen.personalSpaces.find((space) => space.locationId === "form_decorate" && space.spaceIndex === 0)?.occupant).not.toBeNull();
-    expect(nextFreePersonalSpace(wen, "form_decorate")).toBe(1);
-    expect(nextFreePersonalSpace(wen, "glaze_load")).toBe(0);
+    const zhao = summaryOf(model, "p2")!;
+    // Zhao's Apprentice stands on the first Form & Decorate space; the second, added by a Tech, is free.
+    expect(zhao.personalSpaces.find((space) => space.locationId === "form_decorate" && space.spaceIndex === 0)?.occupant).not.toBeNull();
+    expect(nextFreePersonalSpace(zhao, "form_decorate")).toBe(1);
+    expect(nextFreePersonalSpace(zhao, "glaze_load")).toBe(0);
+    // Wen's second Form & Decorate space is not added yet, and the first is taken: none free.
+    expect(nextFreePersonalSpace(summaryOf(model, "p3")!, "form_decorate")).toBeNull();
     const m5 = modelOf("m5_two_player_board_2p");
     const lin = summaryOf(m5, "p1")!;
     const glaze = lin.personalSpaces.filter((space) => space.locationId === "glaze_load");

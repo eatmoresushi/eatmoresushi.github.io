@@ -31,8 +31,9 @@
  * pane options: the Order cards' toggles (`[data-act="order"]`: every Select's reservations on the
  * display and the private look row — the Commission Market's, and Colour Samples' when acquired and
  * in its swap — the held Order the Colour Samples swap gives up, the Order Phase's Orders and the
- * hand trim) and the Shared
- * Kiln's spaces (`[data-act="kiln-space"]`: a Glaze & Load destination, the Setter's Mark). A
+ * hand trim, and the Setup pick's face-up Main Order), the Shared Kiln's spaces
+ * (`[data-act="kiln-space"]`: a Glaze & Load destination, the Setter's Mark) and the Sell buttons
+ * on the viewer's own Flawed Finished ceramics (`[data-act="sell"]`, owner revision 4, R20). A
  * target already pressed, unavailable (`aria-disabled`) or a dev tool (`data-dev`) is not. The
  * pane's own navigation buttons (`data-goto`: the Guild Hall's "Go to the Advanced Techs") move
  * nothing in the game and are never picked. On a phone a table target may sit in another section:
@@ -50,6 +51,13 @@
  * Contribution card (`card`: Bank, Tend and Stoke, and Fuel Ledger Bank and Fuel Ledger Stoke for
  * the Fuel Ledger's owner, change 26) and the Order Phase's Orders (S07's "Carved, Impressed or
  * Painted" and a Crackle ceramic's declaration included).
+ *
+ * **Owner revision 4 (changes 28–35, R20–R25).** Still native radios: the Setup pick
+ * (`kilnId` and `mainOrder`, a display slot), Kiln Master's side chosen at loading (`kilnMaster`,
+ * at Glaze & Load and with Imperial Priority), the Magistrate's Hall Shifu's optional Crown Order
+ * (`crownOrder`), Ge's Crackle on a Fine or Standard ceramic (an `afterQuality` option) and the
+ * sale of a Flawed ceramic (`work.sell`, `orders.sell`, `afterQuality.sell`, `trim.sell`, besides
+ * the table's Sell buttons). There is no Heat-marker step and no salvage window any more.
  *
  * **The hidden pane.** During the work turn the pane is hidden until a placement is chosen (owner
  * review, 2026-10-17): its form stays in the page (`data-window`, `data-step`), but inside a
@@ -147,7 +155,8 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
     if (args.tried?.includes(selector) === true) continue;
     const scope: ParentNode = selector.startsWith("[data-act") || selector.startsWith("[data-pane-opener") ? document : form;
     const element = Array.from(scope.querySelectorAll<HTMLElement>(selector)).find(
-      (candidate) => enabled(candidate) && shown(candidate) && !(candidate instanceof HTMLInputElement && candidate.checked) && candidate.getAttribute("aria-pressed") !== "true",
+      // A chosen table target: a pressed toggle, or a Sell button already chosen (`data-chosen`, not a toggle).
+      (candidate) => enabled(candidate) && shown(candidate) && !(candidate instanceof HTMLInputElement && candidate.checked) && candidate.getAttribute("aria-pressed") !== "true" && !candidate.hasAttribute("data-chosen"),
     );
     if (element === undefined) continue;
     return { ...mark(element, "choice", describeOf(element)), preferred: selector };
@@ -172,14 +181,14 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
     candidates.push(button);
   }
   // The table targets of the open window: Place shortcuts, the Guild Hall's Techs and decks, the
-  // Order cards' toggles, the Shared Kiln's spaces, and the hidden pane's openers.
+  // Order cards' toggles, the Shared Kiln's spaces, the Sell buttons, and the hidden pane's openers.
   const tableTargets =
     args.within === undefined
-      ? '[data-act="place"], [data-act="tech"], [data-act="inspect"], [data-act="order"], [data-act="kiln-space"], [data-pane-opener]'
+      ? '[data-act="place"], [data-act="tech"], [data-act="inspect"], [data-act="order"], [data-act="kiln-space"], [data-act="sell"], [data-pane-opener]'
       : '[data-act="tech"], [data-act="inspect"], [data-act="kiln-space"]';
   for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>(tableTargets))) {
     if (form.contains(button) || !enabled(button) || !shown(button)) continue;
-    if (button.hasAttribute("data-dev") || button.getAttribute("aria-pressed") === "true") continue;
+    if (button.hasAttribute("data-dev") || button.getAttribute("aria-pressed") === "true" || button.hasAttribute("data-chosen")) continue;
     candidates.push(button);
   }
   if (enabled(confirm) && random() < args.confirmChance) return mark(confirm, "confirm", "Confirm");

@@ -6,7 +6,7 @@
     - group "资源":
       - strong: "2"
       - text: 泥
-      - strong: "2"
+      - strong: "3"
       - text: 柴
       - strong: "3"
       - text: 铜钱
@@ -16,7 +16,7 @@
     - img "你的学徒"
     - text: 手中0张委托 声望0／4 0分
   - form "钧窑·窑变天成":
-    - paragraph: 烧窑步骤8，按起始玩家顺序
+    - paragraph: 烧窑步骤3，按起始玩家顺序
     - paragraph:
       - strong: 每轮一次，实际火候算出后、定品前：
       - text: 可付1柴→己方1件器物的实际火候+1或−1。

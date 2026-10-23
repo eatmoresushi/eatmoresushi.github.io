@@ -2,8 +2,9 @@
  * The forms can express every legal firing, Order and Cleanup command (UI_V1.6.1_ARCHITECTURE
  * §9.4). Owner: B5.
  *
- * For each command of B5's forms — Contributions, Test Pieces, Heat markers, Jun, after-Quality,
- * Second Firing's choice, Salvage, the Order Phase and the hand trim — the expressibility
+ * For each command of B5's forms — Contributions, Test Pieces, Jun, after-Quality (with a
+ * Flawed ceramic's sale), Second Firing's choice, the Order Phase and the hand trim (each with a
+ * sale too, rev. 4 R20) — the expressibility
  * helper checks `fromCommand` → every value offered by `options()` → `build` equals the command
  * (after `normalizeCommand`) → `build` validates. Inputs:
  * - canonical mode over every scripted scenario and played moment;
@@ -24,11 +25,9 @@ import { allFixtures, scenarios } from "../support/fixtures.ts";
 const B5_FORMS: ReadonlySet<ExpressibilityForm> = new Set<ExpressibilityForm>([
   "contributions",
   "test_pieces",
-  "heat_markers",
   "jun",
   "after_quality",
   "second_firing",
-  "salvage",
   "orders",
   "hand_limit",
 ]);

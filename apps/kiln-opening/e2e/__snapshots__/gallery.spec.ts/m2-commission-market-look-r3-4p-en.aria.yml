@@ -1,57 +1,57 @@
 - complementary "Your decision":
   - paragraph: Work Phase · Your turn
   - 'heading "Select 3: reserve up to 2 Orders" [level=2]'
-  - region "Wen (you)":
-    - heading "Wen (you)" [level=3]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
     - group "Resources":
       - strong: "1"
       - text: Clay
-      - strong: "1"
-      - text: Wood
       - strong: "4"
-      - text: Coins
+      - text: Wood
+      - strong: "1"
+      - text: Coin
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 4 Orders in hand Recognition 0/4 4 VP
+    - text: 4 Orders in hand Recognition 0/4 0 VP
   - 'form "Select 3: reserve up to 2 Orders"':
     - paragraph: Reserve up to 2 Orders (at least one), from the display and the cards you looked at, in any mix.
     - group "Top 3 of the Main Order deck Only you can see":
       - text: ""
-      - paragraph: Those you do not reserve go face down to the bottom of the Main Order deck.
-      - checkbox "O16 9 VP 2 Coins any Shape · any Glaze · any Decoration Masterpiece"
-      - text: O16 9 VP 2 Coins any Shape · any Glaze · any Decoration Masterpiece
-      - 'button "Full rules: Order O16"'
-      - checkbox /O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations Fine\+ all/
-      - text: /O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations Fine\+ all/
-      - 'button "Full rules: Order O45"'
-      - checkbox "O20 6 VP 2 Coins 1 Crown Bowl · Moon White · Carved Fine+"
-      - text: O20 6 VP 2 Coins 1 Crown Bowl · Moon White · Carved Fine+
-      - 'button "Full rules: Order O20"'
+      - paragraph: Those you do not reserve are discarded face down.
+      - checkbox "O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed Fine+"
+      - text: O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed Fine+
+      - 'button "Full rules: Order O19"'
+      - checkbox "O14 5 VP 3 Coins Bowl, Plate or Brush Washer · any Glaze · any Decoration Fine+"
+      - text: O14 5 VP 3 Coins Bowl, Plate or Brush Washer · any Glaze · any Decoration Fine+
+      - 'button "Full rules: Order O14"'
+      - checkbox "O02 4 VP 3 Coins Plate · any Glaze · any Decoration Standard+"
+      - text: O02 4 VP 3 Coins Plate · any Glaze · any Decoration Standard+
+      - 'button "Full rules: Order O02"'
     - group "Orders on the display":
       - text: ""
       - paragraph: A reserved position stays empty until your turn ends.
-      - checkbox /#1 O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations Fine\+ each/
-      - text: /#1 O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations Fine\+ each/
-      - 'button "Full rules: Order O26"'
-      - checkbox /#2 O24 \d+ VP 1 Coin 1 Crown any Shape · Moon White · any Decoration Masterpiece/
-      - text: /#2 O24 \d+ VP 1 Coin 1 Crown any Shape · Moon White · any Decoration Masterpiece/
-      - 'button "Full rules: Order O24"'
-      - checkbox "#3 O09 6 VP 3 Coins any Shape · Moon White · any Decoration Fine+"
-      - text: "#3 O09 6 VP 3 Coins any Shape · Moon White · any Decoration Fine+"
-      - 'button "Full rules: Order O09"'
-      - checkbox /#4 O31 \d+ VP 5 Coins Plate \+ Vase; both Celadon; at least one Plain, other Decoration any Fine\+ each/
-      - text: /#4 O31 \d+ VP 5 Coins Plate \+ Vase; both Celadon; at least one Plain, other Decoration any Fine\+ each/
+      - checkbox "#1 O13 9 VP 3 Coins any Shape · any Glaze · Painted Masterpiece"
+      - text: "#1 O13 9 VP 3 Coins any Shape · any Glaze · Painted Masterpiece"
+      - 'button "Full rules: Order O13"'
+      - checkbox "#2 O05 6 VP 3 Coins Censer · any Glaze · Carved Fine+"
+      - text: "#2 O05 6 VP 3 Coins Censer · any Glaze · Carved Fine+"
+      - 'button "Full rules: Order O05"'
+      - checkbox /#3 O31 \d+ VP 5 Coins Plate \+ Vase; both Celadon; at least one Plain, other Decoration any Fine\+ each/
+      - text: /#3 O31 \d+ VP 5 Coins Plate \+ Vase; both Celadon; at least one Plain, other Decoration any Fine\+ each/
       - 'button "Full rules: Order O31"'
-      - checkbox "#5 O04 7 VP 3 Coins Vase · Moon White · any Decoration Fine+"
-      - text: "#5 O04 7 VP 3 Coins Vase · Moon White · any Decoration Fine+"
-      - 'button "Full rules: Order O04"'
-      - checkbox "#6 O21 9 VP 1 Coin 1 Crown Plate · White · Plain Masterpiece"
-      - text: "#6 O21 9 VP 1 Coin 1 Crown Plate · White · Plain Masterpiece"
-      - 'button "Full rules: Order O21"'
+      - checkbox /#4 O37 \d+ VP 2 Coins 1 Crown Censer \+ Bowl; one Grey-Green, one Celadon; same Decoration Fine\+ each/
+      - text: /#4 O37 \d+ VP 2 Coins 1 Crown Censer \+ Bowl; one Grey-Green, one Celadon; same Decoration Fine\+ each/
+      - 'button "Full rules: Order O37"'
+      - checkbox "#5 O09 6 VP 3 Coins any Shape · Moon White · any Decoration Fine+"
+      - text: "#5 O09 6 VP 3 Coins any Shape · Moon White · any Decoration Fine+"
+      - 'button "Full rules: Order O09"'
+      - checkbox /#6 O24 \d+ VP 1 Coin 1 Crown any Shape · Moon White · any Decoration Masterpiece/
+      - text: /#6 O24 \d+ VP 1 Coin 1 Crown any Shape · Moon White · any Decoration Masterpiece/
+      - 'button "Full rules: Order O24"'
     - paragraph: 0 of up to 2 chosen
     - strong: Others see
-    - text: Wen is looking at 3 Orders
+    - text: Lin is looking at 3 Orders
     - paragraph: Choose up to 2 Orders to reserve.
     - button "Clear"
     - button "Confirm" [disabled]

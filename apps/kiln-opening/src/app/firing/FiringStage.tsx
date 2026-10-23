@@ -11,15 +11,15 @@
  *   their owner chooses one (v1.6.2 L631);
  * - public firing records: Test Pieces (who paid, whether the card was buried; never the card),
  *   the card Second Firing fired a ceramic again with (both cards then lie in the discard), and
- *   salvaged ceramics;
- * - the kiln (`KilnBlock`) with markers, modifiers and each recorded Quality;
+ *   the Flawed ceramics sold in their owner's after-Quality turn (R20);
+ * - the kiln (`KilnBlock`) with Kiln Master's marker, modifiers and each recorded Quality;
  * - the open Fire discard (in the equation; D4).
  * It reads `firingStage` (`firingStageView`) only: no heat ledger, no previews, no odds.
  */
 import type { FiringStageView, TechId } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";
 import { KILN_TECHS } from "../i18n/catalog/kiln.ts";
-import { firingStepCount, techName } from "../i18n/content.ts";
+import { RULE_NUMBERS, firingStepCount, techName } from "../i18n/content.ts";
 import { signed } from "../i18n/format.ts";
 import { KilnBlock } from "../kiln/KilnBlock.tsx";
 import { kilnCeramicLabel } from "../kiln/KilnCeramic.tsx";
@@ -51,7 +51,7 @@ function Records({ stage, model, t }: { stage: FiringStageView; model: GameModel
     // Second Firing's chosen card (v1.6.2 L631): both cards are in the discard now, so the
     // record says which one fired the ceramic again, as the game log does.
     ...stage.ceramics.flatMap((record) =>
-      record.secondFireModifier === null || record.salvaged
+      record.secondFireModifier === null || record.sold
         ? []
         : [{
             key: `second:${record.id}`,
@@ -60,8 +60,8 @@ function Records({ stage, model, t }: { stage: FiringStageView; model: GameModel
           }],
     ),
     ...stage.ceramics
-      .filter((record) => record.salvaged)
-      .map((record) => ({ key: `salvage:${record.id}`, text: t("kiln.record.salvaged", { name: playerLabel(model, t, record.ownerId) }), tech: null })),
+      .filter((record) => record.sold)
+      .map((record) => ({ key: `sold:${record.id}`, text: t("kiln.record.sold", { name: playerLabel(model, t, record.ownerId), coins: t("common.amount.coins", { n: RULE_NUMBERS.flawedSaleCoins }) }), tech: null })),
   ];
   if (lines.length === 0) return null;
   return (
@@ -90,7 +90,13 @@ export function FiringStage() {
     );
   }
   const total = firingStepCount();
-  const title = t.dynamic(`kiln.step.${String(stage.step)}.full`);
+  // Test Pieces resolves at the end of step 1 (rev. 4 L626, L670: after Base Heat is determined,
+  // before the Fire card is revealed), in First Player order: the queue tells it from step 1's
+  // secret Contributions.
+  const testPieces = stage.step === 1 && stage.queue !== null;
+  const title = testPieces
+    ? t("kiln.stage.testPieces", { tech: techName(KILN_TECHS.testPieces, t.locale) })
+    : t.dynamic(`kiln.step.${String(stage.step)}.full`);
   const acting = model.viewerActs;
   return (
     <div className="stage" data-webgl-mount="firing-stage" data-step={stage.step}>

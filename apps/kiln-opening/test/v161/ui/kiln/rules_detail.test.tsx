@@ -29,10 +29,10 @@ describe("kiln content (B3)", () => {
 });
 
 describe("firing step names (glossary §2.11)", () => {
-  it("has the twelve Appendix D steps in English and Chinese", () => {
-    expect(firingStepCount()).toBe(12);
+  it("has the six Appendix D steps in English and Chinese (rev. 4)", () => {
+    expect(firingStepCount()).toBe(6);
     const rows = glossaryTableAfter("### 2.11").filter(([en]) => /^(Firing )?step \d+ /.test(en ?? ""));
-    expect(rows).toHaveLength(12);
+    expect(rows).toHaveLength(6);
     rows.forEach(([en, zh], index) => {
       const n = index + 1;
       expect(CATALOG.kiln.en[`step.${String(n)}.full` as keyof typeof CATALOG.kiln.en]).toBe((en ?? "").replace(/^(Firing )?step \d+ /, ""));

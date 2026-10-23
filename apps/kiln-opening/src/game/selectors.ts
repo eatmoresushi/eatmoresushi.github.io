@@ -51,7 +51,7 @@ import { lookCount, reservable } from "./market.ts";
 import { completionTriggers, validateOrderCompletion } from "./orders/completion.ts";
 import { findOrderMatches, matchOrder, type OrderMatch } from "./orders/matching.ts";
 import { availableWorkers, centralCapacity, nextPersonalSpace, workersAt } from "./placement.ts";
-import { magistratesHallOpen } from "./recognition.ts";
+import { magistratesHallOpen, milestoneResourcesCrossed } from "./recognition.ts";
 import { isFinalRound, settersMarkSpaces } from "./round.ts";
 import { scorePreview as scorePreviewOf } from "./scoring.ts";
 import { ceramicSequence, ceramicsOf, decisionPrompt, imperialKilnCeramic, kilnMasterCarrier, lookup, player, selectStep, turnOrder, workStep } from "./state.ts";
@@ -352,9 +352,10 @@ export function kilnLayout(view: PlayerView): KilnLayoutView {
   };
 }
 
-/** Appendix D steps resolved in First Player order (rev. 4 L655–672): Test Pieces at the end of
- * step 1, Jun in step 3, the after-Quality abilities in step 5. */
-const FIRST_PLAYER_ORDER_STEPS: readonly FiringStep[] = [1, 3, 5];
+/** Appendix D steps the rulebook resolves in First Player order (rev. 4 L655–672): only step 5,
+ * the after-Quality abilities. Test Pieces (end of step 1) and Jun (step 3) each have a single
+ * owner, so no order is printed for them since revision 4. */
+const FIRST_PLAYER_ORDER_STEPS: readonly FiringStep[] = [5];
 
 /** The Appendix D step a firing phase decides (rev. 4 L655–672); null outside the Firing Phase.
  * Revision 4 has no Heat-marker step (changes 28, 31). */
@@ -990,7 +991,10 @@ export function magistratesHallQuote(
     });
     return { ok: false, error, pay, gain: zero, lines, reachable, crownOrderSlots: slots };
   }
-  return { ok: true, error: null, pay, gain: zero, lines, reachable, crownOrderSlots: slots };
+  // The milestone crossed is part of the action's result: the Imperial Grant at Recognition 1
+  // (L432) if it is not yet received; the later milestones give no resources.
+  const gain = milestoneResourcesCrossed(p, from, reachable);
+  return { ok: true, error: null, pay, gain, lines, reachable, crownOrderSlots: slots };
 }
 
 /**

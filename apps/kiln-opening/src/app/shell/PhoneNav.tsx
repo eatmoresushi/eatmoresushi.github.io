@@ -37,7 +37,7 @@ export interface NavBadge {
   soft: boolean;
 }
 
-const KILN_WINDOWS = new Set(["setters_mark", "contributions", "test_pieces", "heat_markers", "jun", "after_quality", "second_firing", "salvage"]);
+const KILN_WINDOWS = new Set(["setters_mark", "contributions", "test_pieces", "jun", "after_quality", "second_firing"]);
 
 /** The badges for the current window (wireframe `badges`). Pure; exported for tests. */
 export function navBadges(model: GameModel, table: Pick<TableSelection, "placeTargets" | "orderTargets">): Partial<Record<PhoneSection, NavBadge>> {

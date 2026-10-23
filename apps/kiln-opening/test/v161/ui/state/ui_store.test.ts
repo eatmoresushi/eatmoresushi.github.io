@@ -36,7 +36,9 @@ describe("window defaults (wireframe resetApp)", () => {
     // D20: phones open the work turn on the Table tab (workers are placed from the table).
     expect(WINDOW_UI_DEFAULTS.work).toEqual({ section: "table", sheet: "peek" });
     expect(WINDOW_UI_DEFAULTS.contributions).toEqual({ section: "kiln", sheet: "peek" });
-    expect(WINDOW_UI_DEFAULTS.heat_markers).toEqual({ section: "kiln", sheet: "peek" });
+    // Rev. 4 removed the Heat-marker step and the salvage window: no defaults for them.
+    expect(Object.keys(WINDOW_UI_DEFAULTS)).not.toContain("heat_markers");
+    expect(Object.keys(WINDOW_UI_DEFAULTS)).not.toContain("salvage");
     expect(WINDOW_UI_DEFAULTS.after_quality).toEqual({ section: "kiln", sheet: "open" });
     expect(WINDOW_UI_DEFAULTS.orders).toEqual({ section: "orders", sheet: "open" });
     expect(WINDOW_UI_DEFAULTS.hand_limit).toEqual({ section: "orders", sheet: "open" });

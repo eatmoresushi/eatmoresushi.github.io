@@ -14,7 +14,8 @@
  *   same space identically. The engine prints a non-ID string as it is.
  * - An unknown code throws in development and tests; in production it shows the raw code.
  * - `NO_MAIN_ACTION_POSSIBLE` names the location's own placement condition where the catalogue
- *   has one (`NO_MAIN_ACTION_KEYS`: the Guild Hall's, v1.6.2 L212), instead of the engine's
+ *   has one (`NO_MAIN_ACTION_KEYS`: the Guild Hall's, v1.6.2 L212; Glaze & Load's with the kiln
+ *   fuel, rev. 4 L198), instead of the engine's
  *   generic "at least 1 instance of the main action" sentence (L144).
  */
 import { KILN_SPACE_IDS, LOCATION_IDS, RULE_ERROR_TEXT, formatRuleError } from "../../game/index.ts";
@@ -104,6 +105,8 @@ function withSpaceNames(details: Details, t: Translator): Details {
  */
 const NO_MAIN_ACTION_KEYS: Partial<Readonly<Record<LocationId, MessageKey & `work.noMain.${string}`>>> = {
   guild_hall: "work.noMain.guildHall",
+  // The kiln fuel: 1 Wood when the action loads into the Shared Kiln (rev. 4 L198, R24).
+  glaze_load: "work.noMain.glazeLoad",
 };
 
 function isLocationId(value: unknown): value is LocationId {
@@ -120,7 +123,7 @@ export function ruleErrorText(
   const locationId = error.details?.["locationId"];
   if (error.code === "NO_MAIN_ACTION_POSSIBLE" && isLocationId(locationId)) {
     const key = NO_MAIN_ACTION_KEYS[locationId];
-    if (key !== undefined) return t(key, { location: locationName(locationId, t.locale) });
+    if (key !== undefined) return t(key, { location: locationName(locationId, t.locale), wood: t("common.amount.wood", { n: RULE_NUMBERS.kilnFuelWood }) });
   }
   return formatRuleError({ code: error.code, details: withSpaceNames(primitiveDetails(error.details), t) }, ruleLocale(t.locale), {
     ...(options.playerName === undefined ? {} : { playerName: options.playerName }),

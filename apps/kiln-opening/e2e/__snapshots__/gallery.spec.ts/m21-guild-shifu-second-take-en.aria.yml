@@ -6,54 +6,53 @@
     - group "Resources":
       - strong: "0"
       - text: Clay
-      - strong: "0"
+      - strong: "1"
       - text: Wood
-      - strong: "3"
+      - strong: "4"
       - text: Coins
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 3 Orders in hand Recognition 0/4 7 VP
+    - text: 4 Orders in hand Recognition 0/4 7 VP
   - form "Take another Tech, or stop":
-    - paragraph: "Taken this action: Kiln Furniture"
-    - group "Inspected Firing Techs Tech 2 of up to 2":
+    - paragraph: "Taken this action: Decorator's Kit"
+    - group "Inspected Form & Decorate Techs Tech 2 of up to 2":
       - text: ""
-      - radio "Tribute Ware 4 Coins" [disabled]
-      - text: Tribute Ware 4 Coins Firing
-      - strong: "Once per round, when you complete a Crown Order:"
-      - text: gain 1 additional Crown.
-      - paragraph: "Not enough Coins: you need 4 and have 3."
-      - radio "Test Pieces 3 Coins"
-      - text: Test Pieces 3 Coins Firing
-      - strong: "Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing:"
-      - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
-    - group "Or a face-up Tech":
-      - text: ""
-      - radio "Decorator's Kit 2 Coins" [disabled]
-      - text: Decorator's Kit 2 Coins Form & Decorate
-      - strong: "Once per round:"
-      - text: 1 Carved, Impressed or Painted Decoration you apply costs 1 Coin less. Stacks with the Shifu discount.
-      - paragraph: You already own a Form & Decorate Tech.
       - radio "Large Throwing Wheel 2 Coins" [disabled]
       - text: Large Throwing Wheel 2 Coins Form & Decorate
       - strong: "Once per round, during a Form & Decorate action forming at least 1 Vase or Censer:"
       - text: reduce that action's total Clay cost by 2, minimum 0.
       - paragraph: You already own a Form & Decorate Tech.
-      - radio "Kiln Tending 3 Coins" [disabled]
-      - text: Kiln Tending 3 Coins Glazing & Loading
-      - strong: "Once per round, after a Glaze & Load action that loaded at least 1 ceramic:"
-      - text: gain 1 Clay + 1 Wood.
+      - radio "Reworking Table 2 Coins" [disabled]
+      - text: Reworking Table 2 Coins Form & Decorate
+      - strong: "Once per round, when you glaze and load a Shaped vessel:"
+      - text: first change its Shape to any other Shape. Pay no Clay; its Decoration stays.
+      - paragraph: You already own a Form & Decorate Tech.
+    - group "Or a face-up Tech":
+      - text: ""
+      - radio "Senior Apprentice 3 Coins" [disabled]
+      - text: Senior Apprentice 3 Coins Form & Decorate
+      - strong: "Once per round:"
+      - text: 1 Apprentice you place at the Materials Yard or Commission Market uses the Shifu effect instead.
+      - paragraph: You already own a Form & Decorate Tech.
+      - radio "Setter's Mark 2 Coins" [disabled]
+      - text: Setter's Mark 2 Coins Glazing & Loading
+      - strong: "Once per round, at the start of the Work Phase:"
+      - text: place this tile on an empty active Shared Kiln space → only you may load there this round.
       - paragraph: You already own a Glazing & Loading Tech.
-      - radio "Fuel Ledger 2 Coins"
-      - text: Fuel Ledger 2 Coins Firing
-      - strong: "Always:"
-      - text: your Bank and Stoke cost no Wood.
-      - strong: "When acquired:"
-      - text: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards (pay 1 Wood → −2/+2).
+      - radio "Kiln Furniture 2 Coins" [disabled]
+      - text: Kiln Furniture 2 Coins Glazing & Loading
+      - strong: "Once per round, when you load 1 ceramic into the Shared Kiln:"
+      - text: "place this tile beneath it → choose its zone modifier for this firing: −1, 0 or +1."
+      - paragraph: You already own a Glazing & Loading Tech.
       - radio "Kiln Master 2 Coins"
       - text: Kiln Master 2 Coins Firing
-      - strong: "Once per round, in the Heat marker step:"
-      - text: place the Kiln Master marker (+1 or −1) on 1 of your ceramics in this firing that has no Heat marker.
+      - strong: "Once per round, when you load a ceramic:"
+      - text: you may place a +1 or −1 marker on it. It adds its value to that ceramic's Actual Heat.
+      - radio "Second Firing 2 Coins"
+      - text: Second Firing 2 Coins Firing
+      - strong: "Once per round, after Quality is assigned:"
+      - text: 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.
     - paragraph: Another Tech must come from a different discipline, at its printed cost. A taken Tech’s place on the display stays empty until your turn ends.
     - group "Or stop here":
       - text: ""

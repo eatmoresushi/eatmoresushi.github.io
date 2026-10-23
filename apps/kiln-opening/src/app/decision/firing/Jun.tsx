@@ -1,10 +1,10 @@
 /**
- * Jun (UI_V1.6.1_ARCHITECTURE §3.4 `jun`: step 8). Owner: B5.
+ * Jun (UI_V1.6.1_ARCHITECTURE §3.4 `jun`: step 3). Owner: B5.
  *
- * Firing step 8: pay Wood to adjust one of your ceramics' Actual Heat by +1 or −1 (step 1 the
+ * Firing step 3 (rev. 4 L661): pay Wood to adjust one of your ceramics' Actual Heat by +1 or −1 (step 1 the
  * ceramic, step 2 the side, with its cost), or decline (the window's alternative button; Jun stays
- * unused, R4). R7's Jun after Second Firing is chosen in Second Firing's own window. No heat value
- * is shown for any ceramic (D3): only its place, marker and the rule effect.
+ * unused, R4). An unused Jun after Second Firing (rev. 4 L627) is chosen in Second Firing's own window. No heat value
+ * is shown for any ceramic (D3): only its place, Kiln Master's marker and the rule effect.
  */
 import type { CeramicId } from "../../../game/index.ts";
 import { kilnText } from "../../i18n/content.ts";
@@ -15,8 +15,7 @@ import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
 import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
 import { RulesDetail } from "../../rules/RulesDetail.tsx";
-import { B5_KILNS, costText } from "./firingSupport.ts";
-import { isHeatMarkerSide } from "./HeatMarkers.draft.ts";
+import { B5_KILNS, costText, heatDeltaOf } from "./firingSupport.ts";
 import { junDraft } from "./Jun.draft.ts";
 import type { JunAction, JunDraft } from "./Jun.draft.ts";
 import { CeramicLine, Lead, Note, Section, ShortText, StepQueue, stepLabel } from "./WindowParts.tsx";
@@ -66,7 +65,7 @@ export function Jun() {
             layout="pills"
             value={draft.delta === null ? null : String(draft.delta)}
             onChange={(value) => {
-              const side = isHeatMarkerSide(value);
+              const side = heatDeltaOf(value);
               if (side !== null) dispatch({ type: "delta", delta: side });
             }}
           >

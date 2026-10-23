@@ -1,11 +1,11 @@
 /**
  * StepRail (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B3 (kiln, firing stage, results, playtest).
- * Source: wireframe `stepper`: the 12 Appendix D steps with First-Player marks.
+ * Source: wireframe `stepper`: the Appendix D steps (6 since revision 4) with First-Player marks.
  *
  * An ordered list of the Appendix D firing steps (glossary §2.11 names; short English labels on
  * the rail, the full name in its accessible text and tooltip). The open step carries
  * `aria-current="step"`; earlier steps are marked done; steps resolved in First Player order
- * (`stage.firstPlayerOrder`: 4, 5, 8, 10) carry a mark and say so. The rail scrolls inside
+ * (`stage.firstPlayerOrder`: step 5 since revision 4) carry a mark and say so. The rail scrolls inside
  * itself in a narrow stage, never the page, and takes keyboard focus so it can be scrolled.
  * Whenever the open step changes, the rail scrolls itself (instantly, not the page) so the open
  * step sits near its start edge, as the wireframe does (`ol.scrollLeft = st.offsetLeft - 40`).

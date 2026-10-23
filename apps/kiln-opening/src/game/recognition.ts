@@ -46,6 +46,24 @@ function trackSpace(space: Recognition): TrackSpace {
 }
 
 /**
+ * The resources a player would gain from the milestones crossed moving from `from` to `to`
+ * (each space after `from` up to `to`): the Imperial Grant (L432) if it is crossed and not yet
+ * received. A preview only; `resolveMilestone` pays it.
+ */
+export function milestoneResourcesCrossed(owner: PlayerState, from: Recognition, to: Recognition): { clay: number; wood: number; coins: number } {
+  const total = { clay: 0, wood: 0, coins: 0 };
+  for (let space = from + 1; space <= to; space += 1) {
+    const reward = trackSpace(space as Recognition).reward;
+    if (reward !== null && reward.kind === "resources" && !owner.imperial.grantReceived) {
+      total.clay += reward.clay;
+      total.wood += reward.wood;
+      total.coins += reward.coins;
+    }
+  }
+  return total;
+}
+
+/**
  * Resolves the milestone of the space just reached (L429–436). Each flag guards its own
  * reward, so a milestone is gained at most once (L440).
  */

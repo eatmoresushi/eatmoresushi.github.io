@@ -160,7 +160,7 @@ function agreement(state: GameState, firing: FiringContext, stage: FiringStageVi
   expect(stage.fireModifier).toBe(firing.fireModifier);
   expect(stage.globalHeat).toBe(firing.globalHeat);
   expect(stage.fireDiscard).toEqual(state.fireDiscard);
-  expect(stage.firstPlayerOrder).toEqual([1, 3, 5]);
+  expect(stage.firstPlayerOrder).toEqual([5]);
   expect(stage.testPieces).toEqual(firing.testPieces);
   expect(stage.contributions.map((c) => c.playerId)).toEqual(firing.participantIds);
   for (const c of stage.contributions) {

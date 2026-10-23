@@ -1,52 +1,52 @@
 - complementary "Your decision":
   - paragraph: Work Phase · Your turn
   - 'heading "Select 2: reserve an Order" [level=2]'
-  - region "Zhao (you)":
-    - heading "Zhao (you)" [level=3]
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
     - group "Resources":
-      - strong: "0"
+      - strong: "1"
       - text: Clay
-      - strong: "2"
+      - strong: "3"
       - text: Wood
-      - strong: "0"
-      - text: Coins
-    - img "Your Apprentice"
+      - strong: "1"
+      - text: Coin
+    - img "Your Shifu"
     - img "Your Apprentice"
     - text: 3 Orders in hand Recognition 0/4 0 VP
   - 'form "Select 2: reserve an Order"':
     - paragraph: "Reserve one Order: from the display or from the cards you looked at."
     - group "Top 2 of the Main Order deck Only you can see":
       - text: ""
-      - paragraph: Those you do not reserve go face down to the bottom of the Main Order deck.
-      - radio /O46 \d+ VP 0 Coins 2 Crowns Plate \+ Vase \+ Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted Fine\+ all/
-      - text: /O46 \d+ VP 0 Coins 2 Crowns Plate \+ Vase \+ Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted Fine\+ all/
-      - 'button "Full rules: Order O46"'
-      - radio /O35 \d+ VP 2 Coins 1 Crown Bowl \+ Plate; both Celadon; any Decorations Fine\+ each/
-      - text: /O35 \d+ VP 2 Coins 1 Crown Bowl \+ Plate; both Celadon; any Decorations Fine\+ each/
-      - 'button "Full rules: Order O35"'
+      - paragraph: Those you do not reserve are discarded face down.
+      - radio /O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations Fine\+ each/
+      - text: /O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations Fine\+ each/
+      - 'button "Full rules: Order O26"'
+      - radio /O29 \d+ VP 5 Coins Vase \+ Censer; any Glazes; different Decorations Fine\+ each/
+      - text: /O29 \d+ VP 5 Coins Vase \+ Censer; any Glazes; different Decorations Fine\+ each/
+      - 'button "Full rules: Order O29"'
     - group "Orders on the display":
       - text: ""
       - paragraph: A reserved position stays empty until your turn ends.
-      - radio /#1 O42 \d+ VP 0 Coins 2 Crowns Brush Washer \+ Censer; different Glazes; same Decoration Fine\+ each; ≥1 Masterpiece/
-      - text: /#1 O42 \d+ VP 0 Coins 2 Crowns Brush Washer \+ Censer; different Glazes; same Decoration Fine\+ each; ≥1 Masterpiece/
-      - 'button "Full rules: Order O42"'
-      - radio /#2 O41 \d+ VP 1 Coin 2 Crowns Plate \+ Vase; same Glaze; different Decorations Fine\+ each; ≥1 Masterpiece/
-      - text: /#2 O41 \d+ VP 1 Coin 2 Crowns Plate \+ Vase; same Glaze; different Decorations Fine\+ each; ≥1 Masterpiece/
-      - 'button "Full rules: Order O41"'
-      - radio /#3 O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations Fine\+ all/
-      - text: /#3 O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations Fine\+ all/
+      - radio /#1 O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations Fine\+ all; ≥1 Masterpiece/
+      - text: /#1 O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations Fine\+ all; ≥1 Masterpiece/
+      - 'button "Full rules: Order O48"'
+      - radio "#2 O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration Fine+"
+      - text: "#2 O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration Fine+"
+      - 'button "Full rules: Order O08"'
+      - radio "#3 O12 9 VP 3 Coins any Shape · any Glaze · Impressed Masterpiece"
+      - text: "#3 O12 9 VP 3 Coins any Shape · any Glaze · Impressed Masterpiece"
+      - 'button "Full rules: Order O12"'
+      - radio "#4 O16 9 VP 2 Coins any Shape · any Glaze · any Decoration Masterpiece"
+      - text: "#4 O16 9 VP 2 Coins any Shape · any Glaze · any Decoration Masterpiece"
+      - 'button "Full rules: Order O16"'
+      - radio "#5 O01 4 VP 3 Coins Bowl · any Glaze · any Decoration Standard+"
+      - text: "#5 O01 4 VP 3 Coins Bowl · any Glaze · any Decoration Standard+"
+      - 'button "Full rules: Order O01"'
+      - radio /#6 O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations Fine\+ all/
+      - text: /#6 O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations Fine\+ all/
       - 'button "Full rules: Order O45"'
-      - radio /#4 O27 \d+ VP 5 Coins Brush Washer \+ Vase; different Glazes; any Decorations Fine\+ each/
-      - text: /#4 O27 \d+ VP 5 Coins Brush Washer \+ Vase; different Glazes; any Decorations Fine\+ each/
-      - 'button "Full rules: Order O27"'
-      - radio /#5 O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations Fine\+ each/
-      - text: /#5 O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations Fine\+ each/
-      - 'button "Full rules: Order O26"'
-      - radio "#6 O15 5 VP 4 Coins Vase or Censer · any Glaze · any Decoration Fine+"
-      - text: "#6 O15 5 VP 4 Coins Vase or Censer · any Glaze · any Decoration Fine+"
-      - 'button "Full rules: Order O15"'
     - strong: Others see
-    - text: Zhao is looking at 2 Orders
+    - text: Wen is looking at 2 Orders
     - paragraph: Choose an Order to reserve.
     - button "Clear"
     - button "Confirm" [disabled]

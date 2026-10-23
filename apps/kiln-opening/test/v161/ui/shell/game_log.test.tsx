@@ -75,7 +75,7 @@ describe("game log", () => {
       {
         type: "ORDER_COMPLETED",
         playerId: player,
-        record: { orderId: "S04", ceramicIds: [], round: 2, canalBargeCoins: 0, vp: 3, coins: 5, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null },
+        record: { orderId: "S04", ceramicIds: [], round: 2, canalBargeCoins: 0, vp: 3, coins: 5, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], crackleVp: 0, kilnAbility: null },
       },
       { type: "RESOURCES_CHANGED", playerId: player, clay: 0, wood: 0, coins: 5, reason: "order_reward" },
       { type: "ORDER_TURN_ENDED", playerId: player, automatic: true },
@@ -83,7 +83,8 @@ describe("game log", () => {
     const log: LogEntry[] = events.map((event, index) => ({ sequence: index + 1, revision: index + 1, actorId: player, event }));
     const lines = entries(renderComponent(new StaticSource({ ...snapshot, log }), <GameLog />, { ui: { logOpen: true } }));
     expect(lines).toEqual([
-      `${name} has no more Orders to complete`,
+      // An automatic end: nothing to complete and no Flawed ceramic to sell (R20).
+      `${name} has nothing more to complete or sell`,
       `${name} completed S04: +3 VP, +5 Coins`,
       `Order Phase: ${name}’s turn`,
     ]);
@@ -99,7 +100,7 @@ describe("game log", () => {
       {
         type: "ORDER_COMPLETED",
         playerId: player,
-        record: { orderId: "S07", ceramicIds: [], round: 2, canalBargeCoins: 2, vp: 3, coins: 3, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null },
+        record: { orderId: "S07", ceramicIds: [], round: 2, canalBargeCoins: 2, vp: 3, coins: 3, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], crackleVp: 0, kilnAbility: null },
       },
       { type: "RESOURCES_CHANGED", playerId: player, clay: 0, wood: 0, coins: 3, reason: "order_reward" },
       { type: "TECH_USED", playerId: player, techId: "T23" },
@@ -134,7 +135,7 @@ describe("game log", () => {
   });
 
   it("says when nothing has happened", () => {
-    const snapshot = fixtureSnapshot(structuredClone(fixture("w-kiln-selection")));
+    const snapshot = fixtureSnapshot(structuredClone(fixture("w-kiln-and-main-order-choice")));
     const html = renderComponent(new StaticSource({ ...snapshot, log: [] }), <GameLog />, { ui: { logOpen: true } });
     expect(html).toContain("Nothing has happened yet.");
     expect(renderComponent(new StaticSource({ ...snapshot, log: [] }), <GameLog />, { ui: { logOpen: true }, locale: "zh-CN" })).toContain("还没有记录。");
@@ -143,8 +144,8 @@ describe("game log", () => {
   it("marks the viewer's own secret lines and shows only theirs", () => {
     const html = renderComponent(fixtureSource("m2_commission_market_look_r3_4p"), <GameLog />, { ui: { logOpen: true } });
     expect(html).toMatch(/<li class="game-log-entry" data-own="">[^]*?only you/);
-    // m2's viewer (Wen) sees the cards of their own open look; nobody else would.
-    expect(html).toContain("Wen looked at O16, O45, O20");
+    // m2's viewer (Lin) sees the cards of their own open look; nobody else would.
+    expect(html).toContain("Lin looked at O19, O14, O02");
   });
 
   it.each(allFixtures().map((entry) => [entry.id] as const))("%s: the open log shows no foreign secret or internal ID", (id) => {

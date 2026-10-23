@@ -164,7 +164,7 @@ export function KilnSpace({ spaceId }: KilnSpaceProps) {
       key={ceramic.id}
       id={ceramic.id}
       ownerId={ceramic.ownerId}
-      marker={ceramic.heatMarker}
+      marker={ceramic.kilnMasterMarker}
       extraFire={extraFireFor(model, ceramic.id)}
       saggarsFloor={saggarsFloorFor(model, ceramic.id)}
       compactQuality

@@ -1,17 +1,17 @@
 - complementary "Your decision":
   - paragraph: Work Phase · Your turn
   - heading "Place a worker" [level=2]
-  - region "Wen (you)":
-    - heading "Wen (you)" [level=3]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
     - group "Resources":
-      - strong: "2"
+      - strong: "4"
       - text: Clay
       - strong: "2"
       - text: Wood
-      - strong: "0"
+      - strong: "4"
       - text: Coins
     - img "Your Shifu"
-    - text: 4 Orders in hand Recognition 0/4 0 VP
+    - text: 4 Orders in hand Recognition 0/4 4 VP
   - form "Place a worker":
     - paragraph: 1 of your 4 workers left. The Work Phase cannot be passed.
     - paragraph: Choose an open action space.

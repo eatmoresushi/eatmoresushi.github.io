@@ -6,7 +6,7 @@
  *   - `scenarios.json`: every scripted decision window (`phaseScenarios`, kind `window`) and
  *     table state (`tableScenarios`, kind `table`), projected for one viewer. Fast and
  *     deterministic; `fixtures_current.test.ts` regenerates it in memory on every `npm test`;
- *   - `moments.json`: played moments m1–m23 (realistic text lengths, for layout, the gallery and
+ *   - `moments.json`: played moments m1–m27 (realistic text lengths, for layout, the gallery and
  *     screenshots). A moment whose seed search exceeds its budget falls back to the matching
  *     scripted scenario (`source.kind: "scripted"`);
  *   - `secrets.json`: per entry, the Order and Tech IDs that viewer must never see (the oracle
@@ -71,6 +71,7 @@ import {
   ZONE_TEXT,
   activeKilnSpaces,
   actorViewOf,
+  asActorView,
   afterQualityOptions,
   applyAction,
   boardView,
@@ -110,6 +111,7 @@ import {
   shapedVessels,
   submitContribution,
   testPiecesOptions,
+  validateAction,
   vesselCoins,
   viewOf,
 } from "../src/game/index.ts";
@@ -343,6 +345,11 @@ export interface UiFixtureEntry extends PrivacyCheckedEntry {
   ownSecrets: Array<FixtureEventRecord<GameEvent>>;
   source: UiFixtureSource;
   notes: string[];
+  /**
+   * A legal command of the viewer the scenario gallery seeds as the open window's draft, so the
+   * moment shows its form with this choice made (`FixtureEntry.draftCommand`); never sent.
+   */
+  draftCommand?: AuthoritativeCommand;
 }
 
 interface Moment {
@@ -805,8 +812,10 @@ function loadedCeramics(state: GameState): Array<Extract<GameState["ceramics"][s
  * 4 has no Heat-marker step (changes 28, 31). Scores: a Kiln Master marker, an Imperial Kiln
  * ceramic, the viewer's own marker, varied Contributions.
  */
-function findHeatMarkers(): Found {
+function findKilnMasterMarker(): Found {
   let best: Found = null;
+  // A seat buys Kiln Master and places its marker when it next loads, so a firing can show it.
+  const steer = combine(buyTechSteer("T24"), kilnMasterLoadSteer());
   for (const seed of seedOrder(150, 17)) {
     if (best !== null && best.score >= 9) break;
     const table = new Table(seed, 3);
@@ -834,16 +843,31 @@ function findHeatMarkers(): Found {
             id: "m3_kiln_master_marker_3p",
             title: "3P · Firing · Kiln Master's marker before the Fire card or Quality",
             description:
-              "Kiln Die and Base Heat after the revealed Contributions are known. A loaded ceramic carries Kiln Master's +1 or −1 marker, chosen face up when it was loaded (rev. 4 L628, R22); there is no Heat-marker step since revision 4. heatPreviews show Actual Heat before Fire, marker included, and Quality per possible Fire card.",
+              "Kiln Die and Base Heat after the revealed Contributions are known (Test Pieces, before the Fire card, or Jun, before Quality). A loaded ceramic carries Kiln Master's +1 or −1 marker, chosen face up when it was loaded (rev. 4 L628, R22), and the marker adds to its Actual Heat; there is no Heat-marker step since revision 4. The firing stage shows the marker on its ceramic and no heat preview (D3/D4).",
           },
           (view) => firingStageSelectors(view),
         );
       }
       return false;
-    });
+    }, steer);
     if (localMoment !== null && (best === null || localBest > best.score)) best = { score: localBest, moment: localMoment };
   }
   return best;
+}
+
+/**
+ * Steers the Kiln Master owner, before a worker action while the tile is ready, to a Glaze & Load
+ * placement that puts the marker on a load (T24, rev. 4 L628, R22). An illegal attempt falls back
+ * to the policy.
+ */
+function kilnMasterLoadSteer(): Steer {
+  return (t, actor) => {
+    if (techOwner(t, "T24") !== actor || !beforeAction(t, actor)) return null;
+    const view = t.playerView(actor);
+    if (kilnMasterOption(view, actor)?.ready !== true) return null;
+    const command = legalCommands(view, { mode: "canonical" }).find((c) => c.type === "PLACE_GLAZE_LOAD" && c.loads.some((load) => load.kilnMaster !== undefined));
+    return command === undefined ? null : { command, why: "The Kiln Master owner loads a vessel with the marker, so the firing shows it face up." };
+  };
 }
 
 /** 4. After-Quality window with per-ceramic Actual Heat / Heat Difference / Quality. */
@@ -869,7 +893,7 @@ function findAfterQuality(playerCount: PlayerCount): Found {
           actor,
           {
             id: `m4_after_quality_${playerCount}p`,
-            title: `${playerCount}P · Firing · after-Quality window (step 10)`,
+            title: `${playerCount}P · Firing · after-Quality window (step 5)`,
             description:
               "Quality has been assigned. The viewer chooses after-Quality abilities in their own order (Ge Crackle, Protective Saggars, Second Firing), rechecked after each use. heatLadder.chips carries each ceramic's Actual Heat, Heat Difference and Quality.",
           },
@@ -1507,12 +1531,12 @@ function settersMarkOptionsFor(table: LocalTable, actor: PlayerId) {
 function findTestPieces(): Captured[] {
   const decision: MomentMeta = {
     id: "m11a_test_pieces_decision",
-    title: "3P · Firing step 4 · Test Pieces: pay 1 Wood to peek?",
+    title: "3P · Firing, end of step 1 · Test Pieces: pay 1 Wood to peek?",
     description: "The viewer owns Test Pieces (T13) and has a ceramic in this firing: they may pay 1 Wood to look privately at the top Fire card (testPiecesOptions).",
   };
   const bury: MomentMeta = {
     id: "m11b_test_pieces_bury",
-    title: "3P · Firing step 4 · Test Pieces: bury the card?",
+    title: "3P · Firing, end of step 1 · Test Pieces: bury the card?",
     description: "The viewer peeked: only they see the card (own.firePeek). Others see only that they paid and peeked. Next they decide, publicly, whether to bury it.",
   };
   for (const seed of seedOrder(40, 10)) {
@@ -1537,9 +1561,9 @@ function findTestPieces(): Captured[] {
 function findJunSecondFiring(): Captured {
   const meta: MomentMeta = {
     id: "m18_jun_second_firing",
-    title: "3P · Firing step 10 · Second Firing choice with Jun (R7)",
+    title: "3P · Firing step 5 · Second Firing choice with an unused Jun (rev. 4 L627)",
     description:
-      "The viewer (Jun Kiln, Second Firing) kept Jun unused in step 8, then used Second Firing: 2 extra Fire cards are turned (firingStageView.extraFire, secondFiringChoiceOptions). The viewer chooses 1 to recalculate with and, before the new Quality, may use Jun's ±1 for 1 Wood (SECOND_FIRING_CHOOSE).",
+      "The viewer (Jun Kiln, Second Firing) kept Jun unused in step 3, then used Second Firing: 2 extra Fire cards are turned (firingStageView.extraFire, secondFiringChoiceOptions). The viewer chooses 1 to recalculate with and, before the new Quality, may use Jun's ±1 for 1 Wood (SECOND_FIRING_CHOOSE).",
   };
   // Kilns are chosen in reverse turn order, so a fixed seat may find Jun taken: the first seat
   // to choose while Jun is open takes it, and every later steer follows the Jun owner.
@@ -1552,7 +1576,7 @@ function findJunSecondFiring(): Captured {
     (t, actor) => (actor === junOwner(t) ? buyTechSteer("T14", actor)(t, actor) : null),
     (t, actor) =>
       actor === junOwner(t) && t.state.phase.type === "firing_heat_adjustment"
-        ? { command: { type: "RESOLVE_JUN", adjustment: null }, why: "Keep Jun unused in step 8 so it can act in Second Firing (R7)." }
+        ? { command: { type: "RESOLVE_JUN", adjustment: null }, why: "Keep Jun unused in step 3 so it can act in Second Firing (rev. 4 L627)." }
         : null,
     (t, actor) => {
       if (actor !== junOwner(t) || t.state.phase.type !== "firing_after_quality") return null;
@@ -1698,7 +1722,7 @@ function findSaggarsUpgrade(): Captured {
   const seat = "p1";
   const meta: MomentMeta = {
     id: "m22_saggars_upgrade",
-    title: "3P · Firing step 10 · Protective Saggars: Standard → Fine",
+    title: "3P · Firing step 5 · Protective Saggars: Standard → Fine",
     description:
       "The viewer owns Protective Saggars (T11): their ceramics are never Flawed (a Heat Difference of 3 or more counts as Standard: QUALITY_ASSIGNED.saggarsFloor), and once this round, after Quality, 1 of their Standard ceramics from this firing becomes Fine (USE_PROTECTIVE_SAGGARS; afterQualityOptions). Declining keeps the use (R4).",
   };
@@ -1763,6 +1787,168 @@ function findStartingS07(): Captured {
   return best?.moment ?? scriptedMoment(meta, "Order Phase with Ru, Tribute Ware and a Crackle wildcard");
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// Moment searches (m24–m27: owner revision 4's windows, with their choices made in the gallery)
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+/** The viewer's first canonical legal command that `accept` takes, or null. */
+function commandOf(view: PlayerView, accept: (command: AuthoritativeCommand) => boolean): AuthoritativeCommand | null {
+  return legalCommands(view, { mode: "canonical" }).find(accept) ?? null;
+}
+
+/**
+ * The moment with a seeded gallery draft (`draftCommand`): a legal command of the viewer, picked
+ * from the entry's own `PlayerView` (what the viewer's client holds) and checked by
+ * `validateAction`. The gallery seeds the open window's draft with its `fromCommand`.
+ */
+function withDraft(captured: Captured, pick: (view: PlayerView) => AuthoritativeCommand | null, why: string): Captured {
+  const entry = captured.entry;
+  if (entry === null) return captured;
+  const command = pick(entry.playerView);
+  if (command === null) throw new Error(`${captured.id}: no legal command for the gallery draft`);
+  const actor = asActorView(entry.playerView);
+  if (command.type === "SUBMIT_CONTRIBUTION") throw new Error(`${captured.id}: a Contribution is never a gallery draft`);
+  const error = actor === null ? "the viewer does not act" : validateAction(actor, command)?.code ?? null;
+  if (error !== null) throw new Error(`${captured.id}: the gallery draft is not legal (${error})`);
+  entry.draftCommand = command;
+  entry.notes = [...entry.notes, `The gallery opens it with this choice made (draftCommand): ${why}`];
+  return captured;
+}
+
+/** A scripted moment from a phase scenario, for its acting viewer (no seed search). */
+function scenarioMoment(meta: MomentMeta, scenarioName: string): Captured {
+  const scenario = phaseScenarios().find((s) => s.name === scenarioName);
+  if (scenario === undefined) throw new Error(`No phase scenario "${scenarioName}" for ${meta.id}`);
+  const { entry, secrets } = entryOf({
+    id: meta.id,
+    name: meta.title,
+    kind: "moment",
+    description: meta.description,
+    notes: [...(meta.notes ?? []), `The scripted scenario "${scenarioName}".`],
+    source: scriptedSource(scenario.table, "phaseScenarios", scenarioName),
+    state: scenario.table.state,
+    privateState: scenario.table.privateState,
+    log: localTableLog(scenario.table),
+    viewerId: scenario.actor,
+    recent: RECENT_EVENTS,
+  });
+  return { id: meta.id, legacy: null, entry, secrets };
+}
+
+/** The scripted work turn with Kiln Master ready, Wood, two vessels and Crown Orders showing. */
+const REVISION4_WORK_SCENARIO = "before the worker action: Kiln Master at loading, the Magistrate's Hall Shifu's Crown Order, the kiln fuel";
+
+/** m24: the Glaze & Load Shifu loading 2 into the Shared Kiln for 1 Wood, Kiln Master's +1 on the first (R22, R24). */
+function glazeLoadFuelMoment(): Captured {
+  const meta: MomentMeta = {
+    id: "m24_glaze_load_fuel_kiln_master",
+    title: "2P · Work Phase · Glaze & Load: kiln fuel and Kiln Master's marker",
+    description:
+      "The viewer's Shifu glazes and loads 2 vessels into the Shared Kiln: the action costs 1 Wood in all, whether it loads 1 vessel or 2, and loading only into the Imperial Kiln would cost none (rev. 4 L197, changes 34–35, R24; quoteGlazeLoad's kiln_fuel line). The viewer owns Kiln Master (T24): once per round, as a ceramic is loaded, its +1 or −1 marker may go on it, face up and public (rev. 4 L628, R22; kilnMasterOption, LoadSpec.kilnMaster). There is no Heat marker since revision 4.",
+  };
+  return withDraft(
+    scenarioMoment(meta, REVISION4_WORK_SCENARIO),
+    (view) => {
+      // The canonical list caps each family, so Kiln Master is added to a two-load command here;
+      // `withDraft` checks the result with `validateAction`.
+      const plain = commandOf(
+        view,
+        (c) =>
+          c.type === "PLACE_GLAZE_LOAD" &&
+          c.workerId.endsWith(":shifu") &&
+          c.loads.length === 2 &&
+          c.loads.every((load) => load.destination.kiln === "shared" && load.destination.kilnFurniture === undefined && load.destination.invertedFiring !== true && load.kilnMaster === undefined),
+      );
+      if (plain === null || plain.type !== "PLACE_GLAZE_LOAD") return null;
+      return { ...plain, loads: plain.loads.map((load, index) => (index === 0 ? { ...load, kilnMaster: 1 as const } : load)) };
+    },
+    "the Shifu loads both vessels into the Shared Kiln (1 Wood) with Kiln Master's +1 on the first.",
+  );
+}
+
+/** m25: the Magistrate's Hall Shifu reserving a face-up Crown Order after the step (R21). */
+function magistratesCrownMoment(): Captured {
+  const meta: MomentMeta = {
+    id: "m25_magistrates_hall_crown_order",
+    title: "2P · Work Phase · Magistrate's Hall Shifu: 4 Coins and a Crown Order",
+    description:
+      "The viewer's Shifu at the Magistrate's Hall pays 4 Coins (either worker, change 33) for +1 Imperial Recognition and then may reserve 1 face-up Order that shows a Crown (owner ruling R21: optional; magistratesHallQuote.crownOrderSlots). Its display position stays empty until the turn ends, then the display refills as at the Commission Market (rev. 4 L245). The reservation is public.",
+  };
+  return withDraft(
+    scenarioMoment(meta, REVISION4_WORK_SCENARIO),
+    (view) => commandOf(view, (c) => c.type === "PLACE_MAGISTRATES_HALL" && c.workerId.endsWith(":shifu") && c.crownOrder !== undefined),
+    "the Shifu's placement with the first Crown Order on the display chosen (its Choose toggle pressed).",
+  );
+}
+
+/** Steers the Ge owner's after-Quality turn to use Ge on a Fine ceramic when one is eligible. */
+function geOnFineSteer(seat: PlayerId): Steer {
+  return (t, actor) => {
+    if (actor !== seat || t.state.phase.type !== "firing_after_quality") return null;
+    const ge = afterQualityOptions(t.playerView(actor)).find((o) => o.ability === "ge_crackle");
+    const fine = ge?.ceramicIds.find((id) => t.state.firing?.ceramics[id]?.quality === "fine");
+    const target = fine ?? ge?.ceramicIds[0];
+    return target === undefined ? null : { command: { type: "USE_GE_CRACKLE", ceramicId: target }, why: "The Ge owner crackles a ceramic (a Fine one when eligible) so a later Order delivers a Crackle ceramic." };
+  };
+}
+
+/** m26: Ge's Crackle on a Fine ceramic after Quality (change 29, rev. 4 L463). */
+function geOnFineMoment(): Captured {
+  const seat = "p1";
+  const meta: MomentMeta = {
+    id: "m26_ge_crackle_fine",
+    title: "3P · Firing step 5 · Ge's Crackle on a Fine ceramic",
+    description:
+      "The viewer owns the Ge Kiln: once per round, after Quality, 1 of their Fine or Standard ceramics from this firing gains a Crackle marker and is Fine (change 29, rev. 4 L463; afterQualityOptions lists both). On a Fine ceramic the Quality does not change (no QUALITY_IMPROVED, only CRACKLE_APPLIED). Each Crackle ceramic delivered to complete an Order later scores 1 VP.",
+  };
+  for (const seed of seedOrder(40, 2)) {
+    const table = new Table(seed, 3);
+    const viewer = table.runUntil((t, actor) => {
+      if (t.state.round > 5) return true;
+      if (actor !== seat || t.state.phase.type !== "firing_after_quality") return false;
+      const ge = afterQualityOptions(t.playerView(actor)).find((o) => o.ability === "ge_crackle");
+      return ge?.ceramicIds.some((id) => t.state.firing?.ceramics[id]?.quality === "fine") === true;
+    }, kilnSteer(seat, "GE"));
+    if (viewer !== seat || table.state.phase.type !== "firing_after_quality") continue;
+    const fine = (view: PlayerView) =>
+      commandOf(view, (c) => c.type === "USE_GE_CRACKLE" && table.state.firing?.ceramics[c.ceramicId]?.quality === "fine");
+    return withDraft(capture(table, seat, meta, () => ({})), fine, "Ge on the viewer's Fine ceramic is chosen.");
+  }
+  return withDraft(scenarioMoment(meta, "after Quality: Saggars and Ge"), (view) => commandOf(view, (c) => c.type === "USE_GE_CRACKLE"), "Ge on an eligible ceramic is chosen.");
+}
+
+/** m27: an Order Phase completion delivering a Crackle ceramic, with its Crackle VP (rev. 4 L465). */
+function crackleVpMoment(): Captured {
+  const seat = "p1";
+  const meta: MomentMeta = {
+    id: "m27_crackle_vp_completion",
+    title: "3P · Order Phase · a completion delivering a Crackle ceramic: +1 VP",
+    description:
+      "The viewer (Ge Kiln) completes a held Order with a Crackle ceramic among the delivered ones: besides the printed reward, each delivered Crackle ceramic scores 1 VP, automatically (change 29, rev. 4 L465; OrderMatchOption.triggers.crackleVp, CompletedOrderRecord.crackleVp, counted with the Kiln abilities). A Crackle ceramic may count as any one Decoration for the Order; it is Fine, never a Masterpiece.",
+  };
+  const crackle = (view: PlayerView, id: string) => {
+    const c = view.game.ceramics[id];
+    return c !== undefined && c.stage === "finished" && c.crackle;
+  };
+  for (const seed of seedOrder(60, 2)) {
+    const table = new Table(seed, 3);
+    const viewer = table.runUntil((t, actor) => {
+      if (t.state.round > 5) return true;
+      if (actor !== seat || t.state.phase.type !== "orders") return false;
+      return completableOrders(t.playerView(actor)).some((m) => m.triggers.crackleVp > 0);
+    }, combine(kilnSteer(seat, "GE"), geOnFineSteer(seat)));
+    if (viewer !== seat || table.state.phase.type !== "orders") continue;
+    const pick = (view: PlayerView) => commandOf(view, (c) => c.type === "COMPLETE_ORDER" && c.ceramicIds.some((id) => crackle(view, id)));
+    return withDraft(capture(table, seat, meta, () => ({})), pick, "a completion that delivers a Crackle ceramic is chosen, showing its Crackle VP with the rewards.");
+  }
+  throw new Error("m27: no seed reached an Order Phase completion with a Crackle ceramic");
+}
+
+/** Owner revision 4's windows with their choices made, for the gallery (m24–m27). */
+function revision4Moments(): Captured[] {
+  return [glazeLoadFuelMoment(), magistratesCrownMoment(), geOnFineMoment(), crackleVpMoment()];
+}
+
 /** The V1.6.2 windows the owner reviews in the gallery (m19–m23). */
 function v162Moments(): Captured[] {
   return [findCommissionApprenticeLook(), findColourSamplesSwap(), findGuildSecondTake(), findSaggarsUpgrade(), findStartingS07()];
@@ -1798,7 +1984,7 @@ function newMoments(): Captured[] {
     search({
       meta: {
         id: "m13_jun_heat_adjustment",
-        title: "3P · Firing step 8 · Jun heat adjustment",
+        title: "3P · Firing step 3 · Jun heat adjustment",
         description: "The Fire card is turned and Actual Heat known (shown only in the log); the viewer's Jun Kiln may pay 1 Wood to move one of their ceramics ±1 before Quality (junOptions).",
       },
       playerCounts: [3],
@@ -1808,7 +1994,7 @@ function newMoments(): Captured[] {
       giveUp: firingGiveUp,
       fallback: "Jun heat adjustment",
     }),
-    search({
+    withDraft(search({
       meta: {
         id: "m14_sell_flawed",
         title: "3P · Order Phase · sell a Flawed ceramic",
@@ -1822,8 +2008,8 @@ function newMoments(): Captured[] {
       giveUp: firingGiveUp,
       fallback: "Order Phase: sell a Flawed ceramic",
       hint: 7,
-    }),
-    search({
+    }), (view) => commandOf(view, (c) => c.type === "SELL_FLAWED"), "the sale of the first sellable Flawed ceramic is chosen (its Sell button pressed)."),
+    withDraft(search({
       meta: {
         id: "m15_kiln_selection",
         title: "4P · Setup · Kiln and Main Order choice (reverse turn order)",
@@ -1834,8 +2020,8 @@ function newMoments(): Captured[] {
       steer: () => null,
       at: (t, actor) => (t.state.phase.type === "setup_kiln_selection" ? actor : null),
       giveUp: () => false,
-      fallback: "Kiln selection",
-    }),
+      fallback: "Kiln and Main Order choice",
+    }), (view) => commandOf(view, (c) => c.type === "SELECT_KILN" && c.kilnId === "GE" && c.mainOrder.slotIndex === 2) ?? commandOf(view, (c) => c.type === "SELECT_KILN"), "the Ge Kiln and the third face-up Main Order are chosen (the display's Choose toggle pressed)."),
     search({
       meta: {
         id: "m16_colour_samples",
@@ -1871,6 +2057,7 @@ function newMoments(): Captured[] {
     }),
     findJunSecondFiring(),
     ...v162Moments(),
+    ...revision4Moments(),
   ];
 }
 
@@ -1947,7 +2134,7 @@ export function buildScenarioFixtures(): { entries: UiFixtureEntry[]; secrets: R
   return { entries, secrets };
 }
 
-/** m1–m9 (the wireframe set, recaptured in the entry format), m10–m18 and the V1.6.2 windows m19–m23. */
+/** m1–m9 (the wireframe set, recaptured in the entry format), m10–m18, the V1.6.2 windows m19–m23 and owner revision 4's m24–m27. */
 export function buildMomentFixtures(): { entries: UiFixtureEntry[]; secrets: Record<string, string[]>; missing: string[] } {
   const previous = TARGET;
   TARGET = "tests";
@@ -1960,7 +2147,7 @@ export function buildMomentFixtures(): { entries: UiFixtureEntry[]; secrets: Rec
     };
     take("1 work phase R2 3p", findWorkPhaseR2());
     take("2 commission look R3 4p", findCommissionLook());
-    take("3 Kiln Master marker 3p", findHeatMarkers());
+    take("3 Kiln Master marker 3p", findKilnMasterMarker());
     take("4 after-Quality window 3p", findAfterQuality(3));
     take("5 two-player board", findTwoPlayer());
     take("6 order phase with Crackle", findOrderPhase());
@@ -2071,7 +2258,7 @@ export function generateWireframe(): { file: string; moments: Array<{ id: string
     };
     take("1 work phase R2 3p", findWorkPhaseR2());
     take("2 commission look R3 4p", findCommissionLook());
-    take("3 Kiln Master marker 3p", findHeatMarkers());
+    take("3 Kiln Master marker 3p", findKilnMasterMarker());
     take("4 after-Quality window 3p", findAfterQuality(3));
     take("5 two-player board", findTwoPlayer());
     take("6 order phase with Crackle", findOrderPhase());

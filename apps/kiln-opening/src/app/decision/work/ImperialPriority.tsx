@@ -2,7 +2,9 @@
  * ImperialPriority (UI_V1.6.1_ARCHITECTURE §3.4, §5 gap 16). Owner: B4.
  *
  * Spend the Imperial Priority token: a Shaped vessel, Reworking Table's Shape change (P1), its
- * Glaze and the public −1/0/+1 Imperial modifier, from `imperialPriorityOptions(view).ceramics`.
+ * Glaze and the public −1/0/+1 Imperial modifier, from `imperialPriorityOptions(view).ceramics`,
+ * and Kiln Master's optional +1/−1 marker when it is ready (T24, R22). It costs no Wood (rev. 4
+ * L291).
  * The Recognition milestone and Reworking Table open their rules details (D10). Composed by
  * `ActionWindow` before and after the worker action.
  */
@@ -20,6 +22,7 @@ import { RulesDetail } from "../../rules/RulesDetail.tsx";
 import type { WorkAction, WorkDraft } from "./workDraft.ts";
 
 const KEEP_SHAPE = "keep";
+const NO_MARKER = "none";
 
 export function ImperialPriority() {
   const t = useT();
@@ -87,6 +90,24 @@ export function ImperialPriority() {
             />
           ))}
         </OptionGroup>
+      )}
+      {chosen === null || options.kilnMaster === null ? null : (
+        <div className="b4-sub-block">
+          <OptionGroup
+            legend={t("work.gl.kilnMaster", { tech: techName(options.kilnMaster.techId, t.locale) })}
+            description={t("work.gl.kilnMasterNote")}
+            name="kilnMaster"
+            layout="pills"
+            value={draft.kilnMaster === null ? NO_MARKER : String(draft.kilnMaster)}
+            onChange={(value) => dispatch({ type: "kilnMaster", value: options.kilnMaster?.values.find((candidate) => String(candidate) === value) ?? null })}
+          >
+            <OptionCard variant="pill" value={NO_MARKER} title={t("work.gl.kilnMasterNone")} />
+            {options.kilnMaster.values.map((value) => (
+              <OptionCard key={value} variant="pill" value={String(value)} title={t("common.verb.placeKilnMaster", { value: signedModifier(value) })} />
+            ))}
+          </OptionGroup>
+          <RulesDetail subject={{ kind: "tech", id: options.kilnMaster.techId }} />
+        </div>
       )}
       {chosen === null ? null : (
         <OptionGroup

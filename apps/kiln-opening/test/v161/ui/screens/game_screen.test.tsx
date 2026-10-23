@@ -68,11 +68,11 @@ describe("GameScreen renders every fixture", () => {
     const acting = renderWindow(fixtureSource("m1_work_phase_r2_3p"));
     expect(acting).toContain('data-action="confirm"');
     expect(acting).not.toContain('data-dev="canonical-move"');
-    const waiting = renderWindow(fixtureSource("m10b_setters_mark_on_space"));
+    const waiting = renderWindow(fixtureSource("t-imperial-only-firing"));
     expect(waiting).not.toContain('data-action="confirm"');
-    const dev = renderWindow(fixtureSource("w-kiln-selection"), { devTools: true });
+    const dev = renderWindow(fixtureSource("w-kiln-and-main-order-choice"), { devTools: true });
     expect(dev).toContain('data-dev="canonical-move"');
-    expect(renderWindow(fixtureSource("m10b_setters_mark_on_space"), { devTools: true })).not.toContain('data-dev="canonical-move"');
+    expect(renderWindow(fixtureSource("t-imperial-only-firing"), { devTools: true })).not.toContain('data-dev="canonical-move"');
     // The work turn hides the pane until a placement is chosen (owner review, 2026-10-17): the
     // dev button stays in it, once, and adds nothing to the bar above the world.
     const hidden = renderScreen(fixtureSource("m1_work_phase_r2_3p"), { devTools: true });
@@ -82,7 +82,7 @@ describe("GameScreen renders every fixture", () => {
   });
 
   it("names the waiting window after who acts", () => {
-    const entry = fixture("m10b_setters_mark_on_space");
+    const entry = fixture("t-imperial-only-firing");
     const actor = entry.playerView.game.players[decisionWindow(entry.playerView).actorIds[0]!]!.displayName;
     expect(renderWindow(fixtureSource(entry.id), { locale: "en" })).toContain(`Waiting for ${actor}…`);
     expect(renderWindow(fixtureSource(entry.id), { locale: "zh-CN" })).toContain(`等候${actor}……`);

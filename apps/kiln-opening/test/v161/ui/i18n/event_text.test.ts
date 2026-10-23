@@ -55,7 +55,7 @@ const calc = {} as never;
 /** One public sample per event type; a missing type fails `typecheck`. */
 const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type: T }> } = {
   GAME_CREATED: { type: "GAME_CREATED", playerOrder: ["p1", "p2"], firstPlayerId: "p1", playerCount: 2 },
-  ORDERS_DEALT: { type: "ORDERS_DEALT", playerId: "p2", startingCount: 2, mainCount: 1 },
+  ORDERS_DEALT: { type: "ORDERS_DEALT", playerId: "p2", startingCount: 2 },
   KILN_SELECTED: { type: "KILN_SELECTED", playerId: "p2", kilnId: "JU" },
   ROUND_STARTED: { type: "ROUND_STARTED", round: 2, firstPlayerId: "p2" },
   KILN_DIE_ROLLED: { type: "KILN_DIE_ROLLED", round: 2, value: 3 },
@@ -72,10 +72,9 @@ const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type:
   CERAMIC_RESHAPED: { type: "CERAMIC_RESHAPED", playerId: "p1", ceramicId: "c1", from: "plate", to: "bowl" },
   CERAMIC_LOADED: { type: "CERAMIC_LOADED", playerId: "p1", ceramicId: "c1", glaze: "celadon", placement: { kiln: "shared", spaceId: "high_1", stacked: false }, loadedBy: "glaze_load" },
   KILN_FURNITURE_PLACED: { type: "KILN_FURNITURE_PLACED", playerId: "p1", spaceId: "high_1", modifier: -1 },
-  HEAT_MARKER_PLACED: { type: "HEAT_MARKER_PLACED", playerId: "p1", ceramicId: "c1" },
   ORDER_RESERVED: { type: "ORDER_RESERVED", playerId: "p2", via: "commission_market", source: "face_up", slotIndex: 2, orderId: "O17" },
   PRIVATE_LOOK_OPENED: { type: "PRIVATE_LOOK_OPENED", playerId: "p2", kind: "commission_market", discipline: null, count: 3 },
-  LOOKED_ORDERS_TO_BOTTOM: { type: "LOOKED_ORDERS_TO_BOTTOM", playerId: "p2", count: 2 },
+  LOOKED_ORDERS_DISCARDED: { type: "LOOKED_ORDERS_DISCARDED", playerId: "p2", count: 2 },
   HELD_ORDER_DISCARDED: { type: "HELD_ORDER_DISCARDED", playerId: "p2", cause: "colour_samples_swap", to: "main_discard" },
   TECH_ACQUIRED: { type: "TECH_ACQUIRED", playerId: "p2", techId: "T13", source: "face_up", cost: 3 },
   CONTRIBUTION_CARDS_GAINED: { type: "CONTRIBUTION_CARDS_GAINED", playerId: "p2", techId: "T12", cards: ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] },
@@ -104,8 +103,6 @@ const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type:
   BASE_HEAT_DETERMINED: { type: "BASE_HEAT_DETERMINED", kilnDie: 3, contributionSum: 3, unclamped: 6, baseHeat: 5 },
   TEST_PIECES_PEEKED: { type: "TEST_PIECES_PEEKED", playerId: "p2" },
   TEST_PIECES_USED: { type: "TEST_PIECES_USED", playerId: "p2", buried: true },
-  HEAT_MARKER_TURNED: { type: "HEAT_MARKER_TURNED", playerId: "p1", ceramicId: "c1", value: -1 },
-  HEAT_MARKER_RETURNED: { type: "HEAT_MARKER_RETURNED", playerId: "p1", ceramicId: "c1" },
   KILN_MASTER_PLACED: { type: "KILN_MASTER_PLACED", playerId: "p2", ceramicId: "c1", value: 1 },
   FIRE_REVEALED: { type: "FIRE_REVEALED", modifier: -2, baseHeat: 3, globalHeat: 1 },
   FIRE_DECK_RESHUFFLED: { type: "FIRE_DECK_RESHUFFLED", cardCount: 9, buriedBelow: 0 },
@@ -116,13 +113,13 @@ const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type:
   SECOND_FIRING_REVEALED: { type: "SECOND_FIRING_REVEALED", playerId: "p1", ceramicId: "c1", modifiers: [2, -1] },
   SECOND_FIRING_CHOSEN: { type: "SECOND_FIRING_CHOSEN", playerId: "p1", ceramicId: "c1", cardIndex: 1, modifier: -1, calculation: calc },
   CRACKLE_APPLIED: { type: "CRACKLE_APPLIED", playerId: "p1", ceramicId: "c3" },
-  CERAMIC_SALVAGED: { type: "CERAMIC_SALVAGED", playerId: "p2", ceramicId: "c2", coins: 2 },
+  CERAMIC_SOLD: { type: "CERAMIC_SOLD", playerId: "p2", ceramicId: "c2", coins: 2, from: "finished" },
   FIRING_FINISHED: { type: "FIRING_FINISHED", round: 2, finishedCeramicIds: ["c1", "c3"] },
   ORDER_TURN_STARTED: { type: "ORDER_TURN_STARTED", playerId: "p2" },
   ORDER_COMPLETED: {
     type: "ORDER_COMPLETED",
     playerId: "p2",
-    record: { orderId: "O39", ceramicIds: ["c3"], round: 2, canalBargeCoins: 2, vp: 7, coins: 2, printedCrowns: 1, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null },
+    record: { orderId: "O39", ceramicIds: ["c3"], round: 2, canalBargeCoins: 2, vp: 7, coins: 2, printedCrowns: 1, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null, crackleVp: 1 },
   },
   ORDER_TURN_ENDED: { type: "ORDER_TURN_ENDED", playerId: "p2", automatic: true },
   WORKERS_RETURNED: { type: "WORKERS_RETURNED", round: 2 },
@@ -133,10 +130,10 @@ const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type:
 
 /** The viewer's own secret versions (visible to p1). */
 const OWN: { readonly [T in (typeof OWN_SECRET_TYPES)[number]]: Extract<GameEvent, { type: T }> } = {
-  ORDERS_DEALT: { type: "ORDERS_DEALT", playerId: "p1", startingCount: 2, mainCount: 1, secret: { visibleTo: "p1", startingOrderIds: ["S02", "S05"], mainOrderIds: ["O41"] } },
+  ORDERS_DEALT: { type: "ORDERS_DEALT", playerId: "p1", startingCount: 2, secret: { visibleTo: "p1", startingOrderIds: ["S02", "S05"] } },
   ORDER_RESERVED: { type: "ORDER_RESERVED", playerId: "p1", via: "commission_market", source: "looked", slotIndex: null, orderId: null, secret: { visibleTo: "p1", orderId: "O20" } },
   PRIVATE_LOOK_OPENED: { type: "PRIVATE_LOOK_OPENED", playerId: "p1", kind: "guild_inspection", discipline: "glazing_loading", count: 2, secret: { visibleTo: "p1", orderIds: [], techIds: ["T15", "T22"] } },
-  LOOKED_ORDERS_TO_BOTTOM: { type: "LOOKED_ORDERS_TO_BOTTOM", playerId: "p1", count: 2, secret: { visibleTo: "p1", orderIds: ["O14", "O39"] } },
+  LOOKED_ORDERS_DISCARDED: { type: "LOOKED_ORDERS_DISCARDED", playerId: "p1", count: 2, secret: { visibleTo: "p1", orderIds: ["O14", "O39"] } },
   HELD_ORDER_DISCARDED: { type: "HELD_ORDER_DISCARDED", playerId: "p1", cause: "colour_samples_swap", to: "box", secret: { visibleTo: "p1", orderId: "S05" } },
   TECHS_RETURNED_TO_BOTTOM: { type: "TECHS_RETURNED_TO_BOTTOM", playerId: "p1", discipline: "glazing_loading", count: 2, secret: { visibleTo: "p1", techIds: ["T22", "T15"] } },
   TEST_PIECES_PEEKED: { type: "TEST_PIECES_PEEKED", playerId: "p1", secret: { visibleTo: "p1", modifier: -1 } },
@@ -168,9 +165,10 @@ const entry = (event: PublicGameEvent, sequence = 1, own?: GameEvent): LogEntry 
 });
 
 describe("EVENT_TEXT", () => {
-  it("has one template per engine event type (67, with CONTRIBUTION_CARDS_GAINED, v1.6.2 change 26)", () => {
+  it("has one template per engine event type (64: revision 4 drops the three Heat-marker events, and the sale replaces salvage)", () => {
     expect(Object.keys(EVENT_TEXT).sort()).toEqual([...TYPES].sort());
-    expect(TYPES).toHaveLength(67);
+    expect(TYPES).toHaveLength(64);
+    for (const retired of ["HEAT_MARKER_PLACED", "HEAT_MARKER_TURNED", "HEAT_MARKER_RETURNED", "CERAMIC_SALVAGED", "LOOKED_ORDERS_TO_BOTTOM"]) expect(TYPES).not.toContain(retired);
   });
 
   it("has an own-secret template for each of the eight secret events", () => {
@@ -206,7 +204,7 @@ describe("D9 and public facts", () => {
   it("describes an unknown ceramic generically, never by its ID", () => {
     const empty: CeramicLabelModelView = { ...VIEW, ceramics: {} };
     for (const locale of LOCALES) {
-      const text = publicEventText({ type: "HEAT_MARKER_PLACED", playerId: "p2", ceramicId: "c99" }, context(locale, empty));
+      const text = publicEventText({ type: "KILN_MASTER_PLACED", playerId: "p2", ceramicId: "c99", value: 1 }, context(locale, empty));
       expect(text).not.toMatch(/c99/);
       expect(problems(text)).toEqual([]);
     }
@@ -287,12 +285,45 @@ describe("V1.6.2 lines", () => {
     expect(eventText(entry(publicPart as PublicGameEvent, 1, own), en)).toBe("Lin took O07 from the top of the Main Order deck");
   });
 
-  it("puts looked cards on the bottom of the Main Order deck: a count for others, the cards for the looker", () => {
-    expect(publicEventText(SAMPLES.LOOKED_ORDERS_TO_BOTTOM, en)).toBe("Zhao put 2 looked-at Orders face down on the bottom of the Main Order deck");
-    expect(publicEventText(SAMPLES.LOOKED_ORDERS_TO_BOTTOM, zh)).toBe("Zhao把所看的2张委托面朝下放到主委托牌堆底");
-    const own = OWN.LOOKED_ORDERS_TO_BOTTOM;
+  it("discards a Select's looked cards face down (R25): a count for others, the cards for the looker", () => {
+    expect(publicEventText(SAMPLES.LOOKED_ORDERS_DISCARDED, en)).toBe("Zhao discarded 2 looked-at Orders face down");
+    expect(publicEventText(SAMPLES.LOOKED_ORDERS_DISCARDED, zh)).toBe("Zhao把看过的2张委托面朝下弃置");
+    expect(publicEventText({ ...SAMPLES.LOOKED_ORDERS_DISCARDED, count: 1 }, en)).toBe("Zhao discarded 1 looked-at Order face down");
+    const own = OWN.LOOKED_ORDERS_DISCARDED;
     const { secret: _secret, ...publicPart } = own;
-    expect(eventText(entry(publicPart, 1, own), en)).toBe("Lin put O14, O39 face down on the bottom of the Main Order deck");
+    expect(eventText(entry(publicPart, 1, own), en)).toBe("Lin discarded O14, O39 face down");
+    expect(eventText(entry(publicPart, 1, own), zh)).toBe("Lin把O14、O39面朝下弃置");
+    // Another seat sees the count, never the cards.
+    expect(eventText(entry(publicPart, 1, own), context("en", VIEW, "p2"))).toBe("Lin discarded 2 looked-at Orders face down");
+    for (const c of [en, zh]) expect(publicEventText(SAMPLES.LOOKED_ORDERS_DISCARDED, c)).not.toMatch(/bottom|牌堆底/);
+  });
+
+  it("states the Setup take and the Magistrate's Hall Crown Order in public (rev. 4 L122, L241; R21, R23)", () => {
+    const setup: PublicGameEvent = { ...SAMPLES.ORDER_RESERVED, via: "setup", slotIndex: 0, orderId: "O22" };
+    expect(publicEventText(setup, en)).toBe("Zhao took O22 from the display with their Kiln");
+    expect(publicEventText(setup, zh)).toBe("Zhao选窑口时从委托榜上拿取O22");
+    const crown: PublicGameEvent = { ...SAMPLES.ORDER_RESERVED, via: "magistrates_hall", slotIndex: 3, orderId: "O40" };
+    expect(publicEventText(crown, en)).toBe("Zhao reserved the Crown Order O40 from the display (Magistrate's Hall)");
+    expect(publicEventText(crown, zh)).toBe("Zhao承接委托榜上的御令委托O40（州衙）");
+  });
+
+  it("states Kiln Master's marker as placed at loading (R22) and the kiln fuel as a cost (R24)", () => {
+    expect(publicEventText(SAMPLES.KILN_MASTER_PLACED, en)).toBe("Zhao placed the Kiln Master marker +1 on Your Celadon Bowl, Carved");
+    const fuel: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: -1, coins: 0, reason: "kiln_fuel" };
+    expect(publicEventText(fuel, en)).toBe("Zhao: −1 Wood (kiln fuel)");
+    expect(publicEventText(fuel, zh)).toBe("Zhao：−1柴（烧窑要烧柴）");
+  });
+
+  it("states a sale and folds its Coins into it (change 30, R20)", () => {
+    const sold = SAMPLES.CERAMIC_SOLD;
+    expect(publicEventText(sold, en)).toBe("Zhao sold Vase, Painted for 2 Coins");
+    expect(publicEventText(sold, zh)).toBe("Zhao卖出瓶 · 画花，得2铜钱");
+    const coins: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: 2, reason: "flawed_sale" };
+    expect(publicEventText(coins, en)).toBe("Zhao: +2 Coins (sale of a Flawed ceramic)");
+    expect(repeatsPreviousEntry(entry(coins, 2), entry(sold, 1))).toBe(true);
+    expect(repeatsPreviousEntry(entry({ ...coins, coins: 3 }, 2), entry(sold, 1))).toBe(false);
+    expect(repeatsPreviousEntry(entry({ ...coins, playerId: "p1" }, 2), entry(sold, 1))).toBe(false);
+    for (const c of [en, zh]) expect(publicEventText(sold, c)).not.toMatch(/salvag|折卖/);
   });
 
   it("states the Colour Samples swap, then where its held Order went, never which Order, except to its owner", () => {
@@ -374,12 +405,12 @@ describe("V1.6.2 lines", () => {
     expect(repeatsPreviousEntry(entry({ ...coins, coins: 3 }, 2), entry(used, 1))).toBe(false);
     expect(repeatsPreviousEntry(entry({ ...coins, reason: "guan" }, 2), entry(used, 1))).toBe(false);
     expect(repeatsPreviousEntry(entry(coins, 2), undefined)).toBe(false);
-    // A salvage's Coins fold into the salvage line the same way.
-    const salvaged = SAMPLES.CERAMIC_SALVAGED;
-    const salvageCoins: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: 2, reason: "salvage" };
-    expect(publicEventText(salvaged, en)).toContain("for 2 Coins");
-    expect(repeatsPreviousEntry(entry(salvageCoins, 2), entry(salvaged, 1))).toBe(true);
-    expect(repeatsPreviousEntry(entry({ ...salvageCoins, coins: 3 }, 2), entry(salvaged, 1))).toBe(false);
+    // A sale's Coins fold into the sale line the same way (R20).
+    const sold = SAMPLES.CERAMIC_SOLD;
+    const saleCoins: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: 2, reason: "flawed_sale" };
+    expect(publicEventText(sold, en)).toContain("for 2 Coins");
+    expect(repeatsPreviousEntry(entry(saleCoins, 2), entry(sold, 1))).toBe(true);
+    expect(repeatsPreviousEntry(entry({ ...saleCoins, coins: 3 }, 2), entry(sold, 1))).toBe(false);
     // The Imperial Grant's resources fold into the grant line, which states them.
     const grant = SAMPLES.IMPERIAL_GRANT_RECEIVED;
     const granted: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 1, wood: 1, coins: 1, reason: "imperial_grant" };
@@ -404,6 +435,26 @@ describe("V1.6.2 lines", () => {
   });
 });
 
+describe("ceramic names in a line whose subject owns the ceramic (D9)", () => {
+  // Zhao's Celadon Vase, Plain in High 2 has twins: Lin's in Middle 1, and (in `own`) Zhao's own in Low 1.
+  const vase = (id: string, ownerId: PlayerId, spaceId: "high_2" | "middle_1" | "low_1"): CeramicFacts => ({ id, ownerId, shape: "vase", decoration: "plain", glaze: "celadon", stage: "loaded", placement: { kiln: "shared", spaceId, stacked: false } });
+  const others: CeramicLabelModelView = { ...VIEW, ceramics: { v1: vase("v1", "p2", "high_2"), v2: vase("v2", "p1", "middle_1") } };
+  const own: CeramicLabelModelView = { ...VIEW, ceramics: { v1: vase("v1", "p2", "high_2"), v3: vase("v3", "p2", "low_1") } };
+  const loaded: PublicGameEvent = { type: "CERAMIC_LOADED", playerId: "p2", ceramicId: "v1", glaze: "celadon", placement: { kiln: "shared", spaceId: "high_2", stacked: false }, loadedBy: "glaze_load" };
+  const marker: PublicGameEvent = { type: "KILN_MASTER_PLACED", playerId: "p2", ceramicId: "v1", value: -1 };
+
+  it("names no place when only another player's ceramic reads the same", () => {
+    expect(publicEventText(loaded, context("en", others))).toBe("Zhao glazed and loaded Celadon Vase, Plain into High 2");
+    expect(publicEventText(loaded, context("zh-CN", others))).not.toContain("（高温区2）");
+    expect(publicEventText(marker, context("en", others))).toBe("Zhao placed the Kiln Master marker −1 on Celadon Vase, Plain");
+  });
+
+  it("names the place for two of the subject's own, except on the load line, which names where it went", () => {
+    expect(publicEventText(marker, context("en", own))).toBe("Zhao placed the Kiln Master marker −1 on Celadon Vase, Plain (in High 2)");
+    expect(publicEventText(loaded, context("en", own))).toBe("Zhao glazed and loaded Celadon Vase, Plain into High 2");
+  });
+});
+
 describe("Kiln ability lines (D17: a toast's 4 lines carry the moves)", () => {
   const en = context("en");
   const zh = context("zh-CN");
@@ -413,6 +464,25 @@ describe("Kiln ability lines (D17: a toast's 4 lines carry the moves)", () => {
     const log = events.map((event, index) => entry(event, index + 1));
     return log.filter((_line, index) => !foldedEntry(log, index)).map((line) => publicEventText(line.event, c));
   };
+
+  it("Kiln Master, Kiln Furniture and Kiln Tending: \"used ⟨Tech⟩\" folds into the line after it that names the Tech", () => {
+    const tech = (techId: "T24" | "T15" | "T20" | "T21", playerId: PlayerId = "p2"): PublicGameEvent => ({ type: "TECH_USED", playerId, techId });
+    const marker: PublicGameEvent = { type: "KILN_MASTER_PLACED", playerId: "p2", ceramicId: "c1", value: 1 };
+    const furniture: PublicGameEvent = { type: "KILN_FURNITURE_PLACED", playerId: "p2", spaceId: "high_1", modifier: -1 };
+    const tending: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 1, wood: 1, coins: 0, reason: "kiln_tending" };
+    expect(kept([tech("T24"), marker], en)).toEqual([publicEventText(marker, en)]);
+    expect(kept([tech("T15"), furniture], zh)).toEqual([publicEventText(furniture, zh)]);
+    expect(kept([tech("T20"), tending], en)).toEqual([publicEventText(tending, en)]);
+    expect(publicEventText(marker, zh)).toContain("窑工");
+    expect(publicEventText(furniture, zh)).toContain("支烧窑具");
+    expect(publicEventText(tending, en)).toContain("Kiln Tending");
+    // Only directly before the same player's line naming that Tech.
+    expect(repeatsNextEntry(entry(tech("T24"), 1), entry(furniture, 2))).toBe(false);
+    expect(repeatsNextEntry(entry(tech("T24", "p1"), 1), entry(marker, 2))).toBe(false);
+    expect(repeatsPreviousEntry(entry(tech("T24"), 2), entry(marker, 1))).toBe(false);
+    expect(repeatsNextEntry(entry(tech("T21"), 1), entry(marker, 2))).toBe(false);
+    expect(kept([tech("T24"), { ...SAMPLES.WORKER_PLACED, playerId: "p2" } as PublicGameEvent], en)).toHaveLength(2);
+  });
 
   it("Ding: one line states the extra vessel with its cost (v1.6.2 L473)", () => {
     const formed: PublicGameEvent = { type: "CERAMIC_FORMED", playerId: "p2", ceramicId: "c2", shape: "plate", decoration: "plain", formedBy: "form_decorate" };
@@ -468,10 +538,10 @@ describe("Kiln ability lines (D17: a toast's 4 lines carry the moves)", () => {
 describe("Order Phase lines", () => {
   // The engine ends a turn automatically both when it opens with nothing completable and after
   // completions leave nothing completable (src/game/orders/phase.ts): the line is true for both.
-  it("says an automatic end without claiming the player completed nothing", () => {
+  it("says an automatic end without claiming the player completed nothing (nothing to complete or sell, R20)", () => {
     const ended = SAMPLES.ORDER_TURN_ENDED;
-    expect(publicEventText(ended, context("en"))).toBe("Zhao has no more Orders to complete");
-    expect(publicEventText(ended, context("zh-CN"))).toBe("Zhao再没有可以完成的委托");
+    expect(publicEventText(ended, context("en"))).toBe("Zhao has nothing more to complete or sell");
+    expect(publicEventText(ended, context("zh-CN"))).toBe("Zhao再没有可以完成的委托或可以卖出的瑕品");
     expect(publicEventText({ ...ended, automatic: false }, context("en"))).toBe("Zhao ended their Order turn");
   });
 
@@ -479,9 +549,14 @@ describe("Order Phase lines", () => {
     const completed = SAMPLES.ORDER_COMPLETED;
     const reward: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: 2, reason: "order_reward" };
     expect(publicEventText(completed, context("en"))).toContain("+2 Coins");
+    // Ge's Crackle VP for the delivered Crackle ceramic is stated on the completion line (rev. 4 L465).
+    expect(publicEventText(completed, context("en"))).toBe("Zhao completed O39: +7 VP, +2 Coins; Crackle: +1 VP");
+    expect(publicEventText(completed, context("zh-CN"))).toBe("Zhao完成委托O39：+7分，得2铜钱；开片器+1分");
+    const plain = { ...completed, record: { ...completed.record, crackleVp: 0 } };
+    expect(publicEventText(plain, context("en"))).toBe("Zhao completed O39: +7 VP, +2 Coins");
     expect(repeatsPreviousEntry(entry(reward, 2), entry(completed, 1))).toBe(true);
     // Anything else stays: another reason, another player, other amounts, no completion before.
-    expect(repeatsPreviousEntry(entry({ ...reward, reason: "salvage" }, 2), entry(completed, 1))).toBe(false);
+    expect(repeatsPreviousEntry(entry({ ...reward, reason: "flawed_sale" }, 2), entry(completed, 1))).toBe(false);
     expect(repeatsPreviousEntry(entry({ ...reward, playerId: "p1" }, 2), entry(completed, 1))).toBe(false);
     expect(repeatsPreviousEntry(entry({ ...reward, coins: 3 }, 2), entry(completed, 1))).toBe(false);
     expect(repeatsPreviousEntry(entry(reward, 2), entry(SAMPLES.ORDER_TURN_STARTED, 1))).toBe(false);
@@ -495,19 +570,20 @@ describe("own secrets", () => {
     const { secret: _secret, ...publicPart } = own;
     const line = entry(publicPart, 1, own);
     expect(ownSecretOf(line, "p1")).not.toBeNull();
-    expect(eventText(line, context("en"))).toBe("Lin was dealt S02, S05, O41");
+    expect(eventText(line, context("en"))).toBe("Lin was dealt S02, S05");
     // Another seat's secret (or a viewer that is not seated) falls back to the public line.
     expect(ownSecretOf(line, "p2")).toBeNull();
     const asZhao = eventText(line, context("en", VIEW, "p2"));
-    expect(asZhao).toBe("Lin was dealt Orders: 2 Starting, 1 Main");
-    expect(asZhao).not.toMatch(/S02|S05|O41/);
+    // Only Starting Orders are dealt (rev. 4 L115); the Main Order is taken face up with the Kiln.
+    expect(asZhao).toBe("Lin was dealt 2 Starting Orders");
+    expect(asZhao).not.toMatch(/S02|S05/);
     expect(ownSecretOf(line, null)).toBeNull();
   });
 
   it("ignore a secret attached to an event of another type", () => {
     const line = entry(SAMPLES.HAND_TRIMMED, 1, OWN.ORDERS_DEALT);
     expect(ownSecretOf(line, "p1")).toBeNull();
-    expect(eventText(line, context("en"))).not.toMatch(/S02|S05|O41/);
+    expect(eventText(line, context("en"))).not.toMatch(/S02|S05/);
   });
 });
 
@@ -530,7 +606,7 @@ describe("every fixture's log", () => {
   });
 
   it("describes loaded ceramics from the table even without their formation in the log", () => {
-    const snapshot = fixtureSnapshot(structuredClone(fixture("m3_heat_marker_step_3p")));
+    const snapshot = fixtureSnapshot(structuredClone(fixture("m3_kiln_master_marker_3p")));
     const view = snapshot.view;
     if (view === null) throw new Error("no view");
     const model = gameModelOf(view, snapshot.seats);

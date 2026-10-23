@@ -157,15 +157,15 @@ describe("other kit controls", () => {
     expect(html).toMatch(/role="group"[^>]*hidden=""|hidden=""[^>]*role="group"/);
   });
 
-  it("PieceDetail: by default the button is named by its piece's own words, Heat marker included", () => {
+  it("PieceDetail: by default the button is named by its piece's own words, Kiln Master marker included", () => {
     const ceramic = { id: "g4", ownerId: "zhao", shape: "plate", decoration: "painted", glaze: "white", quality: null } as const;
     const view = { viewerId: "lin", game: { players: { lin: { displayName: "Lin" }, zhao: { displayName: "Zhao" } }, ceramics: {} } };
     for (const [locale, expected] of [
-      ["en", "Zhao’s White Plate, Painted, Heat marker, face down"],
-      ["zh-CN", "Zhao的白釉盘 · 画花，火标（暗置）"],
+      ["en", "Zhao’s White Plate, Painted, Kiln Master marker +1"],
+      ["zh-CN", "Zhao的白釉盘 · 画花，窑工标+1"],
     ] as const) {
       const html = render(
-        <PieceDetail label="ignored for the button" trigger={<CeramicChip ceramic={ceramic} seat={1} view={view} marker={{ source: "own", faceDown: true }} />}>
+        <PieceDetail label="ignored for the button" trigger={<CeramicChip ceramic={ceramic} seat={1} view={view} marker={1} />}>
           details
         </PieceDetail>,
         locale,

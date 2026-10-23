@@ -6,7 +6,7 @@
     - group "资源":
       - strong: "2"
       - text: 泥
-      - strong: "2"
+      - strong: "3"
       - text: 柴
       - strong: "3"
       - text: 铜钱
@@ -16,7 +16,7 @@
     - img "你的学徒"
     - text: 手中0张委托 声望0／4 0分
   - form "「复烧」：选一张窑火牌":
-    - paragraph: /烧窑步骤\d+，按起始玩家顺序/
+    - paragraph: 烧窑步骤5，按起始玩家顺序
     - paragraph: 「复烧」额外翻开了2张窑火牌，大家都能看到。选一张，用它为你的器物复烧。
     - heading "器物" [level=3]
     - text: 月白釉碗 · 素面 · 瑕品（低温区1）

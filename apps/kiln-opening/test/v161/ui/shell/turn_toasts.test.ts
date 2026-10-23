@@ -41,6 +41,7 @@ import {
   NO_TOASTS,
   TOAST_MS,
   advanceTurns,
+  isMinorToastLine,
   isToastLine,
   nextDeadline,
   showingToast,
@@ -191,6 +192,32 @@ describe("advanceTurns", () => {
     expect(lines.at(-1)).toBe(`${nameOf(other)}制坯：盘 · 素面（「范制成器」：−1泥 · −1铜钱）`);
   });
 
+  it("fits a Glaze & Load turn with kiln fuel and Kiln Master's marker in 4 lines: no \"used Kiln Master\" (rev. 4 L628, R22, R24)", () => {
+    const loadedTo = (ceramicId: string, spaceId: "high_1" | "middle_1"): PublicGameEvent =>
+      ({ type: "CERAMIC_LOADED", playerId: other, ceramicId, glaze: "celadon", placement: { kiln: "shared", spaceId, stacked: false }, loadedBy: "glaze_load" }) as PublicGameEvent;
+    const glazeLoad = (kind: "apprentice" | "shifu"): PublicGameEvent =>
+      ({ ...placed(other), locationId: "glaze_load", kind, effect: kind, workerId: `${other}:${kind}${kind === "apprentice" ? ":1" : ""}` }) as PublicGameEvent;
+    const fuel: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: -1, coins: 0, reason: "kiln_fuel" };
+    const kilnMaster: PublicGameEvent[] = [
+      { type: "TECH_USED", playerId: other, techId: "T24" },
+      { type: "KILN_MASTER_PLACED", playerId: other, ceramicId: "c905", value: 1 },
+    ];
+    const apprentice = entries(240, BASE + 1, other, [glazeLoad("apprentice"), fuel, loadedTo("c905", "high_1"), ...kilnMaster, turnEnded(other)]);
+    const one = advanceTurns(startTurnTracker([], BASE), apprentice, viewer).turns;
+    expect(keysOf(one)).toEqual([[other, ["WORKER_PLACED", "RESOURCES_CHANGED", "CERAMIC_LOADED", "KILN_MASTER_PLACED"]]]);
+    expect(toastLines(one[0]!.entries, MAX_TOAST_LINES, isMinorToastLine)).toEqual({ shown: one[0]!.entries, more: 0 });
+    // Another player's "used Kiln Master" beside it is a line of its own (no fold across players).
+    expect(isToastLine(apprentice[3]!, apprentice[2], { ...apprentice[4]!, event: { ...apprentice[4]!.event, playerId: third } as PublicGameEvent })).toBe(true);
+    // The Shifu's two loads with the marker are 5 lines: the kiln fuel's Wood is left out first,
+    // so the marker on the first load shows; the second load is counted in "and 2 more lines".
+    const shifu = entries(250, BASE + 1, other, [glazeLoad("shifu"), fuel, loadedTo("c905", "high_1"), ...kilnMaster, loadedTo("c906", "middle_1"), turnEnded(other)]);
+    const two = advanceTurns(startTurnTracker([], BASE), shifu, viewer).turns;
+    const lines = toastLines(two[0]!.entries, MAX_TOAST_LINES, isMinorToastLine);
+    expect(lines.shown.map((entry) => entry.event.type)).toEqual(["WORKER_PLACED", "CERAMIC_LOADED", "KILN_MASTER_PLACED"]);
+    expect(lines.more).toBe(2);
+    expect(MAX_TOAST_LINES).toBe(4);
+  });
+
   it("states a Jun adjustment in one line, and Ge's use in its Quality and Crackle lines only", () => {
     const jun = entries(220, BASE + 1, other, [
       { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: -1, coins: 0, reason: "jun" },
@@ -210,9 +237,9 @@ describe("advanceTurns", () => {
     const swap: GameEvent[] = [
       { type: "TECH_USED", playerId: other, techId: "T10" },
       { type: "HELD_ORDER_DISCARDED", playerId: other, cause: "colour_samples_swap", to: "main_discard", secret: { visibleTo: other, orderId: "O41" } },
-      { type: "PRIVATE_LOOK_OPENED", playerId: other, kind: "colour_samples_swap", discipline: null, count: 2, secret: { visibleTo: other, orderIds: ["O12", "O33"], techIds: [] } },
+      { type: "PRIVATE_LOOK_OPENED", playerId: other, kind: "colour_samples_swap", discipline: null, count: 3, secret: { visibleTo: other, orderIds: ["O12", "O33", "O07"], techIds: [] } },
       { type: "ORDER_RESERVED", playerId: other, via: "colour_samples_swap", source: "looked", slotIndex: null, orderId: null, secret: { visibleTo: other, orderId: "O33" } },
-      { type: "LOOKED_ORDERS_TO_BOTTOM", playerId: other, count: 1, secret: { visibleTo: other, orderIds: ["O12"] } },
+      { type: "LOOKED_ORDERS_DISCARDED", playerId: other, count: 2, secret: { visibleTo: other, orderIds: ["O12", "O07"] } },
     ];
     const log: LogEntry[] = swap.map((own, index) => {
       const { secret: _drop, ...event } = own as GameEvent & { secret?: unknown };
@@ -225,11 +252,11 @@ describe("advanceTurns", () => {
     expect(lines).toEqual([
       `${nameOf(other)} used Colour Samples to swap a held Order`,
       `${nameOf(other)} discarded a held Order face down`,
-      `${nameOf(other)} looked at the top 2 Main Orders`,
+      `${nameOf(other)} looked at the top 3 Main Orders`,
       `${nameOf(other)} reserved one of the Orders they looked at (Colour Samples swap)`,
-      `${nameOf(other)} put 1 looked-at Order face down on the bottom of the Main Order deck`,
+      `${nameOf(other)} discarded 2 looked-at Orders face down`,
     ]);
-    for (const line of [...lines, ...turns[0]!.entries.map((entry) => publicEventText(entry.event, { ...context, t: zh }))]) expect(line).not.toMatch(/O41|O12|O33/);
+    for (const line of [...lines, ...turns[0]!.entries.map((entry) => publicEventText(entry.event, { ...context, t: zh }))]) expect(line).not.toMatch(/O41|O12|O33|O07/);
   });
 
   it("keeps one turn open across updates until it ends, under the same key", () => {
@@ -251,7 +278,7 @@ describe("advanceTurns", () => {
     const log = [
       ...entries(60, BASE + 1, other, [{ type: "CONTRIBUTION_SUBMITTED", playerId: other, windowId: "w" }]),
       ...entries(61, BASE + 2, viewer, [{ type: "CONTRIBUTION_SUBMITTED", playerId: viewer, windowId: "w" }]),
-      ...entries(62, BASE + 3, other, [{ type: "HEAT_MARKER_RETURNED", playerId: other, ceramicId: "c2" }]),
+      ...entries(62, BASE + 3, other, [{ type: "KILN_MASTER_PLACED", playerId: other, ceramicId: "c2", value: 1 }]),
     ];
     const { turns } = advanceTurns(startTurnTracker([], BASE), log, viewer);
     expect(turns.map((turn) => [turn.playerId, turn.key])).toEqual([
@@ -387,6 +414,9 @@ describe("toast lines", () => {
     const { shown, more } = toastLines(many);
     expect(shown).toHaveLength(MAX_TOAST_LINES - 1);
     expect(more).toBe(3);
+    // A minor line (a resource change) is left out before a move; the rest keep their order.
+    expect(toastLines(["placed", "−1 Wood", "load 1", "marker", "load 2"], 4, (line) => line === "−1 Wood")).toEqual({ shown: ["placed", "load 1", "marker"], more: 2 });
+    expect(toastLines(["a", "−", "b", "c", "−"], 4, (line) => line === "−")).toEqual({ shown: ["a", "b", "c"], more: 2 });
     expect(en("shell.toast.more", { n: 3 })).toBe("and 3 more lines in the game log");
     expect(zh("shell.toast.more", { n: 3 })).toBe("另有3条，见对局记录");
   });
@@ -625,7 +655,7 @@ describe("toastReducer", () => {
 
   it("keeps every turn, however many wait: one 4-player end-of-round batch plays in full, in order", () => {
     // The reviewer's case: one computer batch with no decision of the viewer's in it brings the
-    // last placements, the Contributions, the Heat markers, the after-Quality abilities, the
+    // last placements, the Contributions, Jun's adjustments, the after-Quality abilities, the
     // Order turns and the next round's placements of three computers: more than ten turns.
     const players = [other, third];
     const batch: Turn[] = Array.from({ length: 24 }, (_, index) => turn(players[index % 2]!, 200 + index));

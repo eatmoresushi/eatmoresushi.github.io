@@ -8,7 +8,8 @@
 
 import { describe, expect, it } from "vitest";
 import { MAIN_ORDER_IDS } from "../../../src/game/content.ts";
-import { projectEvent, projectPublicState } from "../../../src/game/view.ts";
+import { magistratesHallQuote } from "../../../src/game/selectors.ts";
+import { projectEvent, projectPublicState, viewOf } from "../../../src/game/view.ts";
 import type { GameAction, OrderId, Recognition } from "../../../src/game/types.ts";
 import type { StateSpec } from "./support/fixtures.ts";
 import { LocalTable } from "./support/localTable.ts";
@@ -152,6 +153,19 @@ describe("Magistrate's Hall: 4 Coins for +1 Recognition, either worker (rev. 4 L
     expect(t.player("p1").imperial).toMatchObject({ recognition: 1, grantReceived: true });
     expect(t.halts).toEqual([{ kind: "worker_action_done", playerId: "p1" }]);
     expectPublicEvents(events);
+  });
+
+  it("its quote previews the milestone's resources: the Imperial Grant from 0 → 1, nothing later (L432)", () => {
+    const first = table({ players: [{ resources: { clay: 2, wood: 2, coins: 7 } }, {}] });
+    const quote = magistratesHallQuote(viewOf(first.state, "p1"), "apprentice");
+    expect(quote).toMatchObject({ ok: true, reachable: 1, pay: { clay: 0, wood: 0, coins: 4 }, gain: { clay: 1, wood: 1, coins: 1 } });
+    // The preview matches what the action pays and gains.
+    first.act("p1", hall("p1:apprentice:1"));
+    expect(first.player("p1").resources).toEqual({ clay: 2 - quote.pay.clay + quote.gain.clay, wood: 2 - quote.pay.wood + quote.gain.wood, coins: 7 - quote.pay.coins + quote.gain.coins });
+    for (const recognition of [1, 2] as const) {
+      const later = table({ players: [{ recognition, resources: { coins: 4 } }, {}] });
+      expect(magistratesHallQuote(viewOf(later.state, "p1"), "shifu").gain).toEqual({ clay: 0, wood: 0, coins: 0 });
+    }
   });
 
   it("Shifu: pays 4, advances 1 → 2 and gains the Imperial Kiln tile (L285, L433)", () => {

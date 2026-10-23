@@ -36,7 +36,7 @@ import { CeramicArt } from "../pieces/CeramicArt.tsx";
 import { CeramicChip } from "../pieces/CeramicChip.tsx";
 import { CrownIcon } from "../pieces/CrownIcon.tsx";
 import { FireCard } from "../pieces/FireCard.tsx";
-import { HeatMarkerBadge } from "../pieces/HeatMarkerBadge.tsx";
+import { KilnMasterMarker } from "../pieces/KilnMasterMarker.tsx";
 import { KilnDie } from "../pieces/KilnDie.tsx";
 import { QualityChip } from "../pieces/QualityChip.tsx";
 import { ResourceRow } from "../pieces/ResourceRow.tsx";
@@ -54,7 +54,7 @@ const SAMPLE_CERAMICS: Record<string, CeramicState> = {
   g3: { id: "g3", ownerId: "lin", vesselInstanceId: "bowl-01", shape: "bowl", decoration: "plain", formedInRound: 2, formedBy: "form_decorate", stage: "shaped" },
   g4: { id: "g4", ownerId: "zhao", vesselInstanceId: "plate-01", shape: "plate", decoration: "painted", formedInRound: 2, formedBy: "form_decorate",
     stage: "loaded", glaze: "white", loadedInRound: 2, loadedBy: "glaze_load", placement: { kiln: "shared", spaceId: "high_2", stacked: false },
-    heatMarker: { source: "own", faceDown: true } },
+    kilnMasterMarker: 1 },
   g5: { id: "g5", ownerId: "lin", vesselInstanceId: "censer-01", shape: "censer", decoration: "painted", formedInRound: 2, formedBy: "form_decorate",
     stage: "finished", glaze: "moon_white", firedInRound: 2, crackle: false, quality: "masterpiece" },
   g6: { id: "g6", ownerId: "zhao", vesselInstanceId: "bowl-02", shape: "bowl", decoration: "carved", formedInRound: 2, formedBy: "form_decorate",
@@ -262,7 +262,7 @@ function Controls() {
               <PieceDetail
                 key={id}
                 label={ceramicLabel(ceramic, SAMPLE_VIEW, { locale: t })}
-                trigger={<CeramicChip ceramic={{ ...ceramic, quality }} seat={SEAT[ceramic.ownerId] ?? 0} view={SAMPLE_VIEW} marker={ceramic.stage === "loaded" ? ceramic.heatMarker : null} motionKey={null} />}
+                trigger={<CeramicChip ceramic={{ ...ceramic, quality }} seat={SEAT[ceramic.ownerId] ?? 0} view={SAMPLE_VIEW} marker={ceramic.stage === "loaded" ? ceramic.kilnMasterMarker : null} motionKey={null} />}
               >
                 <p>{shapeName(ceramic.shape, t.locale)} · {decorationName(ceramic.decoration, t.locale)}</p>
                 {quality === null ? null : <p>{qualityName(quality, t.locale)}</p>}
@@ -303,7 +303,7 @@ function Pieces() {
               ceramic={{ ...ceramic, quality: ceramic.stage === "finished" ? ceramic.quality : null }}
               seat={SEAT[ceramic.ownerId] ?? 0}
               view={SAMPLE_VIEW}
-              marker={ceramic.stage === "loaded" ? ceramic.heatMarker : null}
+              marker={ceramic.stage === "loaded" ? ceramic.kilnMasterMarker : null}
               pending={ceramic.id === "g3"}
               highlighted={ceramic.id === "g5"}
               motionKey={null}
@@ -332,12 +332,10 @@ function Pieces() {
           <WorkerPiece kind="apprentice" seat={0} own dim />
         </div>
       </Section>
-      <Section title="HeatMarkerBadge · FireCard · KilnDie · CardBack · CrownIcon">
+      <Section title="KilnMasterMarker · FireCard · KilnDie · CardBack · CrownIcon">
         <div className="kg-row">
-          <HeatMarkerBadge marker={{ source: "own", faceDown: true }} />
-          <HeatMarkerBadge marker={{ source: "own", faceDown: false, value: 1 }} />
-          <HeatMarkerBadge marker={{ source: "own", faceDown: false, value: -1 }} />
-          <HeatMarkerBadge marker={{ source: "kiln_master", faceDown: false, value: 1 }} />
+          <KilnMasterMarker value={1} />
+          <KilnMasterMarker value={-1} />
         </div>
         <div className="kg-row">
           {([-2, -1, 0, 1, 2] as FireModifier[]).map((value) => <FireCard key={value} value={value} />)}

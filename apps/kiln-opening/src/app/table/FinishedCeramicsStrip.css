@@ -22,6 +22,12 @@
     list-style: none;
   }
 
+  .finished-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .finished-none,
   .finished-count,
   .finished-note {

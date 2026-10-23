@@ -41,7 +41,7 @@ export function Contributions() {
   const names = (choices: readonly ContributionCardChoice[]) => choices.map((choice) => contributionCardName(choice.card, t.locale));
   return (
     <div className="dw-form">
-      <Lead step={stepLabel(model, t)}>{t("firing.contrib.lead")}</Lead>
+      <Lead step={stepLabel(model, t, false)}>{t("firing.contrib.lead")}</Lead>
 
       <Section heading={t("firing.who")}>
         <PlayerQueue

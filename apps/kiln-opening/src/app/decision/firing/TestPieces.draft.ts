@@ -1,7 +1,7 @@
 /**
  * The draft model of Test Pieces (UI_V1.6.1_ARCHITECTURE §3.4 `test_pieces`, §3.5). Owner: B5.
  *
- * Firing step 4, in First Player order. Two sub-steps (`testPiecesOptions(view).awaiting`):
+ * At the end of firing step 1 (rev. 4 L626, L670: after Base Heat, before the Fire card), in First Player order. Two sub-steps (`testPiecesOptions(view).awaiting`):
  * - `decision`: pay Wood and peek privately (`TEST_PIECES_DECIDE { peek: true }`), or decline;
  *   whether the peek is possible is the engine's verdict (`canPeek`, and `validateAction`'s
  *   reason when it is not);

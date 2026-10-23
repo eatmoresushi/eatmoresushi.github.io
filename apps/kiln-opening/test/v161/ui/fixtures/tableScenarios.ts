@@ -10,6 +10,7 @@
  */
 
 import { FIRING, MAIN_ORDER_IDS, ORDERS, SHAPES } from "../../../../src/game/content.ts";
+import { sellFlawedOptions } from "../../../../src/game/index.ts";
 import { assertInvariants } from "../../../../src/game/invariants.ts";
 import { matchOrder } from "../../../../src/game/orders/matching.ts";
 import { player, takeVesselCard } from "../../../../src/game/state.ts";
@@ -104,6 +105,8 @@ function completeEarlier(state: GameState, playerId: PlayerId, orderIds: readonl
       bonusCrowns: 0,
       crackleDeclarations: [],
       kilnAbility: null,
+      // The engine always records Ge's Crackle VP (rev. 4 L465); none of these is a Crackle ceramic.
+      crackleVp: 0,
     };
     p.completedOrders.push(record);
     p.score.orders += order.vp;
@@ -167,22 +170,23 @@ export function tableScenarios(): TableScenario[] {
     add("t-firing-skipped", "A round with nothing loaded: firing skipped, then Round 3 begins", table, "p1");
   }
 
-  // 2. An Imperial-only firing: no Contribution participants, Base Heat = Kiln Die (INT).
+  // 2. An Imperial-only firing: no Contribution participants, Base Heat = Kiln Die (INT). Lin's
+  //    Jun keeps the firing open at step 3 (revision 4 has no Heat-marker step to wait at).
   add(
     "t-imperial-only-firing",
     "Imperial-only firing: no Contributions, Base Heat equals the Kiln Die",
     openFiringTable({
       kilnDie: 3,
-      players: [{ recognition: 2, displayName: "Lin" }, { displayName: "Zhao" }],
+      players: [{ recognition: 2, displayName: "Lin", kilnId: "JU", resources: { wood: 2 } }, { displayName: "Zhao" }],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "vase", glaze: "moon_white", decoration: "painted", at: "imperial", imperialModifier: 1, heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "vase", glaze: "moon_white", decoration: "painted", at: "imperial", imperialModifier: 1 },
       ],
     }),
     "p2",
   );
 
   // 3. A Fire-deck reshuffle: the deck is empty at the reveal, so the open discard is shuffled
-  //    back and empties (L512); Jun keeps the firing open at step 8.
+  //    back and empties (L512); Jun keeps the firing open at step 3.
   {
     const table = openFiringTable({
       players: [{ kilnId: "JU", resources: { wood: 3 } }, {}, {}],
@@ -276,7 +280,8 @@ export function tableScenarios(): TableScenario[] {
     add("t-recognition-overflow", "A Crown beyond Recognition 4 scores 1 VP", table, "p1");
   }
 
-  // 8. A 2-player and a 4-player final, reached through the last Order Phase.
+  // 8. A 2-player and a 4-player final, reached through the last Order Phase (in the 2-player one
+  //    Zhao sells a Flawed ceramic in their last Order turn, R20).
   {
     const table = new LocalTable(
       buildState({
@@ -301,6 +306,9 @@ export function tableScenarios(): TableScenario[] {
     table.act("p1", { type: "COMPLETE_ORDER", orderId: "S01", ceramicIds: ["c1"] });
     table.act("p1", { type: "COMPLETE_ORDER", orderId: "O22", ceramicIds: ["c2"] });
     if (table.state.phase.type === "orders") table.act("p2", { type: "COMPLETE_ORDER", orderId: "S06", ceramicIds: ["c5"] });
+    // Zhao's Order turn stays open for the Flawed bowl (R20: the Order Phase turn is a sale
+    // window); selling it leaves nothing to complete or sell, so the turn passes and the game ends.
+    if (table.state.phase.type === "orders") table.act("p2", { type: "SELL_FLAWED", ceramicId: "c7" });
     if (table.state.phase.type !== "finished") throw new Error(`tableScenarios: the 2-player game ended in ${table.state.phase.type}`);
     add("t-final-2p", "2-player final results", table, "p1");
   }
@@ -364,7 +372,7 @@ export function tableScenarios(): TableScenario[] {
   // 10. A Colour Samples Select that took a face-up Order (v1.6.2 L64, L622, change 25): an
   //     Apprentice bought Colour Samples at the Guild Hall, and its when-acquired Select 3 reserved
   //     display #3 instead of a looked card. The position stays empty until the turn ends; the 3
-  //     looked cards went to the bottom of the deck; the viewer is in the after-action window.
+  //     looked cards were discarded (R25); the viewer is in the after-action window.
   {
     const table = new LocalTable(
       buildState({
@@ -386,16 +394,17 @@ export function tableScenarios(): TableScenario[] {
   }
 
   // 11. The Contribution reveal with a Fuel Ledger card (v1.6.2 change 26): Lin played Fuel Ledger
-  //     Stoke (1 Wood, +2), Zhao Bank the Fire; the firing waits at Lin's Heat marker.
+  //     Stoke (1 Wood, +2), Zhao Bank the Fire; the firing waits at Lin's Jun adjustment (step 3:
+  //     revision 4 has no Heat-marker step, so the firing runs on to Jun after the reveal).
   {
     const table = openFiringTable({
       kilnDie: 1,
       players: [
-        { displayName: "Lin", techs: ["T12"], resources: { wood: 2 } },
+        { displayName: "Lin", kilnId: "JU", techs: ["T12"], resources: { wood: 2 } },
         { displayName: "Zhao", resources: { wood: 2 } },
       ],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "grey_green", decoration: "carved", at: "middle_1", heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "grey_green", decoration: "carved", at: "middle_1" },
         { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "high_1" },
       ],
     });
@@ -403,7 +412,53 @@ export function tableScenarios(): TableScenario[] {
     table.contribute("p2", "BANK");
     const revealed = table.events.find((event) => event.type === "CONTRIBUTIONS_REVEALED");
     if (revealed?.type !== "CONTRIBUTIONS_REVEALED" || revealed.contributions["p1"]?.card !== "FUEL_LEDGER_STOKE") throw new Error("tableScenarios: no Fuel Ledger reveal");
+    if (table.state.phase.type !== "firing_heat_adjustment") throw new Error("tableScenarios: the Fuel Ledger reveal did not wait at Lin's Jun adjustment");
     add("t-fuel-ledger-reveal", "Contributions revealed with a Fuel Ledger card: Fuel Ledger Stoke +2 for 1 Wood", table, "p2");
+  }
+
+  // 12–14. Selling a Flawed ceramic (change 30, owner ruling R20) in the other sale windows: the
+  //     own after-Quality turn (a ceramic of this firing, which leaves the kiln), the before-action
+  //     step of a Work turn, and a pending Cleanup hand trim (the player stays pending).
+  {
+    const table = openFiringTable({
+      kilnDie: 1,
+      players: [{ displayName: "Lin", techs: ["T14"] }, { displayName: "Zhao" }],
+      ceramics: [
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", decoration: "carved", at: "low_1" },
+        { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "high_1" },
+      ],
+    });
+    tendAll(table);
+    if (table.state.phase.type !== "firing_after_quality" || sellFlawedOptions(table.view("p1")) === null) throw new Error("tableScenarios: no sale in Lin's after-Quality turn");
+    add("t-after-quality-sale", "After Quality: Lin may sell a Flawed ceramic of this firing, or fire it again", table, "p1");
+  }
+  {
+    const table = new LocalTable(
+      buildState({
+        round: 2,
+        players: [{ displayName: "Lin", resources: { coins: 1 } }, { displayName: "Zhao" }],
+        ceramics: [
+          { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", decoration: "painted", quality: "flawed", firedInRound: 1, formedInRound: 1 },
+          { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard", firedInRound: 1, formedInRound: 1 },
+        ],
+        phase: { type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } },
+      }),
+      { seed: 19 },
+    );
+    if (sellFlawedOptions(table.view("p1")) === null) throw new Error("tableScenarios: no sale before Lin's worker action");
+    add("t-work-turn-sale", "Before the worker action: Lin may sell a Finished Flawed ceramic (not a worker action)", table, "p1");
+  }
+  {
+    const table = new LocalTable(
+      buildState({
+        players: [{ displayName: "Lin", hand: ["S01", "S02", "O01", "O02", "O03"] }, { displayName: "Zhao" }],
+        ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "grey_green", decoration: "impressed", quality: "flawed" }],
+        phase: { type: "cleanup_hand_limit", pendingPlayerIds: ["p1"], openedAtRevision: 1 },
+      }),
+      { flow: "halt" },
+    );
+    if (sellFlawedOptions(table.view("p1")) === null) throw new Error("tableScenarios: no sale in Lin's hand trim");
+    add("t-cleanup-sale", "Cleanup: Lin, still to trim, may first sell a Flawed ceramic", table, "p1");
   }
 
   return scenarios;

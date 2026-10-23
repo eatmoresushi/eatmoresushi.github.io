@@ -8,7 +8,8 @@
  * 3. Crackle declarations, when the group holds a Crackle ceramic;
  * 4. the printed rewards (a Crown reward with the Imperial Recognition rules details, D10),
  *    Canal Barge's automatic 2 Coins on your first completion this round (v1.6.2 L622, never
- *    declined), and the optional abilities this completion would trigger (Ru/Guan, Tribute Ware;
+ *    declined), Ge's automatic 1 VP per Crackle ceramic delivered (rev. 4 L465; the engine's
+ *    `triggers.crackleVp`), and the optional abilities this completion would trigger (Ru/Guan, Tribute Ware;
  *    declining keeps their once-per-round use, R4).
  *
  * Renders only from the completion options; never filters or checks a choice itself.
@@ -136,6 +137,7 @@ export function OrderCompletionPicker({ model, engine, draft, options, dispatch,
             {match.triggers.canalBarge ? (
               <Chip>{t("orders.turn.canalBarge", { tech: techName(B5_TECHS.canalBarge, t.locale), n: RULE_NUMBERS.canalBargeCoins })}</Chip>
             ) : null}
+            {match.triggers.crackleVp > 0 ? <Chip tone="ok">{t("orders.turn.crackleVp", { n: match.triggers.crackleVp })}</Chip> : null}
           </span>
           {match.printedCrowns > 0 ? (
             <div className="dw-row ord-crown-note">

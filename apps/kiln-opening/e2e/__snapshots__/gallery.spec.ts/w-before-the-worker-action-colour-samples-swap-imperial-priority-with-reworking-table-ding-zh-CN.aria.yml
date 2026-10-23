@@ -1,6 +1,6 @@
 - region "你的决断":
   - paragraph: 轮到你了：派工 · 还剩4名工人
-  - group "也可以先用：":
+  - group "也可以先：":
     - text: ""
     - button "御烧优先"
     - button "色样簿换单"

@@ -5,9 +5,10 @@
  * - `KilnTradition`: the Kiln and its Tradition ability, Ready or Used this round, and the short
  *   text (timing clause in bold). The block is the trigger of the Kiln's rules details (D10):
  *   full ability, the Kiln's clarifications, once per round and used this round.
- * - `MarkerLine`: where this player's Heat marker is (face down, or turned with its value; or in
- *   supply), Kiln Master's marker, and the Imperial Kiln's ceramic. Markers are public
- *   (AGENTS.md). Ceramics are named in words (D9).
+ * - `MarkerLine`: Kiln Master's marker while it is on one of this player's loaded ceramics (it is
+ *   chosen face up at loading, T24, rev. 4 L628; there is no player Heat marker since revision 4,
+ *   changes 28, 31), and the Imperial Kiln's ceramic. Markers are public (AGENTS.md). Ceramics are
+ *   named in words (D9).
  */
 import type { ReactNode } from "react";
 import type { CeramicId, PlayerId } from "../../game/index.ts";
@@ -66,20 +67,10 @@ export function MarkerLine({ playerId }: MarkerLineProps) {
     return facts === undefined ? t("common.ceramic.unknown") : ceramicLabel(facts, labelView, { locale: t, withOwner: false, withPlace: true });
   };
   const parts: ReactNode[] = [];
-  const own = summary.heatMarkerCeramicId;
-  if (own === null) parts.push(t("boards.markers.heatSupply"));
-  else {
-    const marker = markers.get(own) ?? null;
-    parts.push(
-      marker === null || marker.faceDown
-        ? t.rich("boards.markers.heatFaceDownOn", { ceramic: name(own) })
-        : t.rich("boards.markers.heatValueOn", { value: signed(marker.value), ceramic: name(own) }),
-    );
-  }
   const master = summary.kilnMasterCeramicId;
   const masterMarker = master === null ? null : markers.get(master) ?? null;
-  if (master !== null && masterMarker !== null && !masterMarker.faceDown) {
-    parts.push(t.rich("boards.markers.kilnMasterOn", { value: signed(masterMarker.value), ceramic: name(master) }));
+  if (master !== null && masterMarker !== null) {
+    parts.push(t.rich("boards.markers.kilnMasterOn", { value: signed(masterMarker), ceramic: name(master) }));
   }
   const imperial = summary.imperial;
   const state = !imperial.kilnGained

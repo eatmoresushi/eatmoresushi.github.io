@@ -9,9 +9,9 @@ const CERAMICS: Record<string, CeramicState> = {
     stage: "finished", glaze: "celadon", firedInRound: 1, crackle: false, quality: "fine" },
   c5: { id: "c5", ownerId: "p1", vesselInstanceId: "bowl-01", shape: "bowl", decoration: "plain", formedInRound: 2, formedBy: "form_decorate", stage: "shaped" },
   c6: { id: "c6", ownerId: "p1", vesselInstanceId: "plate-01", shape: "plate", decoration: "painted", formedInRound: 2, formedBy: "form_decorate",
-    stage: "loaded", glaze: "white", loadedInRound: 2, loadedBy: "glaze_load", placement: { kiln: "shared", spaceId: "high_2", stacked: false }, heatMarker: null },
+    stage: "loaded", glaze: "white", loadedInRound: 2, loadedBy: "glaze_load", placement: { kiln: "shared", spaceId: "high_2", stacked: false }, kilnMasterMarker: null },
   c7: { id: "c7", ownerId: "p1", vesselInstanceId: "plate-02", shape: "plate", decoration: "painted", formedInRound: 2, formedBy: "form_decorate",
-    stage: "loaded", glaze: "white", loadedInRound: 2, loadedBy: "glaze_load", placement: { kiln: "imperial", imperialModifier: 1 }, heatMarker: null },
+    stage: "loaded", glaze: "white", loadedInRound: 2, loadedBy: "glaze_load", placement: { kiln: "imperial", imperialModifier: 1 }, kilnMasterMarker: null },
   c8: { id: "c8", ownerId: "p2", vesselInstanceId: "washer-01", shape: "washer", decoration: "impressed", formedInRound: 1, formedBy: "form_decorate",
     stage: "finished", glaze: "grey_green", firedInRound: 1, crackle: true, quality: "fine" },
 };

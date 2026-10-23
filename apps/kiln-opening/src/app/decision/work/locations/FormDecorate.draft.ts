@@ -5,7 +5,10 @@
  * Choices: 1 vessel (Apprentice) or 1–2 (Shifu, `placementLimits(...).maxVessels`), each a Shape
  * and a Decoration; Large Throwing Wheel and Decorator's Kit when `formDiscountVariants` offers
  * them; Ding's extra vessel on an index `dingCopyableVesselIndexes` lists. The engine's quote
- * (`quoteFormDecorate`, live per draft, gap 6) prices the draft.
+ * (`quoteFormDecorate`, live per draft, gap 6) prices the draft. Each vessel costs its Shape's
+ * Clay and 2 Coins, whatever its Decoration (rev. 4 L183, L336, change 30): the Decoration has no
+ * cost of its own; the Shifu's −1 Coin for two vessels, Decorator's Kit and Ding are reductions
+ * the quote lists (`vessel_coins`, `shifu_discount`, …).
  *
  * The form offers exactly what the engine allows now. Every Shape and Decoration of every vessel
  * is listed (the vocabulary of the action), but one is available only when some command placing
@@ -17,7 +20,7 @@
  * `validateAction` verdict.
  */
 import { DECORATIONS, SHAPES, dingCopyableVesselIndexes, formDiscountVariants, placementLimits, quoteFormDecorate, validateAction } from "../../../../game/index.ts";
-import type { CostQuote, Decoration, FormVesselSpec, GameRuleError, ResourceState, Shape } from "../../../../game/index.ts";
+import type { CostLine, CostQuote, Decoration, FormVesselSpec, GameRuleError, ResourceState, Shape } from "../../../../game/index.ts";
 import { ceramicLabel } from "../../../i18n/ceramicLabel.ts";
 import { kilnText } from "../../../i18n/content.ts";
 import { msg } from "../../../i18n/translator.ts";
@@ -25,6 +28,32 @@ import type { Deferred, MessageParam, RichMessage } from "../../../i18n/translat
 import { keepIfSame, keyOf, viewMemo } from "../context.ts";
 import type { LocationDraftModel, PlacementCommandOf, PlacementContext } from "./editor.ts";
 import { resourcesAfter } from "./shared.ts";
+
+/**
+ * One row of the quote as the pane lists it: an engine cost line, or Ding's extra vessel, whose
+ * Clay and Coin lines (`ding_extra`) make one row naming the Shape it copies ("Moulded
+ * Production: Bowl · 1 Clay, 1 Coin"), so the cost never reads as charged twice.
+ */
+export type QuoteRow = { readonly kind: "line"; readonly line: CostLine } | { readonly kind: "ding"; readonly shape: Shape | null; readonly amounts: ResourceState };
+
+/** The quote's lines as rows (`QuoteRow`), in the quote's order; Ding's row where its first line was. */
+export function quoteRows(quote: CostQuote, draft: FormDecorateDraft): QuoteRow[] {
+  const rows: QuoteRow[] = [];
+  let ding: { shape: Shape | null; amounts: ResourceState } | null = null;
+  for (const line of quote.lines) {
+    if (line.kind !== "ding_extra") {
+      rows.push({ kind: "line", line });
+      continue;
+    }
+    if (ding === null) {
+      const copied = draft.ding?.index ?? null;
+      ding = { shape: copied === null ? null : draft.vessels[copied]?.shape ?? null, amounts: { clay: 0, wood: 0, coins: 0 } };
+      rows.push({ kind: "ding", shape: ding.shape, amounts: ding.amounts });
+    }
+    ding.amounts[line.resource] += line.amount;
+  }
+  return rows;
+}
 
 const LARGE_THROWING_WHEEL = "T01" as const;
 const DECORATORS_KIT = "T16" as const;
@@ -63,16 +92,18 @@ export interface Availability {
 export interface FormVesselOptions {
   /** Every Shape, with its printed Clay and whether it may be chosen for this vessel now. */
   shapes: ReadonlyArray<{ shape: Shape; clay: number | null } & Availability>;
-  /** Every Decoration, with its printed Coins and whether it may be chosen for this vessel now. */
-  decorations: ReadonlyArray<{ decoration: Decoration; coins: number | null } & Availability>;
+  /** Every Decoration and whether it may be chosen for this vessel now (none has a cost, change 30). */
+  decorations: ReadonlyArray<{ decoration: Decoration } & Availability>;
 }
 
 export interface FormDecorateOptions {
   maxVessels: number;
   /** Every Shape, with its printed Clay (from the quote's lines). */
   shapes: ReadonlyArray<{ shape: Shape; clay: number | null }>;
-  /** Every Decoration, with its printed Coins. */
-  decorations: ReadonlyArray<{ decoration: Decoration; coins: number | null }>;
+  /** Every Decoration (none has a cost of its own, rev. 4 L336). */
+  decorations: ReadonlyArray<{ decoration: Decoration }>;
+  /** The Coins every vessel costs before any reduction (the quote's `vessel_coins` line), or null. */
+  vesselCoins: number | null;
   /** Per vessel of the draft: each Shape's and Decoration's availability now. */
   vessels: readonly FormVesselOptions[];
   /**
@@ -117,16 +148,14 @@ function quote(context: PlacementContext, action: PlacementCommandOf<"form_decor
   return viewMemo(context.view, `quoteFormDecorate:${keyOf(action)}`, () => quoteFormDecorate(context.actor, action));
 }
 
-/** The printed Clay of each Shape and Coins of each Decoration, from the engine's quote lines. */
-function printedCosts(context: PlacementContext): Pick<FormDecorateOptions, "shapes" | "decorations"> {
+/** The printed Clay of each Shape and the Coins of a vessel, from the engine's quote lines. */
+function printedCosts(context: PlacementContext): Pick<FormDecorateOptions, "shapes" | "decorations" | "vesselCoins"> {
   return viewMemo(context.view, `formDecoratePrinted:${context.worker.workerId}`, () => {
     const probe = (vessel: FormVesselSpec) => quote(context, { type: "PLACE_FORM_DECORATE", workerId: context.worker.workerId, vessels: [vessel] });
     return {
       shapes: SHAPES.map((shape) => ({ shape, clay: probe({ shape, decoration: "plain" }).lines.find((line) => line.kind === "shape_clay")?.amount ?? null })),
-      decorations: DECORATIONS.map((decoration) => ({
-        decoration,
-        coins: probe({ shape: "bowl", decoration }).lines.find((line) => line.kind === "decoration")?.amount ?? null,
-      })),
+      decorations: DECORATIONS.map((decoration) => ({ decoration })),
+      vesselCoins: probe({ shape: "bowl", decoration: "plain" }).lines.find((line) => line.kind === "vessel_coins")?.amount ?? null,
     };
   });
 }

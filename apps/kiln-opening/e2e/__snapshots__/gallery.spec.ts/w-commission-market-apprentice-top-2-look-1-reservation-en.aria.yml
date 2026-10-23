@@ -18,7 +18,7 @@
     - paragraph: "Reserve one Order: from the display or from the cards you looked at."
     - group "Top 2 of the Main Order deck Only you can see":
       - text: ""
-      - paragraph: Those you do not reserve go face down to the bottom of the Main Order deck.
+      - paragraph: Those you do not reserve are discarded face down.
       - radio "O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+"
       - text: O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+
       - 'button "Full rules: Order O07"'

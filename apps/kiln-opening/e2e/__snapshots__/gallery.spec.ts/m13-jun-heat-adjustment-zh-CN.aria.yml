@@ -4,15 +4,15 @@
   - region "Lin（你）":
     - heading "Lin（你）" [level=3]
     - group "资源":
-      - strong: "0"
-      - text: 泥
       - strong: "1"
-      - text: 柴
+      - text: 泥
       - strong: "2"
+      - text: 柴
+      - strong: "3"
       - text: 铜钱
-    - text: 手中4张委托 声望0／4 0分
+    - text: 手中5张委托 声望0／4 0分
   - form "钧窑·窑变天成":
-    - paragraph: 烧窑步骤8，按起始玩家顺序
+    - paragraph: 烧窑步骤3，按起始玩家顺序
     - paragraph:
       - strong: 每轮一次，实际火候算出后、定品前：
       - text: 可付1柴→己方1件器物的实际火候+1或−1。
@@ -21,8 +21,8 @@
       - listitem: Lin（你）：决断中
     - group "器物":
       - text: ""
-      - radio "月白釉瓶 · 素面（高温区2）" [checked]
-      - text: 月白釉瓶 · 素面（高温区2）
+      - radio "白釉笔洗 · 素面（低温区2）" [checked]
+      - text: 白釉笔洗 · 素面（低温区2）
     - group "调整 费用：1柴":
       - text: ""
       - paragraph: 在定品前计入这件器物的实际火候。

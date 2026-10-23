@@ -1,9 +1,9 @@
 /**
- * SecondFiring (UI_V1.6.1_ARCHITECTURE §3.4 `second_firing`; T14, v1.6.2 L631, R7). Owner: B5.
+ * SecondFiring (UI_V1.6.1_ARCHITECTURE §3.4 `second_firing`; T14, rev. 4 L627). Owner: B5.
  *
  * Second Firing's 2 extra Fire cards, turned face up (public: the table shows them too, in the
  * heat equation and beside the ceramic), and the ceramic they fire again. The owner chooses one
- * card (step 1, radios, each showing its card) and, with Jun ready on this ceramic (R7), Jun's +1
+ * card (step 1, radios, each showing its card) and, with an unused Jun ready on this ceramic (rev. 4 L627), Jun's +1
  * or −1 for its Wood, or not to use it (step 2, pills; "Do not use" is the default, R4). A Jun
  * owner whose Jun is not ready sees why, in the engine's words. The rule is stated in words: the
  * new Quality replaces the old one even if worse, and both cards are discarded. No heat value or
@@ -18,8 +18,7 @@ import { OptionGroup } from "../../kit/OptionGroup.tsx";
 import { FireCard } from "../../pieces/FireCard.tsx";
 import { RulesDetail } from "../../rules/RulesDetail.tsx";
 import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
-import { B5_KILNS, B5_TECHS, costText, ownFiringCeramicIds } from "./firingSupport.ts";
-import { isHeatMarkerSide } from "./HeatMarkers.draft.ts";
+import { B5_KILNS, B5_TECHS, costText, heatDeltaOf, ownFiringCeramicIds } from "./firingSupport.ts";
 import { secondFiringDraft } from "./SecondFiring.draft.ts";
 import type { SecondFiringAction, SecondFiringDraft } from "./SecondFiring.draft.ts";
 import { CeramicLine, Lead, Note, Section, ShortText, stepLabel } from "./WindowParts.tsx";
@@ -80,7 +79,7 @@ export function SecondFiring() {
           name="jun"
           layout="pills"
           value={draft.jun === null ? NO_JUN : String(draft.jun)}
-          onChange={(value) => dispatch({ type: "jun", delta: value === NO_JUN ? null : isHeatMarkerSide(value) })}
+          onChange={(value) => dispatch({ type: "jun", delta: value === NO_JUN ? null : heatDeltaOf(value) })}
         >
           <OptionCard variant="pill" value={NO_JUN} title={t("firing.sf.junNone")} />
           {options.jun.sides.map((side) => (

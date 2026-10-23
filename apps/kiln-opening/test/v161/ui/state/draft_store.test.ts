@@ -4,7 +4,7 @@
  * derivations memoised so `useSyncExternalStore` sees stable values; stubs report `todo`.
  */
 import { describe, expect, it } from "vitest";
-import type { PlayerView } from "../../../../src/game/index.ts";
+import type { KilnId, PlayerView } from "../../../../src/game/index.ts";
 import { decisionWindow, windowDraftKey } from "../../../../src/app/state/decisionWindow.ts";
 import { DraftStore, REVALIDATE, defineWindow, noDraft, stubDraft } from "../../../../src/app/state/draftStore.ts";
 import { buildGameModel, engineViewOf } from "../../../../src/app/state/model.ts";
@@ -26,38 +26,40 @@ function laterRevision(view: PlayerView, patch: Partial<PlayerView["game"]> = {}
 describe("DraftStore", () => {
   it("starts from initial, and returns the same value while nothing changes", () => {
     const store = new DraftStore();
-    const { model, engine, key } = contextOf(fixture("w-kiln-selection").playerView);
+    const { model, engine, key } = contextOf(fixture("w-kiln-and-main-order-choice").playerView);
     const first = store.read(key, kilnDraft, model, engine);
-    expect(first).toEqual({ kilnId: null });
+    // The toy starts on the first face-up Main Order (rev. 4 change 32, R23).
+    expect(first).toEqual({ kilnId: null, slotIndex: 0 });
     expect(store.read(key, kilnDraft, model, engine)).toBe(first);
   });
 
   it("applies actions, and keeps the draft (revalidated) across another player's commit", () => {
     const store = new DraftStore();
-    const view = fixture("w-kiln-selection").playerView;
+    const view = fixture("w-kiln-and-main-order-choice").playerView;
     const { model, engine, key } = contextOf(view);
     store.dispatch(key, kilnDraft, model, engine, { type: "pick", kilnId: "JU" });
-    expect(store.read(key, kilnDraft, model, engine)).toEqual({ kilnId: "JU" });
+    expect(store.read(key, kilnDraft, model, engine)).toEqual({ kilnId: "JU", slotIndex: 0 });
     const later = contextOf(laterRevision(view));
     expect(later.key).toBe(key);
     const kept = store.read(key, kilnDraft, later.model, later.engine);
-    expect(kept).toEqual({ kilnId: "JU" });
+    expect(kept).toEqual({ kilnId: "JU", slotIndex: 0 });
     expect(store.read(key, kilnDraft, later.model, later.engine)).toBe(kept);
   });
 
   it("drops a choice the new options no longer offer", () => {
     const store = new DraftStore();
-    const view = fixture("w-kiln-selection").playerView;
+    const view = fixture("w-kiln-and-main-order-choice").playerView;
     const { model, engine, key } = contextOf(view);
-    const available = kilnDraft.options({ kilnId: null }, model, engine);
-    const pick = available[0]!;
+    const available = kilnDraft.options({ kilnId: null, slotIndex: null }, model, engine);
+    // The toy's options list the free Kilns first, then the face-up Order slots.
+    const pick = available[0] as KilnId;
     store.dispatch(key, kilnDraft, model, engine, { type: "pick", kilnId: pick });
     const taken = laterRevision(view, {
       players: { ...view.game.players, [view.game.playerOrder.find((pid) => pid !== view.viewerId)!]: { ...view.game.players[view.game.playerOrder.find((pid) => pid !== view.viewerId)!]!, kilnId: pick } },
     });
     const later = contextOf(taken);
-    expect(kilnDraft.options({ kilnId: null }, later.model, later.engine)).not.toContain(pick);
-    expect(store.read(key, kilnDraft, later.model, later.engine)).toEqual({ kilnId: null });
+    expect(kilnDraft.options({ kilnId: null, slotIndex: null }, later.model, later.engine)).not.toContain(pick);
+    expect(store.read(key, kilnDraft, later.model, later.engine)).toEqual({ kilnId: null, slotIndex: 0 });
   });
 
   it("resets when the window's key changes", () => {
@@ -74,28 +76,28 @@ describe("DraftStore", () => {
 
   it("resets to initial on this client's own success", () => {
     const store = new DraftStore();
-    const { model, engine, key } = contextOf(fixture("w-kiln-selection").playerView);
+    const { model, engine, key } = contextOf(fixture("w-kiln-and-main-order-choice").playerView);
     store.dispatch(key, kilnDraft, model, engine, { type: "pick", kilnId: "JU" });
     const version = store.getVersion();
     store.reset();
     expect(store.getVersion()).toBe(version + 1);
-    expect(store.read(key, kilnDraft, model, engine)).toEqual({ kilnId: null });
+    expect(store.read(key, kilnDraft, model, engine)).toEqual({ kilnId: null, slotIndex: 0 });
     store.reset();
     expect(store.getVersion()).toBe(version + 1);
   });
 
   it("revalidates a `set` and a seeded draft", () => {
     const store = new DraftStore();
-    const { model, engine, key } = contextOf(fixture("w-kiln-selection").playerView);
-    store.dispatch(key, kilnDraft, model, engine, { type: "set", draft: { kilnId: "NOT_A_KILN" as never } });
-    expect(store.read(key, kilnDraft, model, engine)).toEqual({ kilnId: null });
-    store.seed(key, { kilnId: "JU" });
-    expect(store.read(key, kilnDraft, model, engine)).toEqual({ kilnId: "JU" });
+    const { model, engine, key } = contextOf(fixture("w-kiln-and-main-order-choice").playerView);
+    store.dispatch(key, kilnDraft, model, engine, { type: "set", draft: { kilnId: "NOT_A_KILN" as never, slotIndex: 0 } });
+    expect(store.read(key, kilnDraft, model, engine)).toEqual({ kilnId: null, slotIndex: 0 });
+    store.seed(key, { kilnId: "JU", slotIndex: 0 });
+    expect(store.read(key, kilnDraft, model, engine)).toEqual({ kilnId: "JU", slotIndex: 0 });
   });
 
   it("notifies subscribers on every stored change", () => {
     const store = new DraftStore();
-    const { model, engine, key } = contextOf(fixture("w-kiln-selection").playerView);
+    const { model, engine, key } = contextOf(fixture("w-kiln-and-main-order-choice").playerView);
     let calls = 0;
     const stop = store.subscribe(() => {
       calls += 1;
@@ -103,7 +105,7 @@ describe("DraftStore", () => {
     store.dispatch(key, kilnDraft, model, engine, { type: "pick", kilnId: "JU" });
     store.reset();
     stop();
-    store.seed(key, { kilnId: "RU" });
+    store.seed(key, { kilnId: "RU", slotIndex: 0 });
     expect(calls).toBe(2);
   });
 });
@@ -111,11 +113,11 @@ describe("DraftStore", () => {
 describe("stub and empty draft models", () => {
   it("a stub builds nothing, expresses nothing and is marked", () => {
     const stub = stubDraft();
-    const { model, engine } = contextOf(fixture("w-kiln-selection").playerView);
+    const { model, engine } = contextOf(fixture("w-kiln-and-main-order-choice").playerView);
     const draft = stub.initial(model, engine);
     expect(stub.stub).toBe(true);
     expect(stub.build(draft, model, engine)).toBeNull();
-    expect(stub.fromCommand({ type: "SELECT_KILN", kilnId: "JU" }, model, engine)).toBeNull();
+    expect(stub.fromCommand({ type: "SELECT_KILN", kilnId: "JU", mainOrder: { slotIndex: 0, orderId: engine.view.game.market.display[0]! } }, model, engine)).toBeNull();
     expect(stub.reduce(draft, REVALIDATE, model, engine)).toBe(draft);
     expect(noDraft().stub).toBeUndefined();
   });

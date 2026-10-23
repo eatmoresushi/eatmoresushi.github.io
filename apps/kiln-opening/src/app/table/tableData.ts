@@ -5,7 +5,6 @@
  * firing's recorded Quality and Crackle, and the workers and personal spaces of a board.
  */
 import type {
-  CeramicHeatMarker,
   CeramicId,
   CeramicState,
   LocationId,
@@ -13,6 +12,7 @@ import type {
   PersonalSpaceIndex,
   PlayerId,
   PlayerSummary,
+  HeatDelta,
   WorkerKind,
 } from "../../game/index.ts";
 import type { CeramicFacts, CeramicLabelModelView } from "../i18n/ceramicLabel.ts";
@@ -23,8 +23,8 @@ import type { GameModel } from "../state/model.ts";
 export interface TableCeramics {
   /** Attributes by ID, with this firing's recorded Quality and Crackle merged into loaded ones. */
   readonly byId: ReadonlyMap<CeramicId, CeramicFacts>;
-  /** Heat markers on loaded ceramics (public: face down, or turned with their value). */
-  readonly markers: ReadonlyMap<CeramicId, CeramicHeatMarker>;
+  /** Kiln Master's markers on loaded ceramics (public, face up, chosen at loading: T24, rev. 4 L628). */
+  readonly markers: ReadonlyMap<CeramicId, HeatDelta>;
   /** For `ceramicLabel` and `errorTextOptions`: names and words, never IDs (D9). */
   readonly labelView: CeramicLabelModelView;
 }
@@ -47,13 +47,13 @@ export function tableCeramics(model: GameModel): TableCeramics {
   const cached = CERAMICS.get(model);
   if (cached !== undefined) return cached;
   const byId = new Map<CeramicId, CeramicFacts>();
-  const markers = new Map<CeramicId, CeramicHeatMarker>();
+  const markers = new Map<CeramicId, HeatDelta>();
   for (const [key, ceramic] of Object.entries(model.ceramics)) {
     const id = key as CeramicId;
     byId.set(id, factsOf(id, ceramic));
-    if (ceramic.stage === "loaded" && ceramic.heatMarker !== null) markers.set(id, ceramic.heatMarker);
+    if (ceramic.stage === "loaded" && ceramic.kilnMasterMarker !== null) markers.set(id, ceramic.kilnMasterMarker);
   }
-  // A loaded ceramic shows the Quality and Crackle this firing recorded (steps 9–11).
+  // A loaded ceramic shows the Quality and Crackle this firing recorded (Appendix D steps 4–5).
   const firing = model.firingStage;
   if (firing !== null) {
     for (const fired of firing.ceramics) {

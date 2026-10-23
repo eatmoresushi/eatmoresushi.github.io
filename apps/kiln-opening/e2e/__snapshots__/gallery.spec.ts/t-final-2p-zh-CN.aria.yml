@@ -6,7 +6,7 @@
     - group "资源":
       - strong: "3"
       - text: 泥
-      - strong: "3"
+      - strong: "4"
       - text: 柴
       - strong: /\d+/
       - text: 铜钱
@@ -21,5 +21,5 @@
       - heading "名次" [level=3]
       - list:
         - listitem: /第1名 Lin（你） \d+分/
-        - listitem: 第2名 Zhao 8分
+        - listitem: 第2名 Zhao 9分
       - paragraph: 完整计分见终局结果。

@@ -257,7 +257,10 @@ export const RULE_NUMBERS = Object.freeze({
   coinVpMax: GAME_CONFIG.coinEndGame.maxVp,
   baseHeatMin: FIRING.baseHeat.minimum,
   baseHeatMax: FIRING.baseHeat.maximum,
-  salvageCoins: FIRING.salvageCoins,
+  /** A Glaze & Load action that loads into the Shared Kiln costs this much Wood (rev. 4 L197, R24). */
+  kilnFuelWood: LOCATIONS.glaze_load.effects.apprentice.sharedKilnWood,
+  /** A Flawed ceramic sells for this many Coins (rev. 4 L284, R20). */
+  flawedSaleCoins: FIRING.flawedSaleCoins,
   recognitionMax,
   overflowVpPerCrown: IMPERIAL_TRACK.overflowVpPerCrown,
   /** Canal Barge's Coins on your first completed Order each round (T23, v1.6.2 L622). */

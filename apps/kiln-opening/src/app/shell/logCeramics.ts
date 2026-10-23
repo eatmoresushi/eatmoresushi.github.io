@@ -4,9 +4,9 @@
  *
  * Every undelivered ceramic and its recorded attributes are public (AGENTS.md "Hidden
  * information"). The model's `ceramics` record (change request CR B1-1, landed by B6) describes
- * every ceramic still in the game. A salvaged ceramic leaves the game (its Vessel card returns to
- * the supply, L281), so the log's older lines would lose it; the public events of the log
- * (formed, reshaped, glazed and loaded, Quality, Crackle, finished, delivered, salvaged) keep it
+ * every ceramic still in the game. A sold Flawed ceramic leaves the game (its Vessel card returns
+ * to the supply, rev. 4 L284, R20), so the log's older lines would lose it; the public events of
+ * the log (formed, reshaped, glazed and loaded, Quality, Crackle, finished, delivered, sold) keep it
  * describable, and the model's record and the recorded firing results are laid over them.
  *
  * Nothing here decides a rule: it only remembers what the table showed, to put a ceramic into
@@ -48,8 +48,8 @@ function applyEvent(facts: Map<CeramicId, MutableFacts>, event: LogEntry["event"
       case "FIRING_FINISHED":
         for (const id of event.finishedCeramicIds) update(id, { stage: "finished", placement: null });
         break;
-      case "CERAMIC_SALVAGED":
-        // Discarded: still describable, never a twin of a ceramic on the table.
+      case "CERAMIC_SOLD":
+        // Sold (R20): still describable, never a twin of a ceramic on the table.
         update(event.ceramicId, { stage: "delivered", placement: null });
         break;
       case "ORDER_COMPLETED":

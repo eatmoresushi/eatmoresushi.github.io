@@ -6,7 +6,7 @@
     - group "Resources":
       - strong: "2"
       - text: Clay
-      - strong: "1"
+      - strong: "2"
       - text: Wood
       - strong: "3"
       - text: Coins
@@ -16,9 +16,9 @@
     - img "Your Apprentice"
     - text: 0 Orders in hand Recognition 0/4 0 VP
   - 'form "Test Pieces: the card you saw"':
-    - paragraph: Firing step 4, in First Player order
+    - paragraph: Firing step 1
     - paragraph:
-      - strong: "Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing:"
+      - strong: "Once per round, after Base Heat, before the Fire card, if you have a ceramic in this firing:"
       - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
     - heading "Queue" [level=3]
     - list "Queue":

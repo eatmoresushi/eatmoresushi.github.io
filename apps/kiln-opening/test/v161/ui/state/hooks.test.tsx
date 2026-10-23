@@ -85,9 +85,9 @@ describe("every hook renders on the server", () => {
     const html = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <EveryHook />, { layoutMode: "phone" });
     expect(valueOf(html, "t")).toBe("Confirm");
     expect(valueOf(html, "snapshot")).toBe("FIXTURE");
-    expect(valueOf(html, "session")).toBe("p3");
+    expect(valueOf(html, "session")).toBe("p2");
     expect(valueOf(html, "round")).toBe("2");
-    expect(valueOf(html, "engine")).toBe("p3");
+    expect(valueOf(html, "engine")).toBe("p2");
     expect(valueOf(html, "window")).toBe("work");
     // The work window's real initial draft (B4; CR B4-3, B5-3), from the fixture.
     const source = fixtureSource("m1_work_phase_r2_3p");

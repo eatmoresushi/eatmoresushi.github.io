@@ -5,12 +5,16 @@
  * In the Order Phase, the viewer's Finished ceramics beside their hand, with the ceramics the
  * open Order decision has chosen highlighted (`highlightedCeramicIds`), and the reminder that
  * face-up Main Orders cannot be completed (L297). Only held Orders are completed; the picker
- * itself is B5's decision window. Nothing renders outside the Order Phase or for a spectator.
+ * itself is B5's decision window. A Flawed ceramic the viewer may sell in their Order turn carries
+ * a Sell button (`SellButton`, change 30, R20). Nothing renders outside the Order Phase or for a
+ * spectator.
  */
 import { useT } from "../i18n/I18nProvider.tsx";
 import { locationName } from "../i18n/content.ts";
+import { ceramicLabel } from "../i18n/ceramicLabel.ts";
 import { useGame, useTableSelection } from "../state/hooks.ts";
 import { CeramicPiece } from "./CeramicPiece.tsx";
+import { SellButton } from "./SellButton.tsx";
 import { ceramicsFor, tableCeramics } from "./tableData.ts";
 import "./FinishedCeramicsStrip.css";
 
@@ -30,7 +34,7 @@ export function FinishedCeramicsStrip() {
       ) : (
         <ul className="finished-list">
           {known.map((ceramic) => (
-            <li key={ceramic.id}>
+            <li key={ceramic.id} className="finished-item">
               <CeramicPiece
                 ceramic={ceramic}
                 seat={me.seatIndex}
@@ -40,6 +44,7 @@ export function FinishedCeramicsStrip() {
                 size={40}
                 withOwner={false}
               />
+              {ceramic.id === undefined ? null : <SellButton ceramicId={ceramic.id} label={ceramicLabel(ceramic, labelView, { locale: t, withOwner: false, withPlace: true })} selection={selection} />}
             </li>
           ))}
           {unknown === 0 ? null : <li className="finished-count">{t("table.finished.count", { n: unknown })}</li>}

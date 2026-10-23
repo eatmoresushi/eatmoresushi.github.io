@@ -4,7 +4,7 @@
  * - only the engine's active spaces by player count (`activeKilnSpaces`, `kilnLayout`): a covered
  *   space is not drawn at all, and the rows reflow evenly (owner review, 2026-10-17);
  * - stacks (Inverted Firing), the Setter's Mark tile, Kiln Furniture and its modifier;
- * - markers face down and turned, this firing's Quality on each chip, Crackle;
+ * - the Kiln Master marker face up on its ceramic (rev. 4), this firing's Quality on each chip, Crackle;
  * - kiln targets and pending chips through `TableSelection` (seeded drafts, SSR);
  * - Imperial Kilns with their public modifier; rules details for each tile (D10);
  * - no heat value on a ceramic or a space (D3), no internal ID in perceivable text (D9).
@@ -36,24 +36,24 @@ function renderEdited(id: string, edit: (entry: ReturnType<typeof fixture>) => v
 }
 
 /**
- * m3 with Wen's Kiln Furniture (T15) under Wen's ceramic in High 1 (no played moment holds a tile
+ * m3 with Lin's Kiln Furniture (T15) under Lin's ceramic in High 2 (no played moment holds a tile
  * now): the space reads the tile's modifier, not the zone's.
  */
 function withFurniture(modifier: -1 | 0 | 1): (entry: ReturnType<typeof fixture>) => void {
   return (entry) => {
     const game = entry.playerView.game;
-    const space = game.sharedKiln.spaces.high_1;
+    const space = game.sharedKiln.spaces.high_2;
     const ceramicId = space.ceramicIds[0];
-    if (ceramicId === undefined || game.ceramics[ceramicId]?.ownerId !== "p3" || space.kilnFurniture !== null) throw new Error("fixture changed");
-    space.kilnFurniture = { ownerId: "p3", modifier, underCeramicId: ceramicId };
-    game.players["p3"]!.techs = [...game.players["p3"]!.techs, { id: "T15", acquiredInRound: 1, usedThisRound: true }];
+    if (ceramicId === undefined || game.ceramics[ceramicId]?.ownerId !== "p1" || space.kilnFurniture !== null) throw new Error("fixture changed");
+    space.kilnFurniture = { ownerId: "p1", modifier, underCeramicId: ceramicId };
+    game.players["p1"]!.techs = [...game.players["p1"]!.techs, { id: "T15", acquiredInRound: 1, usedThisRound: true }];
   };
 }
 
 /** The Shared Kiln fixtures for 2, 3 and 4 players. */
 const BY_PLAYERS: ReadonlyArray<readonly [string, PlayerCount]> = [
   ["m5_two_player_board_2p", 2],
-  ["m3_heat_marker_step_3p", 3],
+  ["m3_kiln_master_marker_3p", 3],
   ["m2_commission_market_look_r3_4p", 4],
 ];
 
@@ -124,11 +124,11 @@ describe("Shared Kiln layout (D8)", () => {
   });
 
   it("labels rows and spaces in both languages", () => {
-    const en = render("m3_heat_marker_step_3p");
+    const en = render("m3_kiln_master_marker_3p");
     expect(en).toContain('aria-label="Low zone, modifier −1"');
     expect(en).toContain('aria-label="High zone, modifier +1"');
     expect(en).toContain("Shared Kiln · 3P");
-    const zh = render("m3_heat_marker_step_3p", "zh-CN");
+    const zh = render("m3_kiln_master_marker_3p", "zh-CN");
     expect(zh).toContain('aria-label="低温区，温区修正−1"');
     expect(zh).toContain("共窑 · 3人");
     expect(zh).toContain("高温区1");
@@ -136,31 +136,42 @@ describe("Shared Kiln layout (D8)", () => {
 });
 
 describe("ceramics, markers and tiles", () => {
-  it("shows face-down and turned Heat markers in words, never a heat value", () => {
-    const step5 = perceivable(render("m3_heat_marker_step_3p"));
-    expect(step5).toContain("Heat marker, face down");
-    const step10 = perceivable(render("m22_saggars_upgrade"));
-    expect(step10).toContain("Heat marker +1");
-    // A turned −1 and the Kiln Master marker: m22 with markers added on two other ceramics.
-    const master = perceivable(
+  it("shows the Kiln Master marker face up in words, and no Heat marker (rev. 4), never a heat value", () => {
+    // m3: Zhao's ceramic in High 1 carries the +1 side, chosen when loading (changes 28, 32).
+    const plus = perceivable(render("m3_kiln_master_marker_3p"));
+    expect(plus).toContain("Kiln Master marker +1");
+    expect(perceivable(render("m3_kiln_master_marker_3p", "zh-CN"))).toContain("窑工标+1");
+    // The −1 side: m22 with the marker added to a loaded ceramic.
+    const minus = perceivable(
       renderEdited("m22_saggars_upgrade", (entry) => {
-        const ceramic = entry.playerView.game.ceramics["c4"];
+        const ceramic = entry.playerView.game.ceramics["c12"];
         if (ceramic?.stage !== "loaded") throw new Error("fixture changed");
-        expect(ceramic.heatMarker, "c4 has no marker yet").toBeNull();
-        ceramic.heatMarker = { source: "kiln_master", faceDown: false, value: -1 } as typeof ceramic.heatMarker;
-        const other = entry.playerView.game.ceramics["c6"];
-        if (other?.stage !== "loaded") throw new Error("fixture changed");
-        expect(other.heatMarker, "c6 has no marker yet").toBeNull();
-        other.heatMarker = { source: "own", faceDown: false, value: -1 } as typeof other.heatMarker;
+        expect(ceramic.kilnMasterMarker, "c12 has no marker yet").toBeNull();
+        ceramic.kilnMasterMarker = -1;
       }),
     );
-    expect(master).toContain("Heat marker −1");
-    expect(master).toContain("Kiln Master marker −1");
+    expect(minus).toContain("Kiln Master marker −1");
+    // Rev. 4 removed the Heat marker: no piece of that name is drawn anywhere.
+    for (const id of ["m3_kiln_master_marker_3p", "m9_contributions_step1_3p", "m22_saggars_upgrade"]) {
+      expect(perceivable(render(id))).not.toContain("Heat marker");
+      expect(perceivable(render(id, "zh-CN"))).not.toContain("火标");
+    }
     // Outside the rules-details panels (rulebook text may name Actual Heat), no heat word or value.
-    for (const id of ["m3_heat_marker_step_3p", "m4_after_quality_3p", "m18_jun_second_firing", "m22_saggars_upgrade"]) {
+    for (const id of ["m3_kiln_master_marker_3p", "m4_after_quality_3p", "m18_jun_second_firing", "m22_saggars_upgrade"]) {
       const text = perceivable(withoutRulesPanels(render(id)));
       expect(text).not.toMatch(/Actual Heat|Heat Difference|odds|chance|probability|preview|expected|cards left|left in the deck/i);
     }
+  });
+
+  it("puts a Sell button on the viewer's Flawed ceramic of this firing in their after-Quality turn, and none otherwise (R20)", () => {
+    const html = render("t-after-quality-sale");
+    const buttons = [...html.matchAll(/<button[^>]*data-act="sell"[^>]*>([^<]*)<\/button>/g)];
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]![0]).toMatch(/aria-label="Sell \(2 Coins\): [^"]*Flawed[^"]*"/);
+    expect(buttons[0]![1]).toBe("Sell (2 Coins)");
+    expect(render("t-after-quality-sale", "zh-CN")).toMatch(/data-act="sell"[^>]*>卖出（得2铜钱）<\/button>/);
+    // Another moment of a firing (another player's turn, no sale offered): no Sell button.
+    for (const id of ["m22_saggars_upgrade", "m4_after_quality_3p", "m9_contributions_step1_3p"]) expect(render(id), id).not.toContain('data-act="sell"');
   });
 
   it("shows the Quality each ceramic recorded in this firing, as a word", () => {
@@ -168,38 +179,47 @@ describe("ceramics, markers and tiles", () => {
     expect(text).toContain("Fine");
     expect(text).toContain("Standard");
     expect(perceivable(render("m22_saggars_upgrade", "zh-CN"))).toMatch(/上品[\s\S]*良品|良品[\s\S]*上品/);
-    expect(perceivable(render("m14_salvage"))).toContain("Flawed");
-    expect(perceivable(render("m14_salvage", "zh-CN"))).toContain("瑕品");
+    expect(perceivable(render("m22_saggars_upgrade"))).toContain("Flawed");
+    expect(perceivable(render("m22_saggars_upgrade", "zh-CN"))).toContain("瑕品");
+    expect(perceivable(render("t-after-quality-sale"))).toContain("Flawed");
     expect(perceivable(render("m18_jun_second_firing"))).toContain("Standard");
-    // m22 recorded a Masterpiece (c10), as did m4.
-    expect(perceivable(render("m22_saggars_upgrade"))).toContain("Masterpiece");
-    expect(perceivable(render("m4_after_quality_3p"))).toContain("Masterpiece");
+    // A Masterpiece (no played moment recorded one in its current firing): m22 with c9 at Masterpiece.
+    const masterpiece = (locale: "en" | "zh-CN") =>
+      perceivable(
+        renderEdited("m22_saggars_upgrade", (entry) => {
+          const record = entry.playerView.game.firing?.ceramics["c9"];
+          if (record?.quality !== "fine") throw new Error("fixture changed");
+          record.quality = "masterpiece";
+        }, locale),
+      );
+    expect(masterpiece("en")).toContain("Masterpiece");
+    expect(masterpiece("zh-CN")).toContain("臻品");
     // Before Quality there is none.
-    expect(render("m3_heat_marker_step_3p")).not.toMatch(/data-quality=/);
+    expect(render("m3_kiln_master_marker_3p")).not.toMatch(/data-quality=/);
   });
 
   it("stacks two ceramics in one space with the Inverted Firing tile", () => {
     const html = render("m9_contributions_step1_3p");
-    const cell = spaceCell(html, "high_1");
+    const cell = spaceCell(html, "high_2");
     expect(cell).toContain("2 stacked");
     expect(cell).toContain('class="kstack"');
     expect(cell).toContain("Inverted Firing");
-    expect(spaceCell(render("m9_contributions_step1_3p", "zh-CN"), "high_1")).toContain("2件叠烧");
+    expect(spaceCell(render("m9_contributions_step1_3p", "zh-CN"), "high_2")).toContain("2件叠烧");
   });
 
   it("shows Kiln Furniture under its ceramic, with its owner, and the space's modifier becomes the tile's", () => {
     // A 0 tile in High (+1): the space reads the tile's 0, not the zone's +1.
-    const zero = spaceCell(renderEdited("m3_heat_marker_step_3p", withFurniture(0)), "high_1");
-    expect(zero).toContain("Kiln Furniture 0 · Wen");
-    expect(zero).toContain('aria-label="High 1, Kiln Furniture modifier 0"');
+    const zero = spaceCell(renderEdited("m3_kiln_master_marker_3p", withFurniture(0)), "high_2");
+    expect(zero).toContain("Kiln Furniture 0 · Lin");
+    expect(zero).toContain('aria-label="High 2, Kiln Furniture modifier 0"');
     expect(zero).toMatch(/class="ksp-mod num">0</);
     // A −1 tile: the space reads the tile's −1.
-    const minus = spaceCell(renderEdited("m3_heat_marker_step_3p", withFurniture(-1)), "high_1");
-    expect(minus).toContain("Kiln Furniture −1 · Wen");
-    expect(minus).toContain('aria-label="High 1, Kiln Furniture modifier −1"');
+    const minus = spaceCell(renderEdited("m3_kiln_master_marker_3p", withFurniture(-1)), "high_2");
+    expect(minus).toContain("Kiln Furniture −1 · Lin");
+    expect(minus).toContain('aria-label="High 2, Kiln Furniture modifier −1"');
     expect(minus).toMatch(/class="ksp-mod num">−1</);
     // Without a tile the zone's +1 stands.
-    expect(spaceCell(render("m3_heat_marker_step_3p"), "high_1")).toMatch(/class="ksp-mod num">\+1</);
+    expect(spaceCell(render("m3_kiln_master_marker_3p"), "high_2")).toMatch(/class="ksp-mod num">\+1</);
   });
 
   it("shows the Setter's Mark tile on its space in its owner's colour", () => {
@@ -211,16 +231,16 @@ describe("ceramics, markers and tiles", () => {
   });
 
   it("opens each tile's rules details: only the full rule and clarifications, with no card text, card facts or source labels (D10)", () => {
-    const furniture = spaceCell(renderEdited("m3_heat_marker_step_3p", withFurniture(1)), "high_1");
+    const furniture = spaceCell(renderEdited("m3_kiln_master_marker_3p", withFurniture(1)), "high_2");
     tagged(furniture, techRulesCheck("T15", "en"));
     const setter = spaceCell(render("m10b_setters_mark_on_space"), "high_1");
     tagged(setter, techRulesCheck("T22", "en"));
-    const zh = spaceCell(renderEdited("m3_heat_marker_step_3p", withFurniture(1), "zh-CN"), "high_1");
+    const zh = spaceCell(renderEdited("m3_kiln_master_marker_3p", withFurniture(1), "zh-CN"), "high_2");
     tagged(zh, techRulesCheck("T15", "zh-CN"));
     // The panel is a PieceDetail disclosure: a button with aria-expanded and a hidden panel.
     expect(furniture).toMatch(/<button type="button" class="kit-detail-trigger" aria-expanded="false" aria-controls="[^"]+"/);
     // The tile names its owner; the panel adds no card facts, owner or this-round rows (owner review, 2026-10-17).
-    expect(perceivable(furniture)).toContain("Kiln Furniture +1 · Wen");
+    expect(perceivable(furniture)).toContain("Kiln Furniture +1 · Lin");
     for (const [html, techId, locale] of [[furniture, "T15", "en"], [setter, "T22", "en"], [zh, "T15", "zh-CN"]] as const) {
       const t = createTranslator(locale, { strict: true });
       const body = panel(html, t("rules.label", { name: techText(techId, locale).name }));
@@ -230,12 +250,12 @@ describe("ceramics, markers and tiles", () => {
       expect(body).not.toContain("rd-short");
     }
     const panelText = textOf(panel(furniture, "Full rules: Kiln Furniture"));
-    expect(panelText).not.toMatch(/\bWen\b|Ready|Used this round|1 VP when gained|Your second Glaze & Load space/);
+    expect(panelText).not.toMatch(/\bLin\b|Ready|Used this round|1 VP when gained|Your second Glaze & Load space/);
     expect(perceivable(furniture)).not.toMatch(/\b(un)?lock/i);
   });
 
   it("describes ceramics in words with no internal ID (D9)", () => {
-    for (const id of ["m3_heat_marker_step_3p", "m4_after_quality_3p", "m9_contributions_step1_3p", "m14_salvage", "m18_jun_second_firing"]) {
+    for (const id of ["m3_kiln_master_marker_3p", "m4_after_quality_3p", "m9_contributions_step1_3p", "m14_sell_flawed", "m18_jun_second_firing"]) {
       for (const locale of ["en", "zh-CN"] as const) {
         const text = perceivable(render(id, locale));
         expect(text).not.toMatch(/\bc\d+\b/);
@@ -247,11 +267,11 @@ describe("ceramics, markers and tiles", () => {
 
 describe("Imperial Kilns", () => {
   it("shows each gained Imperial Kiln with its ceramic and public modifier, and who has none yet", () => {
-    const view = fixture("m3_heat_marker_step_3p").playerView;
-    const html = render("m3_heat_marker_step_3p");
-    const lin = view.game.players["p1"]!;
-    expect(lin.imperial.kilnGained).toBe(true);
-    expect(html).toContain('data-webgl-mount="imperial-kiln" data-player-id="p1"');
+    const view = fixture("m3_kiln_master_marker_3p").playerView;
+    const html = render("m3_kiln_master_marker_3p");
+    const wen = view.game.players["p3"]!;
+    expect(wen.imperial.kilnGained).toBe(true);
+    expect(html).toContain('data-webgl-mount="imperial-kiln" data-player-id="p3"');
     const ceramic = Object.values(view.game.ceramics).find((c) => c.stage === "loaded" && c.placement.kiln === "imperial");
     expect(ceramic).toBeDefined();
     const modifier = ceramic?.stage === "loaded" && ceramic.placement.kiln === "imperial" ? ceramic.placement.imperialModifier : null;
@@ -259,12 +279,12 @@ describe("Imperial Kilns", () => {
     expect(html).toContain(`aria-label="Imperial modifier ${signedValue}"`);
     expect(html).toContain(`imp-mod imp-mod--on`);
     expect(html).toMatch(/: none yet \(Recognition 2\)/);
-    expect(html).toContain("Court-fired: Kiln Die + Fire + modifier + marker; ignores Contributions.");
+    expect(html).toContain("Court-fired: Kiln Die + Fire + Imperial modifier + Kiln Master marker if present; ignores Contributions.");
     // Another player's tile is named after them; the viewer (Zhao) reads "Your Imperial Kiln" once gained.
     expect(view.viewerId).toBe("p2");
-    expect(html).toContain(`aria-label="${lin.displayName}’s Imperial Kiln"`);
+    expect(html).toContain(`aria-label="${wen.displayName}’s Imperial Kiln"`);
     expect(html).not.toContain('aria-label="Your Imperial Kiln"');
-    const own = renderEdited("m3_heat_marker_step_3p", (entry) => {
+    const own = renderEdited("m3_kiln_master_marker_3p", (entry) => {
       const zhao = entry.playerView.game.players["p2"]!;
       zhao.imperial = { ...zhao.imperial, recognition: 2, grantReceived: true, kilnGained: true };
     });
@@ -272,13 +292,13 @@ describe("Imperial Kilns", () => {
     expect(own).toContain('data-webgl-mount="imperial-kiln" data-player-id="p2"');
     // The heading opens the Imperial Gift milestone's rules details.
     expect(html).toContain("Imperial Gift");
-    const zh = render("m3_heat_marker_step_3p", "zh-CN");
+    const zh = render("m3_kiln_master_marker_3p", "zh-CN");
     expect(zh).toContain("御窑修正");
     expect(zh).toMatch(/：尚无（御府声望2获得）/);
   });
 
   it("shows 'empty this round' for an Imperial Kiln without a ceramic", () => {
-    const entries = ["m14_salvage", "m4_after_quality_3p", "t-imperial-only-firing"].map((id) => render(id));
+    const entries = ["m14_sell_flawed", "m4_after_quality_3p", "t-imperial-only-firing"].map((id) => render(id));
     expect(entries.some((html) => html.includes('class="imp-mods"'))).toBe(true);
   });
 });

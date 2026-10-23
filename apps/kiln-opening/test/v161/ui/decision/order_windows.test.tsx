@@ -130,22 +130,22 @@ describe("the auto mode names a wildcard only where the ceramic's own Decoration
     expect(en).not.toContain("(as Plain)");
   });
 
-  it("m6: a Plain Crackle Bowl on O25 (any Decorations) is not said to count as anything, in both languages", () => {
+  it("m6: a Carved Crackle Censer on S06 (any Decoration) is not said to count as anything, in both languages", () => {
     const id = "m6_order_phase_crackle_3p";
     const view = fixture(id).playerView;
     const model = buildGameModel(structuredClone(view), []);
     const engine = engineViewOf(structuredClone(view));
-    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "O25" }, model, engine);
-    const draft = chosen.ceramicIds === null ? { ...chosen, ceramicIds: ["c5", "c9"] as CeramicId[] } : chosen;
-    expect(draft.ceramicIds).toContain("c9");
-    expect(view.game.ceramics["c9"]).toMatchObject({ crackle: true, decoration: "plain" });
+    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "S06" }, model, engine);
+    const draft = orderDraft.reduce(chosen, { type: "group", key: "c7" }, model, engine);
+    expect(draft.ceramicIds).toEqual(["c7"]);
+    expect(view.game.ceramics["c7"]).toMatchObject({ crackle: true, decoration: "carved" });
     const en = perceivable(renderWindow(fixtureSource(id), { locale: "en", draft }));
-    expect(en).toContain("Find a declaration for me ✓ satisfies O25");
+    expect(en).toContain("Find a declaration for me ✓ satisfies S06");
     expect(en).not.toContain("Counts as");
-    expect(en).not.toContain("(as Plain)");
+    expect(en).not.toContain("(as Carved)");
     const zh = perceivable(renderWindow(fixtureSource(id), { locale: "zh-CN", draft }));
-    expect(zh).toContain("满足O25");
-    expect(zh).not.toContain("视为素面");
+    expect(zh).toContain("满足S06");
+    expect(zh).not.toContain("视为刻花");
   });
 });
 
@@ -155,8 +155,9 @@ describe("m23: S07 with Canal Barge, a played moment (v1.6.2 L622)", () => {
     const view = fixture(id).playerView;
     const model = buildGameModel(structuredClone(view), []);
     const engine = engineViewOf(structuredClone(view));
-    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "S07" }, model, engine);
-    if (chosen.ceramicIds === null) throw new Error("S07 has several groups in m23");
+    // S07 can take the Crackle Bowl (c13) or the Carved Bowl (c15): the Carved one, no Crackle.
+    const chosen = orderDraft.reduce(orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "S07" }, model, engine), { type: "group", key: "c15" }, model, engine);
+    if (chosen.ceramicIds?.join() !== "c15") throw new Error("fixture changed: S07 no longer takes c15 in m23");
     return chosen;
   };
 
@@ -187,5 +188,33 @@ describe("m23: S07 with Canal Barge, a played moment (v1.6.2 L622)", () => {
       expect(seen).not.toMatch(/\b(odds|chance|probability|preview|expected)\b|概率|几率|预估|预览/i);
       expect(seen).not.toMatch(/\bc\d+\b/);
     }
+  });
+});
+
+describe("m27: Crackle VP on a completion (change 29), a played moment", () => {
+  const id = "m27_crackle_vp_completion";
+  const draftOfMoment = () => {
+    const entry = fixture(id);
+    const view = structuredClone(entry.playerView);
+    const command = entry.draftCommand;
+    if (command?.type !== "COMPLETE_ORDER") throw new Error("fixture changed");
+    const draft = orderDraft.fromCommand(command, buildGameModel(view, []), engineViewOf(view));
+    if (draft === null) throw new Error("the completion is not expressible");
+    return draft;
+  };
+
+  it("shows the Crackle ceramic's 1 VP with the rewards, in both languages", () => {
+    const draft = draftOfMoment();
+    expect(draft.ceramicIds).toEqual(["c4"]);
+    expect(fixture(id).playerView.game.ceramics["c4"]).toMatchObject({ crackle: true });
+    const en = perceivable(renderWindow(fixtureSource(id), { locale: "en", draft }));
+    expect(en).toMatch(/Rewards \+3 VP \+4 Coins Crackle: \+1 VP/);
+    const zh = perceivable(renderWindow(fixtureSource(id), { locale: "zh-CN", draft }));
+    expect(zh).toContain("开片器+1分");
+  });
+
+  it("a completion without a Crackle ceramic shows no Crackle VP", () => {
+    const en = perceivable(renderWindow(fixtureSource("m23_order_phase_s07"), { locale: "en" }));
+    expect(en).not.toContain("Crackle: +");
   });
 });

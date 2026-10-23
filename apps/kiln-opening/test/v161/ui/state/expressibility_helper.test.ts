@@ -44,28 +44,28 @@ describe("expressibility helper", () => {
   });
 
   it("passes a real draft model", () => {
-    const report = checkView(fixture("w-kiln-selection").playerView, { registry: TOY_WINDOWS });
+    const report = checkView(fixture("w-kiln-and-main-order-choice").playerView, { registry: TOY_WINDOWS });
     expect(report.window.kind).toBe("kiln_selection");
     expect(report.rows.map((row) => row.status)).toEqual(report.rows.map(() => "ok"));
     expect(report.rows.length).toBeGreaterThan(1);
   });
 
   it("fails a model that cannot express a command", () => {
-    const report = checkView(fixture("w-kiln-selection").playerView, { registry: withKiln({ ...kilnDraft, fromCommand: () => null }) });
+    const report = checkView(fixture("w-kiln-and-main-order-choice").playerView, { registry: withKiln({ ...kilnDraft, fromCommand: () => null }) });
     expect(report.rows.every((row) => row.status === "fail" && row.problem === "fromCommand returned null")).toBe(true);
   });
 
   it("fails a draft holding a value its options do not offer", () => {
-    const report = checkView(fixture("w-kiln-selection").playerView, {
-      registry: withKiln({ ...kilnDraft, reduce: (draft, action) => (action.type === "revalidate" ? { kilnId: null } : draft) }),
+    const report = checkView(fixture("w-kiln-and-main-order-choice").playerView, {
+      registry: withKiln({ ...kilnDraft, reduce: (draft, action) => (action.type === "revalidate" ? { kilnId: null, slotIndex: null } : draft) }),
     });
     expect(report.rows.every((row) => row.status === "fail" && /options\(\)/.test(row.problem ?? ""))).toBe(true);
   });
 
   it("fails a build that differs from the command, or does not validate", () => {
-    const wrong = checkView(fixture("w-kiln-selection").playerView, { registry: withKiln({ ...kilnDraft, build: () => ({ type: "SELECT_KILN", kilnId: "RU" }) }) });
+    const wrong = checkView(fixture("w-kiln-and-main-order-choice").playerView, { registry: withKiln({ ...kilnDraft, build: () => ({ type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 0, orderId: "O01" } }) }) });
     expect(wrong.rows.some((row) => row.status === "fail" && /^build gave/.test(row.problem ?? ""))).toBe(true);
-    const incomplete = checkView(fixture("w-kiln-selection").playerView, { registry: withKiln({ ...kilnDraft, build: () => null }) });
+    const incomplete = checkView(fixture("w-kiln-and-main-order-choice").playerView, { registry: withKiln({ ...kilnDraft, build: () => null }) });
     expect(incomplete.rows.every((row) => row.problem === "build returned null")).toBe(true);
   });
 

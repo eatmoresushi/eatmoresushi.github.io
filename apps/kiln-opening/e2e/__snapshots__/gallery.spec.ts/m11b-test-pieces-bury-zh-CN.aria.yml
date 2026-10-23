@@ -4,23 +4,23 @@
   - region "Zhao（你）":
     - heading "Zhao（你）" [level=3]
     - group "资源":
-      - strong: "4"
+      - strong: "0"
       - text: 泥
-      - strong: "0"
+      - strong: "1"
       - text: 柴
-      - strong: "0"
+      - strong: "1"
       - text: 铜钱
     - text: 手中4张委托 声望0／4 0分
   - form "「火照」：你看到的牌":
-    - paragraph: 烧窑步骤4，按起始玩家顺序
+    - paragraph: 烧窑步骤1
     - paragraph:
-      - strong: 每轮一次，基础火候定后、翻火标前，本窑有己方器物时：
+      - strong: 每轮一次，基础火候定后、翻窑火前，本窑有己方器物时：
       - text: 可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
     - heading "顺序" [level=3]
     - list "顺序":
       - listitem: Zhao（你）：决断中
     - heading "你看到的牌 仅你可见" [level=3]
-    - text: 窑火牌−2
+    - text: 窑火牌−1
     - group "你看到的牌":
       - text: ""
       - radio "放到窑火牌堆底"

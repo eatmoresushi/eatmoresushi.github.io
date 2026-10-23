@@ -1,0 +1,34 @@
+/* SellButton (B2): the Sell button on a sellable Flawed ceramic (change 30, R20). */
+@layer components {
+  .sell-pick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.75rem;
+    margin-top: var(--sp-2);
+    padding: var(--sp-1) var(--sp-4);
+    border: 1px solid var(--teal);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--teal-ink);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .sell-pick:hover {
+    background: var(--teal-pale);
+  }
+
+  .sell-pick[data-chosen] {
+    border-color: var(--teal-ink);
+    background: var(--teal-pale);
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .sell-pick {
+      min-width: var(--target-min);
+      min-height: var(--target-min);
+    }
+  }
+}

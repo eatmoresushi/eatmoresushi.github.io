@@ -3,9 +3,9 @@
  * `colour_samples_swap`; keyword Select N, v1.6.2 L64, change 25). Owner: B4.
  *
  * A Select looks privately at the top N Main Orders (as many as remain, B1, R16), then reserves
- * 1 of them or 1 face-up Main Order from the display; the looked cards not reserved go face down
- * to the bottom of the Main Order deck (change 24, R19). Three windows open one, and all three
- * answer with one command, `SELECT_CHOOSE`:
+ * 1 of them or 1 face-up Main Order from the display; the looked cards not reserved are discarded
+ * face down to the Main Order discard (owner ruling R25, replacing change 24's deck bottom).
+ * Three windows open one, and all three answer with one command, `SELECT_CHOOSE`:
  * - `commission`: the Commission Market (v1.6.2 L201–202). The Apprentice effect Selects 2 and
  *   reserves exactly 1; the Shifu effect (Senior Apprentice included, R12) Selects 3 and reserves
  *   1 or 2, from the looked cards and the display in any mix. No resource is gained;

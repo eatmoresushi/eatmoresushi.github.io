@@ -40,7 +40,7 @@ describe("Order Phase", () => {
 
   it("lists every held Order with whether it can be completed; nothing chosen", () => {
     const draft = orders(ru);
-    expect(draft).toEqual({ ...EMPTY_COMPLETION, end: false });
+    expect(draft).toEqual({ ...EMPTY_COMPLETION, end: false, sell: null });
     const options = orderDraft.options(draft, ru.model, ru.engine);
     expect(options.orders).toEqual([
       { orderId: "O22", completable: true },
@@ -58,7 +58,7 @@ describe("Order Phase", () => {
     const options = orderDraft.options(chosen, ru.model, ru.engine);
     expect(options.groups.map((group) => group.key)).toEqual(["c1", "c2"]);
     const grouped = orderDraft.reduce(chosen, { type: "group", key: "c2" }, ru.model, ru.engine);
-    expect(orderDraft.options(grouped, ru.model, ru.engine).match?.triggers).toEqual({ ru: true, guan: false, tributeWare: true, canalBarge: false });
+    expect(orderDraft.options(grouped, ru.model, ru.engine).match?.triggers).toEqual({ ru: true, guan: false, tributeWare: true, canalBarge: false, crackleVp: 0 });
     const command = orderDraft.build(grouped, ru.model, ru.engine);
     expect(command).toEqual({ type: "COMPLETE_ORDER", orderId: "O22", ceramicIds: ["c2"] });
     expect(valid(ru, command)).toBe(true);
@@ -107,26 +107,36 @@ describe("Order Phase", () => {
 
   it("a blocked Order cannot be chosen, and revalidation drops an Order no longer completable", () => {
     const m6 = ctx("m6_order_phase_crackle_3p");
-    expect(orders(m6, { type: "order", orderId: "O42" }).orderId).toBeNull();
-    const stale: OrderDraft = { ...EMPTY_COMPLETION, orderId: "O42", ceramicIds: ["c5"], end: false };
-    expect(orderDraft.reduce(stale, REVALIDATE, m6.model, m6.engine)).toEqual({ ...EMPTY_COMPLETION, end: false });
+    expect(orders(m6, { type: "order", orderId: "O43" }).orderId).toBeNull();
+    const stale: OrderDraft = { ...EMPTY_COMPLETION, orderId: "O43", ceramicIds: ["c7"], end: false, sell: null };
+    expect(orderDraft.reduce(stale, REVALIDATE, m6.model, m6.engine)).toEqual({ ...EMPTY_COMPLETION, end: false, sell: null });
   });
 
   it("table adapter: hand Order states and the chosen group's ceramics; clicking a completable Order chooses it", () => {
     const m6 = ctx("m6_order_phase_crackle_3p");
     const table = FIRING_WINDOWS.orders.table!;
-    const draft = orders(m6, { type: "order", orderId: "O25" });
+    const draft = orders(m6, { type: "order", orderId: "O34" });
     const selection = table.select(draft, m6.model, m6.engine);
     expect(Object.fromEntries([...selection.orderTargets].map(([key, target]) => [key, target.state]))).toEqual({
-      S07: "completable",
-      O42: "blocked",
-      O46: "blocked",
-      O25: "chosen",
-      O40: "blocked",
+      S06: "completable",
+      O43: "blocked",
+      O34: "chosen",
+      O10: "completable",
     });
-    expect([...selection.highlightedCeramicIds]).toEqual(["c5", "c9"]);
-    expect(table.act(draft, { type: "order", key: "S07" }, m6.model, m6.engine)).toEqual({ type: "order", orderId: "S07" });
-    expect(table.act(draft, { type: "order", key: "O42" }, m6.model, m6.engine)).toBeNull();
+    expect([...selection.highlightedCeramicIds]).toEqual(["c7", "c12"]);
+    expect(table.act(draft, { type: "order", key: "S06" }, m6.model, m6.engine)).toEqual({ type: "order", orderId: "S06" });
+    expect(table.act(draft, { type: "order", key: "O43" }, m6.model, m6.engine)).toBeNull();
+  });
+
+  it("Crackle VP (change 29): a delivered Crackle ceramic is a trigger of the completion, shown with its rewards", () => {
+    const m6 = ctx("m6_order_phase_crackle_3p");
+    // O34 takes the Ge player's Crackle Censer (c7) and a Plate: 1 VP for the Crackle ceramic.
+    const draft = orders(m6, { type: "order", orderId: "O34" });
+    expect(orderDraft.options(draft, m6.model, m6.engine).match?.triggers.crackleVp).toBe(1);
+    // S06 with the plain Censer (c19) delivers no Crackle ceramic.
+    const plain = orders(m6, { type: "order", orderId: "S06" }, { type: "group", key: "c19" });
+    expect(orderDraft.options(plain, m6.model, m6.engine).match?.triggers.crackleVp).toBe(0);
+    expect(valid(m6, orderDraft.build(draft, m6.model, m6.engine))).toBe(true);
   });
 });
 

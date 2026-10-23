@@ -1,49 +1,49 @@
 /**
- * The draft model of Second Firing's choice (UI_V1.6.1_ARCHITECTURE §3.4; T14, v1.6.2 L631, R7).
+ * The draft model of Second Firing's choice (UI_V1.6.1_ARCHITECTURE §3.4; T14, rev. 4 L627).
  * Owner: B5.
  *
  * Second Firing turned 2 extra Fire cards face up for one of the owner's ceramics. The owner
- * chooses the card the ceramic is fired with again and, when Jun is ready on it (R7: the Jun
- * Kiln, unused this round, 1 Wood), whether to adjust its Actual Heat by +1 or −1 before Quality.
+ * chooses the card the ceramic is fired with again and, when an unused Jun is ready on it (rev. 4
+ * L627, formerly R7: the Jun Kiln, unused this round, 1 Wood), whether to adjust its Actual Heat by
+ * +1 or −1 before Quality. The recalculation keeps the ceramic's Kiln Master marker.
  * One command carries both (`SECOND_FIRING_CHOOSE { cardIndex, jun }`); the new Quality replaces
  * the old one even if worse, and both cards go to the discard.
  *
  * The cards and Jun's readiness come from `secondFiringChoiceOptions(view)`. When the viewer owns
- * the Jun Kiln but Jun is not ready (used in step 8, or not enough Wood), the engine's reason
+ * the Jun Kiln but Jun is not ready (used in step 3, or not enough Wood), the engine's reason
  * comes from probing the command with Jun (`validateAction`), so the form can show Jun greyed
  * out with that reason; a player without the Jun Kiln is never offered it. Nothing here predicts
  * a Quality (D3): the form shows the two cards, the ceramic and the rule.
  */
 import { secondFiringChoiceOptions } from "../../../game/index.ts";
-import type { CeramicId, FireModifier, GameRuleError, HeatMarkerValue } from "../../../game/index.ts";
+import type { CeramicId, FireModifier, GameRuleError, HeatDelta } from "../../../game/index.ts";
 import { kilnText } from "../../i18n/content.ts";
 import { signed } from "../../i18n/format.ts";
 import { msg } from "../../i18n/translator.ts";
 import type { RichMessage, Translator } from "../../i18n/translator.ts";
 import type { DraftModel } from "../../state/draftStore.ts";
 import type { EngineView, GameModel } from "../../state/model.ts";
-import { B5_KILNS, ceramicWords, ownFiringCeramicIds, probe, woodText } from "./firingSupport.ts";
-import { HEAT_MARKER_SIDES } from "./HeatMarkers.draft.ts";
+import { B5_KILNS, HEAT_DELTA_SIDES, ceramicWords, ownFiringCeramicIds, probe, woodText } from "./firingSupport.ts";
 
 export interface SecondFiringDraft {
   /** The chosen card: 0 or 1 in reveal order; null until chosen. */
   readonly cardIndex: 0 | 1 | null;
-  /** R7: Jun's adjustment on this ceramic, or null not to use it (it stays unused, R4). */
-  readonly jun: HeatMarkerValue | null;
+  /** Rev. 4 L627: an unused Jun's adjustment on this ceramic, or null not to use it (it stays unused, R4). */
+  readonly jun: HeatDelta | null;
 }
 
-export type SecondFiringAction = { readonly type: "card"; readonly cardIndex: 0 | 1 } | { readonly type: "jun"; readonly delta: HeatMarkerValue | null };
+export type SecondFiringAction = { readonly type: "card"; readonly cardIndex: 0 | 1 } | { readonly type: "jun"; readonly delta: HeatDelta | null };
 
 export interface SecondFiringOptions {
   ceramicId: CeramicId | null;
   /** The 2 revealed cards in reveal order. */
   cards: ReadonlyArray<{ cardIndex: 0 | 1; modifier: FireModifier }>;
   /**
-   * R7: Jun on this ceramic. `offered` when the viewer owns the Jun Kiln; `ready` when it may be
+   * Rev. 4 L627: an unused Jun on this ceramic. `offered` when the viewer owns the Jun Kiln; `ready` when it may be
    * used now (then `sides` are the adjustments); otherwise `reason` is the engine's verdict on
    * using it (already used this round, not enough Wood).
    */
-  jun: { offered: boolean; ready: boolean; woodCost: number; sides: readonly HeatMarkerValue[]; reason: GameRuleError | null };
+  jun: { offered: boolean; ready: boolean; woodCost: number; sides: readonly HeatDelta[]; reason: GameRuleError | null };
 }
 
 const BLANK: SecondFiringDraft = Object.freeze({ cardIndex: null, jun: null });
@@ -57,9 +57,9 @@ function optionsOf(engine: EngineView): SecondFiringOptions {
     { cardIndex: 0, modifier: options.modifiers[0] },
     { cardIndex: 1, modifier: options.modifiers[1] },
   ] as const;
-  if (options.jun.ready) return { ceramicId: options.ceramicId, cards, jun: { offered: true, ready: true, woodCost: options.jun.woodCost, sides: HEAT_MARKER_SIDES, reason: null } };
+  if (options.jun.ready) return { ceramicId: options.ceramicId, cards, jun: { offered: true, ready: true, woodCost: options.jun.woodCost, sides: HEAT_DELTA_SIDES, reason: null } };
   // Not ready: ask the engine why. Without the Jun Kiln it is not this player's ability at all.
-  const reason = probe(engine, { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: { delta: HEAT_MARKER_SIDES[0] } });
+  const reason = probe(engine, { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: { delta: HEAT_DELTA_SIDES[0] } });
   const offered = reason !== null && reason.code !== "KILN_ABILITY_NOT_OWNED" && reason.code !== "UNKNOWN_PLAYER";
   return { ceramicId: options.ceramicId, cards, jun: { offered, ready: false, woodCost: options.jun.woodCost, sides: [], reason: offered ? reason : null } };
 }

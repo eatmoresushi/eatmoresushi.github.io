@@ -94,6 +94,11 @@
     color: var(--ink-3);
   }
 
+  /* On the quote's darker paper (the kiln-fuel block), --ink-3 falls under 4.5:1. */
+  .b4-quote .b4-note--muted {
+    color: var(--ink-2);
+  }
+
   .b4-note--error {
     padding: var(--sp-2) var(--sp-3);
     border-radius: var(--r-sm);

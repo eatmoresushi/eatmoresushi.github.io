@@ -36,8 +36,8 @@ describe("podium", () => {
     const zh = render(id, "zh-CN");
     expect(perceivable(zh)).toContain("共享胜利");
     expect(perceivable(zh)).toContain("第3名");
-    // m8 (revision 3's seed-5 game) is a single winner: tied on VP and Recognition, decided by printed Crowns.
-    expect(resultOf("m8_final_results_4p").resolvedBy).toBe("printed_crowns");
+    // m8 (revision 4's played 3-player game) is a single winner: tied on VP, decided by Imperial Recognition.
+    expect(resultOf("m8_final_results_3p").resolvedBy).toBe("imperial_recognition");
   });
 
   it("the tie-break winner: one Winner, decided by Imperial Recognition", () => {
@@ -50,9 +50,9 @@ describe("podium", () => {
   });
 
   it("opens each player's Kiln rules details from the podium (D10)", () => {
-    const view = fixture("m8_final_results_4p").playerView;
-    const html = render("m8_final_results_4p");
-    for (const standing of resultOf("m8_final_results_4p").standings) {
+    const view = fixture("m8_final_results_3p").playerView;
+    const html = render("m8_final_results_3p");
+    for (const standing of resultOf("m8_final_results_3p").standings) {
       const kilnId = view.game.players[standing.playerId]?.kilnId;
       if (kilnId === null || kilnId === undefined) continue;
       const card = elementAt(html, new RegExp(`<li class="stand[^"]*"[^>]*data-player-id="${standing.playerId}"`));
@@ -62,7 +62,7 @@ describe("podium", () => {
 });
 
 describe("score table", () => {
-  it.each(["m8_final_results_4p", "t-tie-break-winner", "t-final-2p", "t-final-4p"])("%s: rows in SCORE_BREAKDOWN_ROWS order, columns by standing, totals from finalResult", (id) => {
+  it.each(["m8_final_results_3p", "t-tie-break-winner", "t-final-2p", "t-final-4p"])("%s: rows in SCORE_BREAKDOWN_ROWS order, columns by standing, totals from finalResult", (id) => {
     const result = resultOf(id);
     const html = render(id);
     const table = elementAt(html, /<table class="calc score">/);
@@ -82,9 +82,9 @@ describe("score table", () => {
   });
 
   it("has no Tech row or note: a Tech scores nothing (v1.6.2 change 27); Connoisseur's Cabinet keeps its end-game row", () => {
-    const result = resultOf("m8_final_results_4p");
+    const result = resultOf("m8_final_results_3p");
     for (const locale of ["en", "zh-CN"] as const) {
-      const html = render("m8_final_results_4p", locale);
+      const html = render("m8_final_results_3p", locale);
       expect(html).not.toContain('data-row="techs"');
       expect(html).not.toContain("score-a1");
       expect(html).not.toContain('class="results-note"');
@@ -94,12 +94,23 @@ describe("score table", () => {
       for (const standing of result.standings) expect(cabinet).toContain(`<td class="num">${String(result.scores[standing.playerId]!.connoisseur)}</td>`);
     }
     expect(Object.keys(result.scores[result.standings[0]!.playerId]!)).not.toContain("techs");
-    expect(perceivable(render("m8_final_results_4p", "zh-CN"))).toContain("余钱折分 · 每3铜钱1分，至多5分");
+    expect(perceivable(render("m8_final_results_3p", "zh-CN"))).toContain("余钱折分 · 每3铜钱1分，至多5分");
+  });
+
+  it("counts Crackle VP (change 29) in the Kiln abilities row, named so, in both languages", () => {
+    const result = resultOf("m8_final_results_3p");
+    // m8: the Ge player delivered a Crackle ceramic (1 VP).
+    expect(Object.values(result.scores).some((score) => score.kilnAbilities > 0)).toBe(true);
+    for (const locale of ["en", "zh-CN"] as const) {
+      const row = elementAt(render("m8_final_results_3p", locale), /<tr data-row="kilnAbilities">/);
+      expect(perceivable(row)).toContain(locale === "en" ? "Kiln abilities (Crackle VP included)" : "窑口传承（含开片器得分）");
+      for (const standing of result.standings) expect(row).toContain(`<td class="num">${String(result.scores[standing.playerId]!.kilnAbilities)}</td>`);
+    }
   });
 
   it("splits the Exhibition into its Quality, Shapes and Glazes parts", () => {
-    const result = resultOf("m8_final_results_4p");
-    const html = render("m8_final_results_4p");
+    const result = resultOf("m8_final_results_3p");
+    const html = render("m8_final_results_3p");
     const row = elementAt(html, /<tr data-row="exhibition">/);
     for (const standing of result.standings) {
       const exhibition = result.scores[standing.playerId]!.exhibition;
@@ -109,7 +120,7 @@ describe("score table", () => {
   });
 
   it("opens the Imperial Audience, Crown overflow and Connoisseur's Cabinet rules details under the table (D10)", () => {
-    const html = render("m8_final_results_4p");
+    const html = render("m8_final_results_3p");
     // The table scrolls inside itself, so no rules panel (or other disclosure) sits in it.
     expect(elementAt(html, /<div class="calc-wrap"/)).not.toContain("kit-detail");
     // The tables scroll inside their box on phones, so the box takes keyboard focus.
@@ -122,7 +133,7 @@ describe("score table", () => {
     expect(perceivable(overflow)).toContain("Tribute Ware's bonus Crown scores past Recognition 4");
     tagged(elementAt(html, /<li data-rules-row="connoisseur">/), techRulesCheck("T19", "en"));
     expect(perceivable(html)).toContain("Rules for these rows:");
-    const zh = render("m8_final_results_4p", "zh-CN");
+    const zh = render("m8_final_results_3p", "zh-CN");
     expect(perceivable(zh)).toContain("相关规则：");
     tagged(elementAt(zh, /<li data-rules-row="connoisseur">/), techRulesCheck("T19", "zh-CN"));
   });
@@ -145,7 +156,7 @@ describe("tie-breakers", () => {
 
 describe("in the game screen", () => {
   it("is the first section once the game is finished, and absent before", () => {
-    const html = renderScreen(fixtureSource("m8_final_results_4p"));
+    const html = renderScreen(fixtureSource("m8_final_results_3p"));
     expect(/<section id="sec-(\w+)"/.exec(html)?.[1]).toBe("results");
     expect(renderScreen(fixtureSource("m1_work_phase_r2_3p"))).not.toContain('class="podium"');
   });

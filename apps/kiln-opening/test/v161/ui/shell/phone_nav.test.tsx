@@ -40,7 +40,7 @@ describe("phone nav", () => {
     ["m4_after_quality_3p", "kiln"],
     ["m6_order_phase_crackle_3p", "orders"],
     ["m7_cleanup_hand_limit_3p", "orders"],
-    ["m8_final_results_4p", "table"],
+    ["m8_final_results_3p", "table"],
   ] as const)("%s opens on the %s section", (id, section) => {
     const html = renderComponent(fixtureSource(id), <PhoneNav />);
     expect(html).toMatch(new RegExp(`data-tab="${section}" aria-current="page"`));
@@ -70,7 +70,7 @@ describe("phone nav", () => {
   });
 
   it("points at the kiln in a firing decision", () => {
-    const badges = navBadges(modelOf("m3_heat_marker_step_3p"), INERT_SELECTION);
+    const badges = navBadges(modelOf("m3_kiln_master_marker_3p"), INERT_SELECTION);
     expect(text(badges.kiln!.shown)).toBe("!");
     expect(badges.kiln!.soft).toBe(false);
     expect(text(badges.kiln!.meaning)).toBe("your decision is here");
@@ -100,11 +100,11 @@ describe("phone nav", () => {
   });
 
   it("says the badge in the button's name, never by colour alone", () => {
-    const html = renderComponent(fixtureSource("m3_heat_marker_step_3p"), <PhoneNav />);
+    const html = renderComponent(fixtureSource("m3_kiln_master_marker_3p"), <PhoneNav />);
     const kiln = buttons(html).find((button) => attr(button, "data-tab") === "kiln") ?? "";
     expect(attr(kiln, "aria-label")).toBe("Kiln, your decision is here");
     expect(html).toMatch(/<span class="phone-nav-badge num" aria-hidden="true">!<\/span>/);
-    const zh = renderComponent(fixtureSource("m3_heat_marker_step_3p"), <PhoneNav />, { locale: "zh-CN" });
+    const zh = renderComponent(fixtureSource("m3_kiln_master_marker_3p"), <PhoneNav />, { locale: "zh-CN" });
     expect(zh).toContain('aria-label="窑，需你决断"');
   });
 });

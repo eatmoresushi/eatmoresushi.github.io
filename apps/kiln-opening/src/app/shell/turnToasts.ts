@@ -26,9 +26,13 @@
  *   (`QUALITY_IMPROVED`, a Second Firing `QUALITY_ASSIGNED`). Table events (refills, the Kiln Die,
  *   Fire, Contribution reveals, the Fire deck reshuffle) and turn markers are left out, and so is
  *   a line the game log folds into its neighbour (an Order reward, Canal Barge's 2 Coins, Guan's
- *   Coins, a salvage, the Imperial Grant, a Guild Hall payment, Ding's cost and Jun's Wood, and a
- *   Ding, Jun or Ge "used ⟨ability⟩" beside the line naming it), so the 4 lines carry the moves:
- *   a Form & Decorate turn with Ding's extra vessel is 4 lines, a Jun adjustment 1.
+ *   Coins, a sale's Coins, the Imperial Grant, a Guild Hall payment, Ding's cost and Jun's Wood, a
+ *   Ding, Jun or Ge "used ⟨ability⟩" beside the line naming it, and a "used Kiln Master", "used
+ *   Kiln Furniture" or "used Kiln Tending" before the line naming it), so the 4 lines carry the
+ *   moves: a Form & Decorate turn with Ding's extra vessel is 4 lines, a Glaze & Load turn with
+ *   kiln fuel and Kiln Master's marker 4, a Jun adjustment 1. A turn longer than 4 lines leaves
+ *   out its resource lines first (`isMinorToastLine`; the seat chips show the resources), so the
+ *   moves come before the costs.
  * - **Grouped per turn.** Consecutive entries of one actor form one turn. A Work or Order turn
  *   ends at its `*_TURN_ENDED`, and a turn start always opens a new one. A turn may span several
  *   commands (and so several updates): the tracker keeps the open turn, and the next update adds
@@ -44,8 +48,8 @@
  *
  * **Every turn plays** (owner review item 3: "queue … and play them in order"). The queue has no
  * cap, so no turn the viewer was there for is ever dropped: one computer batch can bring ten
- * turns and more (a 4-player round's end: the last placements, the Contributions, the Heat
- * markers, the after-Quality abilities, the Order turns and the next round's first placements),
+ * turns and more (a 4-player round's end: the last placements, the Contributions, Test
+ * Pieces, Jun, the after-Quality abilities, the Order turns and the next round's first placements),
  * and a viewer who decides faster than the others' turns play builds a backlog, which plays on
  * in order (× or Escape moves on to the next turn). An absence piles up nothing: what is played
  * while the page is hidden or offline is not queued (above).
@@ -82,10 +86,9 @@ export const TOAST_EVENTS: ReadonlySet<GameEventType> = new Set<GameEventType>([
   "CERAMIC_RESHAPED",
   "CERAMIC_LOADED",
   "KILN_FURNITURE_PLACED",
-  "HEAT_MARKER_PLACED",
   "ORDER_RESERVED",
   "PRIVATE_LOOK_OPENED",
-  "LOOKED_ORDERS_TO_BOTTOM",
+  "LOOKED_ORDERS_DISCARDED",
   "HELD_ORDER_DISCARDED",
   "TECH_ACQUIRED",
   // Fuel Ledger's 2 Contribution cards, taken with the tile (v1.6.2 change 26): public.
@@ -104,14 +107,12 @@ export const TOAST_EVENTS: ReadonlySet<GameEventType> = new Set<GameEventType>([
   "CONTRIBUTION_SUBMITTED",
   "TEST_PIECES_PEEKED",
   "TEST_PIECES_USED",
-  "HEAT_MARKER_TURNED",
-  "HEAT_MARKER_RETURNED",
   "KILN_MASTER_PLACED",
   "JUN_ADJUSTED",
   "SECOND_FIRING_REVEALED",
   "SECOND_FIRING_CHOSEN",
   "CRACKLE_APPLIED",
-  "CERAMIC_SALVAGED",
+  "CERAMIC_SOLD",
   "ORDER_COMPLETED",
   "ORDER_TURN_ENDED",
   "HAND_TRIMMED",
@@ -221,12 +222,27 @@ export function advanceTurns(tracker: TurnTracker, log: readonly LogEntry[], vie
 }
 
 /**
- * The lines a toast shows: every line when they fit, else the first `max − 1` and the count of
- * the rest (`more`), which the game log holds.
+ * A line a full toast leaves out first: a resource change (a cost such as the kiln fuel, a gain),
+ * which the seat chips also show. The moves themselves (a placement, a load, Kiln Master's
+ * marker, a completion) stay.
  */
-export function toastLines<T>(lines: readonly T[], max: number = MAX_TOAST_LINES): { shown: readonly T[]; more: number } {
+export function isMinorToastLine(entry: LogEntry): boolean {
+  return entry.event.type === "RESOURCES_CHANGED";
+}
+
+/**
+ * The lines a toast shows: every line when they fit, else `max − 1` of them and the count of the
+ * rest (`more`), which the game log holds. The lines left out are the `minor` ones first (the
+ * latest first), then the latest; those shown keep their order.
+ */
+export function toastLines<T>(lines: readonly T[], max: number = MAX_TOAST_LINES, minor: (line: T) => boolean = () => false): { shown: readonly T[]; more: number } {
   if (lines.length <= max) return { shown: lines, more: 0 };
-  const shown = lines.slice(0, Math.max(1, max - 1));
+  const room = Math.max(1, max - 1);
+  const kept = [...lines];
+  for (let index = kept.length - 1; index >= 0 && kept.length > room; index -= 1) {
+    if (minor(kept[index]!)) kept.splice(index, 1);
+  }
+  const shown = kept.slice(0, room);
   return { shown, more: lines.length - shown.length };
 }
 

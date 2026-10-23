@@ -31,7 +31,10 @@
  *   under the deck in a chosen order) and an Apprentice to Glaze & Load, the Workshop or the
  *   Commission Market (its Select: the private look and the reservations), and takes the Colour
  *   Samples swap, Protective Saggars' upgrade, Second Firing and a Fuel Ledger Contribution card
- *   (Fuel Ledger Stoke or Fuel Ledger Bank, v1.6.2 change 26) whenever they are offered. A steered
+ *   (Fuel Ledger Stoke or Fuel Ledger Bank, v1.6.2 change 26) whenever they are offered, and
+ *   owner revision 4's choices: Kiln Master's side when loading (R22), the Magistrate's Hall
+ *   Shifu's Crown Order (change 33) and the sale of a Flawed ceramic (R20: a Sell button on the
+ *   viewer's own Finished ceramics, or the sale option of the open window). A steered
  *   placement is completed inside its sub-editor (`within: ".b4-sub-region"`), a steered swap
  *   inside its form (the held Order to give up). It must confirm the Commission Market and Guild
  *   Hall windows; the V1.6.2 commands it sent are listed in the annotations;
@@ -44,7 +47,9 @@
  * them), and the Order cards' toggles and the Shared Kiln's spaces are table targets too: every
  * Select's reservations (the Commission Market's, and Colour Samples' when acquired and in its swap)
  * may be made on the display and the look row, the Colour Samples swap gives up a held Order on
- * the hand row.
+ * the hand row. Since owner revision 4 the Setup pick takes a Kiln and a face-up Main Order (the
+ * display's toggles or the `mainOrder` radios), the firing has no Heat-marker step and no salvage
+ * window, and a Flawed ceramic is sold from its Sell button (`[data-act="sell"]`).
  */
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
@@ -67,8 +72,8 @@ interface GameCase {
 
 const CASES: readonly GameCase[] = [
   { title: "1440 EN, 1 human + 3 computers", width: 1440, height: 900, locale: "en", players: 4, policy: "strategic", seed: 1_441 },
-  // Seed 1 (two players): Colour Samples (T10) and the Fuel Ledger (T12) are face up from the start.
-  { title: "1440 EN, steered to the V1.6.2 windows, 1 human + 1 computer", width: 1440, height: 900, locale: "en", players: 2, policy: "canonical", seed: 1, steer: true },
+  // Seed 36 (two players, owner revision 4's setup): Colour Samples (T10) and the Fuel Ledger (T12) are face up from the start.
+  { title: "1440 EN, steered to the V1.6.2 windows, 1 human + 1 computer", width: 1440, height: 900, locale: "en", players: 2, policy: "canonical", seed: 36, steer: true },
   { title: "390 ZH, 1 human + 1 computer", width: 390, height: 844, locale: "zh-CN", players: 2, policy: "strategic", seed: 3_902 },
   { title: "844×390 EN, 1 human + 2 computers", width: 844, height: 390, locale: "en", players: 3, policy: "strategic", seed: 8_443 },
   { title: "1024 ZH, 1 human + 1 computer", width: 1024, height: 768, locale: "zh-CN", players: 2, policy: "strategic", seed: 1_024 },
@@ -100,6 +105,16 @@ const TAKE_PREFERENCES: readonly string[] = ["T10", "T12", "T14", "T11"].flatMap
  * Contribution form offers them only to the Fuel Ledger's owner, with the Wood to pay for one.
  */
 const FUEL_LEDGER_PREFERENCES: readonly string[] = ['input[name="card"][value="FUEL_LEDGER_STOKE"]', 'input[name="card"][value="FUEL_LEDGER_BANK"]'];
+/**
+ * Owner revision 4: Kiln Master's side when loading (R22, inside the Glaze & Load sub-editor or
+ * with Imperial Priority) and the Magistrate's Hall Shifu's Crown Order (change 33).
+ */
+const REVISION_4_PREFERENCES: readonly string[] = ['input[name="kilnMaster"]:not([value="none"])', 'input[name="crownOrder"]:not([value="none"])'];
+/**
+ * A Flawed ceramic's sale (R20): a Sell button on the viewer's own Finished ceramics, or the open
+ * window's sale option. Either completes the form, so Confirm follows.
+ */
+const SALE_PREFERENCES: readonly string[] = ['[data-act="sell"]', 'input[name="orders.sell"]', 'input[name="afterQuality.sell"]', 'input[name="trim.sell"]', 'input[name="work.sell"]'];
 /** After Quality: Protective Saggars' upgrade, else Second Firing (its card is the autopilot's choice). */
 const AFTER_QUALITY_PREFERENCES: readonly string[] = ['input[name="afterQuality"][value^="protective_saggars:"]', 'input[name="afterQuality"][value^="second_firing:"]'];
 /**
@@ -110,6 +125,8 @@ const STEER: readonly string[] = [
   ...SWAP_PREFERENCES,
   ...AFTER_QUALITY_PREFERENCES,
   ...FUEL_LEDGER_PREFERENCES,
+  ...REVISION_4_PREFERENCES,
+  ...SALE_PREFERENCES,
   ...TAKE_PREFERENCES,
   // The Shifu inspects the Glazing & Loading deck (Colour Samples face up, or among the 2 seen).
   '[data-act="inspect"][data-discipline="glazing_loading"]',
@@ -127,6 +144,7 @@ const STEER_GROUPS: ReadonlyArray<{ preferences: readonly string[]; within: (pre
   { preferences: TAKE_PREFERENCES, within: () => null, confirm: true },
   { preferences: AFTER_QUALITY_PREFERENCES, within: () => null, confirm: true },
   { preferences: FUEL_LEDGER_PREFERENCES, within: () => null, confirm: true },
+  { preferences: SALE_PREFERENCES, within: () => null, confirm: true },
 ];
 /** Seeded picks inside a steered form before the autopilot may leave it. */
 const MAX_WITHIN_PICKS = 60;
@@ -140,11 +158,14 @@ const V162_COMMANDS = new Set([
   "USE_PROTECTIVE_SAGGARS",
   "USE_SECOND_FIRING",
   "SECOND_FIRING_CHOOSE",
+  // Owner revision 4 (R20).
+  "SELL_FLAWED",
 ]);
 
 /**
  * The game commands this page sends (`game_action` bodies), by type; a Fuel Ledger card
- * (`SUBMIT_CONTRIBUTION.FUEL_LEDGER_BANK` / `.FUEL_LEDGER_STOKE`) and S07 are counted apart.
+ * (`SUBMIT_CONTRIBUTION.FUEL_LEDGER_BANK` / `.FUEL_LEDGER_STOKE`), S07, Kiln Master's marker on a
+ * load (`.kilnMaster`) and the Magistrate's Hall Shifu's Crown Order (`.crownOrder`) are counted apart.
  */
 function recordCommands(page: Page): Map<string, number> {
   const sent = new Map<string, number>();
@@ -152,7 +173,7 @@ function recordCommands(page: Page): Map<string, number> {
     if (!request.url().includes("/test-api-v161") || request.method() !== "POST") return;
     interface Body {
       operation?: string;
-      command?: { type?: string; card?: string; orderId?: string };
+      command?: { type?: string; card?: string; orderId?: string; kilnMaster?: number; loads?: Array<{ kilnMaster?: number }>; crownOrder?: unknown };
     }
     let body: Body | null;
     try {
@@ -165,6 +186,9 @@ function recordCommands(page: Page): Map<string, number> {
     const keys = [command.type];
     if (command.type === "SUBMIT_CONTRIBUTION" && (command.card === "FUEL_LEDGER_BANK" || command.card === "FUEL_LEDGER_STOKE")) keys.push(`SUBMIT_CONTRIBUTION.${command.card}`);
     if (command.type === "COMPLETE_ORDER" && command.orderId === "S07") keys.push("COMPLETE_ORDER.S07");
+    if (command.type === "PLACE_GLAZE_LOAD" && (command.loads ?? []).some((load) => load.kilnMaster !== undefined)) keys.push("PLACE_GLAZE_LOAD.kilnMaster");
+    if (command.type === "USE_IMPERIAL_PRIORITY" && command.kilnMaster !== undefined) keys.push("USE_IMPERIAL_PRIORITY.kilnMaster");
+    if (command.type === "PLACE_MAGISTRATES_HALL" && command.crownOrder !== undefined) keys.push("PLACE_MAGISTRATES_HALL.crownOrder");
     for (const key of keys) sent.set(key, (sent.get(key) ?? 0) + 1);
   });
   return sent;

@@ -111,7 +111,17 @@ describe("which drafts hide the pane (workPane)", () => {
     expect(EN.message(presence.lead as RichMessage)).toBe(`Your turn: place a worker · ${String(left)} left`);
     expect(ZH.message(presence.lead as RichMessage)).toBe(`轮到你了：派工 · 还剩${String(left)}名工人`);
     expect(EN.richMessage(presence.openersLabel as RichMessage)).toBe("Or first:");
-    expect(ZH.richMessage(presence.openersLabel as RichMessage)).toBe("也可以先用：");
+    // "First" rather than "use first": a sale (rev. 4) is not an ability.
+    expect(ZH.richMessage(presence.openersLabel as RichMessage)).toBe("也可以先：");
+    // A Flawed ceramic may be sold first (rev. 4, R20): an opener of its own, not a worker action.
+    const sale = workOf("t-work-turn-sale");
+    const selling = workPane(sale.initial, sale.model, sale.engine);
+    if (!selling.hidden) throw new Error("shown");
+    expect(selling.openers.map((opener) => opener.key)).toContain("sell_flawed");
+    const sellOpener = selling.openers.find((opener) => opener.key === "sell_flawed")!;
+    expect(sellOpener.action).toEqual({ type: "mode", mode: "sell_flawed" });
+    expect(EN.richMessage(sellOpener.label as RichMessage)).toBe("Sell a Flawed ceramic");
+    expect(ZH.richMessage(sellOpener.label as RichMessage)).toBe("卖出瑕品");
     // Nothing may come first: no openers and no label, and the cue is still there.
     const m1 = workOf(M1);
     const plain = workPane(m1.initial, m1.model, m1.engine);
@@ -246,12 +256,12 @@ describe("the hidden pane in the markup", () => {
     const zh = renderScreen(fixtureSource(DING), { locale: "zh-CN" });
     expect(zh).toContain('<section class="pane-openers" aria-label="你的决断"');
     expect(zh).toMatch(/>轮到你了：派工 · 还剩\d名工人<\/p>/);
-    expect(zh).toContain('<span id="' + /<span id="([^"]+)" class="pane-openers-label">/.exec(zh)?.[1] + '" class="pane-openers-label">也可以先用：</span>');
+    expect(zh).toContain('<span id="' + /<span id="([^"]+)" class="pane-openers-label">/.exec(zh)?.[1] + '" class="pane-openers-label">也可以先：</span>');
     expect(zh).toMatch(/data-pane-opener="imperial_priority"[^>]*>御烧优先</);
   });
 
   it("keeps the pane in every other window, and once a placement is chosen", () => {
-    for (const id of ["w-kiln-selection", "w-after-the-worker-action", "m17_after_action", "m10b_setters_mark_on_space", "m9_contributions_step1_3p", "m8_final_results_4p"]) {
+    for (const id of ["w-kiln-and-main-order-choice", "w-after-the-worker-action", "m17_after_action", "w-setters-mark-window", "m9_contributions_step1_3p", "m8_final_results_3p"]) {
       const html = renderScreen(fixtureSource(id));
       expect(html, id).not.toContain('data-pane="hidden"');
       expect(html, id).not.toMatch(/<aside class="pane"[^>]*hidden=""/);
@@ -608,6 +618,29 @@ describe("an ability that may come first opens the hidden pane", () => {
     press($('input[name="mode"][value="place"]'));
     expect(pane().hidden).toBe(false);
     expect($('[data-b4="chosen"]').getAttribute("data-location-id")).toBe("canal_wharf");
+  });
+
+  it("a table Sell button brings the pane up with the sale (on phones the sheet opens), and Clear returns focus to it (D14, R20)", () => {
+    const SALE = "t-work-turn-sale";
+    const ui = mount(new ControlledSource(SALE), <GameScreen />, "phone");
+    expect(pane().hidden).toBe(true);
+    expect(sheetOf(ui, SALE)).not.toBe("open");
+    const sell = $<HTMLButtonElement>('button[data-act="sell"]');
+    press(sell);
+    expect(sheetOf(ui, SALE)).toBe("open");
+    expect(pane().hidden).toBe(false);
+    expect($(".kit-sheet").getAttribute("data-sheet")).toBe("open");
+    expect($<HTMLInputElement>(`input[name="work.sell"][value="${sell.getAttribute("data-ceramic-id") ?? ""}"]`).checked).toBe(true);
+    // Desktop: Clear hides the pane again and focus goes back to the Sell button.
+    act(() => root.unmount());
+    root = createRoot(container);
+    mount(new ControlledSource(SALE));
+    const button = $<HTMLButtonElement>('button[data-act="sell"]');
+    press(button);
+    expect(pane().hidden).toBe(false);
+    pressClear();
+    expect(pane().hidden).toBe(true);
+    expect(document.activeElement).toBe($<HTMLButtonElement>(`button[data-act="sell"][data-ceramic-id="${button.getAttribute("data-ceramic-id") ?? ""}"]`));
   });
 
   it("on phones the opener opens the sheet", () => {

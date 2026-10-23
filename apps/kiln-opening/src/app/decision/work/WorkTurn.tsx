@@ -9,7 +9,7 @@
  * `windows.work.ts`; an ability that may come first opens it from above the world,
  * `PaneOpeners`). Before the worker action it shows:
  * 1. how many workers are left (the Work Phase cannot be passed);
- * 2. what this step does, when Imperial Priority or the Colour Samples swap may come first
+ * 2. what this step does, when Imperial Priority, the Colour Samples swap or a sale may come first
  *    (`options.stepChoices`): the abilities, and Place a worker only while a placement is chosen,
  *    so moving through the radios (arrow keys select as they move) never hides the pane; no
  *    choice at all when it would be a lone radio (one ability opened with nothing placed: the
@@ -51,12 +51,13 @@ import { workDraft } from "./workDraft.ts";
 import type { ActiveLocation, WorkAction, WorkDraft, WorkMode } from "./workDraft.ts";
 import "./pieces.css";
 
-const MODE_TITLE: Readonly<Record<WorkMode, "work.work.mode.place" | "work.work.mode.imperialPriority" | "work.work.mode.colourSamplesSwap" | "work.work.mode.endTurn">> = {
+const MODE_TITLE = {
   place: "work.work.mode.place",
   imperial_priority: "work.work.mode.imperialPriority",
   colour_samples_swap: "work.work.mode.colourSamplesSwap",
+  sell_flawed: "work.work.mode.sellFlawed",
   end_turn: "work.work.mode.endTurn",
-};
+} as const satisfies Readonly<Record<WorkMode, string>>;
 
 /** The worker of the chosen placement in words: "Shifu", "Apprentice as Shifu" (never an ID, D9). */
 function workerText(active: ActiveLocation, t: Translator): string {
@@ -70,6 +71,19 @@ function spaceText(active: ActiveLocation, t: Translator): string {
   const placement = active.context.placement;
   if (placement.nextSpaceIndex !== null) return t("work.work.personalSpace", { i: placement.nextSpaceIndex + 1 });
   return placement.capacity === null ? t("work.work.noLimit") : t("work.work.taken", { n: placement.occupancy, c: placement.capacity });
+}
+
+/**
+ * The location's one-line effect (the rulebook's Action Summary cell). At Glaze & Load, once the
+ * loads go only into the Imperial Kiln (the engine's quote pays no Wood, R24), the cell's
+ * "(1 Wood)" would contradict the kiln-fuel block, so the line says the action is free instead.
+ */
+function effectText(active: ActiveLocation, t: Translator): string {
+  const effect = active.context.worker.effect;
+  if (active.locationId === "glaze_load" && active.options.fuel.free) {
+    return t(effect === "shifu" ? "work.gl.effectFree.shifu" : "work.gl.effectFree.apprentice", { n: active.options.maxLoads });
+  }
+  return t.dynamic(locationSummaryKey(active.locationId, effect));
 }
 
 function SubEditor({ active, dispatch }: { active: ActiveLocation; dispatch: (action: WorkAction) => void }) {
@@ -87,7 +101,7 @@ function SubEditor({ active, dispatch }: { active: ActiveLocation; dispatch: (ac
     case "canal_wharf":
       return <CanalWharf draft={active.draft} options={active.options} context={active.context} dispatch={() => undefined} />;
     case "magistrates_hall":
-      return <MagistratesHall draft={active.draft} options={active.options} context={active.context} dispatch={() => undefined} />;
+      return <MagistratesHall draft={active.draft} options={active.options} context={active.context} dispatch={(action) => dispatch({ type: "sub", locationId: "magistrates_hall", action })} />;
   }
 }
 
@@ -104,7 +118,7 @@ function ChosenPlacement({ active, dispatch }: { active: ActiveLocation; dispatc
         </h3>
         <span className="b4-chosen-meta num">{spaceText(active, t)}</span>
       </div>
-      <p className="b4-chosen-effect">{t.dynamic(locationSummaryKey(active.locationId, active.context.worker.effect))}</p>
+      <p className="b4-chosen-effect">{effectText(active, t)}</p>
       <div className="b4-sub-region" role="group" aria-label={location}>
         <SubEditor active={active} dispatch={dispatch} />
       </div>
@@ -144,7 +158,9 @@ export function WorkTurn() {
                   ? t("work.work.mode.placeHint")
                   : mode === "colour_samples_swap"
                     ? t("work.work.mode.swapHint", { n: RULE_NUMBERS.swapSelect })
-                    : t("work.work.mode.before")
+                    : mode === "sell_flawed"
+                      ? t("work.work.mode.sellHint")
+                      : t("work.work.mode.before")
               }
             />
           ))}

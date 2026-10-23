@@ -11,10 +11,12 @@
  * - hand trim: the hand's Order cards marked for discard (`discard` / `choosable`); clicking one
  *   toggles it;
  * - firing windows: the target ceramic of the draft (`highlightedCeramicIds`); Second Firing's
- *   choice highlights its ceramic.
+ *   choice highlights its ceramic;
+ * - the viewer's sale windows among them (change 30, R20: the Order Phase turn, the after-Quality
+ *   turn and the hand trim): a Sell button on each sellable Flawed ceramic (`sellTargets`), which
+ *   chooses it in the draft (`saleTargets`, `sale/sellFlawed.ts`).
  * `final` and `waiting` never send a command (`noDraft()`).
  */
-import { heatMarkerStepOptions } from "../../game/index.ts";
 import type { CeramicId, OrderId } from "../../game/index.ts";
 import { kilnText, techName } from "../i18n/content.ts";
 import { list } from "../i18n/format.ts";
@@ -32,30 +34,25 @@ import { afterQualityDraft } from "./firing/AfterQuality.draft.ts";
 import { Contributions } from "./firing/Contributions.tsx";
 import { contributionsDraft } from "./firing/Contributions.draft.ts";
 import { B5_KILNS, B5_TECHS } from "./firing/firingSupport.ts";
-import { HeatMarkers } from "./firing/HeatMarkers.tsx";
-import { heatMarkersDraft } from "./firing/HeatMarkers.draft.ts";
 import { Jun } from "./firing/Jun.tsx";
 import { junDraft } from "./firing/Jun.draft.ts";
-import { Salvage } from "./firing/Salvage.tsx";
 import { SecondFiring } from "./firing/SecondFiring.tsx";
 import { secondFiringDraft } from "./firing/SecondFiring.draft.ts";
-import { salvageDraft } from "./firing/Salvage.draft.ts";
 import { TestPieces } from "./firing/TestPieces.tsx";
 import { testPiecesDraft } from "./firing/TestPieces.draft.ts";
 import { OrderTurn } from "./orders/OrderTurn.tsx";
 import { orderDraft } from "./orders/orderDraft.ts";
 import { FinalSummary } from "./results/FinalSummary.tsx";
+import { saleOffered, saleTargets } from "./sale/sellFlawed.ts";
 import { Waiting } from "./Waiting.tsx";
 
 /** The window kinds this slice covers. */
 export type FiringWindowKind =
   | "contributions"
   | "test_pieces"
-  | "heat_markers"
   | "jun"
   | "after_quality"
   | "second_firing"
-  | "salvage"
   | "orders"
   | "hand_limit"
   | "final"
@@ -90,22 +87,6 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
       return msg("firing.title.testPiecesDecide", { tech });
     },
   }),
-  heat_markers: defineWindow({
-    kind: "heat_markers",
-    Component: HeatMarkers,
-    draft: heatMarkersDraft,
-    title: (_model, engine) => {
-      if (heatMarkerStepOptions(engine.view)?.ownMarkerCeramicId == null) return msg("firing.title.heatMarkerStep");
-      return msg("firing.title.heatMarkers");
-    },
-    table: {
-      select: (draft, model, engine) => {
-        const own = heatMarkersDraft.options(draft, model, engine).own;
-        return highlight([own?.ceramicId, draft.kmTarget === "none" ? null : draft.kmTarget]);
-      },
-      act: () => null,
-    },
-  }),
   jun: defineWindow({
     kind: "jun",
     Component: Jun,
@@ -121,8 +102,15 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
     title: () => msg("firing.title.afterQuality"),
     alternative: () => ({ label: msg("firing.aq.done"), command: { type: "END_AFTER_QUALITY" } }),
     table: {
-      select: (draft) => highlight([draft.choice === null || draft.choice === "end" ? null : draft.choice.ceramicId]),
-      act: () => null,
+      select: (draft, _model, engine) => {
+        const choice = draft.choice === null || draft.choice === "end" ? null : draft.choice;
+        return tableSelection({
+          highlightedCeramicIds: new Set(choice === null ? [] : [choice.ceramicId]),
+          sellTargets: saleTargets(engine, choice?.ability === "sell_flawed" ? choice.ceramicId : null),
+        });
+      },
+      act: (_draft, action, _model, engine) =>
+        action.type === "sell" && saleOffered(engine, action.ceramicId) ? { type: "use" as const, ability: "sell_flawed" as const, ceramicId: action.ceramicId } : null,
     },
   }),
   second_firing: defineWindow({
@@ -131,14 +119,6 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
     draft: secondFiringDraft,
     title: () => msg("firing.title.secondFiring", { tech: (t) => techName(B5_TECHS.secondFiring, t.locale) }),
     table: { select: (_draft, model) => highlight([model.window.kind === "second_firing" ? model.window.ceramicId : null]), act: () => null },
-  }),
-  salvage: defineWindow({
-    kind: "salvage",
-    Component: Salvage,
-    draft: salvageDraft,
-    title: () => msg("firing.title.salvage"),
-    alternative: () => ({ label: msg("firing.salvage.keep"), command: { type: "SALVAGE_FLAWED", ceramicId: null } }),
-    table: { select: (draft) => highlight([draft.choice === "keep" ? null : draft.choice]), act: () => null },
   }),
   orders: defineWindow({
     kind: "orders",
@@ -154,9 +134,12 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
           const state: OrderTargetState = draft.orderId === order.orderId ? "chosen" : order.completable ? "completable" : "blocked";
           orderTargets.set(order.orderId, { state, disabled: !order.completable });
         }
-        return tableSelection({ orderTargets, highlightedCeramicIds: new Set(draft.ceramicIds ?? []) });
+        const highlighted = new Set<CeramicId>(draft.ceramicIds ?? []);
+        if (draft.sell !== null) highlighted.add(draft.sell);
+        return tableSelection({ orderTargets, highlightedCeramicIds: highlighted, sellTargets: saleTargets(engine, draft.sell) });
       },
       act: (_draft, action, model, engine) => {
+        if (action.type === "sell") return saleOffered(engine, action.ceramicId) ? { type: "sell" as const, ceramicId: action.ceramicId } : null;
         if (action.type !== "order") return null;
         const options = orderDraft.options(_draft, model, engine);
         return options.orders.some((order) => order.orderId === action.key && order.completable) ? { type: "order" as const, orderId: action.key as OrderId } : null;
@@ -173,9 +156,10 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
         const options = handTrimDraft.options(draft, model, engine);
         const orderTargets = new Map<string, { state: OrderTargetState; disabled: boolean }>();
         for (const orderId of options.held) orderTargets.set(orderId, { state: draft.orderIds.includes(orderId) ? "discard" : "choosable", disabled: false });
-        return tableSelection({ orderTargets });
+        return tableSelection({ orderTargets, sellTargets: saleTargets(engine, draft.sell), highlightedCeramicIds: new Set(draft.sell === null ? [] : [draft.sell]) });
       },
       act: (draft, action, model, engine) => {
+        if (action.type === "sell") return saleOffered(engine, action.ceramicId) ? { type: "sell" as const, ceramicId: action.ceramicId } : null;
         if (action.type !== "order") return null;
         const held = handTrimDraft.options(draft, model, engine).held;
         const orderId = action.key as OrderId;

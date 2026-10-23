@@ -2,10 +2,11 @@
  * QueueRow (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B3 (kiln, firing stage, results, playtest).
  * Source: wireframe `queueRow`, `submitRow`: who acts in a queued step, who has submitted a Contribution.
  *
- * - Step 1 (secret Contributions): each participant and whether they have chosen, never what
+ * - A queued step (Test Pieces at the end of step 1, Jun in step 3, the after-Quality abilities in
+ *   step 5): the queue in First Player order, with who is deciding now.
+ * - Step 1's secret Contributions: each participant and whether they have chosen, never what
  *   (`stage.submittedPlayerIds`; §3.7). With no participant, a line says nobody contributes.
- * - A queued step (4, 5, 8, 10): the queue in First Player order, with who is deciding now.
- * - Any other step with actors (Salvage, the Second Firing choice): who is deciding.
+ * - Any other step with actors (the Second Firing choice): who is deciding.
  */
 import type { FiringStageView, PlayerId } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";
@@ -57,19 +58,19 @@ export function QueueRow({ stage }: QueueRowProps) {
     </div>
   );
 
+  if (stage.queue !== null) {
+    const { actorIds, index } = stage.queue;
+    return row(
+      t("kiln.queue.label"),
+      actorIds.map((playerId, position) => ({ playerId, mark: position === index ? "now" : position < index ? "done" : "next" })),
+    );
+  }
   if (stage.step === 1) {
     if (stage.contributions.length === 0) return <p className="queue queue-note">{t("kiln.submitted.noneEligible")}</p>;
     const submitted = new Set(stage.submittedPlayerIds);
     return row(
       t("kiln.submitted.label"),
       stage.contributions.map(({ playerId }) => ({ playerId, mark: submitted.has(playerId) ? "chosen" : "choosing" })),
-    );
-  }
-  if (stage.queue !== null) {
-    const { actorIds, index } = stage.queue;
-    return row(
-      t("kiln.queue.label"),
-      actorIds.map((playerId, position) => ({ playerId, mark: position === index ? "now" : position < index ? "done" : "next" })),
     );
   }
   const actors = model.prompt.actorIds;

@@ -41,7 +41,6 @@ const VERB_KEYS: ReadonlyArray<readonly [keyof typeof CATALOG.common.zh, string]
   ["verb.rollKilnDie", "Roll Kiln Die"],
   ["verb.chooseContribution", "Choose Contribution (secret)"],
   ["verb.reveal", "Reveal"],
-  ["verb.returnHeatMarker", "Return Heat marker"],
   ["verb.useAbility", "Use ability"],
   ["status.waitingFor", "Waiting for {name}…"],
   ["status.waitingForOthers", "Waiting for other workshops…"],
@@ -57,10 +56,16 @@ describe("Chinese UI terms follow the glossary", () => {
     expect(CATALOG.common.zh[key]).toBe(verb(english));
   });
 
-  it("turns Heat markers with the glossary wording", () => {
-    const [plus, minus] = verb("Turn Heat marker to +1 / −1").split("／");
-    expect(CATALOG.common.zh["verb.turnHeatMarker"].replace("{value}", "+1")).toBe(plus);
-    expect(CATALOG.common.zh["verb.turnHeatMarker"].replace("{value}", "−1")).toBe(minus);
+  it("places Kiln Master's marker with the glossary wording (rev. 4)", () => {
+    // The row abbreviates the second side: 放窑工标+1／−1.
+    const [plus, minus] = verb("Place Kiln Master marker +1 / −1").split("／");
+    expect(minus).toBe("−1");
+    expect(CATALOG.common.zh["verb.placeKilnMaster"].replace("{value}", "+1")).toBe(plus);
+    expect(CATALOG.common.zh["verb.placeKilnMaster"].replace("{value}", "−1")).toBe((plus ?? "").replace("+1", "−1"));
+  });
+
+  it("sells a Flawed ceramic with the glossary wording (rev. 4)", () => {
+    expect(CATALOG.common.zh["verb.sell"].replace("{coins}", "2铜钱")).toBe(verb("Sell a Flawed ceramic (2 Coins)"));
   });
 
   it("uses no retired or banned term in any Chinese string (glossary §1.5, §6)", () => {

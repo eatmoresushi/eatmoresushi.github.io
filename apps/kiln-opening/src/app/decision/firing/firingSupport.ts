@@ -11,6 +11,7 @@ import type {
   FiringStageView,
   GameAction,
   GameRuleError,
+  HeatDelta,
   KilnId,
   PlayerId,
   PlayerView,
@@ -42,7 +43,8 @@ export function probeCommand(engine: EngineView, command: AuthoritativeCommand):
 /**
  * A ceramic as the table shows it during or after this firing: its card attributes from the
  * public state, with this firing's recorded Quality and Crackle merged in from
- * `firingStageView` (a loaded ceramic carries no Quality of its own until step 12).
+ * `firingStageView` (a loaded ceramic carries no Quality of its own until the firing finishes,
+ * Appendix D step 6).
  */
 export function firingCeramicFacts(view: PlayerView, stage: FiringStageView | null, ceramicId: CeramicId): CeramicFacts | null {
   const base = view.game.ceramics[ceramicId];
@@ -57,11 +59,11 @@ export function firingCeramicFacts(view: PlayerView, stage: FiringStageView | nu
   };
 }
 
-/** The viewer's ceramics of this firing (not salvaged), in ceramic sequence order. */
+/** The viewer's ceramics of this firing (not sold, R20), in ceramic sequence order. */
 export function ownFiringCeramicIds(model: GameModel): CeramicId[] {
   const stage = model.firingStage;
   if (stage === null || model.viewerId === null) return [];
-  return stage.ceramics.filter((ceramic) => ceramic.ownerId === model.viewerId && !ceramic.salvaged).map((ceramic) => ceramic.id);
+  return stage.ceramics.filter((ceramic) => ceramic.ownerId === model.viewerId && !ceramic.sold).map((ceramic) => ceramic.id);
 }
 
 /**
@@ -102,6 +104,15 @@ export function woodText(n: number, t: Translator): string {
 /** Coins as a whole phrase ("2 Coins" / "2铜钱"). */
 export function coinsText(n: number, t: Translator): string {
   return t("common.amount.coins", { n });
+}
+
+/** The two faces of a ±1 adjustment (Jun's, in either firing), in the order the forms list them. */
+export const HEAT_DELTA_SIDES = [1, -1] as const satisfies readonly HeatDelta[];
+
+/** A form value ("1", "-1") as a ±1 adjustment, or null. */
+export function heatDeltaOf(value: string): HeatDelta | null {
+  const number = Number(value);
+  return HEAT_DELTA_SIDES.find((side) => side === number) ?? null;
 }
 
 /** Same members, any order (Order groups are matched as sets). */

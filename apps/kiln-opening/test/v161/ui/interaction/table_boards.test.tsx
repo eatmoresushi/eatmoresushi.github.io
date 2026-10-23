@@ -154,18 +154,19 @@ describe("D1 board tabs", () => {
     const { ui } = mount("m1_work_phase_r2_3p", <BoardArea />);
     const tabs = () => $$<HTMLButtonElement>('[role="tab"]');
     expect(tabs().map((tab) => tab.getAttribute("aria-selected"))).toEqual(["true", "false", "false"]);
-    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p3");
+    // m1's viewer is Zhao (p2), who is also the First Player.
+    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p2");
     focus(tabs()[0]!);
-    // The other boards follow the players' order from the First Player (Zhao, then Lin).
+    // The other boards follow the players' order from the First Player (Wen, then Lin).
     key(tabs()[0]!, "ArrowRight");
     expect(tabs()[1]!.getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(tabs()[1]);
-    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p2");
-    expect(ui.stateFor({ window: null, phase: null }).boardShown).toBe("p2");
+    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p3");
+    expect(ui.stateFor({ window: null, phase: null }).boardShown).toBe("p3");
     key(tabs()[1]!, "End");
     expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p1");
     click(tabs()[0]!);
-    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p3");
+    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p2");
     expect(ui.stateFor({ window: null, phase: null }).boardShown).toBeNull();
   });
 });

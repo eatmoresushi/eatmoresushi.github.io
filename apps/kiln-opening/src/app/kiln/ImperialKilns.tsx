@@ -58,7 +58,7 @@ export function ImperialKilns() {
             </span>
             <span className="imp-body">
               {ceramic === null ? null : (
-                <KilnCeramic id={ceramic.id} ownerId={ceramic.ownerId} marker={ceramic.heatMarker} extraFire={extraFireFor(model, ceramic.id)} saggarsFloor={saggarsFloorFor(model, ceramic.id)} size={34} />
+                <KilnCeramic id={ceramic.id} ownerId={ceramic.ownerId} marker={ceramic.kilnMasterMarker} extraFire={extraFireFor(model, ceramic.id)} saggarsFloor={saggarsFloorFor(model, ceramic.id)} size={34} />
               )}
               {pendingHere.map((entry) => (
                 <PendingChip key={entry.ceramicId} ceramicId={entry.ceramicId} glaze={entry.glaze} ceramics={ceramics} t={t} />

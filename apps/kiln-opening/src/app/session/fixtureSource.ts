@@ -50,6 +50,12 @@ export interface FixtureEntry {
   playerView: PlayerView;
   recentPublicEvents?: readonly FixtureEventRecord[];
   ownSecrets?: readonly FixtureSecretRecord[];
+  /**
+   * A legal command of the viewer that the scenario gallery seeds as the open window's draft
+   * (`fromCommand`), so a moment can show a form with its choices made (the Glaze & Load fuel
+   * line, a chosen Crown Order, a sale…). Never sent; the source ignores it.
+   */
+  draftCommand?: AuthoritativeCommand;
 }
 
 export interface FixtureSourceOptions {

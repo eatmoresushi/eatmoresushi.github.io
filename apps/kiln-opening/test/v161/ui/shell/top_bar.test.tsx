@@ -99,8 +99,8 @@ describe("phase strip", () => {
   });
 
   it("names the firing step in Chinese", () => {
-    const model = modelOf("m3_heat_marker_step_3p");
-    expect(renderComponent(fixtureSource("m3_heat_marker_step_3p"), <PhaseStrip />, { locale: "zh-CN" })).toContain(`步骤${model.firingStage!.step}`);
+    const model = modelOf("m3_kiln_master_marker_3p");
+    expect(renderComponent(fixtureSource("m3_kiln_master_marker_3p"), <PhaseStrip />, { locale: "zh-CN" })).toContain(`步骤${model.firingStage!.step}`);
   });
 });
 
@@ -149,7 +149,7 @@ describe("world sections", () => {
 
 describe("game shell", () => {
   it("lays out the slots with landmarks and the skip target", () => {
-    const html = renderComponent(fixtureSource("w-kiln-selection"), <GameShell skipLink="S" top="T" banner="B" world="W" pane="P" nav="N" live="L" />);
+    const html = renderComponent(fixtureSource("w-kiln-and-main-order-choice"), <GameShell skipLink="S" top="T" banner="B" world="W" pane="P" nav="N" live="L" />);
     expect(html).toMatch(/^<div class="shell" data-shell="">/);
     expect(html).toContain('<main class="shell-world" id="world" data-focus-fallback="">W</main>');
     expect(html).toContain('<div class="shell-pane" id="decision">P</div>');
@@ -157,7 +157,7 @@ describe("game shell", () => {
     expect(html).toContain('<div class="shell-bar"></div>');
     // The jump bar's row (JumpNav by default) comes before the toast's holder and the world, where
     // it is drawn: above the world, not part of its scroll area.
-    const jump = renderComponent(fixtureSource("w-kiln-selection"), <GameShell skipLink="S" top="T" banner="B" world="W" pane="P" nav="N" live="L" jump="J" />);
+    const jump = renderComponent(fixtureSource("w-kiln-and-main-order-choice"), <GameShell skipLink="S" top="T" banner="B" world="W" pane="P" nav="N" live="L" jump="J" />);
     expect(jump).toContain('<div class="shell-jump">J</div>');
     expect(jump.indexOf('<div class="shell-jump">J</div>')).toBeLessThan(jump.indexOf('<div class="shell-toasts">'));
     expect(jump.indexOf('<div class="shell-toasts">')).toBeLessThan(jump.indexOf("<main"));

@@ -1,0 +1,41 @@
+- complementary "Your decision":
+  - paragraph: Order Phase · Your turn
+  - heading "Complete held Orders" [level=2]
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
+    - group "Resources":
+      - strong: "6"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - text: /4 Orders in hand Recognition 2\/4 \d+ VP/
+  - form "Complete held Orders":
+    - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
+    - group "Order 1 of 4 can be completed":
+      - text: ""
+      - radio "S06 3 VP 5 Coins Vase or Censer · any Glaze · any Decoration · Standard+"
+      - text: S06 3 VP 5 Coins Vase or Censer · any Glaze · any Decoration · Standard+
+      - 'button "Full rules: Order S06"'
+      - radio "O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed · Fine+ No matching ceramics" [disabled]
+      - text: O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed · Fine+ No matching ceramics
+      - 'button "Full rules: Order O19"'
+      - radio /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all No matching ceramics/ [disabled]
+      - text: /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all No matching ceramics/
+      - 'button "Full rules: Order O43"'
+      - radio /O35 \d+ VP 2 Coins 1 Crown Bowl \+ Plate; both Celadon; any Decorations · Fine\+ each No matching ceramics/ [disabled]
+      - text: /O35 \d+ VP 2 Coins 1 Crown Bowl \+ Plate; both Celadon; any Decorations · Fine\+ each No matching ceramics/
+      - 'button "Full rules: Order O35"'
+    - paragraph: Only held Orders can be completed; Orders on the display cannot.
+    - group "Sell a Flawed ceramic":
+      - text: ""
+      - paragraph: You may sell one of your Flawed ceramics for 2 Coins. It leaves the game, and its Vessel card goes back to the supply.
+      - radio "White Censer, Plain · Flawed +2 Coins" [checked]
+      - text: White Censer, Plain · Flawed +2 Coins
+    - paragraph:
+      - text: Sell
+      - strong: White Censer, Plain · Flawed
+      - text: for 2 Coins
+    - button "End turn"
+    - button "Confirm"

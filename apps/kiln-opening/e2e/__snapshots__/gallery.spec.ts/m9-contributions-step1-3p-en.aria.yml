@@ -1,26 +1,27 @@
 - complementary "Your decision":
   - paragraph: Firing Phase · Your turn
   - heading "Choose your Contribution" [level=2]
-  - region "Lin (you)":
-    - heading "Lin (you)" [level=3]
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
     - group "Resources":
-      - strong: "4"
-      - text: Clay
-      - strong: "2"
-      - text: Wood
       - strong: "3"
-      - text: Coins
-    - text: 4 Orders in hand Recognition 0/4 3 VP
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "1"
+      - text: Coin
+    - text: 4 Orders in hand Recognition 1/4 6 VP
   - form "Choose your Contribution":
     - paragraph: Firing step 1
     - paragraph: Everyone with a ceramic in the Shared Kiln chooses in secret at the same time. All cards are revealed together once everyone has chosen; Wood is paid then.
     - heading "Who has chosen" [level=3]
     - list "Who has chosen":
       - listitem: "Zhao: chosen"
-      - listitem: "Lin (you): choosing…"
-    - group "Contribution card You have 2 Wood.":
+      - listitem: "Wen (you): choosing…"
+      - listitem: "Lin: choosing…"
+    - group "Contribution card You have 3 Wood.":
       - text: ""
-      - paragraph: Base Heat = Kiln Die 1 + all Contributions, kept within 0–5.
+      - paragraph: Base Heat = Kiln Die 3 + all Contributions, kept within 0–5.
       - radio "Tend the Fire no Wood Heat 0"
       - text: Tend the Fire no Wood Heat 0
       - 'radio "Bank the Fire no Wood: Fuel Ledger Heat −1"'

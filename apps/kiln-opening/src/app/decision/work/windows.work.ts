@@ -9,8 +9,13 @@
  *   spaces (`placeTargets`, every entry legal or not, CR B2-3; `activePlacement`) — since the owner
  *   review of 2026-10-17 the only place a worker is placed from; the Guild Hall chooser on the
  *   Tech display (`techChooser`: a face-up Tech to buy, or a discipline to inspect); Glaze &
- *   Load destinations on the kiln (`kilnTargets`) with pending chips; the held Orders the Colour
- *   Samples swap may give up (`orderTargets` keyed by OrderId); the chosen vessels highlighted;
+ *   Load destinations on the kiln (`kilnTargets`) with pending chips; the Magistrate's Hall
+ *   Shifu's optional Crown Order on the display (`orderTargets` keyed `slot:<i>`, rev. 4 L241,
+ *   R21); the held Orders the Colour Samples swap may give up (`orderTargets` keyed by OrderId);
+ *   a Sell button on each Flawed ceramic the viewer may sell now (`sellTargets`, change 30, R20);
+ *   the chosen vessels highlighted;
+ * - **kiln_selection:** the display's Main Orders (`slot:<i>`), one taken with the Kiln (rev. 4
+ *   L122, R23);
  * - **setters_mark:** the open kiln spaces;
  * - **commission**, **colour_samples** and **colour_samples_swap** (every Select N, v1.6.2 L64,
  *   change 25): the display slots reservable now (`slot:<i>`) and the privately looked-at Orders
@@ -41,6 +46,7 @@ import type { OrderTarget, OrderTargetReason, TableAction, TableSelectionData } 
 import type { OrderId } from "../../../game/index.ts";
 import { KilnSelection } from "../setup/KilnSelection.tsx";
 import { kilnSelectionDraft } from "../setup/KilnSelection.draft.ts";
+import type { KilnSelectionAction } from "../setup/KilnSelection.draft.ts";
 import { SettersMark } from "../setup/SettersMark.tsx";
 import { settersMarkDraft } from "../setup/SettersMark.draft.ts";
 import type { SettersMarkAction } from "../setup/SettersMark.draft.ts";
@@ -54,6 +60,8 @@ import { guildInspectionDraft, inspectionReturnOnly, inspectionTechChooser } fro
 import type { GuildInspectionAction } from "./GuildInspection.draft.ts";
 import { kilnTargetsOf, pendingLoads } from "./locations/GlazeLoad.draft.ts";
 import { techChooserOf } from "./locations/GuildHall.draft.ts";
+import { crownTargetsOf } from "./locations/MagistratesHall.draft.ts";
+import { saleOffered, saleTargets } from "../sale/sellFlawed.ts";
 import type { GlazeLoadDraft } from "./locations/GlazeLoad.draft.ts";
 import { WorkTurn } from "./WorkTurn.tsx";
 import { activePlacement, workDraft } from "./workDraft.ts";
@@ -78,12 +86,14 @@ const HEADING_TITLE = {
   after_action: "work.title.afterAction",
   imperial_priority: "work.work.mode.imperialPriority",
   colour_samples_swap: "work.work.mode.colourSamplesSwap",
+  sell_flawed: "work.work.mode.sellFlawed",
 } as const satisfies Readonly<Record<WorkHeading, MessageKey>>;
 
 /** Each ability that may come before the worker action, as the hidden pane's opener names it. */
 const OPENER_TITLE = {
   imperial_priority: "work.work.mode.imperialPriority",
   colour_samples_swap: "work.work.mode.colourSamplesSwap",
+  sell_flawed: "work.work.mode.sellFlawed",
 } as const satisfies Readonly<Record<Exclude<WorkMode, "place" | "end_turn">, MessageKey>>;
 
 /**
@@ -154,6 +164,22 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
     Component: KilnSelection,
     draft: kilnSelectionDraft,
     title: () => msg("work.title.kilnSelection"),
+    // The Main Order taken with the Kiln (rev. 4 L122, R23): the display's Choose toggles.
+    table: {
+      select: (draft, model, engine) =>
+        tableSelection({
+          orderTargets: new Map(
+            kilnSelectionDraft
+              .options(draft, model, engine)
+              .orders.map((order): [string, OrderTarget] => [displaySlotKey(order.slotIndex), { state: draft.slotIndex === order.slotIndex ? "chosen" : "choosable", disabled: false }]),
+          ),
+        }),
+      act(draft, action, model, engine): KilnSelectionAction | null {
+        if (action.type !== "order") return null;
+        const order = kilnSelectionDraft.options(draft, model, engine).orders.find((candidate) => displaySlotKey(candidate.slotIndex) === action.key);
+        return order === undefined ? null : { type: "order", slotIndex: order.slotIndex };
+      },
+    },
   }),
 
   setters_mark: defineWindow({
@@ -217,11 +243,20 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
             ),
           };
         }
+        if (context !== null && draft.locationId === "magistrates_hall") {
+          // The Magistrate's Hall Shifu's optional Crown Order (rev. 4 L241, R21): the display's
+          // Crown Orders get a Choose toggle (none for the Apprentice, or with none showing).
+          selection = { ...selection, orderTargets: crownTargetsOf(draft.perLocation.magistrates_hall, context) };
+        }
         if (draft.mode === "imperial_priority") {
           const ip = draft.imperialPriority;
           if (ip.ceramicId !== null) highlighted.add(ip.ceramicId);
           if (ip.ceramicId !== null && ip.glaze !== null) selection = { ...selection, pendingCeramics: [{ ceramicId: ip.ceramicId, glaze: ip.glaze, at: "imperial" }] };
         }
+        // A Sell button on each Flawed ceramic the viewer may sell now (change 30, R20).
+        const selling = draft.mode === "sell_flawed" ? draft.sell : null;
+        if (selling !== null) highlighted.add(selling);
+        selection = { ...selection, sellTargets: saleTargets(engine, selling) };
         return tableSelection({ ...selection, highlightedCeramicIds: highlighted });
       },
       act(draft, action, model, engine): WorkAction | null {
@@ -231,10 +266,19 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
           case "kilnSpace":
             return draft.mode === "place" && draft.locationId === "glaze_load" ? { type: "sub", locationId: "glaze_load", action: { type: "kilnSpace", spaceId: action.spaceId } } : null;
           case "order": {
+            if (draft.mode === "place" && draft.locationId === "magistrates_hall") {
+              const context = activePlacement(draft, model, engine);
+              const target = context === null ? undefined : crownTargetsOf(draft.perLocation.magistrates_hall, context).get(action.key);
+              if (target === undefined || context === null) return null;
+              const slotIndex = Number(action.key.slice("slot:".length));
+              return { type: "sub", locationId: "magistrates_hall", action: { type: "crown", slotIndex: target.state === "chosen" ? null : slotIndex } };
+            }
             if (draft.mode !== "colour_samples_swap") return null;
             const discard = colourSamplesSwapDraft.options(draft.swap, model, engine).discards.find((candidate) => candidate.orderId === action.key && candidate.legal);
             return discard === undefined ? null : { type: "swap", action: { type: "discard", orderId: discard.orderId } };
           }
+          case "sell":
+            return saleOffered(engine, action.ceramicId) ? { type: "sell", ceramicId: action.ceramicId } : null;
           case "tech":
             return draft.mode === "place" && draft.locationId === "guild_hall" ? { type: "sub", locationId: "guild_hall", action: { type: "tech", techId: action.techId } } : null;
           case "inspect":

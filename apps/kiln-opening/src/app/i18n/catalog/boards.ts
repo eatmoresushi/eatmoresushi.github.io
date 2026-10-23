@@ -26,13 +26,11 @@ export const boards = defineNamespace({
     "board.handHidden": "{n} · contents hidden",
     "board.completed": "Completed",
     "board.completedOrder": "{order} · {vp}",
+    "board.completedOrderCrackle": "{order} · {vp} · Crackle +{n} VP",
     "board.noKiln": "No Kiln chosen yet",
 
     // Kiln Tradition and the marker line (wireframe `kilnTrad`, `hmLine`).
     "kiln.tradition": "{kiln} · {ability}",
-    "markers.heatFaceDownOn": "Heat marker (face down) on <b>{ceramic}</b>",
-    "markers.heatValueOn": "Heat marker {value} on <b>{ceramic}</b>",
-    "markers.heatSupply": "Heat marker in supply",
     "markers.kilnMasterOn": "Kiln Master marker {value} on <b>{ceramic}</b>",
     "markers.imperial": "Imperial Kiln: {state}",
     "markers.imperialEmpty": "empty this round",
@@ -75,12 +73,10 @@ export const boards = defineNamespace({
     "board.handHidden": "{n}张 · 牌面保密",
     "board.completed": "已完成",
     "board.completedOrder": "{order} · {vp}",
+    "board.completedOrderCrackle": "{order} · {vp} · 开片器+{n}分",
     "board.noKiln": "尚未选定窑口",
 
     "kiln.tradition": "{kiln} · {ability}",
-    "markers.heatFaceDownOn": "火标（暗置）在<b>{ceramic}</b>上",
-    "markers.heatValueOn": "火标{value}在<b>{ceramic}</b>上",
-    "markers.heatSupply": "火标在手",
     "markers.kilnMasterOn": "窑工标{value}在<b>{ceramic}</b>上",
     "markers.imperial": "御窑：{state}",
     "markers.imperialEmpty": "本轮空着",

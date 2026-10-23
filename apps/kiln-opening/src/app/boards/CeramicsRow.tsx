@@ -6,12 +6,16 @@
  * this firing's recorded Quality once assigned), Finished. Each is a ceramic chip described in
  * words (D9) with its details; chips the open decision points at are highlighted
  * (`highlightedCeramicIds`). All undelivered ceramics are public (AGENTS.md). While a group's
- * attributes are not in the model (CR B2-1), the group shows its count instead.
+ * attributes are not in the model (CR B2-1), the group shows its count instead. On the viewer's
+ * own board, a Flawed ceramic they may sell now carries a Sell button (`SellButton`, change 30,
+ * R20: only during their own turn).
  */
 import type { CeramicId, PlayerId } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";
+import { ceramicLabel } from "../i18n/ceramicLabel.ts";
 import { useGame, useTableSelection } from "../state/hooks.ts";
 import { CeramicPiece } from "../table/CeramicPiece.tsx";
+import { SellButton } from "../table/SellButton.tsx";
 import { ceramicsFor, summaryOf, tableCeramics } from "../table/tableData.ts";
 import "./CeramicsRow.css";
 
@@ -46,7 +50,7 @@ export function CeramicsRow({ playerId }: CeramicsRowProps) {
             <span className="cerrow-lab">{t(`boards.ceramics.${group.key}`)}</span>
             <ul className="cerrow-list">
               {known.map((ceramic) => (
-                <li key={ceramic.id}>
+                <li key={ceramic.id} className="cerrow-item">
                   <CeramicPiece
                     ceramic={ceramic}
                     seat={summary.seatIndex}
@@ -55,6 +59,9 @@ export function CeramicsRow({ playerId }: CeramicsRowProps) {
                     highlighted={ceramic.id !== undefined && selection.highlightedCeramicIds.has(ceramic.id)}
                     withOwner={false}
                   />
+                  {ceramic.id === undefined || playerId !== model.viewerId ? null : (
+                    <SellButton ceramicId={ceramic.id} label={ceramicLabel(ceramic, labelView, { locale: t, withOwner: false, withPlace: true })} selection={selection} />
+                  )}
                 </li>
               ))}
               {unknown === 0 ? null : <li className="cerrow-count">{t("boards.ceramics.count", { n: unknown })}</li>}

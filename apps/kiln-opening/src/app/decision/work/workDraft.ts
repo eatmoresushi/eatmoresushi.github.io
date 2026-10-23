@@ -7,6 +7,8 @@
  *   sub-draft), or first use Imperial Priority or the Colour Samples swap (§3.4, R10, v1.6.2
  *   L622);
  * - **after the worker action:** Imperial Priority, the Colour Samples swap, or End turn.
+ * In both steps the viewer may also sell a Flawed ceramic (change 30, R20: `sell_flawed`, from
+ * `sellFlawedOptions`), which is never a worker action: the step stays as it was afterwards.
  *
  * The worker and the location are chosen on the table (owner review, 2026-10-17): the work
  * window's table adapter turns a Place shortcut into the `place` action, and a Guild Hall Tech or
@@ -23,10 +25,12 @@
 import { imperialPriorityOptions } from "../../../game/index.ts";
 import type {
   AuthoritativeCommand,
+  CeramicId,
   GameRuleError,
   LocationId,
   PlacementOption,
   PlacementWorkerOption,
+  SellFlawedOptions,
   WorkerKind,
 } from "../../../game/index.ts";
 import { locationName, workerKindName } from "../../i18n/content.ts";
@@ -39,6 +43,7 @@ import { placementWorkerKey } from "../../state/tableSelection.ts";
 import { imperialPriorityDraft } from "./ImperialPriority.draft.ts";
 import type { ImperialPriorityAction, ImperialPriorityDraft, ImperialPriorityOptions } from "./ImperialPriority.draft.ts";
 import { colourSamplesSwapDraft, swapUsable } from "./ColourSamplesSwap.draft.ts";
+import { saleCommand, saleOf, saleOffered, saleOptions, saleSummary } from "../sale/sellFlawed.ts";
 import type { ColourSamplesSwapAction, ColourSamplesSwapDraft, ColourSamplesSwapOptions } from "./ColourSamplesSwap.draft.ts";
 import { keepIfSame, placementOf, placements, viewMemo, workContext, workerEntry } from "./context.ts";
 import type { WorkContext } from "./context.ts";
@@ -96,7 +101,7 @@ export type SubAction = { [L in LocationId]: { readonly type: "sub"; readonly lo
 
 // ── The work draft ────────────────────────────────────────────────────────────────────────
 
-export type WorkMode = "place" | "imperial_priority" | "colour_samples_swap" | "end_turn";
+export type WorkMode = "place" | "imperial_priority" | "colour_samples_swap" | "sell_flawed" | "end_turn";
 export type WorkStep = "before_action" | "after_action";
 
 export interface WorkDraft {
@@ -109,6 +114,8 @@ export interface WorkDraft {
   readonly imperialPriority: ImperialPriorityDraft;
   /** The Colour Samples swap's held Order to discard (v1.6.2 L622). */
   readonly swap: ColourSamplesSwapDraft;
+  /** The Flawed ceramic to sell (`sell_flawed`, R20), or null. */
+  readonly sell: CeramicId | null;
 }
 
 export type WorkAction =
@@ -118,7 +125,9 @@ export type WorkAction =
   | { readonly type: "place"; readonly locationId: LocationId; readonly workerKey: string }
   | SubAction
   | { readonly type: "imperialPriority"; readonly action: ImperialPriorityAction }
-  | { readonly type: "swap"; readonly action: ColourSamplesSwapAction };
+  | { readonly type: "swap"; readonly action: ColourSamplesSwapAction }
+  /** Sell this Flawed ceramic (the pane's choice, or a Sell button on the table). */
+  | { readonly type: "sell"; readonly ceramicId: CeramicId };
 
 export interface WorkModeOption {
   mode: WorkMode;
@@ -178,6 +187,8 @@ export interface WorkOptions {
   imperialPriority: ImperialPriorityOptions | null;
   /** The Colour Samples swap's discard choices while it may be used, else null. */
   swap: ColourSamplesSwapOptions | null;
+  /** The Flawed ceramics the viewer may sell now (R20), else null. */
+  sale: SellFlawedOptions | null;
   workersLeft: number;
 }
 
@@ -207,6 +218,7 @@ function modesOf(model: GameModel, engine: EngineView): WorkMode[] {
   const modes: WorkMode[] = step === "before_action" ? ["place"] : [];
   if (imperialUsable(engine)) modes.push("imperial_priority");
   if (swapUsable(engine)) modes.push("colour_samples_swap");
+  if (saleOptions(engine) !== null) modes.push("sell_flawed");
   if (step === "after_action") modes.push("end_turn");
   return modes;
 }
@@ -301,6 +313,7 @@ function revalidate(draft: WorkDraft, model: GameModel, engine: EngineView): Wor
   if (mode === "place") next = settleActive(next, context, "revalidate");
   if (mode === "imperial_priority") next = { ...next, imperialPriority: imperialPriorityDraft.reduce(next.imperialPriority, REVALIDATE, model, engine) };
   if (mode === "colour_samples_swap") next = { ...next, swap: colourSamplesSwapDraft.reduce(next.swap, REVALIDATE, model, engine) };
+  if (next.sell !== null && (mode !== "sell_flawed" || !saleOffered(engine, next.sell))) next = { ...next, sell: null };
   return keepIfSame(draft, next);
 }
 
@@ -325,6 +338,7 @@ function blankDraft(model: GameModel, engine: EngineView): WorkDraft {
     perLocation: blankPerLocation(),
     imperialPriority: imperialPriorityDraft.initial(model, engine),
     swap: colourSamplesSwapDraft.initial(model, engine),
+    sell: null,
   };
 }
 
@@ -389,6 +403,9 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       case "swap":
         if (!modesOf(model, engine).includes("colour_samples_swap")) return draft;
         return { ...draft, mode: "colour_samples_swap", swap: colourSamplesSwapDraft.reduce(draft.swap, action.action, model, engine) };
+      case "sell":
+        if (!saleOffered(engine, action.ceramicId)) return draft;
+        return { ...draft, mode: "sell_flawed", sell: action.ceramicId };
     }
   },
 
@@ -398,7 +415,7 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     const modes = modesOf(model, engine).map((mode) => ({ mode }));
     if (context === null) {
       const heading: WorkHeading = step === "after_action" ? "after_action" : "place";
-      return { step, modes, stepChoices: [], heading, backToPlacing: false, workers: [], locations: [], active: null, imperialPriority: null, swap: null, workersLeft: 0 };
+      return { step, modes, stepChoices: [], heading, backToPlacing: false, workers: [], locations: [], active: null, imperialPriority: null, swap: null, sale: null, workersLeft: 0 };
     }
     const placement = draft.mode === "place" ? placementContext(context, draft.locationId, draft.workerKey) : null;
     // A placement kept while an ability is open (the draft keeps the worker and the location).
@@ -407,7 +424,7 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     const candidates = abilities ? modes.filter(({ mode }) => mode !== "place" || placementChosen) : [];
     // One ability opened with nothing placed: a lone radio is no choice (the heading names it).
     const stepChoices = candidates.length > 1 ? candidates : [];
-    const ability = step === "before_action" && (draft.mode === "imperial_priority" || draft.mode === "colour_samples_swap") ? draft.mode : null;
+    const ability = step === "before_action" && (draft.mode === "imperial_priority" || draft.mode === "colour_samples_swap" || draft.mode === "sell_flawed") ? draft.mode : null;
     const heading: WorkHeading = step === "after_action" ? "after_action" : ability === null ? "place" : stepChoices.length === 0 ? ability : "before_action";
     const backToPlacing = step === "before_action" && draft.mode !== null && draft.mode !== "place" && !placementChosen;
     const active: ActiveLocation | null =
@@ -427,6 +444,7 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       active,
       imperialPriority: usable ? imperialPriorityDraft.options(draft.imperialPriority, model, engine) : null,
       swap: swap ? colourSamplesSwapDraft.options(draft.swap, model, engine) : null,
+      sale: saleOptions(engine),
       workersLeft: context.me.availableWorkerIds.length,
     };
   },
@@ -441,6 +459,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
         return imperialPriorityDraft.build(draft.imperialPriority, model, engine);
       case "colour_samples_swap":
         return colourSamplesSwapDraft.build(draft.swap, model, engine);
+      case "sell_flawed":
+        return saleCommand(engine, draft.sell);
       case "end_turn":
         return stepOf(model) === "after_action" ? { type: "END_TURN" } : null;
       case null:
@@ -461,6 +481,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       const sub = colourSamplesSwapDraft.fromCommand(command, model, engine);
       return sub === null ? null : { ...blank, mode: "colour_samples_swap", swap: sub };
     }
+    const sale = saleOf(command);
+    if (sale !== null) return { ...blank, mode: "sell_flawed", sell: sale };
     const locationId = placementLocationOf(command);
     if (locationId === null || stepOf(model) !== "before_action" || !("workerId" in command)) return null;
     const senior = "seniorApprentice" in command && command.seniorApprentice === true;
@@ -487,6 +509,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
         return imperialPriorityDraft.summary(draft.imperialPriority, model, engine);
       case "colour_samples_swap":
         return colourSamplesSwapDraft.summary(draft.swap, model, engine);
+      case "sell_flawed":
+        return draft.sell === null ? msg("common.sale.pick") : saleSummary(model, engine, draft.sell);
       case "place": {
         if (draft.workerKey === null && draft.locationId === null) return msg("work.summary.incomplete");
         if (draft.workerKey === null) return msg("work.summary.chooseWorker");

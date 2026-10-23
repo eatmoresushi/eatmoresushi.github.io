@@ -10,9 +10,7 @@ import { contributionCardsOfTech, validateAction } from "../../../../src/game/in
 import type { ActorView, AuthoritativeCommand, PlayerView, TechId } from "../../../../src/game/index.ts";
 import { afterQualityDraft } from "../../../../src/app/decision/firing/AfterQuality.draft.ts";
 import { contributionsDraft } from "../../../../src/app/decision/firing/Contributions.draft.ts";
-import { heatMarkersDraft } from "../../../../src/app/decision/firing/HeatMarkers.draft.ts";
 import { junDraft } from "../../../../src/app/decision/firing/Jun.draft.ts";
-import { salvageDraft } from "../../../../src/app/decision/firing/Salvage.draft.ts";
 import { secondFiringDraft } from "../../../../src/app/decision/firing/SecondFiring.draft.ts";
 import { testPiecesDraft } from "../../../../src/app/decision/firing/TestPieces.draft.ts";
 import { techsFreeingContributionCard } from "../../../../src/app/i18n/content.ts";
@@ -170,49 +168,8 @@ describe("Test Pieces", () => {
   });
 });
 
-describe("Heat markers", () => {
-  const c = ctx("w-heat-marker-step-with-a-face-down-marker-and-kiln-master");
-
-  it("requires the own marker; Kiln Master defaults to not placing it", () => {
-    const draft = heatMarkersDraft.initial(c.model, c.engine);
-    expect(draft).toEqual({ own: null, kmTarget: "none", kmValue: null });
-    const options = heatMarkersDraft.options(draft, c.model, c.engine);
-    expect(options.own?.ceramicId).toBe("c1");
-    expect(options.own?.choices.map((entry) => entry.choice)).toEqual([1, -1, "return"]);
-    expect(heatMarkersDraft.build(draft, c.model, c.engine)).toBeNull();
-    const turned = run(heatMarkersDraft, c, { type: "own", choice: -1 });
-    expect(heatMarkersDraft.build(turned, c.model, c.engine)).toEqual({ type: "RESOLVE_HEAT_MARKERS", ownMarker: -1 });
-  });
-
-  it("Kiln Master may go on the own marker's ceramic only once that marker is returned", () => {
-    const before = heatMarkersDraft.options(run(heatMarkersDraft, c, { type: "own", choice: 1 }), c.model, c.engine).kilnMaster;
-    expect(before?.targets).toEqual([
-      { ceramicId: "c2", available: true, needsReturn: false },
-      { ceramicId: "c1", available: false, needsReturn: true },
-    ]);
-    expect(run(heatMarkersDraft, c, { type: "own", choice: 1 }, { type: "kmTarget", target: "c1" }).kmTarget).toBeNull();
-    const returned = run(heatMarkersDraft, c, { type: "own", choice: "return" }, { type: "kmTarget", target: "c1" }, { type: "kmValue", value: -1 });
-    const command = heatMarkersDraft.build(returned, c.model, c.engine);
-    expect(command).toEqual({ type: "RESOLVE_HEAT_MARKERS", ownMarker: "return", kilnMaster: { ceramicId: "c1", value: -1 } });
-    expect(valid(c, command)).toBe(true);
-    // Turning the marker after all takes the ceramic away from Kiln Master again.
-    expect(heatMarkersDraft.reduce(returned, { type: "own", choice: 1 }, c.model, c.engine)).toEqual({ own: 1, kmTarget: null, kmValue: -1 });
-  });
-
-  it("a Kiln Master target needs a side before it builds", () => {
-    const halfway = run(heatMarkersDraft, c, { type: "own", choice: 1 }, { type: "kmTarget", target: "c2" });
-    expect(heatMarkersDraft.build(halfway, c.model, c.engine)).toBeNull();
-    expect(heatMarkersDraft.summary(halfway, c.model, c.engine)?.key).toBe("firing.km.pickTarget");
-  });
-
-  it("without Kiln Master only the own marker is offered", () => {
-    const m3 = withoutTech("m3_heat_marker_step_3p", "T24");
-    expect(heatMarkersDraft.options(heatMarkersDraft.initial(m3.model, m3.engine), m3.model, m3.engine).kilnMaster).toBeNull();
-  });
-});
-
 describe("Jun", () => {
-  it("step 8: a ceramic and a side, or decline", () => {
+  it("step 3: a ceramic and a side, or decline", () => {
     const c = ctx("w-jun-heat-adjustment");
     const draft = junDraft.initial(c.model, c.engine);
     expect(draft).toEqual({ ceramicId: null, delta: null, decline: false });
@@ -224,13 +181,13 @@ describe("Jun", () => {
     expect(run(junDraft, c, { type: "ceramic", ceramicId: "c99" }).ceramicId).toBeNull();
   });
 
-  it("is step 8 only: Second Firing's choice carries R7's Jun itself (v1.6.2 L631)", () => {
+  it("is step 3 only: Second Firing's choice carries an unused Jun itself (rev. 4 L627)", () => {
     const c = ctx("w-second-firing-choice-with-jun-r7");
     expect(junDraft.options(junDraft.initial(c.model, c.engine), c.model, c.engine).during).toBeNull();
   });
 });
 
-describe("Second Firing's choice (v1.6.2 L631, R7)", () => {
+describe("Second Firing's choice (rev. 4 L627)", () => {
   it("chooses 1 of the 2 revealed cards, with R7's Jun when ready; nothing preselected", () => {
     const c = ctx("w-second-firing-choice-with-jun-r7");
     const draft = secondFiringDraft.initial(c.model, c.engine);
@@ -295,7 +252,7 @@ describe("Second Firing's choice: a Jun owner whose Jun is not ready sees the en
   };
 
   it.each([
-    ["used in step 8", usedJun, "ABILITY_ALREADY_USED"],
+    ["used in step 3", usedJun, "ABILITY_ALREADY_USED"],
     ["no Wood", noWood, "INSUFFICIENT_RESOURCES"],
   ] as const)("%s", (_, edit, code) => {
     const c = junCtx(edit);
@@ -315,17 +272,22 @@ describe("after-Quality", () => {
   it("offers each ability with its eligible ceramics; one use per command", () => {
     const options = afterQualityDraft.options(afterQualityDraft.initial(c.model, c.engine), c.model, c.engine);
     // v1.6.2 L628: Saggars upgrades a Standard ceramic (its floored one included) for nothing.
+    // Rev. 4 L463 (change 29): Ge crackles a Fine or Standard ceramic, so the Fine c3 is a Ge target too.
     expect(options.abilities.map((option) => [option.ability, option.ceramicIds])).toEqual([
       ["protective_saggars", ["c1", "c2"]],
-      ["ge_crackle", ["c1", "c2"]],
+      ["ge_crackle", ["c1", "c2", "c3"]],
     ]);
+    // The viewer owns Protective Saggars: never Flawed, so there is nothing to sell (R20).
+    expect(options.sale).toBeNull();
     expect(options.abilities.every((option) => option.cost.clay + option.cost.wood + option.cost.coins === 0)).toBe(true);
     expect(c.model.firingStage?.ceramics.find((ceramic) => ceramic.id === "c2")).toMatchObject({ quality: "standard", saggarsFloor: true });
     const ge = run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c1" });
     expect(afterQualityDraft.build(ge, c.model, c.engine)).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c1" });
-    // The Fine ceramic is no target for either.
-    expect(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c3" }).choice).toBeNull();
+    // The Fine ceramic is a Ge target (rev. 4 L463), but no Protective Saggars target (Standard only).
+    expect(afterQualityDraft.build(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c3" }), c.model, c.engine)).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c3" });
     expect(run(afterQualityDraft, c, { type: "use", ability: "protective_saggars", ceramicId: "c3" }).choice).toBeNull();
+    // Nothing to sell: a sale choice is dropped.
+    expect(run(afterQualityDraft, c, { type: "use", ability: "sell_flawed", ceramicId: "c1" }).choice).toBeNull();
     expect(afterQualityDraft.build(run(afterQualityDraft, c, { type: "end" }), c.model, c.engine)).toEqual({ type: "END_AFTER_QUALITY" });
   });
 
@@ -355,14 +317,34 @@ function afterQualityOptionsFirst(c: Ctx, ability: "protective_saggars" | "secon
   return options.abilities.find((option) => option.ability === ability)?.ceramicIds[0] ?? null;
 }
 
-describe("Salvage", () => {
-  it("a still-Flawed ceramic for Coins, or keep it", () => {
-    const c = ctx("w-salvage");
-    const draft = salvageDraft.initial(c.model, c.engine);
-    expect(draft).toEqual({ choice: null });
-    expect(salvageDraft.options(draft, c.model, c.engine)).toMatchObject({ ceramicIds: ["c1"], coins: 2 });
-    expect(salvageDraft.build(run(salvageDraft, c, { type: "salvage", ceramicId: "c1" }), c.model, c.engine)).toEqual({ type: "SALVAGE_FLAWED", ceramicId: "c1" });
-    expect(salvageDraft.build(run(salvageDraft, c, { type: "keep" }), c.model, c.engine)).toEqual({ type: "SALVAGE_FLAWED", ceramicId: null });
+describe("after-Quality: Ge on a Fine ceramic (change 29) and the sale (change 30, R20)", () => {
+  it("Ge on a played Fine ceramic builds the command; the summary says it is Fine with a Crackle marker", () => {
+    const c = ctx("m26_ge_crackle_fine");
+    const options = afterQualityDraft.options(afterQualityDraft.initial(c.model, c.engine), c.model, c.engine);
+    const ge = options.abilities.find((option) => option.ability === "ge_crackle");
+    expect(ge?.ceramicIds.length).toBeGreaterThan(0);
+    const fine = ge!.ceramicIds.find((id) => c.model.firingStage?.ceramics.find((ceramic) => ceramic.id === id)?.quality === "fine");
+    expect(fine).toBeDefined();
+    const draft = run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: fine! });
+    const command = afterQualityDraft.build(draft, c.model, c.engine);
+    expect(command).toEqual({ type: "USE_GE_CRACKLE", ceramicId: fine });
+    expect(valid(c, command)).toBe(true);
+    expect(afterQualityDraft.summary(draft, c.model, c.engine)?.key).toBe("firing.aq.sumGe");
+  });
+
+  it("the own after-Quality turn offers the sale of a Flawed ceramic of this firing, beside Second Firing", () => {
+    const c = ctx("t-after-quality-sale");
+    const options = afterQualityDraft.options(afterQualityDraft.initial(c.model, c.engine), c.model, c.engine);
+    expect(options.sale).toEqual({ ceramicIds: ["c1"], coins: 2 });
+    expect(options.abilities.find((option) => option.ability === "second_firing")?.ceramicIds).toEqual(["c1"]);
+    const sale = run(afterQualityDraft, c, { type: "use", ability: "sell_flawed", ceramicId: "c1" });
+    const command = afterQualityDraft.build(sale, c.model, c.engine);
+    expect(command).toEqual({ type: "SELL_FLAWED", ceramicId: "c1" });
+    expect(valid(c, command)).toBe(true);
+    expect(afterQualityDraft.summary(sale, c.model, c.engine)?.key).toBe("common.sale.sum");
+    expect(afterQualityDraft.fromCommand(command!, c.model, c.engine)).toEqual(sale);
+    // Another player's ceramic, or one that is not Flawed, is never offered.
+    expect(run(afterQualityDraft, c, { type: "use", ability: "sell_flawed", ceramicId: "c2" }).choice).toBeNull();
   });
 });
 
@@ -371,7 +353,8 @@ describe("every built command validates", () => {
     ["w-test-pieces-decision", testPiecesDraft, { type: "choose", choice: "peek" }],
     ["w-second-firing-choice-with-jun-r7", secondFiringDraft, { type: "card", cardIndex: 1 }],
     ["w-after-quality-saggars-and-ge", afterQualityDraft, { type: "use", ability: "protective_saggars", ceramicId: "c2" }],
-    ["m14_salvage", salvageDraft, { type: "keep" }],
+    ["t-after-quality-sale", afterQualityDraft, { type: "use", ability: "sell_flawed", ceramicId: "c1" }],
+    ["m26_ge_crackle_fine", afterQualityDraft, { type: "end" }],
   ] as const)("%s", (id, model, action) => {
     const c = ctx(id);
     const draftModel = model as unknown as DraftModel<unknown, DraftActionBase, unknown>;

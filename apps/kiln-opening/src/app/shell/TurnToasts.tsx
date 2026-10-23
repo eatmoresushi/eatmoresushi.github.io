@@ -60,7 +60,7 @@ import { isPhone } from "../state/layoutMode.ts";
 import { useGame, useLayoutMode, useLog, useSession, useUi } from "../state/hooks.ts";
 import { ceramicViewAsOf } from "./logCeramics.ts";
 import { ToastRoom } from "./toastRoom.ts";
-import { GAP_WAIT_MS, NO_TOASTS, advanceTurns, nextDeadline, showingToast, skipTurns, startTurnTracker, toastLines, toastReducer } from "./turnToasts.ts";
+import { GAP_WAIT_MS, MAX_TOAST_LINES, NO_TOASTS, advanceTurns, isMinorToastLine, nextDeadline, showingToast, skipTurns, startTurnTracker, toastLines, toastReducer } from "./turnToasts.ts";
 import type { ToastAction, TurnTracker } from "./turnToasts.ts";
 import "./TurnToasts.css";
 
@@ -310,7 +310,7 @@ export function TurnToasts() {
   const toastStyle = { "--seat": `var(--seat-${player?.seatIndex ?? 0})` } as CSSProperties;
   const name = player?.displayName || t("common.anotherPlayer");
   const context = { t, view, viewerId: model.viewerId };
-  const lines = toastLines(showing.turn.entries.map((entry) => publicEventText(entry.event, context)));
+  const lines = toastLines(showing.turn.entries, MAX_TOAST_LINES, isMinorToastLine);
   return (
     <div
       ref={groupRef}
@@ -334,9 +334,9 @@ export function TurnToasts() {
       <div className="turn-toast" style={toastStyle} data-player-id={showing.turn.playerId} data-turn={key} onKeyDown={onKeyDown}>
         <div key={key} className="turn-toast-body">
           <ul className="turn-toast-lines">
-            {lines.shown.map((line, index) => (
-              <li key={index} className="turn-toast-line">
-                {line}
+            {lines.shown.map((entry) => (
+              <li key={entry.sequence} className="turn-toast-line">
+                {publicEventText(entry.event, context)}
               </li>
             ))}
             {lines.more > 0 ? <li className="turn-toast-line turn-toast-more">{t("shell.toast.more", { n: lines.more })}</li> : null}

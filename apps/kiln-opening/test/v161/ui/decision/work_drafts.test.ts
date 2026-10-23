@@ -15,8 +15,8 @@ import {
   glazeLoadVesselOptions,
   guildInspectionOptions,
   guildOptions,
-  heatMarkerTargets,
   imperialPriorityOptions,
+  kilnMasterOption,
   kilnSelectionOptions,
   legalActions,
   loadDestinationOptions,
@@ -26,9 +26,13 @@ import {
   placementLimits,
   placementOptions,
   quoteFormDecorate,
+  quoteGlazeLoad,
   quoteMaterialsYard,
   settersMarkOptions,
+  sellFlawedOptions,
+  setupChoiceOptions,
   validateAction,
+  vesselCoins,
   DECORATIONS,
   SHAPES,
 } from "../../../../src/game/index.ts";
@@ -98,6 +102,7 @@ const RICH = "w-before-the-worker-action-rich-4-player-start";
 const DING = "w-before-the-worker-action-colour-samples-swap-imperial-priority-with-reworking-table-ding";
 const INVERTED = "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice";
 const FURNITURE = "t-glaze-load-imperial-furniture";
+const KM_FUEL = "w-before-the-worker-action-kiln-master-at-loading-the-magistrates-hall-shifus-crown-order-the-kiln-fuel";
 
 // ── The work turn ─────────────────────────────────────────────────────────────────────────
 
@@ -144,9 +149,9 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
   });
 
   it("explains a second personal space not yet added in D7 wording", () => {
-    // m1 with Wen's Materials Yard Apprentice on the first Glaze & Load space instead: the second is not added yet.
+    // m1 with Zhao's Materials Yard Apprentice on the first Glaze & Load space instead: the second is not added yet.
     const c = ctxWith("m1_work_phase_r2_3p", (view) => {
-      const worker = viewer(view).workers["p3:apprentice:1"];
+      const worker = viewer(view).workers["p2:apprentice:2"];
       if (worker?.placement?.locationId !== "materials_yard") throw new Error("fixture changed");
       worker.placement = { ...worker.placement, locationId: "glaze_load", spaceIndex: 0 };
       if (viewer(view).personalSpaces.glaze_load[1].unlocked) throw new Error("fixture changed: the second Glaze & Load space is added");
@@ -157,12 +162,12 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
   });
 
   it("ignores an unavailable location, and takes the only legal worker of a location", () => {
-    const c = ctx("m1_work_phase_r2_3p");
-    expect(work(c, { type: "location", locationId: "guild_hall" }).locationId).toBeNull();
+    const c = ctx("m5_two_player_board_2p");
     expect(work(c, { type: "location", locationId: "materials_yard" }).locationId).toBeNull();
+    expect(work(c, { type: "location", locationId: "form_decorate" }).locationId).toBeNull();
     const draft = work(c, { type: "location", locationId: "commission_market" });
     expect(draft.locationId).toBe("commission_market");
-    expect(draft.workerKey).toBe("shifu");
+    expect(draft.workerKey).toBe("apprentice");
   });
 
   it("keeps each location's sub-draft while the player looks at other locations (§3.5)", () => {
@@ -310,12 +315,12 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
 // ── Location sub-drafts ───────────────────────────────────────────────────────────────────
 
 describe("Materials Yard sub-draft (gap 14)", () => {
-  it("offers every split of the worker's resources: 3 for the Apprentice, 6 for the Shifu and Senior Apprentice, with no Coin option (v1.6.2 L164–165)", () => {
+  it("offers every split of the worker's resources: 4 for the Apprentice, 8 for the Shifu and Senior Apprentice, with no Coin option (rev. 4 L176–177, change 34)", () => {
     const c = ctx(INVERTED);
     for (const [key, total] of [
-      ["shifu", 6],
-      ["apprentice", 3],
-      ["apprentice-senior", 6],
+      ["shifu", 8],
+      ["apprentice", 4],
+      ["apprentice-senior", 8],
     ] as const) {
       const draft = work(c, { type: "place", locationId: "materials_yard", workerKey: key });
       const active = workDraft.options(draft, c.model, c.engine).active;
@@ -330,12 +335,12 @@ describe("Materials Yard sub-draft (gap 14)", () => {
     }
   });
 
-  it("builds a split of 6 for the Shifu and quotes it with quoteMaterialsYard", () => {
+  it("builds a split of 8 for the Shifu and quotes it with quoteMaterialsYard", () => {
     const c = ctx(RICH);
     let draft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "materials_yard" });
-    draft = workDraft.reduce(draft, { type: "sub", locationId: "materials_yard", action: { type: "clay", clay: 4 } }, c.model, c.engine);
+    draft = workDraft.reduce(draft, { type: "sub", locationId: "materials_yard", action: { type: "clay", clay: 5 } }, c.model, c.engine);
     const command = workDraft.build(draft, c.model, c.engine);
-    expect(command).toMatchObject({ type: "PLACE_MATERIALS_YARD", clay: 4, wood: 2 });
+    expect(command).toMatchObject({ type: "PLACE_MATERIALS_YARD", clay: 5, wood: 3 });
     expect(command).not.toHaveProperty("buyShifuBonus");
     const active = workDraft.options(draft, c.model, c.engine).active;
     if (active?.locationId !== "materials_yard" || command?.type !== "PLACE_MATERIALS_YARD") throw new Error("no Materials Yard");
@@ -405,15 +410,56 @@ describe("Form & Decorate sub-draft (gap 6)", () => {
     }
   });
 
-  it("shows each Shape's and Decoration's printed cost from the quote lines", () => {
+  it("shows each Shape's printed Clay and a vessel's 2 Coins from the quote lines; a Decoration has no cost of its own (rev. 4 L183, L336, change 30)", () => {
     const c = ctx(RICH);
     const draft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "form_decorate" });
     const active = workDraft.options(draft, c.model, c.engine).active;
     if (active?.locationId !== "form_decorate") throw new Error("no Form & Decorate");
     expect(active.options.shapes.map((entry) => entry.shape)).toEqual([...SHAPES]);
     expect(active.options.shapes.map((entry) => entry.clay)).toEqual([1, 1, 1, 2, 2]);
-    expect(active.options.decorations.map((entry) => entry.coins)).toEqual([2, 2, 2, 2]);
+    expect(active.options.vesselCoins).toBe(vesselCoins());
+    expect(active.options.vesselCoins).toBe(2);
+    expect(active.options.decorations.map((entry) => Object.keys(entry))).toEqual(DECORATIONS.map(() => ["decoration"]));
     expect(active.options.maxVessels).toBe(placementLimits(c.view, "form_decorate", "shifu").maxVessels);
+    // Every Decoration costs the same: the quote of one vessel names its Clay and its 2 Coins only.
+    for (const decoration of DECORATIONS) {
+      const one = workDraft.reduce(
+        workDraft.reduce(draft, { type: "sub", locationId: "form_decorate", action: { type: "shape", index: 0, shape: "bowl" } }, c.model, c.engine),
+        { type: "sub", locationId: "form_decorate", action: { type: "decoration", index: 0, decoration } },
+        c.model,
+        c.engine,
+      );
+      const quote = workDraft.options(one, c.model, c.engine).active;
+      if (quote?.locationId !== "form_decorate") throw new Error("no Form & Decorate");
+      expect(quote.options.quote?.lines.map((line) => [line.kind, line.amount]), decoration).toEqual([
+        ["shape_clay", 1],
+        ["vessel_coins", 2],
+      ]);
+    }
+  });
+
+  it("forming 2 with the Shifu: one vessel costs 1 Coin less, as the quote's shifu_discount line (rev. 4 L184)", () => {
+    const c = ctx(RICH);
+    let draft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "form_decorate" });
+    for (const action of [
+      { type: "second", on: true },
+      { type: "shape", index: 0, shape: "bowl" },
+      { type: "decoration", index: 0, decoration: "plain" },
+      { type: "shape", index: 1, shape: "plate" },
+      { type: "decoration", index: 1, decoration: "painted" },
+    ] as const) {
+      draft = workDraft.reduce(draft, { type: "sub", locationId: "form_decorate", action }, c.model, c.engine);
+    }
+    const active = workDraft.options(draft, c.model, c.engine).active;
+    if (active?.locationId !== "form_decorate") throw new Error("no Form & Decorate");
+    expect(active.options.quote?.lines.map((line) => [line.kind, line.amount])).toEqual([
+      ["shape_clay", 1],
+      ["shape_clay", 1],
+      ["vessel_coins", 2],
+      ["vessel_coins", 2],
+      ["shifu_discount", -1],
+    ]);
+    expect(active.options.quote?.pay).toEqual({ clay: 2, wood: 0, coins: 3 });
   });
 
   it("offers Ding's extra vessel on the indexes dingCopyableVesselIndexes lists", () => {
@@ -528,23 +574,98 @@ describe("Glaze & Load sub-draft (gap 15)", () => {
     expect(draft.perLocation.glaze_load.loads[0]?.destination).toEqual({ kiln: "shared", spaceId: "middle_1", invertedFiring: true });
   });
 
-  it("offers the Shifu's Heat marker on heatMarkerTargets only, and none to the Apprentice", () => {
-    const c = ctx(INVERTED);
+  it("prices the kiln fuel from the quote: 1 Wood for an action loading into the Shared Kiln, 1 vessel or 2; none into the Imperial Kiln only (rev. 4 L197, R24)", () => {
+    const c = ctx(KM_FUEL);
     let draft = glazeDraft(c);
-    draft = workDraft.reduce(draft, sub({ type: "vessel", index: 0, ceramicId: "c2" }), c.model, c.engine);
-    let active = workDraft.options(draft, c.model, c.engine).active;
+    const options = () => {
+      const active = workDraft.options(draft, c.model, c.engine).active;
+      if (active?.locationId !== "glaze_load") throw new Error("no Glaze & Load");
+      return active.options;
+    };
+    expect(options().fuel).toEqual({ wood: 0, perAction: 1, have: 9, free: false, short: false });
+    expect(options().quote).toBeNull();
+    draft = workDraft.reduce(draft, sub({ type: "vessel", index: 0, ceramicId: "c1" }), c.model, c.engine);
+    draft = workDraft.reduce(draft, sub({ type: "place", index: 0, place: "high_1" }), c.model, c.engine);
+    // The place is enough to price the fuel, before the Glaze is chosen.
+    expect(options().fuel).toMatchObject({ wood: 1, free: false });
+    expect(options().quote?.lines).toEqual([{ kind: "kiln_fuel", resource: "wood", amount: 1, itemIndex: null }]);
+    draft = workDraft.reduce(draft, sub({ type: "glaze", index: 0, glaze: "white" }), c.model, c.engine);
+    for (const action of [sub({ type: "second", on: true }), sub({ type: "vessel", index: 1, ceramicId: "c2" }), sub({ type: "glaze", index: 1, glaze: "celadon" }), sub({ type: "place", index: 1, place: "middle_1" })]) {
+      draft = workDraft.reduce(draft, action, c.model, c.engine);
+    }
+    // Still 1 Wood for the action with 2 Shared loads.
+    expect(options().fuel.wood).toBe(1);
+    expect(options().after).toEqual({ clay: 9, wood: 8, coins: 9 });
+    const command = workDraft.build(draft, c.model, c.engine);
+    expect(command).toMatchObject({ type: "PLACE_GLAZE_LOAD", loads: [{ ceramicId: "c1" }, { ceramicId: "c2" }] });
+    expect(quoteGlazeLoad(c.actor, command as Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>).pay).toEqual({ clay: 0, wood: 1, coins: 0 });
+    expect(validateAction(c.actor, command as GameAction)).toBeNull();
+    const [en, zh] = sentences(WINDOWS.work, draft, c);
+    expect(en).toContain("pay 1 Wood (kiln fuel)");
+    expect(zh).toContain("付1柴（烧窑要烧柴）");
+    // Loading only into the Imperial Kiln costs no Wood.
+    const imperial = ctx(DING);
+    let only = glazeDraft(imperial);
+    for (const action of [sub({ type: "vessel", index: 0, ceramicId: "c1" }), sub({ type: "glaze", index: 0, glaze: "celadon" }), sub({ type: "place", index: 0, place: "imperial" }), sub({ type: "destination", index: 0, key: "imperial:0" })]) {
+      only = workDraft.reduce(only, action, imperial.model, imperial.engine);
+    }
+    const active = workDraft.options(only, imperial.model, imperial.engine).active;
     if (active?.locationId !== "glaze_load") throw new Error("no Glaze & Load");
-    const pending: LoadSpec[] = [{ ceramicId: "c2", glaze: "white", destination: { kiln: "imperial", imperialModifier: 0 } }];
-    expect(active.options.marker?.targets).toEqual(heatMarkerTargets(c.view, c.actor.viewerId, pending));
-    draft = workDraft.reduce(draft, sub({ type: "marker", ceramicId: "c9" }), c.model, c.engine);
-    expect(draft.perLocation.glaze_load.marker).toBeNull();
-    draft = workDraft.reduce(draft, sub({ type: "marker", ceramicId: "c1" }), c.model, c.engine);
-    expect(draft.perLocation.glaze_load.marker).toBe("c1");
-    const apprentice = glazeDraft(c, "apprentice");
-    active = workDraft.options(apprentice, c.model, c.engine).active;
+    expect(active.options.fuel).toMatchObject({ wood: 0, free: true });
+    expect(active.options.quote?.lines).toEqual([]);
+    expect(sentences(WINDOWS.work, only, imperial)[0]).not.toContain("kiln fuel");
+  });
+
+  it("without Wood offers only the Imperial Kiln (the engine offers no Shared destination, R24)", () => {
+    const c = ctxWith(DING, (view) => {
+      viewer(view).resources.wood = 0;
+    });
+    let draft = glazeDraft(c);
+    draft = workDraft.reduce(draft, sub({ type: "vessel", index: 0, ceramicId: "c1" }), c.model, c.engine);
+    const active = workDraft.options(draft, c.model, c.engine).active;
     if (active?.locationId !== "glaze_load") throw new Error("no Glaze & Load");
-    expect(active.options.marker).toBeNull();
-    expect(active.options.maxLoads).toBe(placementLimits(c.view, "glaze_load", "apprentice").maxLoads);
+    expect(active.options.loads[0]?.places.map((place) => place.kind)).toEqual(["imperial"]);
+    expect(active.options.fuel).toMatchObject({ perAction: 1, have: 0, short: true });
+  });
+
+  it("places Kiln Master's marker on one load when the tile is ready, optional, for either worker (T24, rev. 4 L628, R22)", () => {
+    const c = ctx(KM_FUEL);
+    let draft = glazeDraft(c);
+    const options = (d: WorkDraft = draft) => {
+      const active = workDraft.options(d, c.model, c.engine).active;
+      if (active?.locationId !== "glaze_load") throw new Error("no Glaze & Load");
+      return active.options;
+    };
+    expect(options().kilnMaster).toEqual({ techId: "T24", values: kilnMasterOption(c.view, c.actor.viewerId)?.values, loads: [] });
+    for (const action of [sub({ type: "vessel", index: 0, ceramicId: "c1" }), sub({ type: "glaze", index: 0, glaze: "white" }), sub({ type: "place", index: 0, place: "high_1" })]) {
+      draft = workDraft.reduce(draft, action, c.model, c.engine);
+    }
+    expect(options().kilnMaster).toMatchObject({ values: [1, -1], loads: [0] });
+    // Nothing is chosen until the player chooses (R4: declining is choosing none).
+    expect(draft.perLocation.glaze_load.kilnMaster).toBeNull();
+    expect(workDraft.build(draft, c.model, c.engine)).toEqual({ type: "PLACE_GLAZE_LOAD", workerId: "p1:shifu", loads: [{ ceramicId: "c1", glaze: "white", destination: { kiln: "shared", spaceId: "high_1" } }] });
+    // A load without a vessel cannot carry it.
+    expect(workDraft.reduce(draft, sub({ type: "kilnMaster", choice: { index: 1, value: 1 } }), c.model, c.engine).perLocation.glaze_load.kilnMaster).toBeNull();
+    draft = workDraft.reduce(draft, sub({ type: "kilnMaster", choice: { index: 0, value: -1 } }), c.model, c.engine);
+    const command = workDraft.build(draft, c.model, c.engine);
+    expect(command).toEqual({ type: "PLACE_GLAZE_LOAD", workerId: "p1:shifu", loads: [{ ceramicId: "c1", glaze: "white", destination: { kiln: "shared", spaceId: "high_1" }, kilnMaster: -1 }] });
+    expect(validateAction(c.actor, command as GameAction)).toBeNull();
+    expect(workDraft.fromCommand(command!, c.model, c.engine)?.perLocation).toMatchObject({ glaze_load: { kilnMaster: { index: 0, value: -1 } } });
+    expect(sentences(WINDOWS.work, draft, c)[0]).toContain("Kiln Master marker −1 on");
+    expect(sentences(WINDOWS.work, draft, c)[1]).toContain("窑工标−1放在");
+    // The Apprentice may place it too (any loading, R22).
+    expect(options(glazeDraft(c, "apprentice")).kilnMaster).not.toBeNull();
+    // Not ready (used this round), or not owned: no marker.
+    const used = ctxWith(KM_FUEL, (view) => {
+      for (const tech of viewer(view).techs) if (tech.id === "T24") tech.usedThisRound = true;
+    });
+    const usedActive = workDraft.options(glazeDraft(used), used.model, used.engine).active;
+    expect(usedActive?.locationId === "glaze_load" && usedActive.options.kilnMaster).toBeNull();
+    const none = ctx(DING);
+    const noneActive = workDraft.options(glazeDraft(none), none.model, none.engine).active;
+    expect(noneActive?.locationId === "glaze_load" && noneActive.options.kilnMaster).toBeNull();
+    // No Heat marker since revision 4 (changes 28, 31).
+    expect(Object.keys(options())).not.toContain("marker");
   });
 
   it("drops a vessel, Glaze or destination the selectors no longer offer", () => {
@@ -660,15 +781,53 @@ describe("Commission Market, Guild Hall, Magistrate's Hall and Canal Wharf sub-d
     expect(detail(0, 4, "apprentice")).toEqual(["Place Apprentice at Commission Market — Select 2", "派学徒到瓷牙行：精选2"]);
   });
 
-  it("shows the Magistrate's Hall price and the Recognition reached from magistratesHallQuote", () => {
-    const c = ctx(RICH);
-    const draft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "magistrates_hall" });
-    const active = workDraft.options(draft, c.model, c.engine).active;
-    if (active?.locationId !== "magistrates_hall") throw new Error("no Magistrate's Hall");
-    const quote = magistratesHallQuote(c.view, "shifu");
-    expect(active.options.reachable).toBe(quote.reachable);
-    expect(active.options.quote.pay).toEqual(quote.pay);
-    expect(workDraft.build(draft, c.model, c.engine)).toMatchObject({ type: "PLACE_MAGISTRATES_HALL" });
+  it("shows the Magistrate's Hall price and the Recognition reached from magistratesHallQuote: 4 Coins for either worker (change 33)", () => {
+    const c = ctx(KM_FUEL);
+    for (const key of ["shifu", "apprentice"] as const) {
+      const draft = work(c, { type: "worker", workerKey: key }, { type: "location", locationId: "magistrates_hall" });
+      const active = workDraft.options(draft, c.model, c.engine).active;
+      if (active?.locationId !== "magistrates_hall") throw new Error("no Magistrate's Hall");
+      const quote = magistratesHallQuote(c.view, key);
+      expect(active.options.reachable, key).toBe(quote.reachable);
+      expect(active.options.reachable, key).toBe(2);
+      expect(active.options.quote.pay, key).toEqual({ clay: 0, wood: 0, coins: 4 });
+      expect(workDraft.build(draft, c.model, c.engine), key).toEqual({ type: "PLACE_MAGISTRATES_HALL", workerId: `p1:${key === "shifu" ? "shifu" : "apprentice:1"}` });
+    }
+  });
+
+  it("lets the Magistrate's Hall Shifu reserve 1 face-up Crown Order, optional (R21); never the Apprentice", () => {
+    const c = ctx(KM_FUEL);
+    let draft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "magistrates_hall" });
+    const options = (d: WorkDraft) => {
+      const active = workDraft.options(d, c.model, c.engine).active;
+      if (active?.locationId !== "magistrates_hall") throw new Error("no Magistrate's Hall");
+      return active.options;
+    };
+    const slots = magistratesHallQuote(c.view, "shifu").crownOrderSlots;
+    expect(options(draft).crownOrders).toEqual(slots.map((slotIndex) => ({ slotIndex, orderId: c.view.game.market.display[slotIndex] })));
+    expect(options(draft).crownOrders).toEqual([
+      { slotIndex: 1, orderId: "O17" },
+      { slotIndex: 3, orderId: "O40" },
+    ]);
+    expect(options(draft).reservesCrown).toBe(true);
+    // Optional: nothing is chosen, and the placement builds without it.
+    expect(draft.perLocation.magistrates_hall.crownSlot).toBeNull();
+    // A display position without a Crown is never taken.
+    expect(workDraft.reduce(draft, { type: "sub", locationId: "magistrates_hall", action: { type: "crown", slotIndex: 0 } }, c.model, c.engine).perLocation.magistrates_hall.crownSlot).toBeNull();
+    draft = workDraft.reduce(draft, { type: "sub", locationId: "magistrates_hall", action: { type: "crown", slotIndex: 3 } }, c.model, c.engine);
+    const command = workDraft.build(draft, c.model, c.engine);
+    expect(command).toEqual({ type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crownOrder: { slotIndex: 3, orderId: "O40" } });
+    expect(validateAction(c.actor, command as GameAction)).toBeNull();
+    expect(workDraft.fromCommand(command!, c.model, c.engine)?.perLocation).toMatchObject({ magistrates_hall: { crownSlot: 3 } });
+    const [en, zh] = sentences(WINDOWS.work, draft, c);
+    expect(en).toBe("Place Shifu at Magistrate's Hall — Pay 4 Coins, then reserve O40");
+    expect(zh).toBe("派师傅到州衙：付4铜钱，再承接O40");
+    // Back to none.
+    expect(workDraft.build(workDraft.reduce(draft, { type: "sub", locationId: "magistrates_hall", action: { type: "crown", slotIndex: null } }, c.model, c.engine), c.model, c.engine)).toEqual({ type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu" });
+    // The Apprentice reserves nothing.
+    const apprentice = work(c, { type: "worker", workerKey: "apprentice" }, { type: "location", locationId: "magistrates_hall" });
+    expect(options(apprentice)).toMatchObject({ crownOrders: [], reservesCrown: false });
+    expect(workDraft.reduce(apprentice, { type: "sub", locationId: "magistrates_hall", action: { type: "crown", slotIndex: 3 } }, c.model, c.engine).perLocation.magistrates_hall.crownSlot).toBeNull();
   });
 
   it("shows the Canal Wharf's Coins from placementLimits (gap 10)", () => {
@@ -683,6 +842,64 @@ describe("Commission Market, Guild Hall, Magistrate's Hall and Canal Wharf sub-d
 });
 
 // ── Imperial Priority and the sub-step windows ────────────────────────────────────────────
+
+describe("selling a Flawed ceramic in the work turn (change 30, R20)", () => {
+  const SALE = "t-work-turn-sale";
+
+  it("is a mode before the worker action, never a worker action: it builds SELL_FLAWED and the step stays", () => {
+    const c = ctx(SALE);
+    const options = workDraft.options(workDraft.initial(c.model, c.engine), c.model, c.engine);
+    expect(options.modes.map(({ mode }) => mode)).toEqual(["place", "sell_flawed"]);
+    expect(options.sale).toEqual(sellFlawedOptions(c.view));
+    expect(options.sale).toEqual({ ceramicIds: ["c1"], coins: 2 });
+    let draft = work(c, { type: "mode", mode: "sell_flawed" });
+    expect(workDraft.options(draft, c.model, c.engine).heading).toBe("sell_flawed");
+    expect(workDraft.build(draft, c.model, c.engine)).toBeNull();
+    expect(sentences(WINDOWS.work, draft, c)).toEqual(["Choose a Flawed ceramic to sell.", "请选择要卖出的瑕品。"]);
+    // A Standard ceramic is never offered.
+    expect(workDraft.reduce(draft, { type: "sell", ceramicId: "c2" }, c.model, c.engine)).toBe(draft);
+    draft = workDraft.reduce(draft, { type: "sell", ceramicId: "c1" }, c.model, c.engine);
+    const command = workDraft.build(draft, c.model, c.engine);
+    expect(command).toEqual({ type: "SELL_FLAWED", ceramicId: "c1" });
+    expect(validateAction(c.actor, command as GameAction)).toBeNull();
+    expect(workDraft.fromCommand(command!, c.model, c.engine)).toMatchObject({ mode: "sell_flawed", sell: "c1" });
+    expect(sentences(WINDOWS.work, draft, c)).toEqual(["Sell Celadon Vase, Painted · Flawed for 2 Coins", "卖出青釉瓶 · 画花 · 瑕品，得2铜钱"]);
+    // Back to placing drops the sale.
+    expect(work(c, { type: "sell", ceramicId: "c1" }, { type: "mode", mode: "place" }).sell).toBeNull();
+  });
+
+  it("is offered by the hidden pane's openers and the table's Sell buttons; never when there is nothing to sell", () => {
+    const c = ctx(SALE);
+    const draft = workDraft.initial(c.model, c.engine);
+    const pane = WINDOWS.work.pane?.(draft, c.model, c.engine);
+    expect(pane?.hidden).toBe(true);
+    expect(pane?.hidden === true ? pane.openers.map((opener) => opener.key) : []).toEqual(["sell_flawed"]);
+    const table = WINDOWS.work.table!;
+    expect([...table.select(draft, c.model, c.engine).sellTargets]).toEqual([["c1", { pressed: false }]]);
+    const action = table.act(draft, { type: "sell", ceramicId: "c1" }, c.model, c.engine);
+    expect(action).toEqual({ type: "sell", ceramicId: "c1" });
+    const chosen = workDraft.reduce(draft, action as WorkAction, c.model, c.engine);
+    expect([...table.select(chosen, c.model, c.engine).sellTargets]).toEqual([["c1", { pressed: true }]]);
+    expect(WINDOWS.work.pane?.(chosen, c.model, c.engine).hidden).toBe(false);
+    // No Flawed ceramic: no mode, no target.
+    const none = ctx("m1_work_phase_r2_3p");
+    expect(sellFlawedOptions(none.view)).toBeNull();
+    const plain = workDraft.initial(none.model, none.engine);
+    expect(workDraft.options(plain, none.model, none.engine).modes.map(({ mode }) => mode)).not.toContain("sell_flawed");
+    expect(table.select(plain, none.model, none.engine).sellTargets.size).toBe(0);
+    expect(table.act(plain, { type: "sell", ceramicId: "c1" }, none.model, none.engine)).toBeNull();
+  });
+
+  it("is offered after the worker action too, beside End turn", () => {
+    const c = ctxWith(SALE, (view) => {
+      view.game.phase = { type: "work_turn", activePlayerId: view.viewerId!, step: { kind: "after_action" } };
+    });
+    expect(workDraft.options(workDraft.initial(c.model, c.engine), c.model, c.engine).modes.map(({ mode }) => mode)).toEqual(["sell_flawed", "end_turn"]);
+    const draft = work(c, { type: "sell", ceramicId: "c1" });
+    expect(workDraft.build(draft, c.model, c.engine)).toEqual({ type: "SELL_FLAWED", ceramicId: "c1" });
+    expect(WINDOWS.work.alternative?.(draft, c.model, c.engine)?.command).toEqual({ type: "END_TURN" });
+  });
+});
 
 describe("Imperial Priority draft (gap 16)", () => {
   it("lists vessels, Glazes, modifiers and rework Shapes from imperialPriorityOptions and builds the command", () => {
@@ -709,6 +926,35 @@ describe("Imperial Priority draft (gap 16)", () => {
     expect(draft.rework).toBe("plate");
     const work = workDraft.reduce(workDraft.initial(c.model, c.engine), { type: "imperialPriority", action: { type: "vessel", ceramicId: "c2" } }, c.model, c.engine);
     expect(work.mode).toBe("imperial_priority");
+    // Without Kiln Master there is no marker to place; Imperial Priority costs no Wood (rev. 4 L291).
+    expect(options.kilnMaster).toBeNull();
+  });
+
+  it("places Kiln Master's marker with Imperial Priority when it is ready (R22: any loading)", () => {
+    // The same choice with Kiln Master (T24) as the viewer's Firing Tech instead of Second Firing.
+    const c = ctxWith(DING, (view) => {
+      viewer(view).techs = viewer(view).techs.map((tech) => (tech.id === "T14" ? { ...tech, id: "T24" as const, usedThisRound: false } : tech));
+    });
+    expect(imperialPriorityOptions(c.view).kilnMaster).toBe(true);
+    let draft = imperialPriorityDraft.initial(c.model, c.engine);
+    for (const action of [
+      { type: "vessel", ceramicId: "c2" },
+      { type: "glaze", glaze: "white" },
+      { type: "modifier", modifier: 0 },
+    ] as const) draft = imperialPriorityDraft.reduce(draft, action, c.model, c.engine);
+    expect(imperialPriorityDraft.options(draft, c.model, c.engine).kilnMaster).toEqual({ techId: "T24", values: [1, -1] });
+    expect(draft.kilnMaster).toBeNull();
+    draft = imperialPriorityDraft.reduce(draft, { type: "kilnMaster", value: 1 }, c.model, c.engine);
+    const command = imperialPriorityDraft.build(draft, c.model, c.engine);
+    expect(command).toEqual({ type: "USE_IMPERIAL_PRIORITY", ceramicId: "c2", glaze: "white", imperialModifier: 0, kilnMaster: 1 });
+    expect(validateAction(c.actor, command as GameAction)).toBeNull();
+    expect(imperialPriorityDraft.fromCommand(command!, c.model, c.engine)).toEqual(draft);
+    expect(sentences(WINDOWS.work, workDraft.fromCommand(command!, c.model, c.engine), c)[0]).toMatch(/; Kiln Master marker \+1$/);
+    // Used this round: the choice is dropped.
+    const used = ctxWith(DING, (view) => {
+      viewer(view).techs = viewer(view).techs.map((tech) => (tech.id === "T14" ? { ...tech, id: "T24" as const, usedThisRound: true } : tech));
+    });
+    expect(imperialPriorityDraft.reduce(draft, REVALIDATE, used.model, used.engine).kilnMaster).toBeNull();
   });
 });
 
@@ -745,8 +991,9 @@ describe("Commission Market reservation step: its Select (v1.6.2 L64, L197–205
     });
     expect(validateAction(c.actor, command as GameAction)).toBeNull();
     const [en, zh] = sentences(WINDOWS.commission, draft, c);
-    expect(en).toBe(`Reserve ${c.view.game.market.display[1]} and ${looked}; the other 2 cards you looked at go to the bottom of the deck`);
-    expect(zh).toBe(`承接${c.view.game.market.display[1]}与${looked}，所看的另2张放到牌堆底`);
+    // R25: the looked cards not reserved are discarded.
+    expect(en).toBe(`Reserve ${c.view.game.market.display[1]} and ${looked}; discard the other 2 cards you looked at`);
+    expect(zh).toBe(`承接${c.view.game.market.display[1]}与${looked}，弃置看过的另2张`);
     expect(selectDraft.fromCommand(command!, c.model, c.engine)).toEqual({ picks: [slotPickKey(1), lookPickKey(looked)] });
     // Unticking one leaves a single, still legal reservation.
     const one = selectDraft.reduce(draft, { type: "toggle", key: slotPickKey(1), on: false }, c.model, c.engine);
@@ -769,12 +1016,12 @@ describe("Commission Market reservation step: its Select (v1.6.2 L64, L197–205
     const command = selectDraft.build(draft, c.model, c.engine);
     expect(command).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: look.orderIds[1] }] });
     expect(validateAction(c.actor, command as GameAction)).toBeNull();
-    expect(sentences(WINDOWS.commission, draft, c)).toEqual([`Reserve ${look.orderIds[1]}; 1 other card you looked at goes to the bottom of the deck`, `承接${look.orderIds[1]}，所看的另1张放到牌堆底`]);
-    // A display Order leaves every looked card for the deck bottom: no "other" (另) card then.
+    expect(sentences(WINDOWS.commission, draft, c)).toEqual([`Reserve ${look.orderIds[1]}; discard the 1 other card you looked at`, `承接${look.orderIds[1]}，弃置看过的另1张`]);
+    // A display Order leaves every looked card to be discarded: no "other" (另) card then.
     const faceUp = selectDraft.reduce(draft, { type: "pick", key: slotPickKey(0) }, c.model, c.engine);
     expect(sentences(WINDOWS.commission, faceUp, c)).toEqual([
-      `Reserve ${c.view.game.market.display[0]}; the 2 cards you looked at go to the bottom of the deck`,
-      `承接${c.view.game.market.display[0]}，所看的2张放到牌堆底`,
+      `Reserve ${c.view.game.market.display[0]}; discard the 2 cards you looked at`,
+      `承接${c.view.game.market.display[0]}，弃置看过的2张`,
     ]);
     // Two picks are not expressible for the Apprentice effect.
     expect(
@@ -918,16 +1165,16 @@ describe("Colour Samples, Kiln selection and Setter's Mark", () => {
       expect(options.looked.map((choice) => choice.orderId), id).toEqual(look.orderIds);
       expect(options.slots.map((choice) => choice.slotIndex), id).toEqual(look.faceUpSlots);
       expect(look.faceUpSlots.length, `${id}: the display offers Orders`).toBeGreaterThan(0);
-      // A looked card: the other 2 go to the bottom of the deck.
+      // A looked card: the other 2 are discarded (R25).
       const lookedPick = selectDraft.reduce(selectDraft.initial(c.model, c.engine), { type: "pick", key: lookPickKey(at(look.orderIds, 0)) }, c.model, c.engine);
       const lookedCommand = selectDraft.build(lookedPick, c.model, c.engine);
       expect(lookedCommand, id).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: look.orderIds[0] }] });
       expect(validateAction(c.actor, lookedCommand as GameAction), id).toBeNull();
       expect(sentences(WINDOWS[kind], lookedPick, c), id).toEqual([
-        `Reserve ${look.orderIds[0]}; the other 2 cards you looked at go to the bottom of the deck`,
-        `承接${look.orderIds[0]}，所看的另2张放到牌堆底`,
+        `Reserve ${look.orderIds[0]}; discard the other 2 cards you looked at`,
+        `承接${look.orderIds[0]}，弃置看过的另2张`,
       ]);
-      // A face-up Order instead: all 3 looked cards go to the bottom; a second pick replaces it (limit 1).
+      // A face-up Order instead: all 3 looked cards are discarded; a second pick replaces it (limit 1).
       const slot = at(look.faceUpSlots, 0);
       const faceUp = selectDraft.reduce(lookedPick, { type: "pick", key: slotPickKey(slot) }, c.model, c.engine);
       expect(faceUp.picks, id).toEqual([slotPickKey(slot)]);
@@ -935,8 +1182,8 @@ describe("Colour Samples, Kiln selection and Setter's Mark", () => {
       expect(faceUpCommand, id).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: slot, orderId: c.view.game.market.display[slot] }] });
       expect(validateAction(c.actor, faceUpCommand as GameAction), id).toBeNull();
       expect(sentences(WINDOWS[kind], faceUp, c), id).toEqual([
-        `Reserve ${c.view.game.market.display[slot]}; the 3 cards you looked at go to the bottom of the deck`,
-        `承接${c.view.game.market.display[slot]}，所看的3张放到牌堆底`,
+        `Reserve ${c.view.game.market.display[slot]}; discard the 3 cards you looked at`,
+        `承接${c.view.game.market.display[slot]}，弃置看过的3张`,
       ]);
       expect(selectDraft.fromCommand(faceUpCommand!, c.model, c.engine), id).toEqual({ picks: [slotPickKey(slot)] });
       // Two reservations are not expressible here.
@@ -961,22 +1208,49 @@ describe("Colour Samples, Kiln selection and Setter's Mark", () => {
     expect(sentences(WINDOWS.colour_samples, draft, c)).toEqual([`Reserve ${at(options.slots, 0).orderId}`, `承接${at(options.slots, 0).orderId}`]);
   });
 
-  it("offers every available Kiln from kilnSelectionOptions and never a taken one", () => {
+  it("offers every available Kiln from setupChoiceOptions and never a taken one; one turn takes a Kiln and a face-up Main Order (rev. 4 L122, R23)", () => {
     const view = structuredClone(fixture("m15_kiln_selection").playerView);
     const other = view.game.playerOrder.find((pid) => pid !== view.viewerId);
     const otherPlayer = other === undefined ? undefined : view.game.players[other];
     if (otherPlayer === undefined) throw new Error("no other player");
     otherPlayer.kilnId = "JU";
     const c = ctxOf(view);
+    const choice = setupChoiceOptions(view);
+    if (choice === null) throw new Error("not the viewer's choice");
     const options = kilnSelectionDraft.options(kilnSelectionDraft.initial(c.model, c.engine), c.model, c.engine);
+    expect(options.kilns).toEqual(choice.kilns);
     expect(options.kilns).toEqual(kilnSelectionOptions(view));
     expect(options.kilns.find((kiln) => kiln.kilnId === "JU")).toMatchObject({ available: false, chosenBy: other });
+    expect(options.orders).toEqual(choice.faceUpSlots.map((slotIndex) => ({ slotIndex, orderId: view.game.market.display[slotIndex] })));
+    expect(options.orders).toHaveLength(6);
     const draft = kilnSelectionDraft.initial(c.model, c.engine);
+    expect(draft).toEqual({ kilnId: null, slotIndex: null });
     expect(kilnSelectionDraft.reduce(draft, { type: "kiln", kilnId: "JU" }, c.model, c.engine).kilnId).toBeNull();
+    expect(kilnSelectionDraft.reduce(draft, { type: "order", slotIndex: 9 }, c.model, c.engine).slotIndex).toBeNull();
     for (const kilnId of ["RU", "GU", "GE", "DI"] as KilnId[]) {
       const chosen = kilnSelectionDraft.reduce(draft, { type: "kiln", kilnId }, c.model, c.engine);
-      expect(kilnSelectionDraft.build(chosen, c.model, c.engine)).toEqual({ type: "SELECT_KILN", kilnId });
+      // The Main Order is not optional: no command until one is chosen.
+      expect(kilnSelectionDraft.build(chosen, c.model, c.engine)).toBeNull();
+      expect(EN.message(kilnSelectionDraft.summary(chosen, c.model, c.engine)!)).toMatch(/now choose a Main Order from the display/);
+      const both = kilnSelectionDraft.reduce(chosen, { type: "order", slotIndex: 2 }, c.model, c.engine);
+      const command = kilnSelectionDraft.build(both, c.model, c.engine);
+      expect(command).toEqual({ type: "SELECT_KILN", kilnId, mainOrder: { slotIndex: 2, orderId: view.game.market.display[2] } });
+      expect(validateAction(c.actor, command as GameAction)).toBeNull();
+      expect(kilnSelectionDraft.fromCommand(command!, c.model, c.engine)).toEqual({ kilnId, slotIndex: 2 });
     }
+    const both = kilnSelectionDraft.reduce(kilnSelectionDraft.reduce(draft, { type: "kiln", kilnId: "GE" }, c.model, c.engine), { type: "order", slotIndex: 0 }, c.model, c.engine);
+    const order = view.game.market.display[0];
+    expect(sentences(WINDOWS.kiln_selection, both, c)).toEqual([`Take the Ge Kiln and ${order}`, `选择哥窑，拿取${order}`]);
+    // A stale display position (refilled since) is dropped.
+    const changed = ctxWith("m15_kiln_selection", (edited) => {
+      edited.game.market.display[0] = null;
+    });
+    expect(kilnSelectionDraft.reduce(both, REVALIDATE, changed.model, changed.engine).slotIndex).toBeNull();
+    // The display's Choose toggles choose the same Main Order.
+    const table = WINDOWS.kiln_selection.table!;
+    expect([...table.select(draft, c.model, c.engine).orderTargets.keys()]).toEqual(choice.faceUpSlots.map((slotIndex) => `slot:${String(slotIndex)}`));
+    expect(table.act(draft, { type: "order", key: "slot:4" }, c.model, c.engine)).toEqual({ type: "order", slotIndex: 4 });
+    expect(table.select(both, c.model, c.engine).orderTargets.get("slot:0")?.state).toBe("chosen");
   });
 
   it("places the Setter's Mark on a settersMarkOptions space, or declines", () => {

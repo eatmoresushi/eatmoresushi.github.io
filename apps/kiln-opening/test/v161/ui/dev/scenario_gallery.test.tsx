@@ -57,8 +57,8 @@ describe("scenario gallery entries (§9.5)", () => {
   });
 
   it("selects an entry, a language, a theme, a board and the bare view from the hash", () => {
-    expect(parseGalleryHash("#m14_salvage?lang=zh-CN&theme=dark&board=p2&bare=1")).toEqual({ id: "m14_salvage", lang: "zh-CN", theme: "dark", board: "p2", bare: true });
-    expect(parseGalleryHash("#w-salvage")).toEqual({ id: "w-salvage", lang: "en", theme: "light", board: null, bare: false });
-    expect(galleryHash({ id: "w-salvage", lang: "zh-CN", theme: "light", board: null, bare: true })).toBe("#w-salvage?lang=zh-CN&bare=1");
+    expect(parseGalleryHash("#m14_sell_flawed?lang=zh-CN&theme=dark&board=p2&bare=1")).toEqual({ id: "m14_sell_flawed", lang: "zh-CN", theme: "dark", board: "p2", bare: true });
+    expect(parseGalleryHash("#w-jun-heat-adjustment")).toEqual({ id: "w-jun-heat-adjustment", lang: "en", theme: "light", board: null, bare: false });
+    expect(galleryHash({ id: "w-jun-heat-adjustment", lang: "zh-CN", theme: "light", board: null, bare: true })).toBe("#w-jun-heat-adjustment?lang=zh-CN&bare=1");
   });
 });

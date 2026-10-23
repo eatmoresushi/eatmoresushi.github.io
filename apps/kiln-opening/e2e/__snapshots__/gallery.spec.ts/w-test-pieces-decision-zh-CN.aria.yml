@@ -6,7 +6,7 @@
     - group "资源":
       - strong: "2"
       - text: 泥
-      - strong: "2"
+      - strong: "3"
       - text: 柴
       - strong: "3"
       - text: 铜钱
@@ -16,9 +16,9 @@
     - img "你的学徒"
     - text: 手中0张委托 声望0／4 0分
   - form "是否使用「火照」？":
-    - paragraph: 烧窑步骤4，按起始玩家顺序
+    - paragraph: 烧窑步骤1
     - paragraph:
-      - strong: 每轮一次，基础火候定后、翻火标前，本窑有己方器物时：
+      - strong: 每轮一次，基础火候定后、翻窑火前，本窑有己方器物时：
       - text: 可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
     - heading "顺序" [level=3]
     - list "顺序":

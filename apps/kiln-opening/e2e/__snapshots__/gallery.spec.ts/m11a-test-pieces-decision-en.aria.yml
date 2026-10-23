@@ -4,17 +4,17 @@
   - region "Zhao (you)":
     - heading "Zhao (you)" [level=3]
     - group "Resources":
-      - strong: "4"
-      - text: Clay
-      - strong: "1"
-      - text: Wood
       - strong: "0"
-      - text: Coins
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "1"
+      - text: Coin
     - text: 4 Orders in hand Recognition 0/4 0 VP
   - form "Use Test Pieces?":
-    - paragraph: Firing step 4, in First Player order
+    - paragraph: Firing step 1
     - paragraph:
-      - strong: "Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing:"
+      - strong: "Once per round, after Base Heat, before the Fire card, if you have a ceramic in this firing:"
       - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
     - heading "Queue" [level=3]
     - list "Queue":

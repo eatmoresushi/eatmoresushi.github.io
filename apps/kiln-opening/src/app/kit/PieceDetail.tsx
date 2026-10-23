@@ -24,7 +24,7 @@
  * - The `title` attribute is never the only carrier of game information. The button's
  *   accessible name comes from the trigger's own words by default (`name="trigger"`), so
  *   everything the piece shows is read: a `CeramicChip` supplies its `ceramicLabel` plus its
- *   Heat marker's words ("…, Heat marker, face down"), a `QualityChip` its word. Pass
+ *   Kiln Master marker's words ("…, Kiln Master marker +1"), a `QualityChip` its word. Pass
  *   `name="label"` only for a trigger with no words of its own (pure art); `label` must then
  *   carry everything the art shows (for a marked ceramic, `common.ceramic.withMarker`).
  *   `label` always names the panel.
@@ -42,7 +42,7 @@ export interface PieceDetailProps {
   trigger: ReactNode;
   /**
    * Where the button's accessible name comes from. `"trigger"` (default): the trigger's own
-   * text, including visually hidden text (CeramicChip, HeatMarkerBadge). `"label"`: `label`,
+   * text, including visually hidden text (CeramicChip, KilnMasterMarker). `"label"`: `label`,
    * for a trigger without words.
    */
   name?: "trigger" | "label";

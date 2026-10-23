@@ -20,7 +20,7 @@
       - text: ""
       - radio "Test Pieces 3 Coins"
       - text: Test Pieces 3 Coins Firing
-      - strong: "Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing:"
+      - strong: "Once per round, after Base Heat, before the Fire card, if you have a ceramic in this firing:"
       - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
       - radio "Second Firing 2 Coins"
       - text: Second Firing 2 Coins Firing
@@ -31,7 +31,7 @@
       - radio "Decorator's Kit 2 Coins" [disabled]
       - text: Decorator's Kit 2 Coins Form & Decorate
       - strong: "Once per round:"
-      - text: 1 Carved, Impressed or Painted Decoration you apply costs 1 Coin less. Stacks with the Shifu discount.
+      - text: a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less. Stacks with the Shifu discount.
       - paragraph: You already own a Form & Decorate Tech.
       - radio "Reworking Table 2 Coins" [disabled]
       - text: Reworking Table 2 Coins Form & Decorate
@@ -56,8 +56,8 @@
       - text: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard.
       - strong: "Once per round, after Quality is assigned:"
       - text: 1 of your Standard ceramics from this firing → Fine.
-      - radio "Fuel Ledger 2 Coins"
-      - text: Fuel Ledger 2 Coins Firing
+      - radio "Fuel Ledger 4 Coins"
+      - text: Fuel Ledger 4 Coins Firing
       - strong: "Always:"
       - text: your Bank and Stoke cost no Wood.
       - strong: "When acquired:"

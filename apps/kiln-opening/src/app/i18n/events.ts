@@ -5,7 +5,7 @@
  * - `EVENT_TEXT`: one template per `GameEventType`, exhaustive by type (a new engine event fails
  *   `typecheck` here). A template reads only `PublicGameEvent` fields.
  * - `OWN_EVENT_TEXT`: the own-secret variants (`ORDERS_DEALT`, `ORDER_RESERVED`,
- *   `PRIVATE_LOOK_OPENED`, `LOOKED_ORDERS_TO_BOTTOM`, `HELD_ORDER_DISCARDED`,
+ *   `PRIVATE_LOOK_OPENED`, `LOOKED_ORDERS_DISCARDED`, `HELD_ORDER_DISCARDED`,
  *   `TECHS_RETURNED_TO_BOTTOM`, `TEST_PIECES_PEEKED`, `HAND_TRIMMED`), which read `LogEntry.own`. `eventText` uses one only
  *   when the secret's `visibleTo` is the viewer, so no seat ever reads another seat's secret.
  * - `eventText(entry, context)`: the log line for one entry, in the translator's language.
@@ -73,7 +73,7 @@ export const OWN_SECRET_TYPES = [
   "ORDERS_DEALT",
   "ORDER_RESERVED",
   "PRIVATE_LOOK_OPENED",
-  "LOOKED_ORDERS_TO_BOTTOM",
+  "LOOKED_ORDERS_DISCARDED",
   "HELD_ORDER_DISCARDED",
   "TECHS_RETURNED_TO_BOTTOM",
   "TEST_PIECES_PEEKED",
@@ -95,6 +95,8 @@ const TECH = {
   testPieces: "T13",
   secondFiring: "T14",
   tributeWare: "T25",
+  kilnFurniture: "T15",
+  kilnMaster: "T24",
 } as const satisfies Readonly<Record<string, TechId>>;
 
 function name(playerId: PlayerId, context: EventTextContext): string {
@@ -103,10 +105,11 @@ function name(playerId: PlayerId, context: EventTextContext): string {
 
 /**
  * A ceramic in words. The line's subject owns most ceramics it names, so the owner is added
- * only for someone else's ceramic; the place only when two would read the same (D9). Quality is
- * left out: a line that changes Quality states it.
+ * only for someone else's ceramic; the place only when two would read the same (D9): for the
+ * subject's own ceramic, two of the subject's (the line names the owner). Quality is left out: a
+ * line that changes Quality states it.
  * - `place: false` for a line about a ceramic of a firing that may since have left the kiln
- *   (Second Firing, salvage): a view of a later moment knows only where it is then ("finished",
+ *   (Second Firing, a sale): a view of a later moment knows only where it is then ("finished",
  *   gone), which is not where the line happened.
  * - `crackle: false` for the line that gives the Crackle marker: it is not on the ceramic before.
  */
@@ -123,9 +126,12 @@ function ceramic(
       ? { ownerId: hint.ownerId, shape: hint.shape, decoration: hint.decoration, glaze: hint.glaze ?? null }
       : null);
   if (facts === null) return context.t("common.ceramic.unknown");
+  const owned = subject !== null && facts.ownerId === subject;
   return ceramicLabel(facts, context.view, {
     locale: context.t,
-    withOwner: subject === null || facts.ownerId !== subject,
+    withOwner: !owned,
+    // The line's subject is the owner: only their own ceramics can read the same.
+    ownerImplied: owned,
     withQuality: false,
     withPlace: known === null || options.place === false ? false : "auto",
     withCrackle: options.crackle !== false,
@@ -191,8 +197,10 @@ function reasonText(reason: ResourceChangeReason, context: EventTextContext): st
       return milestone(1, context);
     case "contribution":
       return t("shell.ev.why.contribution");
-    case "salvage":
-      return t("shell.ev.why.salvage");
+    case "flawed_sale":
+      return t("shell.ev.why.sale");
+    case "kiln_fuel":
+      return t("shell.ev.why.kilnFuel");
     case "order_reward":
       return t("shell.ev.why.order");
   }
@@ -215,8 +223,8 @@ function resourceChanges(amounts: Readonly<Record<ResourceKind, number>>, contex
 export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   // Setup and rounds.
   GAME_CREATED: (event, c) => c.t("shell.ev.GAME_CREATED", { n: event.playerCount, name: name(event.firstPlayerId, c) }),
-  ORDERS_DEALT: (event, c) =>
-    c.t("shell.ev.ORDERS_DEALT", { name: name(event.playerId, c), starting: event.startingCount, main: event.mainCount }),
+  // Only Starting Orders are dealt (rev. 4 L115); the Main Order is taken face up with the Kiln.
+  ORDERS_DEALT: (event, c) => c.t("shell.ev.ORDERS_DEALT", { name: name(event.playerId, c), n: event.startingCount }),
   KILN_SELECTED: (event, c) => c.t("shell.ev.KILN_SELECTED", { name: name(event.playerId, c), kiln: kilnText(event.kilnId, c.t.locale).name }),
   ROUND_STARTED: (event, c) => c.t("shell.ev.ROUND_STARTED", { n: event.round, name: name(event.firstPlayerId, c) }),
   KILN_DIE_ROLLED: (event, c) => c.t("shell.ev.KILN_DIE_ROLLED", { n: event.value }),
@@ -269,7 +277,8 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   },
   CERAMIC_LOADED: (event, c) => {
     const who = name(event.playerId, c);
-    const described = ceramic(event.ceramicId, c, event.playerId, { ownerId: event.playerId, glaze: event.glaze });
+    // The line names where it went, so the ceramic needs no place of its own.
+    const described = ceramic(event.ceramicId, c, event.playerId, { ownerId: event.playerId, glaze: event.glaze }, { place: false });
     const line = event.placement.kiln === "imperial"
       ? c.t("shell.ev.CERAMIC_LOADED.imperial", { name: who, ceramic: described, modifier: signed(event.placement.imperialModifier) })
       : c.t("shell.ev.CERAMIC_LOADED", { name: who, ceramic: described, place: space(event.placement.spaceId, c) });
@@ -277,13 +286,18 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   },
   KILN_FURNITURE_PLACED: (event, c) =>
     c.t("shell.ev.KILN_FURNITURE_PLACED", { name: name(event.playerId, c), modifier: signed(event.modifier), space: space(event.spaceId, c) }),
-  HEAT_MARKER_PLACED: (event, c) => c.t("shell.ev.HEAT_MARKER_PLACED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
   ORDER_RESERVED: (event, c) => {
     const who = name(event.playerId, c);
     switch (event.source) {
       case "face_up": {
         if (event.orderId === null) return c.t("shell.ev.ORDER_RESERVED.looked", { name: who });
-        // Every Select may take a face-up Order (v1.6.2 L64, change 25): Colour Samples' say so.
+        // The Setup take with the Kiln (rev. 4 L122, R23) and the Magistrate's Hall Shifu's Crown
+        // Order (rev. 4 L241, R21) are public; every Select may take a face-up Order (v1.6.2 L64,
+        // change 25): Colour Samples' say so.
+        if (event.via === "setup") return c.t("shell.ev.ORDER_RESERVED.setup", { name: who, order: event.orderId });
+        if (event.via === "magistrates_hall") {
+          return c.t("shell.ev.ORDER_RESERVED.magistrate", { name: who, order: event.orderId, location: locationName("magistrates_hall", c.t.locale) });
+        }
         const tech = techName(TECH.colourSamples, c.t.locale);
         if (event.via === "colour_samples") return c.t("shell.ev.ORDER_RESERVED.face_upColourSamples", { name: who, order: event.orderId, tech });
         if (event.via === "colour_samples_swap") return c.t("shell.ev.ORDER_RESERVED.face_upSwap", { name: who, order: event.orderId, tech });
@@ -310,7 +324,8 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
       ? c.t("shell.ev.PRIVATE_LOOK_OPENED.techsNone", { name: who, discipline })
       : c.t("shell.ev.PRIVATE_LOOK_OPENED.techs", { name: who, n: event.count, discipline });
   },
-  LOOKED_ORDERS_TO_BOTTOM: (event, c) => c.t("shell.ev.LOOKED_ORDERS_TO_BOTTOM", { name: name(event.playerId, c), n: event.count }),
+  // A Select's looked cards not reserved are discarded face down (owner ruling R25).
+  LOOKED_ORDERS_DISCARDED: (event, c) => c.t("shell.ev.LOOKED_ORDERS_DISCARDED", { name: name(event.playerId, c), n: event.count }),
   // The swap's discard (v1.6.2 L622): the line before it says "used Colour Samples to swap".
   HELD_ORDER_DISCARDED: (event, c) =>
     event.to === "box" ? c.t("shell.ev.HELD_ORDER_DISCARDED.box", { name: name(event.playerId, c) }) : c.t("shell.ev.HELD_ORDER_DISCARDED", { name: name(event.playerId, c) }),
@@ -414,10 +429,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     event.buried
       ? c.t("shell.ev.TEST_PIECES_USED.buried", { name: name(event.playerId, c) })
       : c.t("shell.ev.TEST_PIECES_USED.kept", { name: name(event.playerId, c) }),
-  HEAT_MARKER_TURNED: (event, c) =>
-    c.t("shell.ev.HEAT_MARKER_TURNED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId), value: signed(event.value) }),
-  HEAT_MARKER_RETURNED: (event, c) =>
-    c.t("shell.ev.HEAT_MARKER_RETURNED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
+  // Chosen face up as the ceramic is loaded (T24, rev. 4 L628, R22).
   KILN_MASTER_PLACED: (event, c) =>
     c.t("shell.ev.KILN_MASTER_PLACED", { name: name(event.playerId, c), value: signed(event.value), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
   FIRE_REVEALED: (event, c) => c.t("shell.ev.FIRE_REVEALED", { modifier: signed(event.modifier), heat: event.globalHeat }),
@@ -471,18 +483,23 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
       line: c.t("shell.ev.CRACKLE_APPLIED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { crackle: false }) }),
       via: kilnAbility("GE", c),
     }),
-  CERAMIC_SALVAGED: (event, c) =>
-    c.t("shell.ev.CERAMIC_SALVAGED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { place: false }), coins: coins(event.coins, c) }),
+  // A Flawed ceramic sold during its owner's turn (R20, rev. 4 L284).
+  CERAMIC_SOLD: (event, c) =>
+    c.t("shell.ev.CERAMIC_SOLD", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { place: false }), coins: coins(event.coins, c) }),
   FIRING_FINISHED: (event, c) => c.t("shell.ev.FIRING_FINISHED", { n: event.finishedCeramicIds.length }),
 
   // Orders.
   ORDER_TURN_STARTED: (event, c) => c.t("shell.ev.ORDER_TURN_STARTED", { name: name(event.playerId, c) }),
+  // Ge's Crackle VP (rev. 4 L465): 1 VP per Crackle ceramic delivered, stated on the line.
   ORDER_COMPLETED: (event, c) => {
     const record = event.record;
     const values = { name: name(event.playerId, c), order: record.orderId, vp: record.vp };
-    return record.coins > 0
+    const line = record.coins > 0
       ? c.t("shell.ev.ORDER_COMPLETED.coins", { ...values, coins: coins(record.coins, c) })
       : c.t("shell.ev.ORDER_COMPLETED", values);
+    // The engine always records it; a record without it means 0 (`CompletedOrderRecord.crackleVp`).
+    const crackle = record.crackleVp ?? 0;
+    return crackle > 0 ? c.t("shell.ev.ORDER_COMPLETED.crackle", { line, crackle }) : line;
   },
   ORDER_TURN_ENDED: (event, c) =>
     event.automatic
@@ -507,11 +524,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
 // ── Own-secret templates ──────────────────────────────────────────────────────────────────
 
 export const OWN_EVENT_TEXT: { readonly [T in OwnSecretType]: OwnEventTemplate<T> } = {
-  ORDERS_DEALT: (event, c) =>
-    c.t("shell.ev.ORDERS_DEALT.own", {
-      name: name(event.playerId, c),
-      orders: orders([...event.secret.startingOrderIds, ...event.secret.mainOrderIds], c),
-    }),
+  ORDERS_DEALT: (event, c) => c.t("shell.ev.ORDERS_DEALT.own", { name: name(event.playerId, c), orders: orders(event.secret.startingOrderIds, c) }),
   ORDER_RESERVED: (event, c) => {
     if (event.secret === undefined) return EVENT_TEXT.ORDER_RESERVED(event, c);
     const values = { name: name(event.playerId, c), order: event.secret.orderId };
@@ -527,10 +540,10 @@ export const OWN_EVENT_TEXT: { readonly [T in OwnSecretType]: OwnEventTemplate<T
       ? c.t("shell.ev.PRIVATE_LOOK_OPENED.ownNone", { name: name(event.playerId, c) })
       : c.t("shell.ev.PRIVATE_LOOK_OPENED.own", { name: name(event.playerId, c), cards });
   },
-  LOOKED_ORDERS_TO_BOTTOM: (event, c) =>
+  LOOKED_ORDERS_DISCARDED: (event, c) =>
     event.secret.orderIds.length === 0
-      ? EVENT_TEXT.LOOKED_ORDERS_TO_BOTTOM(event, c)
-      : c.t("shell.ev.LOOKED_ORDERS_TO_BOTTOM.own", { name: name(event.playerId, c), orders: orders(event.secret.orderIds, c) }),
+      ? EVENT_TEXT.LOOKED_ORDERS_DISCARDED(event, c)
+      : c.t("shell.ev.LOOKED_ORDERS_DISCARDED.own", { name: name(event.playerId, c), orders: orders(event.secret.orderIds, c) }),
   HELD_ORDER_DISCARDED: (event, c) =>
     event.to === "box"
       ? c.t("shell.ev.HELD_ORDER_DISCARDED.ownBox", { name: name(event.playerId, c), order: event.secret.orderId })
@@ -599,10 +612,37 @@ function abilityNamedBy(event: PublicGameEvent): KilnId | null {
   }
 }
 
-/** A Ding, Jun or Ge "used ⟨ability⟩" line beside a line of the same player that names that ability. */
-function namedBeside(entry: LogEntry, beside: LogEntry | undefined): boolean {
+/**
+ * The Tech a line names in its own words, for a "used ⟨Tech⟩" line directly before it: Kiln
+ * Master's marker line ("placed the Kiln Master marker +1 on …", T24, rev. 4 L628), Kiln
+ * Furniture's tile line ("set Kiln Furniture −1 on …", T15) and Kiln Tending's resources line
+ * ("+1 Clay · +1 Wood (Kiln Tending)", T20); or null.
+ */
+function techNamedBy(event: PublicGameEvent): TechId | null {
+  switch (event.type) {
+    case "KILN_MASTER_PLACED":
+      return TECH.kilnMaster;
+    case "KILN_FURNITURE_PLACED":
+      return TECH.kilnFurniture;
+    case "RESOURCES_CHANGED":
+      return event.reason === "kiln_tending" ? TECH.kilnTending : null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * A Ding, Jun or Ge "used ⟨ability⟩" line beside a line of the same player that names that
+ * ability; or a "used ⟨Tech⟩" line directly before such a line naming that Tech (`techNamedBy`).
+ */
+function namedBeside(entry: LogEntry, beside: LogEntry | undefined, side: "previous" | "next"): boolean {
   const event = entry.event;
-  if (event.type !== "KILN_ABILITY_USED" || beside === undefined || abilityNamedBy(beside.event) !== event.kilnId) return false;
+  if (beside === undefined) return false;
+  if (event.type === "TECH_USED") {
+    if (side !== "next" || techNamedBy(beside.event) !== event.techId) return false;
+  } else if (event.type !== "KILN_ABILITY_USED" || abilityNamedBy(beside.event) !== event.kilnId) {
+    return false;
+  }
   const owner = eventPlayer(beside.event);
   return owner === null || owner === event.playerId;
 }
@@ -617,8 +657,8 @@ function namedBeside(entry: LogEntry, beside: LogEntry | undefined): boolean {
  *   Barge: +2 Coins").
  * - Guan's Coins (`guan`) directly after the same player's `KILN_ABILITY_USED` of Guan, whose
  *   line states them ("used Imperial Patronage: +1 VP, +2 Coins").
- * - A salvage's Coins (`salvage`) directly after the same player's `CERAMIC_SALVAGED`, whose line
- *   states them ("salvaged … for 2 Coins").
+ * - A sale's Coins (`flawed_sale`) directly after the same player's `CERAMIC_SOLD`, whose line
+ *   states them ("sold … for 2 Coins").
  * - The Imperial Grant's resources (`imperial_grant`) directly after the same player's
  *   `IMPERIAL_GRANT_RECEIVED`, whose line states them.
  * - Jun's "used Kiln Transformation" (`KILN_ABILITY_USED`) directly after the same player's Jun
@@ -626,7 +666,7 @@ function namedBeside(entry: LogEntry, beside: LogEntry | undefined): boolean {
  */
 export function repeatsPreviousEntry(entry: LogEntry, previous: LogEntry | undefined): boolean {
   const event = entry.event;
-  if (event.type === "KILN_ABILITY_USED") return namedBeside(entry, previous);
+  if (event.type === "KILN_ABILITY_USED") return namedBeside(entry, previous, "previous");
   if (event.type !== "RESOURCES_CHANGED" || previous === undefined) return false;
   const before = previous.event;
   if (event.reason === "imperial_grant") {
@@ -642,8 +682,8 @@ export function repeatsPreviousEntry(entry: LogEntry, previous: LogEntry | undef
   if (event.reason === "guan") {
     return before.type === "KILN_ABILITY_USED" && before.kilnId === "GU" && before.playerId === event.playerId && event.coins === KILNS.GU.params.coins;
   }
-  if (event.reason === "salvage") {
-    return before.type === "CERAMIC_SALVAGED" && before.playerId === event.playerId && event.coins === before.coins;
+  if (event.reason === "flawed_sale") {
+    return before.type === "CERAMIC_SOLD" && before.playerId === event.playerId && event.coins === before.coins;
   }
   return false;
 }
@@ -660,10 +700,14 @@ export function repeatsPreviousEntry(entry: LogEntry, previous: LogEntry | undef
  *   `JUN_ADJUSTED` follows at once and which states the Wood;
  * - a Ding, Jun or Ge "used ⟨ability⟩" (`KILN_ABILITY_USED`) directly before the same player's
  *   line naming that ability (Ding's cost or vessel, Jun's adjustment, Ge's Quality change).
+ * - a "used Kiln Master", "used Kiln Furniture" or "used Kiln Tending" (`TECH_USED`) directly
+ *   before the same player's line naming that Tech (Kiln Master's marker, the Kiln Furniture
+ *   tile, Kiln Tending's resources), so a Glaze & Load turn with kiln fuel and Kiln Master fits
+ *   the toast's 4 lines.
  */
 export function repeatsNextEntry(entry: LogEntry, next: LogEntry | undefined): boolean {
   const event = entry.event;
-  if (event.type === "KILN_ABILITY_USED") return namedBeside(entry, next);
+  if (event.type === "KILN_ABILITY_USED" || event.type === "TECH_USED") return namedBeside(entry, next, "next");
   if (event.type !== "RESOURCES_CHANGED" || next === undefined) return false;
   const after = next.event;
   if (event.reason === "ding_extra") {

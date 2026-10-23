@@ -9,14 +9,14 @@
  * Each window carries an `openKey` (§3.5). The draft store resets a window's draft when its
  * `kind` or `openKey` changes, and keeps (and revalidates) it otherwise:
  * - Kiln selection: the selection index;
- * - Setter's Mark and the queued firing steps (Test Pieces, Heat markers, Jun, after-Quality):
+ * - Setter's Mark and the queued firing steps (Test Pieces, Jun, after-Quality):
  *   the round and the queue index (plus the Test Pieces sub-step); Second Firing's choice: the
  *   round and the ceramic;
  * - the work turn and its sub-steps: the round, the active player and how many of their workers
  *   are placed (one per turn), plus the step (and, at the Guild Hall, how many Techs the Shifu
  *   has taken, so each take starts from a fresh draft);
  * - Contributions: the engine's `windowId`;
- * - Salvage and the hand trim: `openedAtRevision`;
+ * - the hand trim: `openedAtRevision`;
  * - the Order Phase: the round and the turn index.
  *
  * The viewer who does not act sees `waiting` (B5's `Waiting.tsx`), and a finished game `final`.
@@ -47,11 +47,9 @@ export const DECISION_WINDOW_KINDS = [
   "colour_samples_swap",
   "contributions",
   "test_pieces",
-  "heat_markers",
   "jun",
   "after_quality",
   "second_firing",
-  "salvage",
   "orders",
   "hand_limit",
   "final",
@@ -105,14 +103,12 @@ export type DecisionWindow =
     })
   | (WindowBase<"contributions"> & { windowId: string })
   | (WindowBase<"test_pieces"> & { awaiting: "decision" | "bury"; queueIndex: number })
-  | WindowBase<"heat_markers"> & { queueIndex: number }
   | (WindowBase<"jun"> & { queueIndex: number })
   | (WindowBase<"after_quality"> & { queueIndex: number })
   | (WindowBase<"second_firing"> & {
-      /** The ceramic Second Firing recalculates with the chosen card (v1.6.2 L639, R7). */
+      /** The ceramic Second Firing recalculates with the chosen card (rev. 4 L627). */
       ceramicId: CeramicId;
     })
-  | (WindowBase<"salvage"> & { openedAtRevision: number })
   | (WindowBase<"orders"> & { index: number })
   | (WindowBase<"hand_limit"> & { openedAtRevision: number })
   | WindowBase<"final">
@@ -176,16 +172,12 @@ function actingWindow(game: PublicGameState, phase: Exclude<GamePhase, { type: "
       return { ...base, kind: "contributions", windowId: phase.windowId, openKey: phase.windowId };
     case "firing_test_pieces":
       return { ...base, kind: "test_pieces", awaiting: phase.awaiting, queueIndex: phase.queue.index, openKey: `r${round}:q${phase.queue.index}:${phase.awaiting}` };
-    case "firing_heat_markers":
-      return { ...base, kind: "heat_markers", queueIndex: phase.queue.index, openKey: `r${round}:q${phase.queue.index}` };
     case "firing_heat_adjustment":
       return { ...base, kind: "jun", queueIndex: phase.queue.index, openKey: `r${round}:q${phase.queue.index}` };
     case "firing_after_quality":
       return { ...base, kind: "after_quality", queueIndex: phase.queue.index, openKey: `r${round}:q${phase.queue.index}` };
     case "firing_second_firing_choice":
       return { ...base, kind: "second_firing", ceramicId: phase.ceramicId, openKey: `r${round}:second:${phase.ceramicId}` };
-    case "firing_salvage":
-      return { ...base, kind: "salvage", openedAtRevision: phase.openedAtRevision, openKey: `rev${phase.openedAtRevision}` };
     case "orders":
       return { ...base, kind: "orders", index: phase.index, openKey: `r${round}:t${phase.index}` };
     case "cleanup_hand_limit":

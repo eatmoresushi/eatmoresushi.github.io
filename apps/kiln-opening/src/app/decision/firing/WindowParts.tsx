@@ -107,7 +107,7 @@ export function CeramicLine({ model, engine, ceramicId, withPlace = "auto", amon
   const amongFacts = among === undefined ? undefined : among.map((id) => firingCeramicFacts(engine.view, model.firingStage, id)).filter((item): item is CeramicFacts => item !== null);
   const label = ceramicLabel(facts, engine.view, { locale: t, withOwner: facts.ownerId !== model.viewerId, withPlace, ...(amongFacts === undefined ? {} : { among: amongFacts }) });
   const base = engine.view.game.ceramics[ceramicId];
-  const marker = base !== undefined && base.stage === "loaded" ? base.heatMarker : null;
+  const marker = base !== undefined && base.stage === "loaded" ? base.kilnMasterMarker : null;
   return (
     <span className="dw-ceramic" data-ceramic-id={ceramicId}>
       <CeramicChip ceramic={facts} seat={seatOf(model, facts.ownerId)} label={label} marker={marker} size={size} highlighted={highlighted} showQuality motionKey={null} />
@@ -120,9 +120,15 @@ export function CeramicLine({ model, engine, ceramicId, withPlace = "auto", amon
   );
 }
 
-/** "Firing step 5, in First Player order" from `firingStageView` (null outside a firing). */
-export function stepLabel(model: GameModel, t: Translator): string | undefined {
+/**
+ * "Firing step 5, in First Player order" from `firingStageView` (null outside a firing), for a
+ * window whose players take turns in the queue (Jun, the after-Quality abilities, Second Firing).
+ * `inTurn: false` gives the plain "Firing step 1": the Contributions are chosen in secret at the
+ * same time, and Test Pieces is one tile (revision 4 dropped "Test Pieces owners resolve in First
+ * Player order"; glossary §2.11 step 1), so neither says First Player order.
+ */
+export function stepLabel(model: GameModel, t: Translator, inTurn = true): string | undefined {
   const stage = model.firingStage;
   if (stage === null) return undefined;
-  return stage.firstPlayerOrder.includes(stage.step) ? t("firing.stepAndOrder", { n: stage.step }) : t("firing.step", { n: stage.step });
+  return inTurn && stage.firstPlayerOrder.includes(stage.step) ? t("firing.stepAndOrder", { n: stage.step }) : t("firing.step", { n: stage.step });
 }

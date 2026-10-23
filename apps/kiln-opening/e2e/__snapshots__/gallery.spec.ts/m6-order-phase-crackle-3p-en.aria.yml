@@ -1,35 +1,32 @@
 - complementary "Your decision":
   - paragraph: Order Phase · Your turn
   - heading "Complete held Orders" [level=2]
-  - region "Lin (you)":
-    - heading "Lin (you)" [level=3]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
     - group "Resources":
-      - strong: "1"
+      - strong: "4"
       - text: Clay
-      - strong: "2"
+      - strong: "1"
       - text: Wood
-      - strong: "5"
+      - strong: "6"
       - text: Coins
-    - text: 5 Orders in hand Recognition 0/4 6 VP
+    - text: /4 Orders in hand Recognition 0\/4 \d+ VP/
   - form "Complete held Orders":
     - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
-    - group "Order 2 of 5 can be completed":
+    - group "Order 3 of 4 can be completed":
       - text: ""
-      - radio "S07 3 VP 3 Coins any Shape · any Glaze · Carved, Impressed or Painted · Standard+"
-      - text: S07 3 VP 3 Coins any Shape · any Glaze · Carved, Impressed or Painted · Standard+
-      - 'button "Full rules: Order S07"'
-      - radio /O42 \d+ VP 0 Coins 2 Crowns Brush Washer \+ Censer; different Glazes; same Decoration · Fine\+ each; ≥1 Masterpiece No matching ceramics/ [disabled]
-      - text: /O42 \d+ VP 0 Coins 2 Crowns Brush Washer \+ Censer; different Glazes; same Decoration · Fine\+ each; ≥1 Masterpiece No matching ceramics/
-      - 'button "Full rules: Order O42"'
-      - radio /O46 \d+ VP 0 Coins 2 Crowns Plate \+ Vase \+ Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted · Fine\+ all No matching ceramics/ [disabled]
-      - text: /O46 \d+ VP 0 Coins 2 Crowns Plate \+ Vase \+ Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted · Fine\+ all No matching ceramics/
-      - 'button "Full rules: Order O46"'
-      - radio "O25 9 VP 5 Coins 2 different Shapes; any Glazes; any Decorations · Standard+ each"
-      - text: O25 9 VP 5 Coins 2 different Shapes; any Glazes; any Decorations · Standard+ each
-      - 'button "Full rules: Order O25"'
-      - radio /O40 \d+ VP 0 Coins 2 Crowns Bowl \+ Brush Washer; one White, one Grey-Green; one Impressed, one Painted · Fine\+ each; ≥1 Masterpiece No matching ceramics/ [disabled]
-      - text: /O40 \d+ VP 0 Coins 2 Crowns Bowl \+ Brush Washer; one White, one Grey-Green; one Impressed, one Painted · Fine\+ each; ≥1 Masterpiece No matching ceramics/
-      - 'button "Full rules: Order O40"'
+      - radio "S06 3 VP 5 Coins Vase or Censer · any Glaze · any Decoration · Standard+"
+      - text: S06 3 VP 5 Coins Vase or Censer · any Glaze · any Decoration · Standard+
+      - 'button "Full rules: Order S06"'
+      - radio /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all No matching ceramics/ [disabled]
+      - text: /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all No matching ceramics/
+      - 'button "Full rules: Order O43"'
+      - radio /O34 \d+ VP 5 Coins 2 different Shapes; different Glazes; same Decoration · Fine\+ each; ≥1 Masterpiece/
+      - text: /O34 \d+ VP 5 Coins 2 different Shapes; different Glazes; same Decoration · Fine\+ each; ≥1 Masterpiece/
+      - 'button "Full rules: Order O34"'
+      - radio "O10 5 VP 3 Coins any Shape · any Glaze · Plain · Fine+"
+      - text: O10 5 VP 3 Coins any Shape · any Glaze · Plain · Fine+
+      - 'button "Full rules: Order O10"'
     - paragraph: Only held Orders can be completed; Orders on the display cannot.
     - paragraph: Choose an Order to complete, or end your turn.
     - button "End turn"

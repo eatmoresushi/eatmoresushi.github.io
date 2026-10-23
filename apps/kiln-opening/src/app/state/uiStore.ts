@@ -83,11 +83,9 @@ export const WINDOW_UI_DEFAULTS: Readonly<Record<Exclude<DecisionWindowKind, "wa
   colour_samples_swap: { section: "orders", sheet: "open" },
   contributions: { section: "kiln", sheet: "peek" },
   test_pieces: { section: "kiln", sheet: "open" },
-  heat_markers: { section: "kiln", sheet: "peek" },
   jun: { section: "kiln", sheet: "open" },
   after_quality: { section: "kiln", sheet: "open" },
   second_firing: { section: "kiln", sheet: "open" },
-  salvage: { section: "kiln", sheet: "open" },
   orders: { section: "orders", sheet: "open" },
   hand_limit: { section: "orders", sheet: "open" },
   final: { section: "table", sheet: "peek" },
@@ -125,7 +123,7 @@ export interface UiActions {
   setSheet(state: SheetState): void;
   setLogOpen(open: boolean): void;
   setTheme(choice: ThemeChoice): void;
-  /** §8.1: a Place shortcut or a location was used; on phones the sheet opens. */
+  /** §8.1: a Place shortcut, a location or a table Sell button was used; on phones the sheet opens. */
   placeShortcut(): void;
   /** Desktop and tablet scroll to the section; phones switch to its section tab. */
   jumpTo(section: WorldSectionId): void;

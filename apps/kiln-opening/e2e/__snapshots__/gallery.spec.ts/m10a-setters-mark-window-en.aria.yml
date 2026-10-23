@@ -1,14 +1,14 @@
 - complementary "Your decision":
   - paragraph: Start of Round · Your turn
   - heading "Place your Setter’s Mark" [level=2]
-  - region "Lin (you)":
-    - heading "Lin (you)" [level=3]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
     - group "Resources":
-      - strong: "0"
+      - strong: "1"
       - text: Clay
-      - strong: "2"
+      - strong: "3"
       - text: Wood
-      - strong: "2"
+      - strong: "3"
       - text: Coins
     - img "Your Shifu"
     - img "Your Apprentice"

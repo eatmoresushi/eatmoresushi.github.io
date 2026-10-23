@@ -39,14 +39,14 @@ describe("announcementFor", () => {
   });
 
   it("has a sentence for every acting window and none for waiting", () => {
-    const acting = ["w-kiln-selection", "w-setters-mark-window", "m1_work_phase_r2_3p", "w-commission-market-shifu-top-3-look-2-reservations", "w-guild-hall-shifu-inspection", "w-colour-samples-choice", "m9_contributions_step1_3p", "m11a_test_pieces_decision", "m3_heat_marker_step_3p", "m13_jun_heat_adjustment", "m4_after_quality_3p", "m14_salvage", "m6_order_phase_crackle_3p", "m7_cleanup_hand_limit_3p"];
+    const acting = ["w-kiln-and-main-order-choice", "w-setters-mark-window", "m1_work_phase_r2_3p", "w-commission-market-shifu-top-3-look-2-reservations", "w-guild-hall-shifu-inspection", "w-colour-samples-choice", "m9_contributions_step1_3p", "m11a_test_pieces_decision", "m3_kiln_master_marker_3p", "m13_jun_heat_adjustment", "m4_after_quality_3p", "m14_sell_flawed", "m6_order_phase_crackle_3p", "m7_cleanup_hand_limit_3p"];
     for (const id of acting) {
       const message = yourTurnMessage(modelOf(id));
       expect(message, id).not.toBeNull();
       expect(en.message(message!)).toMatch(/^(Your turn|Cleanup): /);
       expect(zh.message(message!)).toMatch(/^(轮到你了|收工)：/);
     }
-    expect(yourTurnMessage(modelOf("m10b_setters_mark_on_space"))).toBeNull();
+    expect(yourTurnMessage(modelOf("t-imperial-only-firing"))).toBeNull();
     expect(yourTurnMessage(modelOf("t-final-2p"))).toBeNull();
   });
 

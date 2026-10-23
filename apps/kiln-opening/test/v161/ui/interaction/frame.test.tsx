@@ -83,7 +83,7 @@ function afterSelection(view: PlayerView): PlayerView {
 
 describe("sending (§3.6)", () => {
   it("makes only the fields inert, keeps focus on a busy Confirm and ignores a second submit", async () => {
-    const source = new ControlledSource("w-kiln-selection");
+    const source = new ControlledSource("w-kiln-and-main-order-choice");
     mount(source, <DecisionPane />);
     const confirm = $<HTMLButtonElement>('[data-action="confirm"]');
     expect(confirm.getAttribute("aria-disabled")).toBe("true");
@@ -91,7 +91,9 @@ describe("sending (§3.6)", () => {
     expect(confirm.getAttribute("aria-disabled")).toBeNull();
     act(() => confirm.focus());
     click(confirm);
-    expect(source.submitted).toEqual([{ type: "SELECT_KILN", kilnId: "JU" }]);
+    // The toy starts on the first face-up Main Order (rev. 4 change 32, R23).
+    const display = fixture("w-kiln-and-main-order-choice").playerView.game.market.display;
+    expect(source.submitted).toEqual([{ type: "SELECT_KILN", kilnId: "JU", mainOrder: { slotIndex: 0, orderId: display[0] } }]);
     expect($(".pane-scroll").hasAttribute("inert")).toBe(true);
     expect(confirm.closest("[inert]")).toBeNull();
     expect(confirm.getAttribute("aria-busy")).toBe("true");
@@ -110,29 +112,29 @@ describe("sending (§3.6)", () => {
 
 describe("focus on a window change (§8.2)", () => {
   it("moves to the pane heading when focus was in the pane", async () => {
-    const source = new ControlledSource("w-kiln-selection");
+    const source = new ControlledSource("w-kiln-and-main-order-choice");
     mount(source, <DecisionPane />);
     click($('input[name="kilnId"][value="JU"]'));
     const confirm = $<HTMLButtonElement>('[data-action="confirm"]');
     act(() => confirm.focus());
     click(confirm);
-    await act(async () => source.answer({ view: afterSelection(fixture("w-kiln-selection").playerView) }));
+    await act(async () => source.answer({ view: afterSelection(fixture("w-kiln-and-main-order-choice").playerView) }));
     expect($("form[data-window]").getAttribute("data-window")).toBe("waiting");
     expect(document.activeElement).toBe($("h2.pane-heading"));
   });
 
   it("moves to the sheet strip when the heading is hidden (phone sheet in peek)", () => {
-    const source = new ControlledSource("w-kiln-selection");
+    const source = new ControlledSource("w-kiln-and-main-order-choice");
     mount(source, <DecisionPane />);
     const heading = $("h2.pane-heading");
     heading.getClientRects = () => ({ length: 0 }) as unknown as DOMRectList;
     act(() => $<HTMLInputElement>('input[name="kilnId"][value="RU"]').focus());
-    act(() => source.setView(afterSelection(fixture("w-kiln-selection").playerView)));
+    act(() => source.setView(afterSelection(fixture("w-kiln-and-main-order-choice").playerView)));
     expect(document.activeElement).toBe($(".kit-sheet-strip"));
   });
 
   it("leaves focus alone when it was outside the pane", () => {
-    const source = new ControlledSource("w-kiln-selection");
+    const source = new ControlledSource("w-kiln-and-main-order-choice");
     mount(
       source,
       <>
@@ -144,7 +146,7 @@ describe("focus on a window change (§8.2)", () => {
     );
     const outside = $<HTMLButtonElement>("#outside");
     act(() => outside.focus());
-    act(() => source.setView(afterSelection(fixture("w-kiln-selection").playerView)));
+    act(() => source.setView(afterSelection(fixture("w-kiln-and-main-order-choice").playerView)));
     expect(document.activeElement).toBe(outside);
   });
 });
@@ -176,17 +178,17 @@ describe("scroll on a window change", () => {
   });
 
   it("starts the fields at the top when the viewer's window becomes a waiting one", () => {
-    const source = new ControlledSource("w-kiln-selection");
+    const source = new ControlledSource("w-kiln-and-main-order-choice");
     mount(source, <DecisionPane />);
     const top = fakeScroll($(".pane-scroll"), 240);
-    act(() => source.setView(afterSelection(fixture("w-kiln-selection").playerView)));
+    act(() => source.setView(afterSelection(fixture("w-kiln-and-main-order-choice").playerView)));
     expect($("form[data-window]").getAttribute("data-window")).toBe("waiting");
     expect(top()).toBe(0);
   });
 
   it("keeps a waiting window's place when only the player it waits for changes", () => {
-    const waiting = afterSelection(fixture("w-kiln-selection").playerView);
-    const source = new ControlledSource("w-kiln-selection");
+    const waiting = afterSelection(fixture("w-kiln-and-main-order-choice").playerView);
+    const source = new ControlledSource("w-kiln-and-main-order-choice");
     mount(source, <DecisionPane />);
     act(() => source.setView(waiting));
     const top = fakeScroll($(".pane-scroll"), 120);
@@ -196,7 +198,7 @@ describe("scroll on a window change", () => {
   });
 
   it("keeps the place while the same window re-renders (a choice in a long list)", () => {
-    const source = new ControlledSource("w-kiln-selection");
+    const source = new ControlledSource("w-kiln-and-main-order-choice");
     mount(source, <DecisionPane />);
     const top = fakeScroll($(".pane-scroll"), 300);
     click($('input[name="kilnId"][value="JU"]'));
@@ -245,7 +247,7 @@ describe("table selection (§3.5)", () => {
 
 describe("language switch (§6.1, §9.3)", () => {
   it("keeps the draft and re-renders the stored error in the new language", () => {
-    const source = new ControlledSource("w-kiln-selection", {
+    const source = new ControlledSource("w-kiln-and-main-order-choice", {
       status: { error: { kind: "rule", error: { code: "NOT_YOUR_DECISION", message: "", details: {} } } },
     });
     mount(
@@ -290,7 +292,7 @@ describe("heading block (wireframe promptBlock, ownSummary)", () => {
   });
 
   it("shows only the phase when the viewer does not act, and Final scoring once the game is over", () => {
-    const source = new ControlledSource("m8_final_results_4p");
+    const source = new ControlledSource("m8_final_results_3p");
     mount(source, <DecisionPane />);
     expect($(".pane-eyebrow").textContent).toBe("Final scoring");
   });

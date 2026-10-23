@@ -150,7 +150,7 @@ describe("coverage", () => {
     expect(scenarios.entries.every((e) => e.kind === "window" || e.kind === "table")).toBe(true);
     expect(moments.entries.every((e) => e.kind === "moment")).toBe(true);
     expect(scenarios.entries.filter((e) => e.kind === "window").every((e) => e.viewerActs)).toBe(true);
-    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]) {
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]) {
       expect(moments.entries.some((e) => e.id.startsWith(`m${n}_`)), `m${n}`).toBe(true);
     }
     for (const id of ["m10a", "m10b", "m11a", "m11b"]) expect(moments.entries.some((e) => e.id.startsWith(`${id}_`)), id).toBe(true);
@@ -164,11 +164,9 @@ describe("coverage", () => {
       "work_turn",
       "firing_contributions",
       "firing_test_pieces",
-      "firing_heat_markers",
       "firing_heat_adjustment",
       "firing_after_quality",
       "firing_second_firing_choice",
-      "firing_salvage",
       "orders",
       "cleanup_hand_limit",
       "finished",
@@ -194,7 +192,7 @@ describe("coverage", () => {
       ].sort(),
     );
     expect(all.some((e) => !e.viewerActs && e.playerView.game.phase.type !== "finished")).toBe(true);
-    // V1.6.2's regenerated moments end a 4-player game (m8, seed 2); the finals cover 2 and 4.
+    // m8 ends a 3-player game (revision 4's regenerated moments); t-final-2p and t-final-4p cover 2 and 4.
     const finals = all.filter((e) => e.playerView.game.phase.type === "finished").map((e) => e.playerView.game.playerCount);
     expect(finals).toEqual(expect.arrayContaining([2, 4]));
     expect(all.some((e) => e.playerView.game.finalResult !== null && e.playerView.game.finalResult.resolvedBy !== "total_vp")).toBe(true);

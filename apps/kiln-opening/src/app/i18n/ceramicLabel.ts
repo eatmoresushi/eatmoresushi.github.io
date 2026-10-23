@@ -72,6 +72,12 @@ export interface CeramicLabelOptions {
   withCrackle?: boolean;
   /** The ceramics shown together with this one, for `"auto"`. Default: all undelivered in the view. */
   among?: Iterable<CeramicFacts>;
+  /**
+   * The words around the label name the owner (a log line whose subject owns the ceramic), so
+   * with the owner left out, only the owner's own ceramics can read the same for `withPlace:
+   * "auto"`.
+   */
+  ownerImplied?: boolean;
 }
 
 export type CeramicPlace =
@@ -189,7 +195,7 @@ export function ceramicLabel(ceramic: CeramicId | CeramicFacts, view: CeramicLab
     : ownerMode;
   const placeMode = options.withPlace ?? "auto";
   const withPlace = placeMode === "auto"
-    ? among().some((other) => sameCard(facts, other, withOwner, withQuality, withCrackle))
+    ? among().some((other) => sameCard(facts, other, withOwner || options.ownerImplied === true, withQuality, withCrackle))
     : placeMode;
 
   let text = baseText(facts, t, withQuality, withCrackle);
