@@ -360,12 +360,25 @@ test("the secret Contribution and the private Commission look stay with their ow
         await expect(guest.page.locator("[data-sealed-contribution], [data-contribution]")).toHaveCount(0);
         for (const text of guest.received.slice(guestFrom)) expect(text, "a Contribution card reached Zhao's client before the reveal").not.toMatch(CONTRIBUTION_CARD);
 
-        // Zhao submits: both cards are revealed on both pages.
+        // Zhao submits: both cards are revealed to both players. Since revision 4 there is no
+        // Heat-marker step, so a firing with no decision left finishes at once and the reveal is
+        // read where it stays (the owner removed the last-firing recap, D16): the public reveal
+        // event reaches both clients, and both game logs show the reveal naming both players.
+        const revealFrom = { host: host.received.length, guest: guest.received.length };
         await guest.page.locator(ENABLED_CARD).last().click();
         await send(guest, "confirm");
-        for (const viewer of [host, guest]) {
-          await expect(viewer.page.locator("[data-contribution]")).toHaveCount(2, { timeout: 15_000 });
-          await expect(viewer.page.locator(`[data-contribution="${card}"]`).first()).toBeVisible();
+        for (const [viewer, from] of [[host, revealFrom.host], [guest, revealFrom.guest]] as const) {
+          await expect
+            .poll(() => viewer.received.slice(from).some((text) => text.includes("CONTRIBUTIONS_REVEALED") && text.includes(`"card":"${card}"`)), { timeout: 15_000 })
+            .toBe(true);
+          const logButton = viewer.page.locator("button.game-log-button");
+          if ((await logButton.getAttribute("aria-expanded")) !== "true") await logButton.click();
+          const reveal = viewer.page.locator(".game-log-entry", { hasText: "Contributions revealed" }).last();
+          await expect(reveal).toBeVisible({ timeout: 15_000 });
+          await expect(reveal).toContainText("Lin");
+          await expect(reveal).toContainText("Zhao");
+          await logButton.click();
+          await expect(logButton).toHaveAttribute("aria-expanded", "false");
         }
         contributionChecked = true;
         acted = true;

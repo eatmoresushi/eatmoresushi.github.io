@@ -12,7 +12,7 @@
       - text: 铜钱
     - text: 手中5张委托 声望0／4 0分
   - form "钧窑·窑变天成":
-    - paragraph: 烧窑步骤3，按起始玩家顺序
+    - paragraph: 烧窑步骤3
     - paragraph:
       - strong: 每轮一次，实际火候算出后、定品前：
       - text: 可付1柴→己方1件器物的实际火候+1或−1。

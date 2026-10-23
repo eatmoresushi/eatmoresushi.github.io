@@ -12,7 +12,7 @@
       - text: Coins
     - text: 4 Orders in hand Recognition 0/4 3 VP
   - form "Jun Kiln · Kiln Transformation":
-    - paragraph: Firing step 3, in First Player order
+    - paragraph: Firing step 3
     - paragraph:
       - strong: "Once per round, after Actual Heat is calculated, before Quality:"
       - text: pay 1 Wood → adjust 1 of your ceramics' Actual Heat by +1 or −1.
