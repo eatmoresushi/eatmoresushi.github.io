@@ -41,7 +41,8 @@ Version v1.6.2 (the working name v1.3 was already used by an earlier draft). Thi
 31. **Heat marker removed.** The player Heat marker is gone: no face-down token, no marker step, and the Glaze & Load Shifu simply loads up to 2. With it, a player whose one pot was protected could Stoke or Bank for 1 Wood and shift every other pot at the table (about +1.4 VP a round relative to each opponent); with nothing protected, a shift costs the shifter as much as anyone. Kiln Master's marker is now chosen when the ceramic is loaded, +1 or −1 face up, like the Imperial Kiln's modifier. Firing: Contributions → Test Pieces → Fire → Actual Heat → Quality.
 32. **Starting hand: the Main Order is chosen, not dealt.** Each player still starts with 2 Starting Orders and 1 Main Order, but the Main Order is taken from the face-up display in reverse turn order during Setup (refilling after each take) instead of being dealt blind. A dealt card ranged from O01 (4 VP for one Standard pot, deliverable in round 2) to O47 (three pots, two Masterpieces), a 3–5 VP swing bigger than any seat effect; a choice from six visible cards removes it, costs no placement, and gives the last seat the first pick.
 33. **Magistrate's Hall Shifu.** The 3-Coin discount was worth about 0.5 VP over the Apprentice, a quarter of what a Shifu placement should buy, and was the only one-space price exception. Now the Shifu pays the same 4 Coins, advances 1 step and reserves 1 face-up Crown Order from the display (nothing if none is showing): the magistrate commissions court wares. About 1.5 VP over the Apprentice; it feeds Guan and Tribute Ware and is self-limiting because the Hall closes at Recognition 3.
-34. **The kiln burns fuel.** Loading a ceramic into the Shared Kiln costs 1 Wood, paid as it is loaded; the Glaze & Load Shifu loads up to 2 and pays Wood for at most 1 of them, the mirror of Form & Decorate's discount (2.05 VP over the Apprentice against 2.30). Loading into the Imperial Kiln costs no Wood. Wood had no sink for three of the five boards — 1–2 a game, inside the starting 2 — so the Yard's Clay/Wood split was no decision; fuel is about 5 Wood a game on every production line, Kiln Tending and the Grant's Wood gain a point, and Jun's and Test Pieces' Wood become real trade-offs. Materials Yard 4 / 8 and 3 starting Wood keep the pot count where it was. A player who leads a round with the Yard can never be shut out of fuel, since the Yard has as many spaces as players; a player stuck without Wood spent their first worker elsewhere.
+34. **The kiln burns fuel.** A Glaze & Load action into the Shared Kiln costs 1 Wood whether it loads 1 vessel or 2, so the Shifu's second load is the mirror of Form & Decorate's discount (2.05 VP over the Apprentice against 2.30). Loading into the Imperial Kiln costs no Wood. Wood had no sink for three of the five boards — 1–2 a game, inside the starting 2 — so the Yard's Clay/Wood split was no decision; fuel is about 5 Wood a game on every production line, Kiln Tending and the Grant's Wood gain a point, and Jun's and Test Pieces' Wood become real trade-offs. Materials Yard 4 / 8 and 3 starting Wood keep the pot count where it was. A player who leads a round with the Yard can never be shut out of fuel, since the Yard has as many spaces as players; a player stuck without Wood spent their first worker elsewhere.
+35. **Seat Coin removed; fuel charged per action.** The reverse-order Main Order pick at setup pays the last seats 0.4–0.8 VP, which at 4 players is the whole lead deficit; with the extra Coin on top, seat 1 became the worst seat at 3 and 4 players (4p seat spread 0.46 VP with the Coin, 0.36 without; at 3p the deficit belongs to seat 1, last in round 5). At 2 players it is a coin-flip (0.19 with, 0.36 without) and goes to the playtest list. Fuel is charged per Glaze & Load action rather than per ceramic: identical Wood on every line, one bullet instead of two annotated rows.
 
 **Yours, from the doc comments:** 1–4, the first two sentences of 6, the first sentence of 7, the marker turn order in 3, 12, and 15. **The review's recommendations, applied at your request so the draft plays as one piece:** 5, the Shifu selection and Colour Samples in 6, the court-fired Imperial Kiln in 7, 8, 9, 11, 13 and 14. Each is a sentence to revert.
 
@@ -88,7 +89,7 @@ The game lasts exactly **5 rounds**.
 | Shifu Workers | 4 | One per player colour. |
 | Apprentice Workers | 12 | Three per player. |
 | Clay | 40 | Resource. |
-| Wood | 40 | Resource and kiln fuel: 1 per ceramic loaded into the Shared Kiln, and the cost of Bank and Stoke. |
+| Wood | 40 | Resource and kiln fuel: 1 per Glaze & Load action into the Shared Kiln, and the cost of Bank and Stoke. |
 | Coins | 50 | Decoration, Advanced Tech and Magistrate's Hall currency. |
 | Vessel Cards | 50 | Ten each: Bowl, Plate, Brush Washer, Vase and Censer. |
 | Main Order Cards | 48 | One unified public/reservable deck; see Appendix A. |
@@ -121,7 +122,7 @@ The game lasts exactly **5 rounds**.
 9. Randomly choose the First Player. In reverse turn order, each player chooses an available Kiln Player Board, places a Cover token on the second space of its Form & Decorate and of its Glaze & Load, and takes **1 face-up Main Order** from the display into their hand; refill the display to 6 after each take. Each player now holds 2 Starting Orders and 1 Main Order, and everyone has seen which Main Order each player took.
 10. Each player places **1 Shifu + 3 Apprentices** as available workers.
 11. Leave each player's Imperial Kiln area empty until it is gained through Imperial Recognition.
-12. Each player receives **2 Clay, 3 Wood and 3 Coins**. Every player after the first in turn order takes **1 extra Coin**.
+12. Each player receives **2 Clay, 3 Wood and 3 Coins**.
 13. Place all Imperial Recognition markers on space **0** and the Round marker on Round **1**.
 
 ## Round Structure
@@ -189,11 +190,11 @@ Each player has **1 Shifu and 3 Apprentices** available each round. Each worker 
 
 | Worker | Effect |
 | --- | --- |
-| Apprentice | Choose **1** of your Shaped vessels, give it a Glaze and load it, paying **1 Wood**. |
-| **Shifu** | Do this for up to **2** of your Shaped vessels, paying Wood for **at most 1** of them. |
+| Apprentice | Choose **1** of your Shaped vessels, give it a Glaze and load it. |
+| **Shifu** | Do this for up to **2** of your Shaped vessels. |
 
 - **Loading** places the vessel in an empty active Shared Kiln space. If you have gained your Imperial Kiln and it is empty, **1 vessel loaded by this action** may enter it instead.
-- **The kiln burns fuel:** each ceramic loaded into the Shared Kiln costs **1 Wood**, paid as it is loaded. You pay **no Wood** when loading into your Imperial Kiln.
+- **The kiln burns fuel:** a Glaze & Load action that loads into the Shared Kiln costs **1 Wood**, whether it loads 1 vessel or 2. You pay **no Wood** if the action loads only into your Imperial Kiln.
 - A placement here is legal only if you have at least 1 Shaped vessel, an empty active Shared Kiln space or your own empty Imperial Kiln, and 1 Wood if you load into the Shared Kiln.
 - Covered Shared Kiln spaces are never empty or usable. The Imperial Kiln holds 1 ceramic per firing.
 
@@ -688,7 +689,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | --- | --- | --- |
 | Materials Yard | Gain 4 Clay/Wood | Gain 8 Clay/Wood |
 | Form & Decorate | Form 1: Clay + 2 Coins, any Decoration | Form up to 2; if 2, one costs 1 Coin less |
-| Glaze & Load | Glaze and load 1 (1 Wood) | Glaze and load up to 2 (1 Wood for both) |
+| Glaze & Load | Glaze and load 1 (1 Wood) | Glaze and load up to 2 (still 1 Wood) |
 | Commission Market | Select 2 | Select 3, reserving up to 2 |
 | Guild Hall | Buy 1 Advanced Tech at cost | Look at top 2 Techs of 1 discipline (or as many as remain); buy up to 2 Techs from different disciplines at cost |
 | Canal Wharf | 2 Coins | 4 Coins + the top Order card, unseen, to hand |
