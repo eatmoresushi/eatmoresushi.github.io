@@ -1,0 +1,26 @@
+/* Placeholder (A2): a dashed box naming a component that a phase B owner has not landed yet. */
+@layer components {
+  .placeholder {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+    padding: var(--sp-3) var(--sp-4);
+    border: 1px dashed var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    color: var(--ink-3);
+  }
+
+  .placeholder--inline {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--sp-3);
+    border-radius: var(--r-pill);
+  }
+
+  .placeholder-name {
+    font-family: var(--mono);
+    font-size: var(--fs-12);
+    overflow-wrap: anywhere;
+  }
+}

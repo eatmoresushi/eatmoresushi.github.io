@@ -1,0 +1,48 @@
+- complementary "Your decision":
+  - paragraph: Order Phase · Your turn
+  - heading "Complete held Orders" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "4"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "5"
+      - text: Coins
+    - text: 4 Orders in hand Recognition 0/4 0 VP
+  - form "Complete held Orders":
+    - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
+    - group "Order 1 of 4 can be completed":
+      - text: ""
+      - radio "S03 3 VP 4 Coins any Shape · Grey-Green · any Decoration · Standard+" [checked]
+      - text: S03 3 VP 4 Coins any Shape · Grey-Green · any Decoration · Standard+
+      - 'button "Full rules: Order S03"'
+      - radio "S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+ No matching ceramics" [disabled]
+      - text: S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+ No matching ceramics
+      - 'button "Full rules: Order S02"'
+      - radio /O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations · Fine\+ all; ≥1 Masterpiece No matching ceramics/ [disabled]
+      - text: /O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations · Fine\+ all; ≥1 Masterpiece No matching ceramics/
+      - 'button "Full rules: Order O48"'
+      - radio /O29 \d+ VP 5 Coins Vase \+ Censer; any Glazes; different Decorations · Fine\+ each No matching ceramics/ [disabled]
+      - text: /O29 \d+ VP 5 Coins Vase \+ Censer; any Glazes; different Decorations · Fine\+ each No matching ceramics/
+      - 'button "Full rules: Order O29"'
+    - group "Ceramics":
+      - text: ""
+      - radio "Option 1 Grey-Green Brush Washer, Plain · Fine · Crackle" [checked]
+      - text: Option 1 Grey-Green Brush Washer, Plain · Fine · Crackle
+    - group "Crackle declaration":
+      - text: ""
+      - radio "Find a declaration for me satisfies S03 The game picks Decorations for your Crackle ceramics that complete the Order, and records them." [checked]
+      - text: Find a declaration for me satisfies S03 The game picks Decorations for your Crackle ceramics that complete the Order, and records them.
+      - radio "Declare each Crackle ceramic myself Each Crackle ceramic may count as any one Decoration for this Order only."
+      - text: Declare each Crackle ceramic myself Each Crackle ceramic may count as any one Decoration for this Order only.
+    - heading "Rewards" [level=3]
+    - text: "+3 VP +4 Coins Crackle: +1 VP"
+    - paragraph: Only held Orders can be completed; Orders on the display cannot.
+    - paragraph:
+      - text: Complete
+      - strong: S03
+      - text: with Grey-Green Brush Washer, Plain · Fine · Crackle
+    - button "End turn"
+    - button "Confirm"

@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.4",
+  "rulesVersion": "1.6.2",
   "players": {
     "min": 2,
     "max": 4
@@ -7,39 +7,36 @@
   "rounds": 5,
   "startingResources": {
     "clay": 2,
-    "wood": 2,
+    "wood": 3,
     "coins": 3
   },
   "workers": {
     "shifu": 1,
-    "apprenticesTotal": 3,
-    "apprenticesStarting": 3
+    "apprentices": 3
   },
-  "orderDisplay": {
-    "market": 6,
-    "roundStartDiscard": 2,
-    "baseHandLimit": 3
+  "setupDeal": {
+    "startingOrders": 2
   },
-  "techniques": {
-    "maxOwned": 2,
-    "faceUpPerDiscipline": 2
+  "setupFaceUpMainOrders": 1,
+  "mainMarket": {
+    "displaySize": 6,
+    "roundStartDiscard": 2
   },
-  "kiln": {
-    "spaces": {
-      "high": 3,
-      "middle": 2,
-      "low": 3
-    },
-    "zoneModifier": {
-      "high": 1,
-      "middle": 0,
-      "low": -1
-    },
+  "handLimit": {
+    "base": 4
+  },
+  "techs": {
+    "perDiscipline": 6,
+    "faceUpPerDiscipline": 2,
+    "maxOwned": 3,
+    "maxPerDiscipline": 1
+  },
+  "sharedKiln": {
     "activeSpacesByPlayerCount": {
       "2": [
         "high_1",
+        "high_2",
         "middle_1",
-        "middle_2",
         "low_1"
       ],
       "3": [
@@ -56,30 +53,11 @@
         "high_3",
         "middle_1",
         "middle_2",
+        "middle_3",
         "low_1",
-        "low_2",
-        "low_3"
+        "low_2"
       ]
     }
-  },
-  "fireDeck": {
-    "-2": 1,
-    "-1": 3,
-    "0": 4,
-    "1": 3,
-    "2": 1
-  },
-  "glazes": {
-    "white": 1,
-    "celadon": 2,
-    "grey_green": 3,
-    "moon_white": 4
-  },
-  "decorations": {
-    "plain": 0,
-    "carved": 2,
-    "impressed": 2,
-    "painted": 2
   },
   "shapes": {
     "bowl": 1,
@@ -89,6 +67,19 @@
     "censer": 2
   },
   "shapeSupplyEach": 10,
+  "decorations": [
+    "plain",
+    "carved",
+    "impressed",
+    "painted"
+  ],
+  "formingCoins": 2,
+  "glazes": {
+    "white": 1,
+    "celadon": 2,
+    "grey_green": 3,
+    "moon_white": 4
+  },
   "coinEndGame": {
     "coinsPerVp": 3,
     "maxVp": 5

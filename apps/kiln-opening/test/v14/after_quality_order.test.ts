@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyAction, currentDecisionActor } from "../../src/game/index.ts";
-import type { FireModifier, GameAction, GameState, Glaze, KilnSpaceId, PlayerId, SeededRandom, TechniqueId } from "../../src/game/index.ts";
+import { applyAction, currentDecisionActor } from "../../src/game-v14/index.ts";
+import type { FireModifier, GameAction, GameState, Glaze, KilnSpaceId, PlayerId, SeededRandom, TechniqueId } from "../../src/game-v14/index.ts";
 import { addLoaded, addTechnique, mustApply, startedGame } from "../v127/helpers.ts";
 
 interface LoadFixture {

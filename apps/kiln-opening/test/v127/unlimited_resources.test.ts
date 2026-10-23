@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { projectPublicGameState } from "../../src/multiplayer/projection.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/projection.ts";
 import { mustApply, mustResult, startedGame, workerId } from "./helpers.ts";
 
 describe("unlimited Clay, Wood and Coins", () => {

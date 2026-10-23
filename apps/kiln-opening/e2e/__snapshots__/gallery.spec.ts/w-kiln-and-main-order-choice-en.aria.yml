@@ -1,0 +1,61 @@
+- complementary "Your decision":
+  - paragraph: Start of Round · Your turn
+  - heading "Choose your Kiln and a Main Order" [level=2]
+  - region "C (you)":
+    - heading "C (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 2 Orders in hand Recognition 0/4 0 VP
+  - form "Choose your Kiln and a Main Order":
+    - paragraph: In reverse turn order, each player chooses a Kiln and takes one face-up Main Order from the display in the same turn. Each Kiln Player Board gives a once-per-round ability.
+    - group "Kiln":
+      - text: ""
+      - 'radio "Ru Kiln Quiet Perfection Once per round, when you complete an Order using a Plain Celadon Masterpiece: gain 4 VP."'
+      - text: Ru Kiln Quiet Perfection
+      - strong: "Once per round, when you complete an Order using a Plain Celadon Masterpiece:"
+      - text: gain 4 VP.
+      - 'radio "Guan Kiln Imperial Patronage Once per round, when you complete a Crown Order: gain 2 Coins + 1 VP."'
+      - text: Guan Kiln Imperial Patronage
+      - strong: "Once per round, when you complete a Crown Order:"
+      - text: gain 2 Coins + 1 VP.
+      - 'radio "Ge Kiln Crackle Mastery Once per round, after Quality is assigned: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine. Orders: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered."'
+      - text: Ge Kiln Crackle Mastery
+      - strong: "Once per round, after Quality is assigned:"
+      - text: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine.
+      - strong: "Orders:"
+      - text: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
+      - 'radio "Ding Kiln Moulded Production Once per round, during a Form & Decorate action: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 1 Coin → form 1 extra vessel of the same Shape with any Decoration (no discounts). It counts as formed by that action."'
+      - text: Ding Kiln Moulded Production
+      - strong: "Once per round, during a Form & Decorate action:"
+      - text: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 1 Coin → form 1 extra vessel of the same Shape with any Decoration (no discounts). It counts as formed by that action.
+      - 'radio "Jun Kiln Kiln Transformation Once per round, after Actual Heat is calculated, before Quality: pay 1 Wood → adjust 1 of your ceramics'' Actual Heat by +1 or −1."'
+      - text: Jun Kiln Kiln Transformation
+      - strong: "Once per round, after Actual Heat is calculated, before Quality:"
+      - text: pay 1 Wood → adjust 1 of your ceramics' Actual Heat by +1 or −1.
+    - group "Main Order to take":
+      - text: ""
+      - paragraph: Everyone sees which Order you take. The display is refilled before the next player chooses.
+      - radio "#1 O03 4 VP 3 Coins Brush Washer · any Glaze · any Decoration Standard+"
+      - text: "#1 O03 4 VP 3 Coins Brush Washer · any Glaze · any Decoration Standard+"
+      - radio "#2 O16 9 VP 2 Coins any Shape · any Glaze · any Decoration Masterpiece"
+      - text: "#2 O16 9 VP 2 Coins any Shape · any Glaze · any Decoration Masterpiece"
+      - radio "#3 O02 4 VP 3 Coins Plate · any Glaze · any Decoration Standard+"
+      - text: "#3 O02 4 VP 3 Coins Plate · any Glaze · any Decoration Standard+"
+      - radio /#4 O46 \d+ VP 0 Coins 2 Crowns Plate \+ Vase \+ Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted Fine\+ all/
+      - text: /#4 O46 \d+ VP 0 Coins 2 Crowns Plate \+ Vase \+ Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted Fine\+ all/
+      - radio /#5 O41 \d+ VP 1 Coin 2 Crowns Plate \+ Vase; same Glaze; different Decorations Fine\+ each; ≥1 Masterpiece/
+      - text: /#5 O41 \d+ VP 1 Coin 2 Crowns Plate \+ Vase; same Glaze; different Decorations Fine\+ each; ≥1 Masterpiece/
+      - radio "#6 O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+"
+      - text: "#6 O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+"
+    - paragraph: Choose a Kiln and a Main Order.
+    - button "Clear"
+    - button "Confirm" [disabled]

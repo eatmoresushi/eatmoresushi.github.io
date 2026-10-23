@@ -1,0 +1,10 @@
+/* CeramicPiece (B2): a ceramic chip with its details. */
+@layer components {
+  .cer-piece {
+    vertical-align: bottom;
+  }
+
+  .cer-piece-line {
+    margin: 0;
+  }
+}

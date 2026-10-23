@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kiln-opening-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:local", "--", "--port", "4317", "--strictPort"],
+      "port": 4317
+    }
+  ]
+}

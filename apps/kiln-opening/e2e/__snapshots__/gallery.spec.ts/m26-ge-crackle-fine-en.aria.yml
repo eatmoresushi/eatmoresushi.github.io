@@ -1,0 +1,38 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "After-Quality abilities" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "4"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "5"
+      - text: Coins
+    - text: 4 Orders in hand Recognition 0/4 0 VP
+  - form "After-Quality abilities":
+    - paragraph: Firing step 5, in First Player order
+    - paragraph: Use them in any order you like; the options are checked again after each use.
+    - heading "Queue" [level=3]
+    - list "Queue":
+      - listitem: "Lin (you): deciding"
+    - heading "Your ceramics in this firing" [level=3]
+    - text: Grey-Green Brush Washer, Plain · Fine
+    - group "Ge Kiln · Crackle Mastery":
+      - button "Ge Kiln · Crackle Mastery"
+      - paragraph:
+        - strong: "Once per round, after Quality is assigned:"
+        - text: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine.
+        - strong: "Orders:"
+        - text: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
+      - radio "Grey-Green Brush Washer, Plain · Fine" [checked]
+      - text: Grey-Green Brush Washer, Plain · Fine
+    - paragraph:
+      - text: Use
+      - strong: Ge Kiln · Crackle Mastery
+      - text: ":"
+      - strong: Grey-Green Brush Washer, Plain · Fine
+      - text: gains a Crackle marker and is Fine
+    - button "Done — decline the rest"
+    - button "Confirm"

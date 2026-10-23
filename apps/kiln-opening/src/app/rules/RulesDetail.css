@@ -1,0 +1,171 @@
+/* RulesDetail (B6; owner decision D10, K15): the shared rules-details trigger and panel body.
+   The panel itself is the kit's PieceDetail panel (body-level layer, `data-size="wide"`). */
+@layer components {
+  /* A piece whose whole face is the trigger: let the face fill the card or tile. */
+  .kit-detail.rd-piece {
+    display: flex;
+    min-width: 0;
+  }
+
+  .kit-detail.rd-piece > .kit-detail-trigger {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    align-items: stretch;
+    min-width: 0;
+    cursor: pointer;
+  }
+
+  /* Beside a form option: a small "Rules" button, or the component's name. */
+  .kit-detail.rd-piece--button,
+  .kit-detail.rd-piece--name {
+    display: inline-flex;
+    flex: none;
+    max-width: 100%;
+  }
+
+  .kit-detail.rd-piece--button > .kit-detail-trigger,
+  .kit-detail.rd-piece--name > .kit-detail-trigger {
+    flex: none;
+    align-items: center;
+  }
+
+  .rd-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1) var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .rd-button-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--on-teal);
+    font-family: var(--serif);
+    font-size: var(--fs-12);
+    font-style: italic;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .rd-name {
+    color: var(--teal-ink);
+    font-weight: 700;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.2em;
+    overflow-wrap: anywhere;
+    text-align: start;
+  }
+
+  /* The panel body. */
+  .rd {
+    display: grid;
+    gap: var(--sp-5);
+    min-width: 0;
+    font-size: var(--fs-rule);
+    line-height: var(--lh-body);
+    font-weight: 400;
+    color: var(--ink);
+    text-align: start;
+    white-space: normal;
+  }
+
+  .rd-sec {
+    display: grid;
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
+  .rd-h {
+    margin: 0;
+    font-size: var(--fs-meta);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .rd-short,
+  .rd-rule {
+    margin: 0;
+  }
+
+  .rd-short strong,
+  .rd-rule strong {
+    font-weight: 700;
+  }
+
+  .rd-line {
+    display: block;
+  }
+
+  .rd-facts {
+    display: grid;
+    gap: var(--sp-1);
+    margin: 0;
+  }
+
+  .rd-fact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--sp-4);
+  }
+
+  .rd-fact dt {
+    min-width: 6.5rem;
+    color: var(--ink-2);
+  }
+
+  .rd-fact dd {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .rd-clar {
+    display: grid;
+    gap: var(--sp-3);
+    margin: 0;
+    padding-inline-start: 1.1em;
+  }
+
+  .rd-clar li {
+    display: grid;
+    gap: var(--sp-1);
+  }
+
+  .rd-src {
+    font-size: var(--fs-meta);
+    color: var(--ink-2);
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .rd-button {
+      min-height: var(--target-min);
+    }
+
+    /* A short name ("火照") is still a 44px target (WCAG 2.5.8); the piece rule above sets 0. */
+    .kit-detail.rd-piece--button > .kit-detail-trigger,
+    .kit-detail.rd-piece--name > .kit-detail-trigger {
+      min-width: var(--target-min);
+    }
+  }
+
+  /* An Order's printed reward (`OrderReward`): VP, Coins, Crowns. */
+  .order-reward {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-4);
+    font-variant-numeric: tabular-nums;
+  }
+}

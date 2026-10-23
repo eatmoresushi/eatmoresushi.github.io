@@ -1,0 +1,170 @@
+/* GameLog (B1; wireframe `.logbtn`, `.logpanel`, `.ledger`). */
+@layer components {
+  /* At 900px and wider the panel hangs under the button; on phones it spans the top bar. */
+  .game-log {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .game-log-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-height: 1.875rem;
+    padding: var(--sp-1) var(--sp-5);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .game-log-button:hover {
+    border-color: var(--celadon);
+  }
+
+  .game-log-icon {
+    flex: none;
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .game-log-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    /* Hung from the button's end, opening towards the start: the tools sit at the end of the top
+       bar (TopBar.css), which reaches the viewport's edge while the decision pane is hidden (D14),
+       so a panel opening from the button's start would run off the screen. The bar's start is
+       always more than 24rem before the button's end at 900px and wider. */
+    right: 0;
+    left: auto;
+    z-index: var(--z-popover);
+    width: min(24rem, calc(100vw - 2 * var(--sp-6)));
+    max-height: min(27.5rem, 70dvh);
+    overflow-y: auto;
+    padding: var(--sp-4) var(--sp-6) var(--sp-5);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 14px 34px var(--shadow-c);
+  }
+
+  .game-log-panel[hidden] {
+    display: none;
+  }
+
+  .game-log-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-4);
+    margin: var(--sp-1) 0 var(--sp-2);
+    font-size: var(--fs-14);
+  }
+
+  .game-log-title:focus {
+    outline: none;
+  }
+
+  .game-log-title:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .game-log-order {
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: var(--fs-meta);
+    font-weight: 500;
+  }
+
+  .game-log-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .game-log-entry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-4);
+    padding: var(--sp-3) 0;
+    border-bottom: 1px solid var(--line-2);
+    font-size: var(--fs-label);
+    overflow-wrap: anywhere;
+  }
+
+  .game-log-text {
+    min-width: 0;
+  }
+
+  .game-log-empty {
+    margin: var(--sp-3) 0;
+    color: var(--ink-2);
+    font-size: var(--fs-label);
+  }
+
+  .game-log-earlier {
+    margin-top: var(--sp-4);
+    min-height: 2rem;
+    padding: var(--sp-2) var(--sp-6);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    font-size: var(--fs-label);
+    font-weight: 700;
+  }
+
+  @container shell (max-width: 899px) {
+    .game-log-button,
+    .game-log-earlier {
+      min-height: var(--target-min);
+      min-width: var(--target-min);
+    }
+
+    .game-log {
+      position: static;
+    }
+
+    /* Icon only: the button's accessible name stays "Game log". */
+    .game-log-button {
+      justify-content: center;
+      min-width: var(--target-min);
+      padding: var(--sp-1) var(--sp-2);
+    }
+
+    .game-log-button-text,
+    .game-log-caret {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .game-log-icon {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+
+    .game-log-panel {
+      right: var(--gutter);
+      left: auto;
+      width: calc(100% - 2 * var(--gutter));
+    }
+  }
+}
+
+@layer states {
+  .game-log-button[aria-expanded="true"] {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: var(--on-teal);
+  }
+}

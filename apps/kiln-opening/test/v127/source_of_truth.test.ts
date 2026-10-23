@@ -11,7 +11,7 @@ import {
   ORDER_DEFINITIONS,
   TECHNIQUE_DEFINITIONS,
   preferredHeat,
-} from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
 
 /**
  * Guard against re-declared game content.
@@ -47,7 +47,7 @@ describe("authoritative content has exactly one source", () => {
    * lines in the shipped tree are scanned.
    */
   it("declares no Glaze heat literals outside the content layer", () => {
-    const allowed = new Set(["src/game/content.ts"]);
+    const allowed = new Set(["src/game/content.ts", "src/game-v14/content.ts"]);
     const offenders: string[] = [];
     const walk = (dir: string): string[] => readdirSync(dir).flatMap((entry) => {
       const full = join(dir, entry);

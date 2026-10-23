@@ -1,4 +1,4 @@
-import { withOwnOrderHand } from "../multiplayer/projection";
+import { withOwnOrderHand } from "../multiplayer-v14/projection";
 import { useEffect, useId, useReducer, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -16,7 +16,7 @@ import {
   currentDecisionActor,
   locationCapacity,
   preferredHeat,
-} from "../game";
+} from "../game-v14";
 import type {
   CeramicState,
   Decoration,
@@ -31,7 +31,7 @@ import type {
   TechniqueDiscipline,
   TechniqueId,
   WorkerId,
-} from "../game";
+} from "../game-v14";
 import type {
   AuthoritativeCommand,
   PendingContribution,
@@ -41,7 +41,7 @@ import type {
   PublicGameState,
   PublicPlayerState,
   PublicSeat,
-} from "../multiplayer";
+} from "../multiplayer-v14";
 import { ActionPanel } from "./ActionPanel";
 import { OrderFace, TechniqueFace, pieceSurfaceClass } from "./PieceFaces";
 import {

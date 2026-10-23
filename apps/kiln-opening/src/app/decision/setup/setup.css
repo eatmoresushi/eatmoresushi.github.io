@@ -1,0 +1,10 @@
+/* Setup windows (B4): Kiln selection and Setter's Mark. */
+@layer components {
+  .b4-kiln-short {
+    display: block;
+  }
+
+  .b4-kiln-short strong {
+    font-weight: 700;
+  }
+}

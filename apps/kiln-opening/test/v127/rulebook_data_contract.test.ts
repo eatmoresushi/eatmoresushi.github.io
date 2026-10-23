@@ -11,7 +11,7 @@ import {
   STARTING_TECHNIQUES,
   TECHNIQUES,
   TECHNIQUE_DEFINITIONS,
-} from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
 
 const EN_SOURCE = readFileSync(
   join(import.meta.dirname, "../../docs/KILN_OPENING_v1.4_EN_SOURCE.md"),

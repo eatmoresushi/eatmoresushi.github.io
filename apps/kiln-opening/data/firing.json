@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.4",
+  "rulesVersion": "1.6.2",
   "kilnSpaces": [
     {
       "id": "high_1",
@@ -27,6 +27,11 @@
       "modifier": 0
     },
     {
+      "id": "middle_3",
+      "zone": "middle",
+      "modifier": 0
+    },
+    {
       "id": "low_1",
       "zone": "low",
       "modifier": -1
@@ -35,19 +40,21 @@
       "id": "low_2",
       "zone": "low",
       "modifier": -1
-    },
-    {
-      "id": "low_3",
-      "zone": "low",
-      "modifier": -1
     }
   ],
-  "baseHeatRule": {
-    "formula": "clamp(2 + sum(revealed heat adjustments), 0, 5)",
-    "start": 2,
+  "kilnDie": {
+    "faces": [
+      1,
+      1,
+      2,
+      2,
+      3,
+      3
+    ]
+  },
+  "baseHeat": {
     "minimum": 0,
-    "maximum": 5,
-    "contributors": "players with at least 1 ceramic in the Shared Kiln or their Imperial Kiln"
+    "maximum": 5
   },
   "fireDeck": [
     -2,
@@ -63,57 +70,80 @@
     1,
     2
   ],
-  "qualityByDifference": {
-    "0": "masterpiece",
-    "1": "fine",
-    "2": "standard",
-    "3+": "flawed"
-  },
+  "qualityByHeatDifference": [
+    {
+      "maxDifference": 0,
+      "quality": "masterpiece"
+    },
+    {
+      "maxDifference": 1,
+      "quality": "fine"
+    },
+    {
+      "maxDifference": 2,
+      "quality": "standard"
+    },
+    {
+      "maxDifference": null,
+      "quality": "flawed"
+    }
+  ],
   "contributionCards": [
     {
       "id": "BANK",
+      "woodCost": 1,
+      "heat": -1,
+      "techId": null,
       "name": "Bank the Fire",
       "nameZh": "压火",
-      "woodCost": 1,
-      "heatAdjustment": -1,
-      "meaning": "Deliberately restrain and bank the firing.",
-      "meaningZh": "压低本次烧成的基础火候。"
+      "shortText": null,
+      "shortTextZh": null
     },
     {
       "id": "TEND",
+      "woodCost": 0,
+      "heat": 0,
+      "techId": null,
       "name": "Tend the Fire",
       "nameZh": "守火",
-      "woodCost": 0,
-      "heatAdjustment": 0,
-      "meaning": "Maintain the neutral fire without pushing it.",
-      "meaningZh": "维持平稳窑火，不作增减。"
+      "shortText": null,
+      "shortTextZh": null
     },
     {
       "id": "STOKE",
+      "woodCost": 1,
+      "heat": 1,
+      "techId": null,
       "name": "Stoke the Fire",
       "nameZh": "添柴",
+      "shortText": null,
+      "shortTextZh": null
+    },
+    {
+      "id": "FUEL_LEDGER_BANK",
       "woodCost": 1,
-      "heatAdjustment": 1,
-      "meaning": "Feed the kiln enough to raise the fire one step.",
-      "meaningZh": "添柴助火，使窑温上升一级。"
+      "heat": -2,
+      "techId": "T12",
+      "name": "Fuel Ledger Bank",
+      "nameZh": "柴簿压火",
+      "shortText": "1 Wood: −2.",
+      "shortTextZh": "1柴：−2。"
     },
     {
-      "id": "BANK_2",
-      "name": "−2 Bank",
-      "nameZh": "强压火",
-      "woodCost": 2,
-      "heatAdjustment": -2,
-      "meaning": "Fuel Ledger: bank the fire by two steps.",
-      "meaningZh": "柴簿：使基础火候降低两级。"
-    },
-    {
-      "id": "STOKE_2",
-      "name": "+2 Stoke",
-      "nameZh": "猛添柴",
-      "woodCost": 2,
-      "heatAdjustment": 2,
-      "meaning": "Fuel Ledger: stoke the fire by two steps.",
-      "meaningZh": "柴簿：使基础火候提高两级。"
+      "id": "FUEL_LEDGER_STOKE",
+      "woodCost": 1,
+      "heat": 2,
+      "techId": "T12",
+      "name": "Fuel Ledger Stoke",
+      "nameZh": "柴簿添柴",
+      "shortText": "1 Wood: +2.",
+      "shortTextZh": "1柴：+2。"
     }
-  ]
+  ],
+  "imperialModifiers": [
+    -1,
+    0,
+    1
+  ],
+  "flawedSaleCoins": 2
 }

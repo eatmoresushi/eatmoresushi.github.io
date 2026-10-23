@@ -1,0 +1,50 @@
+/* QualityChip (pieces; wireframe `.chip.q-*`). */
+@layer components {
+  .qchip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--sp-3);
+    border-radius: var(--r-pill);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  .qchip--masterpiece {
+    background: var(--q-masterpiece-bg);
+    color: var(--q-masterpiece);
+  }
+
+  .qchip--fine {
+    background: var(--q-fine-bg);
+    color: var(--q-fine);
+  }
+
+  .qchip--standard {
+    background: var(--q-standard-bg);
+    color: var(--q-standard);
+  }
+
+  .qchip--flawed {
+    background: var(--q-flawed-bg);
+    color: var(--q-flawed);
+  }
+
+  .qchip-letter {
+    display: none;
+  }
+
+  .qchip--compact .qchip-word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .qchip--compact .qchip-letter {
+    display: inline;
+  }
+}

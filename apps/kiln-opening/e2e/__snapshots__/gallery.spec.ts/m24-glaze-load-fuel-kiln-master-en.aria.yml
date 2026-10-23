@@ -1,0 +1,104 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Place a worker" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "9"
+      - text: Clay
+      - strong: "9"
+      - text: Wood
+      - strong: "9"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 0 Orders in hand Recognition 1/4 0 VP
+  - form "Place a worker":
+    - paragraph: 4 of your 4 workers left. The Work Phase cannot be passed.
+    - region "Shifu at Glaze & Load":
+      - heading "Shifu at Glaze & Load" [level=3]
+      - text: your space 1
+      - paragraph: Glaze and load up to 2 (still 1 Wood)
+      - group "Glaze & Load":
+        - paragraph: Vessel 1
+        - group "Shaped vessel":
+          - text: ""
+          - radio "Bowl, Plain" [checked]
+          - text: Bowl, Plain
+          - radio "Plate, Carved"
+          - text: Plate, Carved
+        - group "Glaze":
+          - text: ""
+          - radio "White" [checked]
+          - text: White
+          - radio "Celadon"
+          - text: Celadon
+          - radio "Grey-Green"
+          - text: Grey-Green
+          - radio "Moon White"
+          - text: Moon White
+        - group "Load into or choose a highlighted kiln space":
+          - text: ""
+          - radio "High 1 (+1)" [checked]
+          - text: High 1 (+1)
+          - radio "High 2 (+1)"
+          - text: High 2 (+1)
+          - radio "Middle 1 (0)"
+          - text: Middle 1 (0)
+          - radio "Low 1 (−1)"
+          - text: Low 1 (−1)
+        - paragraph: Vessel 2
+        - group "Shaped vessel":
+          - text: ""
+          - radio "Plate, Carved" [checked]
+          - text: Plate, Carved
+        - group "Glaze":
+          - text: ""
+          - radio "White" [checked]
+          - text: White
+          - radio "Celadon"
+          - text: Celadon
+          - radio "Grey-Green"
+          - text: Grey-Green
+          - radio "Moon White"
+          - text: Moon White
+        - group "Load into or choose a highlighted kiln space":
+          - text: ""
+          - radio "High 2 (+1)" [checked]
+          - text: High 2 (+1)
+          - radio "Middle 1 (0)"
+          - text: Middle 1 (0)
+          - radio "Low 1 (−1)"
+          - text: Low 1 (−1)
+        - checkbox "Load a second vessel" [checked]
+        - text: Load a second vessel
+        - 'group "Kiln Master: place its marker (optional)"':
+          - text: ""
+          - paragraph: Face up, for everyone to see. It adds to that ceramic’s Actual Heat this firing and stays for a Second Firing. Once per round.
+          - radio "No marker"
+          - text: No marker
+          - radio "+1 on Bowl, Plain" [checked]
+          - text: +1 on Bowl, Plain
+          - radio "−1 on Bowl, Plain"
+          - text: −1 on Bowl, Plain
+          - radio "+1 on Plate, Carved"
+          - text: +1 on Plate, Carved
+          - radio "−1 on Plate, Carved"
+          - text: −1 on Plate, Carved
+        - 'button "Full rules: Kiln Master"'
+        - group "Kiln fuel":
+          - paragraph: Kiln fuel
+          - text: Loading into the Shared Kiln 1 Wood
+          - paragraph: An action that loads into the Shared Kiln costs 1 Wood, whether it loads one vessel or two. Loading only into your Imperial Kiln costs nothing.
+        - group "Your resources after this action": After this action Clay 9 → 9 Wood 9 → 8 Coins 9 → 9
+      - paragraph: To place elsewhere, choose another Place on the table.
+    - paragraph:
+      - text: Place
+      - strong: Shifu
+      - text: at
+      - strong: Glaze & Load
+      - text: — Bowl, Plain → White, High 1 (+1); Plate, Carved → White, High 2 (+1); Kiln Master marker +1 on Bowl, Plain; pay 1 Wood (kiln fuel)
+    - button "Clear"
+    - button "Confirm"

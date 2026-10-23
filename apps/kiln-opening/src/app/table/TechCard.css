@@ -1,0 +1,188 @@
+/* TechCard (B2; wireframe `.tech`). */
+@layer components {
+  .tech {
+    display: grid;
+    min-width: 0;
+    border: 1px solid var(--line-2);
+    border-top: 3px solid var(--dc, var(--line));
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+
+  .tech-detail {
+    min-width: 0;
+  }
+
+  .tech-face {
+    display: grid;
+    flex: 1 1 auto;
+    gap: var(--sp-2);
+    min-width: 0;
+    padding: var(--sp-3) var(--sp-4);
+    text-align: start;
+  }
+
+  /* The title row wraps (review of owner items 4–5, 2026-10-17): the name keeps at least 8em
+     beside the cost (the longest word of a Tech name, "Connoisseur's", is about 7.2em); when the
+     cost would squeeze it below that (a narrow tile, 200% text on a phone), the cost moves under
+     the name rather than breaking the name mid-word. */
+  .tech-t1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-1) var(--sp-3);
+    min-width: 0;
+  }
+
+  .tech-name {
+    flex: 1 1 8em;
+    min-width: 0;
+    color: var(--ink);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .tech-cost {
+    margin-inline-start: auto;
+    color: var(--gold-ink);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .tech-short {
+    color: var(--ink-2);
+    font-size: var(--fs-rule);
+    line-height: var(--lh-snug);
+  }
+
+  .tech-short strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .tech:hover {
+    border-color: var(--celadon);
+  }
+
+  /* The Guild Hall chooser (owner review, 2026-10-17): the whole tile is a toggle button. */
+  .tech-pick {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--target-min);
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .tech--choice {
+    border-color: var(--teal);
+  }
+
+  .tech-why {
+    margin: 0;
+    padding: 0 var(--sp-4) var(--sp-3);
+    color: var(--bad-ink);
+    font-size: var(--fs-meta);
+  }
+
+  /* As a radio of the Guild Hall inspection (TechOption, owner review 2026-10-17): the label is
+     the tile; the native radio covers it (focusable, in the accessibility tree) and the mark
+     draws it. */
+  .tech--option .tech-pick {
+    position: relative;
+  }
+
+  .tech-radio {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+  }
+
+  .tech-pick:has(.tech-radio:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* The radio mark beside the face (not in its wrapping title row), level with the name's first
+     line; the face's start padding is the gap after it. */
+  .tech-mark {
+    flex: none;
+    align-self: flex-start;
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-block-start: calc(var(--sp-3) + 0.125rem);
+    margin-inline-start: var(--sp-4);
+    border: 1.5px solid var(--ink-2);
+    border-radius: 50%;
+    background: var(--surface);
+  }
+
+  .tech--option .tech-face {
+    padding-inline-start: var(--sp-3);
+  }
+
+  .tech-disc {
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+}
+
+@layer states {
+  .tech--chosen {
+    border-color: var(--teal);
+    box-shadow: inset 0 0 0 2px var(--teal);
+    background: var(--teal-pale);
+  }
+
+  /* Not buyable with this worker: greyed out (dashed, paper, no discipline colour), still
+     focusable, with its reason below. --ink-2 keeps the text readable on --paper-2. */
+  .tech--unavailable {
+    border-style: dashed;
+    border-color: var(--line-2);
+    border-top-color: var(--line-2);
+    background: var(--paper-2);
+  }
+
+  .tech--unavailable .tech-pick {
+    cursor: not-allowed;
+  }
+
+  .tech--chosen .tech-mark {
+    border: 4px solid var(--teal);
+  }
+
+  .tech--unavailable .tech-mark {
+    border-color: var(--ink-3);
+    background: var(--paper-2);
+  }
+
+  .tech--unavailable .tech-name,
+  .tech--unavailable .tech-cost,
+  .tech--unavailable .tech-disc {
+    color: var(--ink-2);
+    font-weight: 600;
+  }
+
+  /* Greyed, but the printed short text keeps its weights: the timing clause stays bold (owner
+     review items 4–5, 2026-10-17). */
+  .tech--unavailable .tech-short,
+  .tech--unavailable .tech-short strong {
+    color: var(--ink-2);
+  }
+
+  .tech--unavailable:hover {
+    border-color: var(--line-2);
+  }
+}

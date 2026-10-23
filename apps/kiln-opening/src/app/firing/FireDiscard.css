@@ -1,0 +1,30 @@
+/* Open Fire discard (wireframe `.discard`): turned cards, oldest first (D4). */
+@layer components {
+  .fdiscard {
+    display: inline-grid;
+    gap: var(--sp-2);
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .fdiscard-label {
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .fdiscard-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fdiscard-none {
+    font-size: var(--fs-12);
+    /* --ink-2: --ink-3 falls under 4.5:1 on the warm kiln panel (KilnMini). */
+    color: var(--ink-2);
+  }
+}

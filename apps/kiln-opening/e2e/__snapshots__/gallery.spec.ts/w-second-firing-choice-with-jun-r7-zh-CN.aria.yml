@@ -1,0 +1,47 @@
+- complementary "你的决断":
+  - paragraph: 烧窑阶段·轮到你了
+  - heading "「复烧」：选一张窑火牌" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望0／4 0分
+  - form "「复烧」：选一张窑火牌":
+    - paragraph: 烧窑步骤5，按起始玩家顺序
+    - paragraph: 「复烧」额外翻开了2张窑火牌，大家都能看到。选一张，用它为你的器物复烧。
+    - heading "器物" [level=3]
+    - text: 月白釉碗 · 素面 · 瑕品（低温区1）
+    - group "选一张窑火牌":
+      - text: ""
+      - paragraph: 新品质取代原来的品质，即使更差也一样。
+      - radio "第1张：+1"
+      - text: 第1张：+1
+      - radio "第2张：−1"
+      - text: 第2张：−1
+    - group "「窑变天成」（可选） 费用：1柴":
+      - text: ""
+      - paragraph: 用在这件器物上：重算之后、定新品质之前。
+      - radio "不使用" [checked]
+      - text: 不使用
+      - radio "+1"
+      - text: "+1"
+      - radio "−1"
+      - text: −1
+    - heading "能力 复烧" [level=3]:
+      - text: ""
+      - button "复烧"
+    - strong: 每轮一次，定品后：
+    - text: 己方本窑1件瑕品或良品→另翻2张窑火牌，以其中1张重算其品质，即使更差也算。
+    - paragraph: 这2张牌随后都正面朝上放入窑火弃牌堆。
+    - paragraph: 请选一张窑火牌。
+    - button "取消"
+    - button "确认" [disabled]

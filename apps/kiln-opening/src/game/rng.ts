@@ -1,8 +1,14 @@
-export interface RandomSource {
-  nextUint32(): number;
-  nextInt(maxExclusive: number): number;
-  getState(): number;
-}
+/**
+ * Seeded randomness (DESIGN §7). Every random draw in the engine goes through a
+ * `RandomSource`; the engine never uses the platform's own random source or clock.
+ *
+ * `SeededRandom` and `shuffle` are unchanged from V1.4 (mulberry32, Fisher–Yates), so a
+ * persisted `getState()` continues the same sequence when passed back to the constructor.
+ *
+ * Layer 1: imports only types.
+ */
+
+import type { RandomSource } from "./types.ts";
 
 export class SeededRandom implements RandomSource {
   private state: number;
@@ -44,4 +50,12 @@ export function shuffle<T>(items: readonly T[], rng: RandomSource): T[] {
     result[swapIndex] = current;
   }
   return result;
+}
+
+/** One roll: `faces[rng.nextInt(faces.length)]`. Consumes exactly one draw. */
+export function rollDie<T>(faces: readonly T[], rng: RandomSource): T {
+  if (faces.length === 0) {
+    throw new RangeError("A die needs at least one face");
+  }
+  return faces[rng.nextInt(faces.length)] as T;
 }

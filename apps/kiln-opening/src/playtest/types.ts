@@ -1,15 +1,26 @@
-import type { KilnId, StartingTechniqueId, TechniqueId } from "../game/types.ts";
+/**
+ * Playtest Form V3 for rules V1.6.2 (the form structure is unchanged from V1.6.1; ENGINE_V1.6.2_DELTA.md §9).
+ *
+ * Changes from Form V2 (V1.4): no Starting Tech (V1.6.1 and V1.6.2 have none); up to three Techs, at
+ * most one per discipline (L211), recorded per discipline; all five Kilns; the round's
+ * Kiln Die, because Base Heat is the Kiln Die plus the revealed Contributions (L263); and
+ * the Firing Techs. Every option list comes from the V1.6.2 content API, never
+ * from literals here.
+ */
 
+import type { KilnId, OrderId, TechId } from "../game/types.ts";
+
+/** A revealed Contribution: Bank/Tend/Stoke, or Fuel Ledger's Bank −2 / Stoke +2 (L638). */
 export type FireContribution = "bank_2" | "bank" | "tend" | "stoke" | "stoke_2";
-export type FiringTechniqueId = "T11" | "T12" | "T13" | "T14" | "T15";
 
 export interface PlayerMetrics {
   name: string;
   kilnId: KilnId;
-  startingTechniqueId: StartingTechniqueId;
-  advancedTechnique1Id: TechniqueId | null;
-  advancedTechnique2Id: TechniqueId | null;
-  completedOrderIds: string[];
+  /** The player's Tech of each discipline, if any (at most one each, L211). */
+  workshopTechId: TechId | null;
+  glazingLoadingTechId: TechId | null;
+  firingTechId: TechId | null;
+  completedOrderIds: OrderId[];
   recognition: number;
   coinsRemaining: number;
   clayRemaining: number;
@@ -34,9 +45,12 @@ export interface RoundPlayerMetrics {
 
 export interface RoundMetrics {
   round: number;
+  /** The round's public Kiln Die (L126), 1–3. */
+  kilnDie: number | null;
   players: RoundPlayerMetrics[];
   fireModifier: number | null;
-  firingTechniqueIds: FiringTechniqueId[];
+  /** Firing-discipline Techs used this round (content `techsOfDiscipline("firing")`). */
+  firingTechIds: TechId[];
 }
 
 export interface PlaytestFeedback {
@@ -55,9 +69,11 @@ export interface PlaytestFeedback {
   minorTuning: string;
 }
 
+export const PLAYTEST_FORM_VERSION = 3;
+
 export interface PlaytestSubmission {
-  formVersion: 2;
-  rulesVersion: "1.4";
+  formVersion: typeof PLAYTEST_FORM_VERSION;
+  rulesVersion: "1.6.2";
   playedOn: string;
   playerCount: 2 | 3 | 4;
   firstPlayerIndex: number;
@@ -69,17 +85,9 @@ export interface PlaytestSubmission {
 
 type DraftPlayerMetrics = Omit<
   PlayerMetrics,
-  | "kilnId"
-  | "startingTechniqueId"
-  | "recognition"
-  | "coinsRemaining"
-  | "clayRemaining"
-  | "woodRemaining"
-  | "kilnAbilityUses"
-  | "finalVp"
+  "kilnId" | "recognition" | "coinsRemaining" | "clayRemaining" | "woodRemaining" | "kilnAbilityUses" | "finalVp"
 > & {
   kilnId: KilnId | null;
-  startingTechniqueId: StartingTechniqueId | null;
   recognition: number | null;
   coinsRemaining: number | null;
   clayRemaining: number | null;
@@ -88,8 +96,8 @@ type DraftPlayerMetrics = Omit<
 };
 
 export interface PlaytestDraft {
-  formVersion: 2;
-  rulesVersion: "1.4";
+  formVersion: typeof PLAYTEST_FORM_VERSION;
+  rulesVersion: "1.6.2";
   playedOn: string;
   playerCount: 2 | 3 | 4;
   firstPlayerIndex: number;
@@ -99,9 +107,51 @@ export interface PlaytestDraft {
   feedback: PlaytestFeedback;
 }
 
+/**
+ * A stable code per validation issue, so a client can show it in the reader's language without
+ * matching the English sentence (change request CR B3-3). Parameters fill the numbers.
+ */
+export type PlaytestIssueCode =
+  | "section_invalid"
+  | "list_invalid"
+  | "list_max"
+  | "text_invalid"
+  | "text_max"
+  | "integer_min"
+  | "integer_range"
+  | "option_invalid"
+  | "order_invalid"
+  | "order_once"
+  | "starting_tech"
+  | "firing_tech_invalid"
+  | "firing_tech_once"
+  | "round_rows"
+  | "seat_order"
+  | "shared_capacity"
+  | "kiln_die_face"
+  | "fuel_ledger_check"
+  | "fuel_ledger_one"
+  | "fuel_ledger_owner"
+  | "reference_server"
+  | "form_version"
+  | "rules_version"
+  | "date_invalid"
+  | "player_records"
+  | "duplicate_kiln"
+  | "tech_once"
+  | "order_per_game"
+  | "rounds_count"
+  | "round_once"
+  | "firing_tech_owner"
+  | "ability_total"
+  | "order_total";
+
 export interface PlaytestValidationIssue {
   path: string;
+  /** English sentence (unchanged; the Edge Function returns it). */
   message: string;
+  code?: PlaytestIssueCode;
+  params?: Readonly<Record<string, number | string>>;
 }
 
 export type PlaytestValidationResult =

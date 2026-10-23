@@ -1,0 +1,41 @@
+- complementary "Your decision":
+  - paragraph: Cleanup · Your turn
+  - heading "Discard down to your hand limit" [level=2]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
+    - group "Resources":
+      - strong: "1"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 5 Orders in hand Recognition 0/4 0 VP
+  - form "Discard down to your hand limit":
+    - paragraph: "You hold 5 Orders and your limit is 4: discard exactly 1. Starting Orders return to the box; Main Orders go face down to the discard."
+    - group "Order Only you can see":
+      - text: ""
+      - paragraph: 0 of 1 chosen
+      - checkbox "S08 2 VP 4 Coins any Shape · any Glaze · any Decoration · Standard+"
+      - text: S08 2 VP 4 Coins any Shape · any Glaze · any Decoration · Standard+
+      - 'button "Full rules: Order S08"'
+      - checkbox "S04 4 VP 4 Coins any Shape · Moon White · any Decoration · Standard+"
+      - text: S04 4 VP 4 Coins any Shape · Moon White · any Decoration · Standard+
+      - 'button "Full rules: Order S04"'
+      - checkbox /O28 \d+ VP 5 Coins 2 ceramics of the same Shape; different Glazes; any Decorations · Fine\+ each/
+      - text: /O28 \d+ VP 5 Coins 2 ceramics of the same Shape; different Glazes; any Decorations · Fine\+ each/
+      - 'button "Full rules: Order O28"'
+      - checkbox "O17 6 VP 2 Coins 1 Crown Brush Washer · White · Painted · Fine+"
+      - text: O17 6 VP 2 Coins 1 Crown Brush Washer · White · Painted · Fine+
+      - 'button "Full rules: Order O17"'
+      - checkbox /O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations · Fine\+ each/
+      - text: /O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations · Fine\+ each/
+      - 'button "Full rules: Order O26"'
+    - paragraph: Everyone trims at the same time; others see only how many Orders you hold.
+    - paragraph: 0 of 1 chosen
+    - button "Clear"
+    - button "Confirm" [disabled]

@@ -1,0 +1,23 @@
+/* ResourceRow (pieces; wireframe `.res`). */
+@layer components {
+  .res {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2) var(--sp-6);
+  }
+
+  .res-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--sp-1);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .res-item strong {
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: var(--fs-17);
+    font-variant-numeric: tabular-nums;
+  }
+}

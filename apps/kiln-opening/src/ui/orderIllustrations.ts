@@ -1,5 +1,5 @@
-import { DECORATIONS, GLAZES, ORDER_DEFINITIONS, SHAPES, matchesOrder } from "../game/index.ts";
-import type { Decoration, FinishedCeramic, Glaze, OrderId, Shape } from "../game/index.ts";
+import { DECORATIONS, GLAZES, ORDER_DEFINITIONS, SHAPES, matchesOrder } from "../game-v14/index.ts";
+import type { Decoration, FinishedCeramic, Glaze, OrderId, Shape } from "../game-v14/index.ts";
 
 const cache = new Map<OrderId, readonly FinishedCeramic[]>();
 const EMPTY: readonly FinishedCeramic[] = Object.freeze([]);

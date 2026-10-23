@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyAction } from "../../src/game/index.ts";
-import type { GameAction, GameState, TechniqueId } from "../../src/game/index.ts";
+import { applyAction } from "../../src/game-v14/index.ts";
+import type { GameAction, GameState, TechniqueId } from "../../src/game-v14/index.ts";
 import {
   addFinished, addGlazed, addLoaded, addShaped, addTechnique,
   expectError, mustApply, mustResult, setWorkTurn, startedGame, workerId,

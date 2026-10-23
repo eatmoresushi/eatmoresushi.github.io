@@ -1,4 +1,4 @@
-import type { StartingTechniqueId, TechniqueId } from "../game";
+import type { StartingTechniqueId, TechniqueId } from "../game-v14";
 import artworkST01 from "../../assets/current_v04/pieces/tech-ST01-v2.webp";
 import artworkST02 from "../../assets/current_v04/pieces/tech-ST02-v2.webp";
 import artworkST03 from "../../assets/current_v04/pieces/tech-ST03-v2.webp";

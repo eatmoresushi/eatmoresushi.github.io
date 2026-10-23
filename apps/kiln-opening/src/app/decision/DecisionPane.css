@@ -1,0 +1,107 @@
+/* DecisionPane (A2; wireframe `.ko-pane`, `.pane-body`, `.pane-scroll`). */
+@layer components {
+  .pane {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    background: var(--panel);
+  }
+
+  .pane > .kit-sheet {
+    flex: 1;
+  }
+
+  /* Wireframe `.eyebrow`: the round phase (and "Your turn") above the heading. */
+  .pane-eyebrow {
+    padding: var(--sp-5) var(--sp-6) 0;
+    font-size: var(--fs-meta);
+    font-weight: 800;
+    color: var(--cinnabar-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .pane-eyebrow:lang(en) {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pane-heading {
+    padding: var(--sp-5) var(--sp-6) var(--sp-3);
+    font-size: var(--fs-19);
+    overflow-wrap: anywhere;
+  }
+
+  .pane-eyebrow + .pane-heading {
+    padding-block-start: var(--sp-1);
+  }
+
+  .pane-heading:focus {
+    outline: none;
+  }
+
+  .pane-heading:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: -2px;
+  }
+
+  .pane-form {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .pane-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--sp-4) var(--sp-6);
+  }
+
+  .pane-strip {
+    display: inline-flex;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .pane-strip-turn {
+    color: var(--cinnabar-ink);
+  }
+
+  .pane-strip-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Short landscape (844×390 … 932×430; kit/Sheet's side panel, §7.3): the eyebrow, heading and
+     OwnSummary would leave `.pane-scroll` about 80px between them and the ConfirmBar. There the
+     whole pane body scrolls instead: the header scrolls away with the fields, and the ConfirmBar
+     stays pinned at the bottom (its own background). The scroll padding keeps a focused field
+     clear of the pinned bar. Elsewhere only `.pane-scroll` scrolls. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .pane .kit-sheet-body {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scroll-padding-block-end: calc(var(--target-min) * 2 + var(--sp-6));
+    }
+
+    .pane .pane-form,
+    .pane .pane-scroll {
+      flex: none;
+      min-height: auto;
+    }
+
+    .pane .pane-scroll {
+      overflow-y: visible;
+    }
+
+    .pane .confirm {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+    }
+  }
+}

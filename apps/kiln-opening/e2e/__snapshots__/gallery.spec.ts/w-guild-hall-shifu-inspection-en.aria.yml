@@ -1,0 +1,67 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Take a Tech" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "9"
+      - text: Clay
+      - strong: "9"
+      - text: Wood
+      - strong: "9"
+      - text: Coins
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 0 Orders in hand Recognition 0/4 0 VP
+  - form "Take a Tech":
+    - paragraph: Take up to 2 Techs from different disciplines, inspected or face up, each at its printed cost.
+    - group "Inspected Firing Techs Tech 1 of up to 2":
+      - text: ""
+      - radio "Test Pieces 3 Coins"
+      - text: Test Pieces 3 Coins Firing
+      - strong: "Once per round, after Base Heat, before the Fire card, if you have a ceramic in this firing:"
+      - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
+      - radio "Second Firing 2 Coins"
+      - text: Second Firing 2 Coins Firing
+      - strong: "Once per round, after Quality is assigned:"
+      - text: 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.
+    - group "Or a face-up Tech":
+      - text: ""
+      - radio "Decorator's Kit 2 Coins" [disabled]
+      - text: Decorator's Kit 2 Coins Form & Decorate
+      - strong: "Once per round:"
+      - text: a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less. Stacks with the Shifu discount.
+      - paragraph: You already own a Form & Decorate Tech.
+      - radio "Reworking Table 2 Coins" [disabled]
+      - text: Reworking Table 2 Coins Form & Decorate
+      - strong: "Once per round, when you glaze and load a Shaped vessel:"
+      - text: first change its Shape to any other Shape. Pay no Clay; its Decoration stays.
+      - paragraph: You already own a Form & Decorate Tech.
+      - radio "Colour Samples 2 Coins"
+      - text: Colour Samples 2 Coins Glazing & Loading
+      - strong: "When acquired:"
+      - text: Select 3.
+      - strong: "Ongoing:"
+      - text: your Order hand limit is 5.
+      - strong: "Once per round, before or after one of your worker actions:"
+      - text: discard 1 held Order → Select 3.
+      - radio "Kiln Tending 3 Coins"
+      - text: Kiln Tending 3 Coins Glazing & Loading
+      - strong: "Once per round, after a Glaze & Load action that loaded at least 1 ceramic:"
+      - text: gain 1 Clay + 1 Wood.
+      - radio "Protective Saggars 3 Coins"
+      - text: Protective Saggars 3 Coins Firing
+      - strong: "Always:"
+      - text: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard.
+      - strong: "Once per round, after Quality is assigned:"
+      - text: 1 of your Standard ceramics from this firing → Fine.
+      - radio "Fuel Ledger 4 Coins"
+      - text: Fuel Ledger 4 Coins Firing
+      - strong: "Always:"
+      - text: your Bank and Stoke cost no Wood.
+      - strong: "When acquired:"
+      - text: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards (pay 1 Wood → −2/+2).
+    - paragraph: Choose a Tech to take.
+    - button "Clear"
+    - button "Confirm" [disabled]

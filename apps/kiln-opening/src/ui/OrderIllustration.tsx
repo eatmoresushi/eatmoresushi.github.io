@@ -1,5 +1,5 @@
-import { ORDER_DEFINITIONS } from "../game";
-import type { OrderId } from "../game";
+import { ORDER_DEFINITIONS } from "../game-v14";
+import type { OrderId } from "../game-v14";
 import { CeramicArtwork } from "./CeramicArtwork";
 import { orderIllustrationCeramics } from "./orderIllustrations";
 

@@ -1,0 +1,203 @@
+/* OrderCard (B2; wireframe `.ord`). */
+@layer components {
+  .ord {
+    container: order-card / inline-size;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--sp-3);
+    min-width: 0;
+    min-height: 6.25rem;
+    padding: var(--sp-3);
+    border: 1px solid var(--line-2);
+    border-top: 3px solid var(--celadon);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    list-style: none;
+  }
+
+  .ord--crown {
+    border-top-color: var(--gold);
+    background: linear-gradient(var(--imp-bg), var(--surface) 45%);
+  }
+
+  .ord--starting {
+    border-top-color: var(--d-workshop);
+  }
+
+  .ord--own {
+    background: linear-gradient(var(--surface-2), var(--surface));
+  }
+
+  .ord-slot {
+    position: absolute;
+    top: -0.6rem;
+    left: var(--sp-4);
+    padding: 0 var(--sp-2);
+    border-radius: var(--r-xs);
+    background: var(--paper);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    line-height: 1.2;
+  }
+
+  .ord-detail {
+    min-width: 0;
+  }
+
+  .ord-face {
+    display: grid;
+    flex: 1 1 auto;
+    gap: var(--sp-3);
+    align-content: start;
+    min-width: 0;
+    text-align: start;
+  }
+
+  .ord-o1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--sp-3);
+    min-width: 0;
+  }
+
+  .ord-id {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+
+  .ord-kind {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .ord-vp {
+    margin-inline-start: auto;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    white-space: nowrap;
+  }
+
+  .ord-vp strong {
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: var(--fs-19);
+    line-height: 1;
+  }
+
+  .ord-req {
+    font-size: var(--fs-meta);
+    line-height: var(--lh-snug);
+  }
+
+  .ord-o2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+
+  .ord-pick {
+    justify-self: start;
+    min-height: 1.75rem;
+    padding: var(--sp-1) var(--sp-5);
+    border: 1px solid var(--teal);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--teal-ink);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+  }
+
+  .ord-pick:hover {
+    background: var(--teal-pale);
+  }
+
+  .ord-state {
+    font-size: var(--fs-meta);
+    font-weight: 700;
+  }
+
+  .ord-state--blocked {
+    color: var(--ink-3);
+  }
+
+  /* Why a greyed-out toggle cannot be chosen now (the toggle's description). */
+  .ord-why {
+    margin: calc(-1 * var(--sp-2)) 0 0;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    line-height: var(--lh-snug);
+  }
+
+  .ord--completable {
+    box-shadow: inset 0 0 0 1px var(--celadon);
+  }
+
+  .ord--completable .ord-pick {
+    border-color: var(--q-masterpiece);
+    color: var(--q-masterpiece);
+  }
+
+  /* Not by fading the text (that fails 4.5:1 contrast): a dashed edge on a quieter surface,
+     with the "can't complete" state in words. */
+  .ord--blocked {
+    border-style: dashed;
+    background: var(--surface-2);
+  }
+
+  .ord--chosen {
+    border-color: var(--teal);
+    box-shadow: inset 0 0 0 2px var(--teal);
+  }
+
+  .ord--discard {
+    border-color: var(--cinnabar);
+    box-shadow: inset 0 0 0 2px var(--cinnabar);
+  }
+
+  .ord--discard .ord-pick {
+    border-color: var(--cinnabar);
+    background: var(--cinnabar-pale);
+    color: var(--cinnabar-ink);
+  }
+
+  /* Narrow cards: the kind moves under the number. */
+  @container order-card (max-width: 170px) {
+    .ord-kind {
+      order: 3;
+      flex-basis: 100%;
+      line-height: 1.2;
+    }
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .ord-pick {
+      min-height: var(--target-min);
+    }
+  }
+}
+
+@layer states {
+  .ord-pick[aria-pressed="true"] {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: var(--on-teal);
+  }
+
+  .ord--discard .ord-pick[aria-pressed="true"] {
+    background: var(--cinnabar);
+    border-color: var(--cinnabar);
+    color: var(--on-cinnabar);
+  }
+
+  .ord-pick[aria-disabled="true"] {
+    border-color: var(--line);
+    background: var(--surface-2);
+    color: var(--ink-3);
+    cursor: not-allowed;
+  }
+}

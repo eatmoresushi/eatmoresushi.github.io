@@ -1,0 +1,42 @@
+/* ResourceIcon (pieces): Clay, Wood and Coin marks; the cut lines take the surface behind them. */
+@layer components {
+  .ri {
+    flex: none;
+    display: inline-block;
+    vertical-align: -0.15em;
+  }
+
+  .ri[data-resource="clay"] {
+    color: var(--res-clay);
+  }
+
+  .ri[data-resource="wood"] {
+    color: var(--res-wood);
+  }
+
+  .ri[data-resource="coins"] {
+    color: var(--res-coin);
+  }
+
+  .ri-body {
+    fill: currentColor;
+  }
+
+  .ri-cut {
+    stroke: var(--ri-cut, var(--surface-2));
+  }
+
+  /* The log's cut end: pale wood with one growth ring in the bark colour. */
+  .ri-end {
+    fill: var(--res-wood-cut);
+  }
+
+  .ri-ring {
+    stroke: currentColor;
+  }
+
+  .ri-fill {
+    fill: var(--ri-cut, var(--surface-2));
+    stroke: none;
+  }
+}

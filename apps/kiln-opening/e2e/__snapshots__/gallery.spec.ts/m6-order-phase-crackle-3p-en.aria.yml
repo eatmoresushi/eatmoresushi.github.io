@@ -1,0 +1,33 @@
+- complementary "Your decision":
+  - paragraph: Order Phase · Your turn
+  - heading "Complete held Orders" [level=2]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
+    - group "Resources":
+      - strong: "4"
+      - text: Clay
+      - strong: "1"
+      - text: Wood
+      - strong: "6"
+      - text: Coins
+    - text: /4 Orders in hand Recognition 0\/4 \d+ VP/
+  - form "Complete held Orders":
+    - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
+    - group "Order 3 of 4 can be completed":
+      - text: ""
+      - radio "S06 3 VP 5 Coins Vase or Censer · any Glaze · any Decoration · Standard+"
+      - text: S06 3 VP 5 Coins Vase or Censer · any Glaze · any Decoration · Standard+
+      - 'button "Full rules: Order S06"'
+      - radio /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all No matching ceramics/ [disabled]
+      - text: /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all No matching ceramics/
+      - 'button "Full rules: Order O43"'
+      - radio /O34 \d+ VP 5 Coins 2 different Shapes; different Glazes; same Decoration · Fine\+ each; ≥1 Masterpiece/
+      - text: /O34 \d+ VP 5 Coins 2 different Shapes; different Glazes; same Decoration · Fine\+ each; ≥1 Masterpiece/
+      - 'button "Full rules: Order O34"'
+      - radio "O10 5 VP 3 Coins any Shape · any Glaze · Plain · Fine+"
+      - text: O10 5 VP 3 Coins any Shape · any Glaze · Plain · Fine+
+      - 'button "Full rules: Order O10"'
+    - paragraph: Only held Orders can be completed; Orders on the display cannot.
+    - paragraph: Choose an Order to complete, or end your turn.
+    - button "End turn"
+    - button "Confirm" [disabled]

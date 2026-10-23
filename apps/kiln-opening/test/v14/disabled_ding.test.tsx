@@ -7,14 +7,14 @@ import {
   KILN_IDS,
   applyAction,
   currentDecisionActor,
-} from "../../src/game/index.ts";
-import { fallbackComputerCommands } from "../../src/multiplayer/computerFallback.ts";
-import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
-import { chooseOnlineComputerAction, ONLINE_COMPUTER_POLICY_VERSION } from "../../src/multiplayer/computerPlayer.ts";
-import { projectPublicGameState } from "../../src/multiplayer/projection.ts";
-import type { StoredSeat } from "../../src/multiplayer/types.ts";
-import { createPlaytestDraft, submissionCandidate } from "../../src/playtest/model.ts";
-import { validatePlaytestSubmission } from "../../src/playtest/schema.ts";
+} from "../../src/game-v14/index.ts";
+import { fallbackComputerCommands } from "../../src/multiplayer-v14/computerFallback.ts";
+import { createComputerObservation } from "../../src/multiplayer-v14/computerObservation.ts";
+import { chooseOnlineComputerAction, ONLINE_COMPUTER_POLICY_VERSION } from "../../src/multiplayer-v14/computerPlayer.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/projection.ts";
+import type { StoredSeat } from "../../src/multiplayer-v14/types.ts";
+import { createPlaytestDraft, submissionCandidate } from "../../src/playtest-v14/model.ts";
+import { validatePlaytestSubmission } from "../../src/playtest-v14/schema.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import { PlaytestFormPage } from "../../src/ui/PlaytestFormPage.tsx";

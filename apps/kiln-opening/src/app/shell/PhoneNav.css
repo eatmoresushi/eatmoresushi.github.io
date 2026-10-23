@@ -1,0 +1,94 @@
+/* PhoneNav (B1; wireframe `.ko-tabs`): a bottom bar on phones, a left rail in short landscape. */
+@layer components {
+  .phone-nav {
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    padding: var(--sp-2) var(--sp-2) calc(var(--sp-2) + env(safe-area-inset-bottom, 0));
+  }
+
+  .phone-nav-list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .phone-nav-list > li {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .phone-nav-button {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: var(--sp-1);
+    width: 100%;
+    min-height: var(--target-min);
+    padding: var(--sp-3) var(--sp-1) var(--sp-2);
+    border-radius: var(--r-md);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .phone-nav-icon {
+    width: 1.375rem;
+    height: 1.125rem;
+  }
+
+  /* Never cut off (§7.3: no clipped text); a long label wraps inside its tab instead. */
+  .phone-nav-label {
+    max-width: 100%;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .phone-nav-badge {
+    position: absolute;
+    top: var(--sp-1);
+    left: calc(50% + 0.5rem);
+    min-width: 1.125rem;
+    height: 1.125rem;
+    padding: 0 var(--sp-2);
+    border-radius: var(--r-pill);
+    background: var(--cinnabar);
+    color: var(--on-cinnabar);
+    font-size: var(--fs-12);
+    font-weight: 800;
+    line-height: 1.125rem;
+    text-align: center;
+  }
+
+  .phone-nav-badge[data-soft] {
+    background: var(--paper-2);
+    color: var(--ink-2);
+  }
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    .phone-nav {
+      height: 100%;
+      border-top: 0;
+      border-inline-end: 1px solid var(--line);
+      padding: var(--sp-4) var(--sp-2) calc(var(--sp-4) + env(safe-area-inset-bottom, 0));
+    }
+
+    .phone-nav-list {
+      flex-direction: column;
+      justify-content: center;
+      gap: var(--sp-2);
+      height: 100%;
+    }
+
+    .phone-nav-list > li {
+      flex: none;
+    }
+  }
+}
+
+@layer states {
+  .phone-nav-button[aria-current="page"] {
+    background: var(--teal-pale);
+    color: var(--teal-ink);
+    font-weight: 800;
+  }
+}

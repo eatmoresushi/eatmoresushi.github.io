@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { GameState } from "../../src/game/index.ts";
-import { projectPublicGameState } from "../../src/multiplayer/index.ts";
+import type { GameState } from "../../src/game-v14/index.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/index.ts";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";
 import { TabletopGameExperience } from "../../src/ui/TabletopGameExperience.tsx";

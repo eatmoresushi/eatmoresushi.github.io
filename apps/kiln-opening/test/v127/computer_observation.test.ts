@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { applyAction } from "../../src/game/index.ts";
-import { createComputerObservation } from "../../src/multiplayer/index.ts";
+import { applyAction } from "../../src/game-v14/index.ts";
+import { createComputerObservation } from "../../src/multiplayer-v14/index.ts";
 import {
   fallbackComputerCommands,
   selectFirstLegalComputerCommand,
-} from "../../src/multiplayer/computerFallback.ts";
+} from "../../src/multiplayer-v14/computerFallback.ts";
 import {
   addTechnique,
   createdGame,

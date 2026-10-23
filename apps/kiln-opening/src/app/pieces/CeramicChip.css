@@ -1,0 +1,61 @@
+/* CeramicChip (pieces; wireframe `.cchip`). No ID line (owner decision D9). */
+@layer components {
+  .cchip {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-1);
+    min-width: 0;
+  }
+
+  .cchip-ring {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    padding: 2px;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: 0 0 0 2px var(--pc);
+  }
+
+  .cchip-marker {
+    position: absolute;
+    top: -6px;
+    right: -10px;
+    z-index: 2;
+  }
+
+  .cchip-crackle {
+    position: absolute;
+    top: -6px;
+    left: -10px;
+    z-index: 2;
+    padding: 0 var(--sp-2);
+    border-radius: var(--r-pill);
+    background: var(--gold-pale);
+    color: var(--gold-ink);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .cchip--crackle {
+    margin-left: 8px;
+  }
+
+  .cchip-quality {
+    line-height: 1.15;
+  }
+}
+
+@layer states {
+  .cchip--pending .cchip-ring {
+    outline: 2px dashed var(--teal-ink);
+    outline-offset: 2px;
+  }
+
+  .cchip--highlighted .cchip-ring {
+    box-shadow: 0 0 0 2px var(--pc), 0 0 0 5px var(--celadon);
+  }
+}

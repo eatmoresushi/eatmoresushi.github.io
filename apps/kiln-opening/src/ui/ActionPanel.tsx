@@ -1,4 +1,4 @@
-import { withOwnOrderHand } from "../multiplayer/projection";
+import { withOwnOrderHand } from "../multiplayer-v14/projection";
 import {
   ACTION_LOCATION_PRICES,
   BASE_HEAT_START,
@@ -8,7 +8,7 @@ import {
   contributionHeatAdjustment,
   contributionWoodCost,
   orderHandLimit,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import { useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
@@ -38,7 +38,7 @@ import {
   findGeGlazes,
   preferredHeat,
   qualityForOrderOrExhibition,
-} from "../game";
+} from "../game-v14";
 import type {
   Decoration,
   FinishedCeramic,
@@ -55,14 +55,14 @@ import type {
   TechniqueId,
   WorkerId,
   WorkshopCeramic,
-} from "../game";
+} from "../game-v14";
 import type {
   AuthoritativeCommand,
   PendingContribution,
   PrivateDecisionState,
   PublicGameState,
   PublicPlayerState,
-} from "../multiplayer";
+} from "../multiplayer-v14";
 import { OrderCard } from "./GameTable";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";

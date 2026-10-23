@@ -1,0 +1,36 @@
+- complementary "你的决断":
+  - paragraph: 烧窑阶段·轮到你了
+  - heading "定品后结算" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "4"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "5"
+      - text: 铜钱
+    - text: 手中4张委托 声望0／4 0分
+  - form "定品后结算":
+    - paragraph: 烧窑步骤5，按起始玩家顺序
+    - paragraph: 顺序由你决定；每次使用后重新核验可用选项。
+    - heading "顺序" [level=3]
+    - list "顺序":
+      - listitem: Lin（你）：决断中
+    - heading "你本窑的器物" [level=3]
+    - text: 灰青釉笔洗 · 素面 · 上品
+    - group "哥窑 · 金丝铁线":
+      - button "哥窑 · 金丝铁线"
+      - paragraph:
+        - strong: 每轮一次，定品后：
+        - text: 可令己方本窑1件上品或良品开片→品质为上品。
+        - strong: 完成委托时：
+        - text: 每件开片器可作任意1种纹饰，交付时得1分。
+      - radio "灰青釉笔洗 · 素面 · 上品" [checked]
+      - text: 灰青釉笔洗 · 素面 · 上品
+    - paragraph:
+      - text: 使用「哥窑·金丝铁线」：
+      - strong: 灰青釉笔洗 · 素面 · 上品
+      - text: 开片，品质为上品
+    - button "完成——其余不使用"
+    - button "确认"

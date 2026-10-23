@@ -1,0 +1,119 @@
+{
+  "rulesVersion": "1.4",
+  "kilnSpaces": [
+    {
+      "id": "high_1",
+      "zone": "high",
+      "modifier": 1
+    },
+    {
+      "id": "high_2",
+      "zone": "high",
+      "modifier": 1
+    },
+    {
+      "id": "high_3",
+      "zone": "high",
+      "modifier": 1
+    },
+    {
+      "id": "middle_1",
+      "zone": "middle",
+      "modifier": 0
+    },
+    {
+      "id": "middle_2",
+      "zone": "middle",
+      "modifier": 0
+    },
+    {
+      "id": "low_1",
+      "zone": "low",
+      "modifier": -1
+    },
+    {
+      "id": "low_2",
+      "zone": "low",
+      "modifier": -1
+    },
+    {
+      "id": "low_3",
+      "zone": "low",
+      "modifier": -1
+    }
+  ],
+  "baseHeatRule": {
+    "formula": "clamp(2 + sum(revealed heat adjustments), 0, 5)",
+    "start": 2,
+    "minimum": 0,
+    "maximum": 5,
+    "contributors": "players with at least 1 ceramic in the Shared Kiln or their Imperial Kiln"
+  },
+  "fireDeck": [
+    -2,
+    -1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    2
+  ],
+  "qualityByDifference": {
+    "0": "masterpiece",
+    "1": "fine",
+    "2": "standard",
+    "3+": "flawed"
+  },
+  "contributionCards": [
+    {
+      "id": "BANK",
+      "name": "Bank the Fire",
+      "nameZh": "压火",
+      "woodCost": 1,
+      "heatAdjustment": -1,
+      "meaning": "Deliberately restrain and bank the firing.",
+      "meaningZh": "压低本次烧成的基础火候。"
+    },
+    {
+      "id": "TEND",
+      "name": "Tend the Fire",
+      "nameZh": "守火",
+      "woodCost": 0,
+      "heatAdjustment": 0,
+      "meaning": "Maintain the neutral fire without pushing it.",
+      "meaningZh": "维持平稳窑火，不作增减。"
+    },
+    {
+      "id": "STOKE",
+      "name": "Stoke the Fire",
+      "nameZh": "添柴",
+      "woodCost": 1,
+      "heatAdjustment": 1,
+      "meaning": "Feed the kiln enough to raise the fire one step.",
+      "meaningZh": "添柴助火，使窑温上升一级。"
+    },
+    {
+      "id": "BANK_2",
+      "name": "−2 Bank",
+      "nameZh": "强压火",
+      "woodCost": 2,
+      "heatAdjustment": -2,
+      "meaning": "Fuel Ledger: bank the fire by two steps.",
+      "meaningZh": "柴簿：使基础火候降低两级。"
+    },
+    {
+      "id": "STOKE_2",
+      "name": "+2 Stoke",
+      "nameZh": "猛添柴",
+      "woodCost": 2,
+      "heatAdjustment": 2,
+      "meaning": "Fuel Ledger: stoke the fire by two steps.",
+      "meaningZh": "柴簿：使基础火候提高两级。"
+    }
+  ]
+}

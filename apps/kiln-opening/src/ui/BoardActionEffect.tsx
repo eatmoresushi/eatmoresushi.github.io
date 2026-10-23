@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { ACTION_LOCATION_PRICES } from "../game";
-import type { LocationId, WorkerKind } from "../game";
+import { ACTION_LOCATION_PRICES } from "../game-v14";
+import type { LocationId, WorkerKind } from "../game-v14";
 import type { Locale } from "./i18n";
 
 type BoardResourceKind = "clay" | "wood" | "coin";

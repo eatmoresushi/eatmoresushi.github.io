@@ -1,0 +1,98 @@
+/* Sheet (kit; wireframe phone `.sheet-strip`, `.ko-pane[data-sheet]`). */
+@layer components {
+  .kit-sheet {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .kit-sheet-strip {
+    display: none;
+  }
+
+  .kit-sheet-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  @media (max-width: 899px) {
+    .kit-sheet {
+      border-top: 1px solid var(--line);
+      border-radius: var(--r-xl) var(--r-xl) 0 0;
+      background: var(--panel);
+      box-shadow: 0 -8px 24px var(--shadow-c);
+      max-height: 72dvh;
+      /* clip: focus() inside must never scroll the sheet itself (only .pane-scroll scrolls). */
+      overflow: clip;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .kit-sheet-strip {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+      width: 100%;
+      min-height: var(--target-min);
+      padding: var(--sp-4) var(--sp-6);
+      text-align: start;
+    }
+
+    .kit-sheet-grab {
+      position: absolute;
+      top: 3px;
+      left: calc(50% - 18px);
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--line);
+    }
+
+    .kit-sheet-text {
+      flex: 1;
+      min-width: 0;
+      font-size: var(--fs-label);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .kit-sheet-text:lang(zh-Hans) {
+      white-space: normal;
+    }
+
+    .kit-sheet-cta {
+      flex: none;
+      padding: var(--sp-2) var(--sp-5);
+      border-radius: var(--r-sm);
+      background: var(--teal);
+      color: var(--on-teal);
+      font-size: var(--fs-label);
+      font-weight: 800;
+    }
+
+    .kit-sheet[data-sheet="peek"] > .kit-sheet-body {
+      display: none;
+    }
+  }
+
+  /* Short landscape (844×390 … 932×430): a side panel, never collapsed (§7.3). */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .kit-sheet {
+      max-height: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .kit-sheet-strip {
+      display: none;
+    }
+
+    .kit-sheet[data-sheet] > .kit-sheet-body {
+      display: flex;
+    }
+  }
+}

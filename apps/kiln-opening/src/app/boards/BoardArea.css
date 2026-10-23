@@ -1,0 +1,16 @@
+/* BoardArea (B2; wireframe `.boards`, owner decision D1): tabs on the board's top edge. */
+@layer components {
+  .boards {
+    display: grid;
+    min-width: 0;
+  }
+
+  .boards-tabs .kit-tabpanel {
+    display: grid;
+    min-width: 0;
+  }
+
+  .boards-tabs .kit-tabpanel:focus-visible {
+    outline-offset: -2px;
+  }
+}

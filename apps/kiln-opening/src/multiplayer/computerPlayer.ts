@@ -1,1198 +1,3042 @@
-import { withOwnOrderHand } from "./projection.ts";
+/**
+ * The strategic V1.6.2 computer player (DESIGN §3.4, §4.5, §4.6, §5.2, §9.2 P9; ENGINE_V1.6.2_DELTA.md §10).
+ *
+ * **What it may know.** `chooseCommand(view, seat)` receives only the seat's `ActorView`: the
+ * public projection plus its own hand, private look, Test Pieces peek and sealed Contribution
+ * (`computerObservation.ts`). It never sees `GameState`, so deck orders, other hands and
+ * unrevealed Contributions cannot influence a choice (`computer_hidden_independence.test.ts`).
+ *
+ * **How it decides.** Every decision is routed on `decisionPrompt` and the phase, and built
+ * from the engine's own selectors (`placementOptions`, `loadDestinationOptions`,
+ * `kilnMasterOption`, `commissionOptions`, `orderMatchOptions`, the firing-window options,
+ * `legalContributions`, …). Candidates are ranked by a value model and each one is checked with
+ * the engine's `validateAction` before it is returned, so the policy never re-implements a
+ * rule's legality; when nothing it prefers validates it returns null and the service uses
+ * `fallbackComputerCommands`. The value model:
+ *
+ * - **Orders.** Each held Order is planned against the seat's pipeline (Finished, Loaded and
+ *   Shaped ceramics plus vessels still to form). Requirements are independent per dimension
+ *   (L423): every Order is precompiled into its valid Shape, Glaze and Decoration multisets, so
+ *   a partial selection is feasible iff each dimension's fixed values fit one valid multiset.
+ *   Plans give a completion probability, the vessels still to form (Shape and Decoration) and
+ *   the Glazes that keep a plan alive when a vessel is loaded.
+ * - **Heat.** Glazes and kiln spaces are chosen for the expected heat: the public Kiln Die, the
+ *   space's zone or Kiln Furniture modifier, the Imperial modifier, the Kiln Master marker, and
+ *   the remaining Fire deck computed from the public discard (and the seat's own peek). The same
+ *   expectation chooses Contributions (with a model of the other participants' pushes from
+ *   their public loads), Kiln Master's marker at loading (rev. 4 L628, R22), Test Pieces, Jun,
+ *   Protective Saggars, Second Firing (the better of 2 cards) and Ge (on a Fine or Standard
+ *   ceramic, with its 1 VP per delivered Crackle ceramic, rev. 4 L463, L465). The Fire deck model
+ *   follows R15: once only buried cards are left, the next card comes from the reshuffled
+ *   discard. There is no player Heat marker since revision 4 (changes 28, 31).
+ * - **Sales.** A Finished Flawed ceramic can complete no Order and enter no Exhibition (rev. 4
+ *   L282), so it is sold for 2 Coins (R20) at the start of the seat's next Work turn, Order Phase
+ *   turn or Cleanup trim, before any other choice.
+ * - **Work.** A small dynamic programme plans the seat's remaining placements this round over
+ *   an abstract economy (resources, Shaped and Loaded counts, free personal spaces, kiln
+ *   contention, Order and Tech offers); the best first step is then built concretely.
+ *
+ * **Determinism.** No `Math.random` and no clock in any choice: ties fall to a fixed order or
+ * a hash of the seat's `aiSeed`. The only clock use is the cooperative decision deadline: past
+ * it the policy throws `ComputerPolicyTimeoutError`, which the service logs server-side and
+ * answers with the canonical fallback (DESIGN §4.5: the message is fixed and never forwarded).
+ */
+
 import {
-  ACTION_LOCATION_PRICES,
-  DECORATION_COSTS,
   DECORATIONS,
-  DING_EXTRA_SHAPES,
-  FIRE_CARDS,
-  GAME_CONFIG,
-  formingTechniqueRewards,
-  FORMING_TECH_COINS,
-  GLAZES,
-  IMPERIAL_PROGRESS,
-  AVAILABLE_KILN_IDS,
-  ORDER_DEFINITIONS,
-  QUALITY_RANK,
-  SHAPE_COSTS,
-  SHAPES,
-  STARTING_TECHNIQUES,
-  TECHNIQUE_DEFINITIONS,
-  activeKilnSpaceIds,
-  canCompleteOrder,
-  currentDecisionActor,
-  locationCapacity,
-  kilnYardGlazingCost,
   DISCIPLINES,
-  matchingOrderCeramicGroups,
-  matchesOrder,
-  findGeGlazes,
-  orderHandLimit,
+  FIRING,
+  GAME_CONFIG,
+  GLAZES,
+  IMPERIAL_TRACK,
+  KILNS,
+  KILN_SPACE_IDS,
+  LOCATIONS,
+  ORDERS,
+  QUALITY_RANK,
+  SHAPES,
+  TECHS,
+  afterQualityOptions,
+  colourSamplesSwapOptions,
+  commissionOptions,
+  contributionCard,
+  decisionPrompt,
+  guildInspectionOptions,
+  guildOptions,
+  handLimitStatus,
+  imperialPriorityOptions,
+  junOptions,
+  kilnMasterOption,
+  magistratesHallQuote,
+  setupChoiceOptions,
+  contributionOptions,
+  loadDestinationOptions,
+  lookedOrderOptions,
+  orderMatchOptions,
+  placementOptions,
   preferredHeat,
-  qualityFromDifference,
-  qualityForOrderOrExhibition,
+  qualityForDifference,
+  secondFiringChoiceOptions,
+  sellFlawedOptions,
+  settersMarkOptions,
+  shapeClay,
+  techsOfDiscipline,
+  testPiecesOptions,
+  validateAction,
+  vesselCoins,
+  zoneModifier,
 } from "../game/index.ts";
 import type {
+  ActorView,
+  AuthoritativeCommand,
+  CeramicId,
   CeramicState,
+  SelectPick,
   Decoration,
   FinishedCeramic,
+  FormVesselSpec,
   GameAction,
-  GameState,
   Glaze,
-  WorkshopCeramic,
+  GuildTechOption,
+  HeatDelta,
+  KilnId,
   KilnSpaceId,
-  KilnLoadSelection,
-  LocationId,
+  LoadSpec,
   LoadedCeramic,
   OrderDefinition,
   OrderId,
+  OrderMatchOption,
+  OrderRelationDefinition,
   PlayerId,
   PlayerState,
+  PublicGameState,
+  Quality,
   Shape,
-  StartingTechniqueId,
-  TechniqueId,
-  WorkerState,
+  ShapedCeramic,
+  SubmitContributionCommand,
+  TechDiscipline,
+  TechId,
+  WorkerEffect,
 } from "../game/index.ts";
-import type { ComputerObservation } from "./computerObservation.ts";
-import type { AuthoritativeCommand, PublicGameState, StoredSeat, SubmitWoodCommand } from "./types.ts";
+import { CANONICAL_COMPUTER_POLICY } from "./computerPolicy.ts";
+import type { ComputerPolicy, ComputerSeatContext } from "./computerPolicy.ts";
+import type { ComputerPolicyVersion } from "./types.ts";
 
-export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.4-strategic-001" as const;
-export const PREVIOUS_ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.7-strategic-002" as const;
-export const LEGACY_ONLINE_COMPUTER_POLICY_VERSION = "selfplay-003" as const;
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 1. Policy objects and the decision deadline
+// ═══════════════════════════════════════════════════════════════════════════════════════
 
-export function nextOnlineDecisionActor(state: Pick<GameState, "phase">): PlayerId | null {
-  const phase = state.phase;
-  if (phase.type === "firing_contributions") {
-    return phase.eligiblePlayerIds.find((id) => !phase.submittedPlayerIds.includes(id)) ?? null;
+export const STRATEGIC_COMPUTER_POLICY_VERSION = "rules-v1.6.2-strategic-001" satisfies ComputerPolicyVersion;
+export const STRATEGIC_COMPUTER_POLICY_LABEL = "V1.6.2 Strategic";
+/**
+ * The cooperative per-decision budget of the service's policy. Typical decisions take a few
+ * milliseconds (the `computer_strength` suite measures them); the budget only bounds a
+ * pathological case, which then falls back to the canonical command. One request may play up
+ * to 24 computer actions (the service's per-request cap), so even 24 decisions that each hit
+ * the budget stay at 1.8 s, inside an Edge function's ~2 s per-request CPU allowance, while
+ * leaving ample headroom over the slowest decision measured (p99 ≈ 4 ms, max ≈ 30 ms).
+ */
+export const DEFAULT_DECISION_BUDGET_MS = 75;
+/**
+ * The default budget of a direct `chooseStrategicCommand` call (tests, analysis tools), which
+ * runs outside any request and should not fall back merely because a loaded machine is slow.
+ */
+export const DIRECT_DECISION_BUDGET_MS = 1_000;
+
+/**
+ * Thrown when a policy runs past its decision budget. The message is fixed: it never names a
+ * card, so even a logger that forwarded it could not leak the seat's hand (DESIGN §4.5).
+ */
+export class ComputerPolicyTimeoutError extends Error {
+  constructor(readonly budgetMs: number) {
+    super(`The computer policy exceeded its ${budgetMs} ms decision budget.`);
+    this.name = "ComputerPolicyTimeoutError";
   }
-  if (phase.type === "presentation") {
-    return phase.eligiblePlayerIds.find((id) => !phase.submittedPlayerIds.includes(id)) ?? null;
-  }
-  return currentDecisionActor(phase);
 }
 
-function combinations<T>(values: readonly T[], count: number): T[][] {
-  if (count === 0) return [[]];
-  const result: T[][] = [];
-  const visit = (start: number, chosen: T[]) => {
-    if (chosen.length === count) {
-      result.push([...chosen]);
-      return;
+export interface StrategicPolicyOptions {
+  /** Cooperative per-decision budget in ms (default `DEFAULT_DECISION_BUDGET_MS`). */
+  decisionBudgetMs?: number;
+  /** Clock in ms, injectable for tests; default `performance.now`. Used only for the deadline. */
+  now?: () => number;
+}
+
+function defaultNow(): number {
+  return globalThis.performance.now();
+}
+
+class Deadline {
+  private readonly end: number;
+  private calls = 0;
+
+  constructor(
+    private readonly now: () => number,
+    readonly budgetMs: number,
+  ) {
+    this.end = now() + budgetMs;
+  }
+
+  /** Throws once the budget is spent. Cheap: the clock is read every 16th call. */
+  check(): void {
+    this.calls += 1;
+    if ((this.calls & 15) === 0 && this.now() > this.end) {
+      throw new ComputerPolicyTimeoutError(this.budgetMs);
     }
-    for (let index = start; index < values.length; index += 1) {
-      const value = values[index];
-      if (value !== undefined) visit(index + 1, [...chosen, value]);
+  }
+
+  /** An unconditional clock check, for the end of an expensive step. */
+  checkNow(): void {
+    if (this.now() > this.end) {
+      throw new ComputerPolicyTimeoutError(this.budgetMs);
     }
+  }
+}
+
+/**
+ * The strategic policy. Returns null only when none of its preferred commands validates; the
+ * service then commits the first legal `fallbackComputerCommands(view)` candidate.
+ */
+export function createStrategicComputerPolicy(options: StrategicPolicyOptions = {}): ComputerPolicy {
+  const budgetMs = options.decisionBudgetMs ?? DEFAULT_DECISION_BUDGET_MS;
+  const now = options.now ?? defaultNow;
+  return {
+    version: STRATEGIC_COMPUTER_POLICY_VERSION,
+    label: STRATEGIC_COMPUTER_POLICY_LABEL,
+    chooseCommand(view, seat) {
+      return chooseStrategicCommand(view, seat, new Deadline(now, budgetMs));
+    },
   };
-  visit(0, []);
-  return result;
 }
 
-function cartesian<T>(choices: readonly (readonly T[])[]): T[][] {
-  let result: T[][] = [[]];
-  for (const values of choices) {
-    result = result.flatMap((prefix) => values.map((value) => [...prefix, value]));
+export const STRATEGIC_COMPUTER_POLICY: ComputerPolicy = createStrategicComputerPolicy();
+
+/**
+ * Every V1.6.2 policy a server knows, the default first: new computer seats are stamped with
+ * the strategic policy; seats stamped earlier with the canonical one keep it.
+ */
+export const COMPUTER_POLICIES: readonly ComputerPolicy[] = [STRATEGIC_COMPUTER_POLICY, CANONICAL_COMPUTER_POLICY];
+
+/**
+ * Wraps any policy with a decision timeout: an asynchronous proposal that has not settled
+ * within `budgetMs`, or a synchronous one that took longer, is rejected with
+ * `ComputerPolicyTimeoutError`, so the service falls back to the canonical command.
+ */
+export function withDecisionTimeout(policy: ComputerPolicy, budgetMs: number, now: () => number = defaultNow): ComputerPolicy {
+  return {
+    version: policy.version,
+    label: policy.label,
+    chooseCommand(view, seat) {
+      const started = now();
+      const proposal = policy.chooseCommand(view, seat);
+      if (!(proposal instanceof Promise)) {
+        if (now() - started > budgetMs) {
+          throw new ComputerPolicyTimeoutError(budgetMs);
+        }
+        return proposal;
+      }
+      return new Promise<AuthoritativeCommand | null>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new ComputerPolicyTimeoutError(budgetMs)), budgetMs);
+        proposal.then(
+          (value) => {
+            clearTimeout(timer);
+            resolve(value);
+          },
+          (cause: unknown) => {
+            clearTimeout(timer);
+            reject(cause);
+          },
+        );
+      });
+    },
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 2. Small helpers
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+type ActionOf<T extends GameAction["type"]> = Extract<GameAction, { type: T }>;
+type Dist = ReadonlyArray<readonly [number, number]>;
+
+const QUALITY_VALUE: Readonly<Record<Quality, number>> = { flawed: 0.7, standard: 2, fine: 3.1, masterpiece: 5 };
+const QUALITY_BY_RANK: readonly Quality[] = ["flawed", "standard", "fine", "masterpiece"];
+const MASTERPIECE_RANK = QUALITY_RANK.masterpiece;
+const FINE_RANK = QUALITY_RANK.fine;
+const SHAPE_COUNT = SHAPES.length;
+const GLAZE_COUNT = GLAZES.length;
+const DECORATION_COUNT = DECORATIONS.length;
+/** Generic vessels (no Order asks for one): cheap Shapes, Plain (Ru, O10, O22). */
+const GENERIC_DECORATION: Decoration = "plain";
+const COLOUR_SAMPLES: TechId = "T10";
+const PROTECTIVE_SAGGARS: TechId = "T11";
+const FUEL_LEDGER: TechId = "T12";
+const REWORKING_TABLE: TechId = "T05";
+const SENIOR_APPRENTICE: TechId = "T18";
+const PREPARED_CLAY: TechId = "T17";
+const DECORATORS_KIT: TechId = "T16";
+const LARGE_THROWING_WHEEL: TechId = "T01";
+const KILN_TENDING: TechId = "T20";
+const CONNOISSEUR: TechId = "T19";
+const TRIBUTE_WARE: TechId = "T25";
+
+function sequenceOf(id: string): number {
+  const match = /^c([0-9]+)$/.exec(id);
+  return match === null ? Number.MAX_SAFE_INTEGER : Number(match[1]);
+}
+
+function ceramicsOf<S extends CeramicState["stage"]>(game: PublicGameState, playerId: PlayerId, stage: S): Array<Extract<CeramicState, { stage: S }>> {
+  return Object.values(game.ceramics)
+    .filter((c): c is Extract<CeramicState, { stage: S }> => c.ownerId === playerId && c.stage === stage)
+    .sort((a, b) => sequenceOf(a.id) - sequenceOf(b.id));
+}
+
+function ownsTech(p: PlayerState, techId: TechId): boolean {
+  return p.techs.some((tech) => tech.id === techId);
+}
+
+function techReady(p: PlayerState, techId: TechId): boolean {
+  const owned = p.techs.find((tech) => tech.id === techId);
+  return owned !== undefined && !(TECHS[techId].oncePerRound && owned.usedThisRound);
+}
+
+function kilnReady(p: PlayerState, kilnId: KilnId): boolean {
+  return p.kilnId === kilnId && !p.kilnAbilityUsedThisRound;
+}
+
+function clamp(value: number, low: number, high: number): number {
+  return Math.min(high, Math.max(low, value));
+}
+
+/** FNV-1a of the seat seed and a key: a stable, seat-specific tie-break. */
+function tieHash(seed: number, key: string): number {
+  let hash = (Math.trunc(seed) ^ 0x811c9dc5) >>> 0;
+  for (let index = 0; index < key.length; index += 1) {
+    hash ^= key.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
   }
-  return result;
+  return hash;
 }
 
-function indexed<T>(values: readonly T[], indices: readonly number[]): T[] {
-  return indices.flatMap((index) => values[index] === undefined ? [] : [values[index]!]);
+/** The Quality a heat gives; `neverFlawed` for a Protective Saggars owner (v1.6.2 L628). */
+function qualityAt(heat: number, preferred: number, neverFlawed = false): Quality {
+  const quality = qualityForDifference(heat - preferred);
+  return neverFlawed && quality === "flawed" ? "standard" : quality;
 }
 
-/** Stable, seed-specific tie-breaking without exposing or consuming game RNG state. */
-function seededTieRank(seed: number, key: string): number {
-  let value = (Math.trunc(seed) ^ 0x811c9dc5) >>> 0;
-  for (const character of key) {
-    value ^= character.charCodeAt(0);
-    value = Math.imul(value, 0x01000193) >>> 0;
+/** A utility over the seat's own ceramics, floored at Standard under Protective Saggars. */
+function floored(k: Know, utility: (q: Quality) => number): (q: Quality) => number {
+  return ownsTech(k.me, PROTECTIVE_SAGGARS) ? (quality) => utility(quality === "flawed" ? "standard" : quality) : utility;
+}
+
+function stepQuality(quality: Quality, steps: number, cap: Quality): Quality {
+  const rank = Math.min(QUALITY_RANK[quality] + steps, QUALITY_RANK[cap]);
+  return QUALITY_BY_RANK[rank] ?? quality;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 3. Per-decision knowledge
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+interface Know {
+  readonly view: ActorView;
+  readonly game: PublicGameState;
+  readonly pid: PlayerId;
+  readonly me: PlayerState;
+  readonly round: number;
+  /** Rounds after the current one (0 in Round 5). */
+  readonly roundsAfter: number;
+  readonly lastRound: boolean;
+  readonly hand: readonly OrderId[];
+  readonly seed: number;
+  readonly deadline: Deadline;
+  /** This round's Kiln Die (L126); 2 before the first roll. */
+  readonly die: number;
+  readonly memo: Map<string, unknown>;
+}
+
+function knowledge(view: ActorView, seat: ComputerSeatContext | null, deadline: Deadline): Know {
+  const game = view.game;
+  const me = game.players[view.viewerId];
+  if (me === undefined) {
+    throw new Error("The computer seat is not seated in this game.");
   }
+  const rounds = GAME_CONFIG.rounds;
+  const die = game.firing?.kilnDie ?? (game.kilnDie !== null && game.kilnDie.round === game.round ? game.kilnDie.value : 2);
+  return {
+    view,
+    game,
+    pid: view.viewerId,
+    me,
+    round: game.round,
+    roundsAfter: rounds - game.round,
+    lastRound: game.round >= rounds,
+    hand: view.own.orderHand,
+    seed: seat?.aiSeed ?? 0,
+    deadline,
+    die,
+    memo: new Map(),
+  };
+}
+
+function memo<T>(k: Know, key: string, build: () => T): T {
+  if (k.memo.has(key)) {
+    return k.memo.get(key) as T;
+  }
+  const value = build();
+  k.memo.set(key, value);
   return value;
 }
 
-function multisetContains<T>(actual: readonly T[], required: readonly T[]): boolean {
-  const remaining = [...actual];
+function workPhaseOpen(k: Know): boolean {
+  return k.game.phase.type === "work_turn" || k.game.phase.type === "round_start_setters_mark";
+}
+
+function availableWorkerCount(p: PlayerState): number {
+  return Object.values(p.workers).filter((w) => w.placement === null).length;
+}
+
+function freePersonalSpaces(p: PlayerState, locationId: "form_decorate" | "glaze_load"): number {
+  const used = new Set(
+    Object.values(p.workers)
+      .filter((w) => w.placement?.locationId === locationId)
+      .map((w) => w.placement?.spaceIndex),
+  );
+  return p.personalSpaces[locationId].filter((space, index) => space.unlocked && !used.has(index)).length;
+}
+
+function sharedSpaceOpenFor(game: PublicGameState, playerId: PlayerId, spaceId: KilnSpaceId): boolean {
+  const space = game.sharedKiln.spaces[spaceId];
+  return space.active && space.ceramicIds.length === 0 && (space.setterMarkOwnerId === null || space.setterMarkOwnerId === playerId);
+}
+
+function openSharedSpaces(game: PublicGameState, playerId: PlayerId): number {
+  return KILN_SPACE_IDS.filter((spaceId) => sharedSpaceOpenFor(game, playerId, spaceId)).length;
+}
+
+function imperialOpen(game: PublicGameState, playerId: PlayerId): boolean {
+  const p = game.players[playerId];
+  if (p === undefined || !p.imperial.kilnGained) {
+    return false;
+  }
+  return !Object.values(game.ceramics).some((c) => c.stage === "loaded" && c.ownerId === playerId && c.placement.kiln === "imperial");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 4. Fire and heat expectations (public information plus the seat's own peek)
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+function deckCounts(values: readonly number[]): Map<number, number> {
+  const counts = new Map<number, number>();
+  for (const value of values) {
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function removeOne(counts: Map<number, number>, value: number): void {
+  const held = counts.get(value) ?? 0;
+  if (held > 0) {
+    counts.set(value, held - 1);
+  }
+}
+
+function toDist(counts: ReadonlyMap<number, number>): Dist {
+  const total = [...counts.values()].reduce((sum, n) => sum + n, 0);
+  if (total <= 0) {
+    return toDist(deckCounts(FIRING.fireDeck));
+  }
+  return [...counts.entries()]
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => a[0] - b[0])
+    .map(([value, n]) => [value, n / total] as const);
+}
+
+/** The Fire deck's cards: the full deck minus the open discard (L511) and the cards of the
+ * current firing (the round's card and any revealed Second Firing cards). Buried cards are in
+ * it too; their values are unknown to the table except a seat's own peek. */
+function unseenFire(game: PublicGameState): Map<number, number> {
+  const counts = deckCounts(FIRING.fireDeck);
+  for (const value of game.fireDiscard) {
+    removeOne(counts, value);
+  }
+  const firing = game.firing;
+  if (firing !== null) {
+    if (firing.fireModifier !== null) {
+      removeOne(counts, firing.fireModifier);
+    }
+    for (const value of firing.pendingExtraFire?.modifiers ?? []) {
+      removeOne(counts, value);
+    }
+  }
+  return counts;
+}
+
+/** Unburied cards left in the Fire deck (public: every bury is public, R15). */
+function unburiedFire(game: PublicGameState): number {
+  return Math.max(0, game.counts.fireDeck - game.counts.fireBuried);
+}
+
+/**
+ * The deck cards a draw may take before any reshuffle: the deck's cards less the seat's own
+ * buried peek of this round (it sits at the bottom, L638).
+ */
+function drawableFire(k: Know): Map<number, number> {
+  const counts = unseenFire(k.game);
+  const peek = k.view.own.firePeek;
+  if (peek !== null && peek.round === k.game.round && peek.buried === true) removeOne(counts, peek.modifier);
+  return counts;
+}
+
+/**
+ * The next Fire card (R15): the seat's own unburied peek is the top card (L638); with only
+ * buried cards left, the next card comes from the reshuffled open discard; otherwise from the
+ * deck's unburied cards.
+ */
+function nextFireDist(k: Know): Dist {
+  const peek = k.view.own.firePeek;
+  const firing = k.game.firing;
+  if (peek !== null && peek.round === k.game.round && firing !== null && firing.fireModifier === null && peek.buried !== true) {
+    return [[peek.modifier, 1]];
+  }
+  if (unburiedFire(k.game) === 0 && k.game.fireDiscard.length > 0) {
+    return toDist(deckCounts(k.game.fireDiscard));
+  }
+  return toDist(drawableFire(k));
+}
+
+/** Expected utility over the next Fire card; own utilities come `floored` (Protective Saggars). */
+function expectQuality(heatBeforeFire: number, preferred: number, fire: Dist, utility: (q: Quality) => number): number {
+  let total = 0;
+  for (const [value, p] of fire) {
+    total += p * utility(qualityAt(heatBeforeFire + value, preferred));
+  }
+  return total;
+}
+
+function positionModifierOf(game: PublicGameState, ceramic: LoadedCeramic): number {
+  const placement = ceramic.placement;
+  if (placement.kiln === "imperial") {
+    return placement.imperialModifier;
+  }
+  return game.sharedKiln.spaces[placement.spaceId].kilnFurniture?.modifier ?? zoneModifier(placement.spaceId);
+}
+
+/** The Kiln Master marker a loaded ceramic carries (rev. 4 L628, public), 0 without one. */
+function markerValueOf(ceramic: LoadedCeramic): number {
+  return ceramic.kilnMasterMarker ?? 0;
+}
+
+function clampBase(value: number): number {
+  return clamp(value, FIRING.baseHeat.minimum, FIRING.baseHeat.maximum);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 5. Order models and the hand planner
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+type Dim = "shape" | "glaze" | "decoration";
+
+interface OrderModel {
+  readonly def: OrderDefinition;
+  readonly n: number;
+  readonly minRank: number;
+  /** Masterpieces the Order needs (an `at_least_n_quality` relation or a Masterpiece minimum). */
+  readonly mpCount: number;
+  /** Valid value multisets per dimension, as count vectors over SHAPES / GLAZES / DECORATIONS. */
+  readonly shapeSets: readonly number[][];
+  readonly glazeSets: readonly number[][];
+  readonly decoSets: readonly number[][];
+}
+
+const MODELS = new Map<OrderId, OrderModel>();
+
+function countVectors(length: number, total: number): number[][] {
+  if (length === 1) {
+    return [[total]];
+  }
+  const result: number[][] = [];
+  for (let first = total; first >= 0; first -= 1) {
+    for (const rest of countVectors(length - 1, total - first)) {
+      result.push([first, ...rest]);
+    }
+  }
+  return result;
+}
+
+function expand<T>(counts: readonly number[], domain: readonly T[]): T[] {
+  const values: T[] = [];
+  counts.forEach((n, index) => {
+    for (let copy = 0; copy < n; copy += 1) {
+      values.push(domain[index] as T);
+    }
+  });
+  return values;
+}
+
+function permutationsOf<T>(items: readonly T[]): T[][] {
+  if (items.length <= 1) {
+    return [[...items]];
+  }
+  const result: T[][] = [];
+  items.forEach((item, index) => {
+    for (const rest of permutationsOf([...items.slice(0, index), ...items.slice(index + 1)])) {
+      result.push([item, ...rest]);
+    }
+  });
+  return result;
+}
+
+function relationDim(relation: OrderRelationDefinition): Dim | "quality" {
+  switch (relation.type) {
+    case "same_shape":
+    case "different_shape":
+    case "all_different_shape":
+      return "shape";
+    case "same_glaze":
+    case "different_glaze":
+    case "all_different_glaze":
+    case "required_glazes":
+      return "glaze";
+    case "same_decoration":
+    case "different_decoration":
+    case "at_least_n_distinct_decorations":
+    case "required_decorations":
+      return "decoration";
+    case "at_least_n_quality":
+      return "quality";
+  }
+}
+
+function includesAll<T>(values: readonly T[], required: readonly T[]): boolean {
+  const pool = [...values];
   for (const value of required) {
-    const at = remaining.indexOf(value);
-    if (at < 0) return false;
-    remaining.splice(at, 1);
+    const index = pool.indexOf(value);
+    if (index < 0) {
+      return false;
+    }
+    pool.splice(index, 1);
   }
   return true;
 }
 
-function assignmentDeficit<T>(assignment: readonly T[], existing: readonly T[]): number {
-  const remaining = [...existing];
-  let deficit = 0;
-  for (const value of assignment) {
-    const at = remaining.indexOf(value);
-    if (at < 0) deficit += 1;
-    else remaining.splice(at, 1);
+function relationHolds(relation: OrderRelationDefinition, values: readonly string[]): boolean {
+  switch (relation.type) {
+    case "same_shape":
+    case "same_glaze":
+    case "same_decoration":
+      return relation.indices.every((index) => values[index] === values[relation.indices[0] ?? 0]);
+    case "different_shape":
+    case "all_different_shape":
+    case "different_glaze":
+    case "all_different_glaze":
+    case "different_decoration":
+      return new Set(relation.indices.map((index) => values[index])).size === relation.indices.length;
+    case "at_least_n_distinct_decorations":
+      return new Set(relation.indices.map((index) => values[index])).size >= relation.count;
+    case "required_glazes":
+      return includesAll(values, relation.values);
+    case "required_decorations":
+      return includesAll(values, relation.values);
+    case "at_least_n_quality":
+      return true;
   }
-  return deficit;
 }
 
-function missingFromAssignment<T>(assignment: readonly T[], existing: readonly T[]): T[] {
-  const remaining = [...existing];
-  return assignment.filter((value) => {
-    const at = remaining.indexOf(value);
-    if (at < 0) return true;
-    remaining.splice(at, 1);
-    return false;
+function dimValid(def: OrderDefinition, dim: Dim, values: readonly string[]): boolean {
+  const relations = (def.relations ?? []).filter((relation) => relationDim(relation) === dim);
+  return permutationsOf(values).some((assigned) => {
+    const slotsFit = def.ceramics.every((slot, index) => {
+      const value = assigned[index];
+      if (dim === "shape") {
+        return (slot.shape === undefined || slot.shape === value) && (slot.shapes === undefined || (slot.shapes as readonly string[]).includes(value ?? ""));
+      }
+      if (dim === "glaze") {
+        return slot.glaze === undefined || slot.glaze === value;
+      }
+      return (
+        (slot.decoration === undefined || slot.decoration === value) &&
+        (slot.decorations === undefined || (slot.decorations as readonly string[]).includes(value ?? ""))
+      );
+    });
+    return slotsFit && relations.every((relation) => relationHolds(relation, assigned));
   });
 }
 
-const shapeAssignments = new Map<OrderId, Shape[][]>();
-const glazeAssignments = new Map<OrderId, Glaze[][]>();
-const decorationAssignments = new Map<OrderId, Decoration[][]>();
+function orderModel(orderId: OrderId): OrderModel {
+  const cached = MODELS.get(orderId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const def = ORDERS[orderId];
+  const n = def.ceramics.length;
+  const sets = (dim: Dim, domain: readonly string[]): number[][] =>
+    countVectors(domain.length, n).filter((counts) => dimValid(def, dim, expand(counts, domain)));
+  const mpRelation = (def.relations ?? []).find((relation) => relation.type === "at_least_n_quality" && relation.quality === "masterpiece");
+  const mpCount = def.minQuality === "masterpiece" ? n : mpRelation !== undefined && mpRelation.type === "at_least_n_quality" ? mpRelation.count : 0;
+  const model: OrderModel = {
+    def,
+    n,
+    minRank: QUALITY_RANK[def.minQuality],
+    mpCount,
+    shapeSets: sets("shape", SHAPES),
+    glazeSets: sets("glaze", GLAZES),
+    decoSets: sets("decoration", DECORATIONS),
+  };
+  MODELS.set(orderId, model);
+  return model;
+}
+
+/** Some valid multiset contains every fixed value (the free slots fill the rest). */
+function fits(sets: readonly number[][], fixed: readonly number[]): boolean {
+  return sets.some((set) => set.every((n, index) => n >= (fixed[index] ?? 0)));
+}
+
+function withOne(fixed: readonly number[], index: number): number[] {
+  const next = [...fixed];
+  next[index] = (next[index] ?? 0) + 1;
+  return next;
+}
+
+/** One ceramic of the seat's pipeline as the planner sees it. */
+interface PItem {
+  readonly id: CeramicId;
+  readonly stage: "finished" | "loaded" | "shaped";
+  readonly shape: number;
+  /** Index into GLAZES, or -1 while still free (Shaped). */
+  readonly glaze: number;
+  /** Index into DECORATIONS, or -1 for a Crackle wildcard (L470). */
+  readonly deco: number;
+  /** P(final Quality rank ≥ r) for r = 0…3 (exact for Finished; Crackle counts as Fine for Orders). */
+  readonly pAtLeast: readonly number[];
+  readonly pMasterpiece: number;
+  readonly masterpiece: boolean;
+  readonly exhibitValue: number;
+}
+
+interface OrderPlan {
+  readonly orderId: OrderId;
+  readonly model: OrderModel;
+  readonly gross: number;
+  readonly p: number;
+  readonly chosen: readonly PItem[];
+  readonly newCount: number;
+}
+
+interface VesselDemand {
+  readonly orderId: OrderId;
+  readonly shape: Shape;
+  readonly decoration: Decoration;
+  readonly value: number;
+}
+
+interface HandPlan {
+  readonly plans: readonly OrderPlan[];
+  readonly planOf: ReadonlyMap<CeramicId, OrderPlan>;
+  readonly demands: readonly VesselDemand[];
+}
+
+/** Base probability that a fired ceramic reaches a Quality rank when its Glaze is aimed well. */
+function aimedQualityP(k: Know, rank: number): number {
+  const jun = k.me.kilnId === "JU";
+  // Protective Saggars: never Flawed, and once a round a Standard becomes Fine (rev. 4 L624);
+  // Ge crackles a Fine or Standard ceramic, and a Standard one becomes Fine (rev. 4 L463).
+  const saggars = ownsTech(k.me, PROTECTIVE_SAGGARS);
+  const lift = saggars || k.me.kilnId === "GE";
+  if (rank <= 0) return 1;
+  if (rank === 1) return saggars ? 1 : jun || lift ? 0.98 : 0.95;
+  if (rank === 2) return jun ? 0.9 : lift ? 0.88 : 0.8;
+  return jun ? 0.45 : 0.33;
+}
+
+/** Chance a Shaped vessel is loaded and fired before the end of the game. */
+function loadLaterP(k: Know): number {
+  if (k.roundsAfter >= 1) return 0.9;
+  if (k.game.phase.type === "work_turn" && freePersonalSpaces(k.me, "glaze_load") > 0 && availableWorkerCount(k.me) > 0) return 0.65;
+  return 0;
+}
+
+/** Chance a vessel not yet formed is formed, loaded and fired in time. */
+function makeLaterP(k: Know): number {
+  if (k.roundsAfter >= 2) return 0.85;
+  if (k.roundsAfter === 1) return workPhaseOpen(k) ? 0.75 : 0.6;
+  if (k.game.phase.type === "work_turn" && availableWorkerCount(k.me) >= 2 && freePersonalSpaces(k.me, "form_decorate") > 0 && freePersonalSpaces(k.me, "glaze_load") > 0) {
+    return 0.3;
+  }
+  return 0;
+}
+
+function finishedRank(c: FinishedCeramic): number {
+  const rank = QUALITY_RANK[c.quality];
+  return c.crackle ? Math.min(rank, FINE_RANK) : rank;
+}
+
+/** P(rank ≥ r) for a loaded ceramic, from its heat situation. */
+function loadedQualityP(k: Know, c: LoadedCeramic): { pAtLeast: number[]; pMp: number } {
+  const record = k.game.firing?.ceramics[c.id];
+  if (record?.quality !== null && record?.quality !== undefined) {
+    const rank = QUALITY_RANK[record.quality];
+    return { pAtLeast: [0, 1, 2, 3].map((r) => (rank >= r ? 1 : 0)), pMp: rank === MASTERPIECE_RANK && !record.crackle ? 1 : 0 };
+  }
+  const preferred = preferredHeat(c.glaze);
+  const pos = positionModifierOf(k.game, c);
+  const fire = nextFireDist(k);
+  const bases: Dist =
+    c.placement.kiln === "imperial"
+      ? [[k.die, 1]]
+      : k.game.firing?.baseHeat !== null && k.game.firing?.baseHeat !== undefined
+        ? [[k.game.firing.baseHeat, 1]]
+        : [
+            [clampBase(k.die - 1), 0.2],
+            [k.die, 0.6],
+            [clampBase(k.die + 1), 0.2],
+          ];
+  const pAtLeast = [0, 0, 0, 0];
+  let pMp = 0;
+  for (const [base, pb] of bases) {
+    const markers = [markerValueOf(c)];
+    let best: number[] = [0, 0, 0, 0];
+    let bestScore = -1;
+    for (const marker of markers) {
+      const probs = [0, 0, 0, 0];
+      for (const [fire1, pf] of fire) {
+        const rank = QUALITY_RANK[qualityAt(base + pos + marker + fire1, preferred, ownsTech(k.me, PROTECTIVE_SAGGARS))];
+        for (let r = 0; r <= rank; r += 1) {
+          probs[r] = (probs[r] ?? 0) + pf;
+        }
+      }
+      const score = (probs[1] ?? 0) + (probs[2] ?? 0) + (probs[3] ?? 0);
+      if (score > bestScore) {
+        bestScore = score;
+        best = probs;
+      }
+    }
+    for (let r = 0; r < 4; r += 1) {
+      pAtLeast[r] = (pAtLeast[r] ?? 0) + pb * (best[r] ?? 0);
+    }
+    pMp += pb * (best[3] ?? 0);
+  }
+  return { pAtLeast, pMp };
+}
+
+function poolItems(k: Know): PItem[] {
+  return memo(k, "pool", () => {
+    const items: PItem[] = [];
+    for (const c of ceramicsOf(k.game, k.pid, "finished")) {
+      if (c.quality === "flawed") continue;
+      const rank = finishedRank(c);
+      items.push({
+        id: c.id,
+        stage: "finished",
+        shape: SHAPES.indexOf(c.shape),
+        glaze: GLAZES.indexOf(c.glaze),
+        deco: c.crackle ? -1 : DECORATIONS.indexOf(c.decoration),
+        pAtLeast: [0, 1, 2, 3].map((r) => (rank >= r ? 1 : 0)),
+        pMasterpiece: rank === MASTERPIECE_RANK ? 1 : 0,
+        masterpiece: rank === MASTERPIECE_RANK,
+        exhibitValue: QUALITY_VALUE[c.quality],
+      });
+    }
+    for (const c of ceramicsOf(k.game, k.pid, "loaded")) {
+      const { pAtLeast, pMp } = loadedQualityP(k, c);
+      items.push({
+        id: c.id,
+        stage: "loaded",
+        shape: SHAPES.indexOf(c.shape),
+        glaze: GLAZES.indexOf(c.glaze),
+        deco: DECORATIONS.indexOf(c.decoration),
+        pAtLeast,
+        pMasterpiece: pMp,
+        masterpiece: false,
+        exhibitValue: 3,
+      });
+    }
+    const load = loadLaterP(k);
+    for (const c of ceramicsOf(k.game, k.pid, "shaped")) {
+      items.push({
+        id: c.id,
+        stage: "shaped",
+        shape: SHAPES.indexOf(c.shape),
+        glaze: -1,
+        deco: DECORATIONS.indexOf(c.decoration),
+        pAtLeast: [0, 1, 2, 3].map((r) => load * aimedQualityP(k, r)),
+        pMasterpiece: load * aimedQualityP(k, MASTERPIECE_RANK),
+        masterpiece: false,
+        exhibitValue: 2.5,
+      });
+    }
+    return items;
+  });
+}
+
+/** Imperial Audience's VP (Recognition 4, L435). */
+function audienceVp(): number {
+  const reward = IMPERIAL_TRACK.track.find((space) => space.space === 4)?.reward;
+  return reward?.kind === "vp" ? reward.vp : 0;
+}
+
+/** True once the last Work Phase is over: nothing gained from now on can be spent or loaded. */
+function afterFinalWork(k: Know): boolean {
+  return k.lastRound && !workPhaseOpen(k);
+}
+
+/** End-game VP for `coins` (1 per 3, capped, L494). */
+function endCoinVp(coins: number): number {
+  const rule = GAME_CONFIG.coinEndGame;
+  return Math.min(Math.floor(Math.max(0, coins) / rule.coinsPerVp), rule.maxVp);
+}
+
+/** Imperial Grant's Coins (Recognition 1, L432). */
+function grantCoins(): number {
+  const reward = IMPERIAL_TRACK.track.find((space) => space.space === 1)?.reward;
+  return reward?.kind === "resources" ? reward.coins : 0;
+}
+
+/** Tie breaker 1 (L498): farther along Imperial Recognition. */
+const RECOGNITION_TIE_BREAK = 0.05;
 
 /**
- * Enumerate each rules-legal attribute route independently, exactly as V1.4 Orders are
- * read. The deck has at most three slots, so this is bounded to 5^3 Shape routes and 4^3
- * Glaze/Decoration routes and can be cached by stable Order ID.
+ * A Crown's worth now at Recognition `from`, valued by what its milestone can still do:
+ * the Imperial Grant's Clay and Wood need a Work Phase to spend them, the Imperial Kiln and
+ * Imperial Priority need a Glaze & Load or a worker action before a firing. After the last
+ * Work Phase only the Grant's Coin (as end-game Coin VP), the Audience and overflow VP count.
  */
-function legalShapeAssignments(order: OrderDefinition): Shape[][] {
-  const cached = shapeAssignments.get(order.id);
-  if (cached !== undefined) return cached;
-  const routes = cartesian(order.ceramics.map((requirement) =>
-    requirement.shape === undefined
-      ? requirement.shapes ?? SHAPES
-      : [requirement.shape],
-  )).filter((route) => (order.relations ?? []).every((relation) => {
-    if (relation.type === "same_shape") return new Set(indexed(route, relation.indices)).size === 1;
-    if (relation.type === "different_shape" || relation.type === "all_different_shape") {
-      const values = indexed(route, relation.indices);
-      return new Set(values).size === values.length;
-    }
-    return true;
-  }));
-  shapeAssignments.set(order.id, routes);
-  return routes;
+function crownStepValue(k: Know, from: number): number {
+  const ended = afterFinalWork(k);
+  switch (from) {
+    case 0:
+      if (ended) return grantCoins() * coinValue(k) + RECOGNITION_TIE_BREAK;
+      return k.roundsAfter >= 1 ? 1.6 + 0.6 : 0.8;
+    case 1:
+      if (ended) return RECOGNITION_TIE_BREAK;
+      return 0.6 + 1.6 * Math.min(k.roundsAfter, 3);
+    case 2:
+      if (ended) return RECOGNITION_TIE_BREAK;
+      return 0.6 + (k.roundsAfter >= 1 ? 2 : 0.3);
+    case 3:
+      return audienceVp() + 0.2;
+    default:
+      return IMPERIAL_TRACK.overflowVpPerCrown;
+  }
 }
 
-function legalGlazeAssignments(order: OrderDefinition): Glaze[][] {
-  const cached = glazeAssignments.get(order.id);
-  if (cached !== undefined) return cached;
-  const routes = cartesian(order.ceramics.map((requirement) =>
-    requirement.glaze === undefined
-      ? requirement.glazes ?? GLAZES
-      : [requirement.glaze],
-  )).filter((route) => (order.relations ?? []).every((relation) => {
-    if (relation.type === "same_glaze") return new Set(indexed(route, relation.indices)).size === 1;
-    if (relation.type === "different_glaze" || relation.type === "all_different_glaze") {
-      const values = indexed(route, relation.indices);
-      return new Set(values).size === values.length;
-    }
-    if (relation.type === "at_least_n_distinct_glazes") {
-      return new Set(indexed(route, relation.indices)).size >= relation.count;
-    }
-    if (relation.type === "required_glazes") return multisetContains(route, relation.values);
-    if (relation.type === "glaze_categories") {
-      return relation.categories.every((category) => route.some((glaze) => category.includes(glaze)));
-    }
-    return true;
-  }));
-  glazeAssignments.set(order.id, routes);
-  return routes;
-}
-
-function legalDecorationAssignments(order: OrderDefinition): Decoration[][] {
-  const cached = decorationAssignments.get(order.id);
-  if (cached !== undefined) return cached;
-  const routes = cartesian(order.ceramics.map((requirement) =>
-    requirement.decoration === undefined ? requirement.decorations ?? DECORATIONS : [requirement.decoration],
-  )).filter((route) => (order.relations ?? []).every((relation) => {
-    if (relation.type === "same_decoration") return new Set(indexed(route, relation.indices)).size === 1;
-    if (relation.type === "different_decoration") {
-      const values = indexed(route, relation.indices);
-      return new Set(values).size === values.length;
-    }
-    if (relation.type === "at_least_n_distinct_decorations") {
-      return new Set(indexed(route, relation.indices)).size >= relation.count;
-    }
-    if (relation.type === "required_decorations") return multisetContains(route, relation.values);
-    return true;
-  }));
-  decorationAssignments.set(order.id, routes);
-  return routes;
-}
-
-function pipelineCeramics(state: PublicGameState, playerId: PlayerId): CeramicState[] {
-  return Object.values(state.ceramics).filter((ceramic) =>
-    ceramic.ownerId === playerId
-    && ceramic.stage !== "delivered"
-    && ceramic.stage !== "presented"
-    && ceramic.stage !== "sold",
-  );
-}
-
-function bestAssignment<T>(
-  routes: readonly T[][],
-  existing: readonly T[],
-  preference: (value: T) => number,
-): T[] {
-  return [...routes].sort((left, right) =>
-    assignmentDeficit(left, existing) - assignmentDeficit(right, existing)
-    || left.reduce((sum, value) => sum + preference(value), 0)
-      - right.reduce((sum, value) => sum + preference(value), 0)
-    || left.map(String).join("|").localeCompare(right.map(String).join("|"))
-  )[0] ?? [];
-}
-
-interface OrderRoute {
-  definition: OrderDefinition;
-  held: boolean;
-  shapes: Shape[];
-  glazes: Glaze[];
-  decorations: Decoration[];
-  remainingCeramics: number;
-  score: number;
-}
-
-function canCompleteNow(state: PublicGameState, playerId: PlayerId, order: OrderDefinition): boolean {
-  const finished = Object.values(state.ceramics).filter(
-    (ceramic): ceramic is FinishedCeramic => ceramic.ownerId === playerId && ceramic.stage === "finished",
-  );
-  return canCompleteOrder(order, finished, state.players[playerId]);
-}
-
-function recognitionValue(player: PlayerState, crowns: number): number {
-  let recognition = player.imperialRecognition;
+function crownsValue(k: Know, crowns: number, from: number = k.me.imperial.recognition): number {
   let value = 0;
+  let recognition = from;
   for (let crown = 0; crown < crowns; crown += 1) {
-    if (recognition >= 4) value += 1;
-    else {
-      recognition += 1;
-      // The one-off rewards are deliberately valued in VP-equivalent terms. Recognition 4
-      // is printed 6 VP; earlier milestones receive modest values for their tempo/resources.
-      value += recognition === 1 ? 2.5 : recognition === 2 ? 2 : recognition === 3 ? 2 : 6;
-    }
+    value += crownStepValue(k, recognition);
+    recognition = Math.min(4, recognition + 1);
   }
   return value;
 }
 
-function routeForOrder(
-  state: PublicGameState,
-  player: PlayerState,
-  definition: OrderDefinition,
-  held: boolean,
-): OrderRoute {
-  const ceramics = pipelineCeramics(state, player.id);
-  const shapes = bestAssignment(legalShapeAssignments(definition), ceramics.map(({ shape }) => shape), (shape) => SHAPE_COSTS[shape]);
-  const glazed = ceramics.filter((ceramic): ceramic is Exclude<CeramicState, { stage: "workshop" | "sold" }> => "glaze" in ceramic);
-  const glazes = bestAssignment(legalGlazeAssignments(definition), glazed.map(({ glaze }) => glaze), (glaze) => Math.abs(preferredHeat(glaze) - 2));
-  const decorations = bestAssignment(legalDecorationAssignments(definition), ceramics.flatMap((ceramic) => "decoration" in ceramic ? [ceramic.decoration] : []), (decoration) => DECORATION_COSTS[decoration]);
-  const remainingCeramics = Math.max(
-    assignmentDeficit(shapes, ceramics.map(({ shape }) => shape)),
-    assignmentDeficit(glazes, glazed.map(({ glaze }) => glaze)),
-    assignmentDeficit(decorations, ceramics.flatMap((ceramic) => "decoration" in ceramic ? [ceramic.decoration] : [])),
-    Math.max(0, definition.ceramics.length - ceramics.length),
-  );
-  const progress = definition.ceramics.length - remainingCeramics;
-  const remainingRounds = 6 - state.round;
-  const latePenalty = remainingCeramics > remainingRounds ? (remainingCeramics - remainingRounds) * 4 : 0;
-  const qualityPenalty = definition.minQuality === "masterpiece" ? 2 : definition.minQuality === "fine" ? 0.75 : 0;
-  const contestedBonus = !held && Object.values(state.players).some(
-    (opponent) => opponent.id !== player.id && canCompleteNow(state, opponent.id, definition),
-  ) ? 1 : 0;
-  return {
-    definition,
-    held,
-    shapes,
-    glazes,
-    decorations,
-    remainingCeramics,
-    score: definition.vp
-      + definition.coins * 0.35
-      + recognitionValue(player, definition.crowns)
-      + progress * 4
-      + (held ? 2 : contestedBonus)
-      - definition.ceramics.length * 0.75
-      - qualityPenalty
-      - latePenalty,
+function coinValue(k: Know): number {
+  return k.lastRound ? 1 / 3 : 0.5;
+}
+
+function woodValue(k: Know): number {
+  return k.lastRound ? 0.15 : 0.35;
+}
+
+/** What completing the Order is worth to the seat, before the ceramics it consumes. */
+function orderGross(k: Know, def: OrderDefinition): number {
+  let value = def.vp + def.coins * coinValue(k) + crownsValue(k, def.crowns);
+  if (def.crowns >= 1) {
+    if (k.me.kilnId === "GU") value += 0.7 * (KILNS.GU.params.vp + KILNS.GU.params.coins * coinValue(k));
+    if (ownsTech(k.me, TRIBUTE_WARE)) value += 0.7 * crownStepValue(k, Math.min(4, k.me.imperial.recognition + def.crowns));
+  }
+  return value;
+}
+
+/** The best way to fill one Order from `items` plus vessels still to form. */
+function planOrder(k: Know, orderId: OrderId, items: readonly PItem[]): OrderPlan | null {
+  const model = orderModel(orderId);
+  const n = model.n;
+  const shapeOk = (shape: number) => fits(model.shapeSets, withOne(new Array(SHAPE_COUNT).fill(0), shape));
+  const glazeOk = (glaze: number) => glaze < 0 || fits(model.glazeSets, withOne(new Array(GLAZE_COUNT).fill(0), glaze));
+  const decoOk = (deco: number) => deco < 0 || fits(model.decoSets, withOne(new Array(DECORATION_COUNT).fill(0), deco));
+  const candidates = items
+    .filter((item) => (item.pAtLeast[model.minRank] ?? 0) > 0.01 && shapeOk(item.shape) && glazeOk(item.glaze) && decoOk(item.deco))
+    .slice(0, 12);
+  const pNew = makeLaterP(k) * aimedQualityP(k, model.minRank);
+  const pNewMp = makeLaterP(k) * aimedQualityP(k, MASTERPIECE_RANK);
+  let best: { chosen: PItem[]; p: number; cost: number } | null = null;
+  const chosen: PItem[] = [];
+  const evaluate = (): void => {
+    k.deadline.check();
+    const shapes = new Array<number>(SHAPE_COUNT).fill(0);
+    const glazes = new Array<number>(GLAZE_COUNT).fill(0);
+    const decos = new Array<number>(DECORATION_COUNT).fill(0);
+    let p = 1;
+    let cost = 0;
+    let definiteMp = 0;
+    const mpChances: number[] = [];
+    for (const item of chosen) {
+      shapes[item.shape] = (shapes[item.shape] ?? 0) + 1;
+      if (item.glaze >= 0) glazes[item.glaze] = (glazes[item.glaze] ?? 0) + 1;
+      if (item.deco >= 0) decos[item.deco] = (decos[item.deco] ?? 0) + 1;
+      p *= item.pAtLeast[model.minRank] ?? 0;
+      cost += item.stage === "finished" ? item.exhibitValue * 0.05 : 0;
+      if (item.masterpiece) definiteMp += 1;
+      else mpChances.push(item.pMasterpiece);
+    }
+    if (!fits(model.shapeSets, shapes) || !fits(model.glazeSets, glazes) || !fits(model.decoSets, decos)) {
+      return;
+    }
+    const fresh = n - chosen.length;
+    p *= pNew ** fresh;
+    for (let index = 0; index < fresh; index += 1) mpChances.push(pNewMp);
+    const mpNeeded = model.mpCount - definiteMp;
+    if (mpNeeded > 0 && model.minRank < MASTERPIECE_RANK) {
+      if (mpChances.length < mpNeeded) return;
+      mpChances.sort((a, b) => b - a);
+      for (let index = 0; index < mpNeeded; index += 1) p *= (mpChances[index] ?? 0) / Math.max(0.01, aimedQualityP(k, model.minRank));
+    }
+    if (best === null || p > best.p + 1e-9 || (Math.abs(p - best.p) <= 1e-9 && cost < best.cost)) {
+      best = { chosen: [...chosen], p, cost };
+    }
+  };
+  const walk = (start: number): void => {
+    evaluate();
+    if (chosen.length >= n) return;
+    for (let index = start; index < candidates.length; index += 1) {
+      chosen.push(candidates[index] as PItem);
+      walk(index + 1);
+      chosen.pop();
+    }
+  };
+  walk(0);
+  const found = best as { chosen: PItem[]; p: number; cost: number } | null;
+  if (found === null || found.p <= 0) {
+    return null;
+  }
+  return { orderId, model, gross: orderGross(k, model.def), p: Math.min(1, found.p), chosen: found.chosen, newCount: n - found.chosen.length };
+}
+
+/** New vessels (Shape, Decoration) that keep `plan` feasible, chosen cheapest first. */
+function demandsOf(k: Know, plan: OrderPlan): VesselDemand[] {
+  const shapes = new Array<number>(SHAPE_COUNT).fill(0);
+  const decos = new Array<number>(DECORATION_COUNT).fill(0);
+  for (const item of plan.chosen) {
+    shapes[item.shape] = (shapes[item.shape] ?? 0) + 1;
+    if (item.deco >= 0) decos[item.deco] = (decos[item.deco] ?? 0) + 1;
+  }
+  const shapeOrder = [...SHAPES].sort((a, b) => shapeClay(a) - shapeClay(b) || tieHash(k.seed, a) - tieHash(k.seed, b));
+  const decoOrder: Decoration[] = [GENERIC_DECORATION, ...DECORATIONS.filter((d) => d !== GENERIC_DECORATION)];
+  const demands: VesselDemand[] = [];
+  let currentShapes = shapes;
+  let currentDecos = decos;
+  for (let index = 0; index < plan.newCount; index += 1) {
+    const shape = shapeOrder.find((s) => fits(plan.model.shapeSets, withOne(currentShapes, SHAPES.indexOf(s))));
+    const decoration = decoOrder.find((d) => fits(plan.model.decoSets, withOne(currentDecos, DECORATIONS.indexOf(d))));
+    if (shape === undefined || decoration === undefined) break;
+    currentShapes = withOne(currentShapes, SHAPES.indexOf(shape));
+    currentDecos = withOne(currentDecos, DECORATIONS.indexOf(decoration));
+    demands.push({ orderId: plan.orderId, shape, decoration, value: planValue(plan) / Math.max(1, plan.model.n) });
+  }
+  return demands;
+}
+
+/** What a ceramic earns when simply exhibited (L446–452), the baseline an Order must beat. */
+const EXHIBIT_BASELINE = 2.6;
+
+/** The planning value of an Order: its chance times what it earns beyond exhibiting its
+ * ceramics, plus a little for finishing early (Coins sooner, a lighter hand). */
+function planValue(plan: OrderPlan): number {
+  return plan.p * (Math.max(0, plan.gross - plan.model.n * EXHIBIT_BASELINE) + 1);
+}
+
+/** Most leading Orders whose planning order `assignPlans` permutes (4! = 24 orders). */
+const PLAN_PERMUTED = 4;
+
+/** Plans the Orders in `sequence`, each taking the best of the ceramics still unclaimed. */
+function assignInSequence(k: Know, sequence: readonly OrderPlan[], items: readonly PItem[]): OrderPlan[] {
+  const used = new Set<CeramicId>();
+  const raw: OrderPlan[] = [];
+  for (const first of sequence) {
+    const plan = planOrder(
+      k,
+      first.orderId,
+      items.filter((item) => !used.has(item.id)),
+    );
+    if (plan === null || plan.p < 0.02) continue;
+    raw.push(plan);
+    for (const item of plan.chosen) used.add(item.id);
+  }
+  return raw;
+}
+
+/**
+ * Assigns the pipeline's ceramics to the held Orders. When the Orders' own best plans share no
+ * ceramic, each keeps its own. Otherwise the planning order matters — the most valuable Order
+ * planned first may take, among equally good ceramics, the only one a second Order can use —
+ * so the leading Orders are planned in every order and the assignment with the greatest total
+ * planning value is kept (ties keep the value order).
+ */
+function assignPlans(k: Know, solo: readonly OrderPlan[], items: readonly PItem[]): OrderPlan[] {
+  const claimed = new Set<CeramicId>();
+  let overlap = false;
+  for (const plan of solo) {
+    for (const item of plan.chosen) {
+      if (claimed.has(item.id)) overlap = true;
+      claimed.add(item.id);
+    }
+  }
+  if (!overlap) return solo.filter((plan) => plan.p >= 0.02);
+  const head = solo.slice(0, PLAN_PERMUTED);
+  const tail = solo.slice(PLAN_PERMUTED);
+  let best: { plans: OrderPlan[]; total: number } | null = null;
+  const permute = (prefix: OrderPlan[], rest: OrderPlan[]): void => {
+    if (rest.length === 0) {
+      k.deadline.check();
+      const plans = assignInSequence(k, [...prefix, ...tail], items);
+      const total = plans.reduce((sum, plan) => sum + planValue(plan), 0);
+      if (best === null || total > best.total + 1e-9) best = { plans, total };
+      return;
+    }
+    for (let index = 0; index < rest.length; index += 1) {
+      permute([...prefix, rest[index] as OrderPlan], [...rest.slice(0, index), ...rest.slice(index + 1)]);
+    }
+  };
+  permute([], head);
+  return (best as { plans: OrderPlan[]; total: number } | null)?.plans ?? [];
+}
+
+/**
+ * Plans the held Orders against the pipeline: the most valuable first, each taking the
+ * ceramics it fits best, then scales the chance of every plan that still needs new vessels by
+ * the seat's remaining production capacity (vessels are formed for the best plans first).
+ */
+function handPlan(k: Know): HandPlan {
+  return memo(k, "handPlan", () => {
+    const items = poolItems(k);
+    const solo = k.hand
+      .map((orderId) => planOrder(k, orderId, items))
+      .filter((plan): plan is OrderPlan => plan !== null)
+      .sort((a, b) => planValue(b) - planValue(a) || a.orderId.localeCompare(b.orderId));
+    const raw = assignPlans(k, solo, items);
+    raw.sort((a, b) => planValue(b) - planValue(a) || a.orderId.localeCompare(b.orderId));
+    let capacity = productionCapacity(k);
+    const plans = raw.map((plan) => {
+      if (plan.newCount === 0) return plan;
+      const factor = clamp(capacity / plan.newCount, 0, 1);
+      capacity -= plan.newCount;
+      return factor >= 1 ? plan : { ...plan, p: plan.p * factor };
+    });
+    plans.sort((a, b) => planValue(b) - planValue(a) || a.orderId.localeCompare(b.orderId));
+    const planOf = new Map<CeramicId, OrderPlan>();
+    for (const plan of plans) {
+      for (const item of plan.chosen) planOf.set(item.id, plan);
+    }
+    const demands = plans
+      .filter((plan) => plan.p > 0.05)
+      .flatMap((plan) => demandsOf(k, plan))
+      .sort((a, b) => b.value - a.value);
+    return { plans, planOf, demands };
+  });
+}
+
+/** The planned use of a ceramic: the Order share it would earn at or above `minRank`. */
+function ceramicNeed(k: Know, ceramicId: CeramicId): { minRank: number; bonus: number; mpBonus: number } {
+  const plan = handPlan(k).planOf.get(ceramicId);
+  if (plan === undefined) {
+    return { minRank: 4, bonus: 0, mpBonus: 0 };
+  }
+  const others = plan.chosen.filter((item) => item.id !== ceramicId).reduce((p, item) => p * (item.pAtLeast[plan.model.minRank] ?? 0), 1);
+  const share = Math.max(0, plan.gross / plan.model.n - 2.4) * Math.max(0.25, others);
+  return { minRank: plan.model.minRank, bonus: share, mpBonus: plan.model.mpCount > 0 && plan.model.minRank < MASTERPIECE_RANK ? share * 0.6 : 0 };
+}
+
+/** Utility of a ceramic of this seat ending at `quality` (exhibition value plus its planned
+ * Order share, plus Ru's 4 VP for a Celadon Plain Masterpiece). */
+function ceramicUtility(k: Know, ceramicId: CeramicId, glaze: Glaze, decoration: Decoration): (q: Quality) => number {
+  const need = ceramicNeed(k, ceramicId);
+  const ru = k.me.kilnId === "RU" && glaze === KILNS.RU.params.glaze && decoration === KILNS.RU.params.decoration;
+  return (quality: Quality): number => {
+    const rank = QUALITY_RANK[quality];
+    let value = QUALITY_VALUE[quality];
+    if (rank >= need.minRank && quality !== "flawed") value += need.bonus;
+    if (quality === "masterpiece") {
+      value += need.mpBonus;
+      if (ru) value += 2.5;
+    }
+    return value;
   };
 }
 
-function bestOrderRoute(state: PublicGameState, player: PlayerState): OrderRoute | null {
-  // Production follows protected held Orders only. Face-up Orders can disappear before the
-  // next Order Phase; they influence reservation urgency but are too volatile to justify
-  // repainting the workshop's pipeline around them.
-  return player.orderHand
-    .map((id) => ORDER_DEFINITIONS[id])
-    .filter((definition): definition is OrderDefinition => definition !== undefined)
-    .map((definition) => routeForOrder(state, player, definition, player.orderHand.includes(definition.id)))
-    .sort((left, right) => right.score - left.score || left.definition.id.localeCompare(right.definition.id))[0] ?? null;
+function loadedUtility(k: Know, c: LoadedCeramic): (q: Quality) => number {
+  return floored(k, ceramicUtility(k, c.id, c.glaze, c.decoration));
 }
 
-function plannedValues<T>(
-  route: readonly T[],
-  existing: readonly T[],
-  count: number,
-  fallback: readonly T[],
-): T[] {
-  const missing = missingFromAssignment(route, existing);
-  const result = [...missing];
-  for (const value of fallback) {
-    if (result.length >= count) break;
-    result.push(value);
-  }
-  return result.slice(0, count);
-}
-
-function chooseContribution(
-  state: PublicGameState,
-  playerId: PlayerId,
-  windowId: string,
-  knownFire: number | null,
-): SubmitWoodCommand {
-  const player = state.players[playerId];
-  if (player === undefined) throw new Error("Computer contributor disappeared");
-  const loaded = Object.values(state.ceramics).filter(
-    (ceramic): ceramic is LoadedCeramic => ceramic.stage === "loaded" && ceramic.ownerId === playerId,
-  );
-  // Test Pieces paid 1 Wood to see the Fire card; the peek sat in state and was never read,
-  // so the tile fired 0.81 times a game and changed nothing. Actual Heat is
-  // Base Heat + Fire + zone, so a known Fire modifier moves the Contribution target by -F.
-  const fireAdjustment = knownFire ?? 0;
-  const desiredAdjustment = loaded.length === 0 ? 0 : Math.round(loaded.reduce((sum, ceramic) => {
-    const zone = ceramic.kilnSpaceId === "imperial" || ceramic.kilnFurnitureUsed === true
-      ? 0
-      : ceramic.kilnSpaceId.startsWith("high_") ? 1 : ceramic.kilnSpaceId.startsWith("low_") ? -1 : 0;
-    return sum + preferredHeat(ceramic.glaze) - 2 - zone - fireAdjustment;
-  }, 0) / loaded.length);
-  const hasLedger = player.techniques.some((technique) => technique.id === "T12");
-  if (hasLedger && player.resources.wood >= 2 && desiredAdjustment >= 2) return { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "STOKE_2" };
-  if (hasLedger && player.resources.wood >= 2 && desiredAdjustment <= -2) return { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "BANK_2" };
-  if (desiredAdjustment > 0 && player.resources.wood >= 1) return { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "STOKE" };
-  if (desiredAdjustment < 0 && player.resources.wood >= 1) return { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "BANK" };
-  return { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "TEND" };
-}
-
-function orderAction(state: PublicGameState, playerId: PlayerId): GameAction {
-  const player = state.players[playerId];
-  if (player === undefined) throw new Error("Computer order actor disappeared");
-  const finished = Object.values(state.ceramics).filter(
-    (ceramic): ceramic is FinishedCeramic => ceramic.stage === "finished" && ceramic.ownerId === playerId,
-  );
-  const orderIds = [...player.orderHand, ...state.displays.market].sort((a, b) => {
-    const left = ORDER_DEFINITIONS[a]; const right = ORDER_DEFINITIONS[b];
-    const leftValue = left === undefined ? 0 : left.vp + left.coins * 0.35 + recognitionValue(player, left.crowns);
-    const rightValue = right === undefined ? 0 : right.vp + right.coins * 0.35 + recognitionValue(player, right.crowns);
-    return rightValue - leftValue || a.localeCompare(b);
+/**
+ * Held Orders expected to leave the hand by completion before the next Cleanup: plans that
+ * need no new vessel, in full when their ceramics are Finished or loaded for this round's
+ * firing, half when a Shaped one must still be loaded this Work Phase.
+ */
+function expectedCompletionsBeforeCleanup(k: Know): number {
+  return memo(k, "completionsBeforeCleanup", () => {
+    let expected = 0;
+    for (const plan of handPlan(k).plans) {
+      if (plan.newCount > 0) continue;
+      const ready = plan.chosen.every((item) => item.stage === "finished" || item.stage === "loaded");
+      expected += plan.p * (ready ? 1 : workPhaseOpen(k) ? 0.5 : 0);
+    }
+    return expected;
   });
-  for (const orderId of orderIds) {
-    const order = ORDER_DEFINITIONS[orderId];
-    if (order === undefined) continue;
-    const matching = matchingOrderCeramicGroups(order, finished, player)
-      // Preserve Masterpieces and diverse ceramics for the Exhibition when a cheaper
-      // ceramic delivers the same Order. Required minimum Quality is already validated.
-      .sort((left, right) => left.reduce((sum, ceramic) => sum + QUALITY_RANK[qualityForOrderOrExhibition(ceramic, player.kilnId)], 0)
-        - right.reduce((sum, ceramic) => sum + QUALITY_RANK[qualityForOrderOrExhibition(ceramic, player.kilnId)], 0)
-        || left.map(({ id }) => id).join("|").localeCompare(right.map(({ id }) => id).join("|")));
-    for (const group of matching) {
-      const crossesGrant = player.imperialRecognition < 1 && player.imperialRecognition + order.crowns >= 1;
-      return {
-        type: "COMPLETE_ORDER",
-        orderId,
-        ceramicIds: group.map((ceramic) => ceramic.id),
-        ...(!matchesOrder(order, group, player.kilnId) ? { geGlazes: findGeGlazes(order, group)! } : {}),
-        ...(crossesGrant ? {
-          imperialGrantChoice: player.resources.clay + player.resources.wood < 3
-            ? "resources" as const
-            : "coins" as const,
-        } : {}),
-      };
+}
+
+/**
+ * Whether one more Order — after `pending` reservations already counted for this action but
+ * not yet in hand — would leave the seat over its hand limit at Cleanup (L304), once the
+ * Orders it expects to complete first have left the hand.
+ */
+function reservationOverflows(k: Know, pending: number): boolean {
+  const limit = handLimitStatus(k.view, k.pid).limit;
+  return k.hand.length + pending + 1 - expectedCompletionsBeforeCleanup(k) > limit + 1e-9;
+}
+
+/**
+ * A reservation that still needs new vessels completes less often than its plan suggests —
+ * the plan cannot see the rivals' competition for kiln spaces or the Orders reserved after it
+ * (self-play: about half of such reservations were ever completed). Head-to-head over 600
+ * seeded 2–4-player games, this discount scored about 0.5 VP more per game than none.
+ */
+const RESERVATION_NEW_VESSEL_DISCOUNT = 0.75;
+
+/**
+ * The value of reserving `orderId` now: its plan against the ceramics the held Orders do not
+ * already claim, its chance scaled by the production capacity those Orders leave, and — when
+ * the hand would be over its limit at Cleanup, counting `pending` reservations this action
+ * has already planned and the Orders expected to be completed first — only what it adds over
+ * the weakest held Order, which Cleanup would discard (L304).
+ */
+function reservationValue(k: Know, orderId: OrderId, pending = 0): number {
+  return memo(k, `reserve:${orderId}:${pending}`, () => {
+    const plan = handPlan(k);
+    const used = new Set(plan.plans.flatMap((p) => p.chosen.map((item) => item.id)));
+    const items = poolItems(k).filter((item) => !used.has(item.id));
+    const own = planOrder(k, orderId, items);
+    if (own === null) return 0;
+    const pendingNew = plan.plans.filter((p) => p.p > 0.1).reduce((sum, p) => sum + p.newCount, 0);
+    const spare = productionCapacity(k) - pendingNew;
+    const crowding = own.newCount === 0 ? 1 : clamp(spare / own.newCount, 0, 1);
+    // In Round 5 a new Order can only use ceramics fired this round.
+    const late = k.lastRound && own.newCount > 0 ? 0.4 : 1;
+    const value = planValue({ ...own, p: own.p * crowding * late * (own.newCount > 0 ? RESERVATION_NEW_VESSEL_DISCOUNT : 1) });
+    if (!reservationOverflows(k, pending)) return value;
+    const values = plan.plans.map(planValue);
+    const unplanned = k.hand.length - plan.plans.length;
+    const weakest = unplanned > 0 ? 0 : Math.min(...values, Infinity);
+    return Math.max(0, value - (Number.isFinite(weakest) ? weakest : 0) - 0.3);
+  });
+}
+
+/** New vessels the seat can still form and fire before the game ends. */
+function productionCapacity(k: Know): number {
+  const perRound = 1.6 + 0.6 * (freePersonalSpacesTotal(k.me, "form_decorate") > 1 ? 1 : 0) + 0.6 * (freePersonalSpacesTotal(k.me, "glaze_load") > 1 ? 1 : 0);
+  const thisRound = workPhaseOpen(k) ? Math.min(1, availableWorkerCount(k.me) / 3) * perRound : 0;
+  return thisRound + perRound * k.roundsAfter;
+}
+
+function freePersonalSpacesTotal(p: PlayerState, locationId: "form_decorate" | "glaze_load"): number {
+  return p.personalSpaces[locationId].filter((space) => space.unlocked).length;
+}
+
+/** The Main Orders whose identity the seat does not know: not shown, not held, not completed. */
+function unknownMainOrders(k: Know): OrderId[] {
+  return memo(k, "unknownMain", () => {
+    const seen = new Set<OrderId>([...k.hand]);
+    for (const orderId of k.game.market.display) if (orderId !== null) seen.add(orderId);
+    for (const pid of k.game.playerOrder) {
+      for (const record of k.game.players[pid]?.completedOrders ?? []) seen.add(record.orderId);
+    }
+    return (Object.keys(ORDERS) as OrderId[]).filter((orderId) => ORDERS[orderId].deck === "main" && !seen.has(orderId)).sort();
+  });
+}
+
+/** Expected value of the best of `count` cards drawn from the unknown Main Orders. */
+function expectedBestOf(k: Know, count: number, pending = 0): number {
+  return memo(k, `bestOf:${count}:${pending}`, () => {
+    const values = unknownMainOrders(k)
+      .map((orderId) => reservationValue(k, orderId, pending))
+      .sort((a, b) => a - b);
+    const total = values.length;
+    if (total === 0) return 0;
+    const draws = Math.min(count, total);
+    const choose = (n: number, r: number): number => {
+      if (r < 0 || r > n) return 0;
+      let result = 1;
+      for (let index = 1; index <= r; index += 1) result = (result * (n - r + index)) / index;
+      return result;
+    };
+    let expected = 0;
+    const all = choose(total, draws);
+    values.forEach((value, index) => {
+      expected += value * (choose(index, draws - 1) / all);
+    });
+    return expected;
+  });
+}
+
+/**
+ * Expected value of a single-reservation Select (v1.6.2 L64): the best of the face-up Main
+ * Orders showing and `count` cards drawn from the unknown Main Orders. Exact over the order
+ * statistics of the look, like `expectedBestOf`.
+ */
+function expectedBestWithDisplay(k: Know, count: number, pending = 0): number {
+  return memo(k, `bestOfWithDisplay:${count}:${pending}`, () => {
+    let floor = 0;
+    for (const orderId of k.game.market.display) {
+      if (orderId !== null) floor = Math.max(floor, reservationValue(k, orderId, pending));
+    }
+    const values = unknownMainOrders(k)
+      .map((orderId) => reservationValue(k, orderId, pending))
+      .sort((a, b) => a - b);
+    const total = values.length;
+    const draws = Math.min(count, total);
+    if (draws === 0) return floor;
+    const choose = (n: number, r: number): number => {
+      if (r < 0 || r > n) return 0;
+      let result = 1;
+      for (let index = 1; index <= r; index += 1) result = (result * (n - r + index)) / index;
+      return result;
+    };
+    let expected = 0;
+    const all = choose(total, draws);
+    values.forEach((value, index) => {
+      expected += Math.max(floor, value) * (choose(index, draws - 1) / all);
+    });
+    return expected;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 6. Valuations
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * The resources the seat's plan wants in hand. Wood covers the kiln fuel (1 per Glaze & Load
+ * action into the Shared Kiln, rev. 4 L197, R24) as well as Contributions, Jun and Test Pieces.
+ */
+function resourceNeed(k: Know): { clay: number; wood: number; coins: number } {
+  const demands = handPlan(k).demands.slice(0, 3);
+  const clay = demands.length > 0 ? demands.reduce((sum, d) => sum + shapeClay(d.shape), 0) : 3;
+  return { clay: Math.max(2, Math.min(4, clay)), wood: k.lastRound ? 2 : 3, coins: k.lastRound ? 0 : 5 };
+}
+
+function marginal(units: number, need: number, high: number, low: number): number {
+  const covered = Math.min(units, need);
+  return covered * high + Math.max(0, units - need) * low;
+}
+
+/** Value of holding these resources at the end of the seat's round plan. */
+function resourceValue(k: Know, clay: number, wood: number, coins: number): number {
+  const need = resourceNeed(k);
+  if (k.lastRound) {
+    return Math.min(coins, 15) / 3 + marginal(wood, need.wood, 0.3, 0.02) + clay * 0.01;
+  }
+  return marginal(clay, need.clay, 0.45, 0.15) + marginal(wood, need.wood, 0.35, 0.08) + marginal(coins, need.coins, 0.55, 0.3);
+}
+
+/**
+ * A Tech's worth to the seat: its ability over the remaining rounds and the second personal space
+ * it adds. Gaining a Tech scores no VP (v1.6.2 change 27, which superseded owner amendment A1).
+ */
+function techValue(k: Know, techId: TechId): number {
+  const left = k.roundsAfter + (workPhaseOpen(k) ? 1 : 0);
+  const later = k.roundsAfter;
+  const unlock = TECHS[techId].unlocks !== null ? 0.7 * Math.min(later, 3) : 0;
+  const perRound: Partial<Record<TechId, number>> = {
+    T01: 0.25,
+    T16: 0.3,
+    T05: 0.15,
+    T17: 0.7,
+    T18: 0.45,
+    T20: 0.5,
+    T15: 0.35,
+    T21: 0.4,
+    T22: 0.25,
+    // Protective Saggars: never Flawed and a free Standard → Fine each round (v1.6.2 L628).
+    T11: 0.75,
+    // Fuel Ledger: Bank and Stoke cost no Wood, and its 2 cards push ±2 for 1 Wood (v1.6.2 L634).
+    T12: 0.4,
+    T13: 0.25,
+    // Second Firing: the better of 2 extra cards (v1.6.2 L631).
+    T14: 0.5,
+    T24: 0.4,
+  };
+  let ability = (perRound[techId] ?? 0) * left * kilnSynergy(k.me.kilnId, techId) * planFit(k, techId);
+  // Connoisseur's Cabinet: +1 per exhibited Fine or Masterpiece, up to 5 (L620); most
+  // ceramics go to Orders, so expect a few.
+  if (techId === "T19") ability = Math.min(5, 0.4 + 0.45 * left);
+  // Colour Samples: the when-acquired Select 3 (the display included), hand limit 5 and a
+  // Select 3 swap each round (v1.6.2 L622, change 25).
+  if (techId === "T10") ability = (k.hand.length <= 3 ? 2.2 : 1.4) + 0.15 * left + 0.3 * left;
+  // Canal Barge: 2 Coins on the round's first completion (v1.6.2 L622), most rounds.
+  if (techId === "T23") ability = TECHS.T23.params.coins * coinValue(k) * 0.6 * left * kilnSynergy(k.me.kilnId, techId);
+  if (techId === "T25") ability = 0.2 * left * kilnSynergy(k.me.kilnId, techId) * Math.min(2, handPlan(k).plans.filter((p) => p.model.def.crowns > 0).length + 0.5);
+  return unlock + ability;
+}
+
+/** How well a Tech suits the seat's Kiln Tradition (L458–478, Appendix B). */
+function kilnSynergy(kilnId: KilnId | null, techId: TechId): number {
+  switch (kilnId) {
+    case "RU":
+      // Precision for Celadon Plain Masterpieces.
+      return techId === "T15" || techId === "T24" ? 1.4 : techId === "T13" ? 1.5 : 1;
+    case "GU":
+      // More Crown Orders completed, sooner.
+      return techId === "T25" ? 1.6 : techId === "T23" ? 1.3 : 1;
+    case "GE":
+      // Under Protective Saggars a would-be Flawed ceramic is Standard, which Ge may crackle
+      // (rev. 4 L641); Second Firing makes Flawed ceramics Standard or better to crackle.
+      return techId === "T11" ? 1.3 : techId === "T14" ? 1.2 : 1;
+    case "DI":
+      // Cheap Bowls, Plates and Brush Washers: Clay and stacking.
+      return techId === "T17" || techId === "T20" ? 1.2 : techId === "T21" ? 1.25 : techId === "T01" ? 0.6 : 1;
+    case "JU":
+      // Jun already corrects one ceramic per round.
+      return techId === "T11" ? 0.8 : techId === "T24" ? 0.9 : 1;
+    default:
+      return 1;
+  }
+}
+
+/** How well a Tech suits the vessels the held Orders still need. */
+function planFit(k: Know, techId: TechId): number {
+  const demands = handPlan(k).demands;
+  if (demands.length === 0) return 1;
+  const share = (test: (d: VesselDemand) => boolean): number => demands.filter(test).length / demands.length;
+  switch (techId) {
+    case "T01":
+      return 0.5 + share((d) => (TECHS.T01.params.triggerShapes as readonly Shape[]).includes(d.shape));
+    case "T16":
+      return 0.5 + share((d) => (TECHS.T16.params.decorations as readonly Decoration[]).includes(d.decoration));
+    case "T21":
+      return 0.6 + share((d) => (TECHS.T21.params.shapes as readonly Shape[]).includes(d.shape)) * 0.6;
+    default:
+      return 1;
+  }
+}
+
+/** The best Tech this worker effect could take now at the Guild Hall, net of its printed cost. */
+function bestTechOffer(k: Know, effect: WorkerEffect): { techId: TechId; net: number; price: number } | null {
+  return memo(k, `tech:${effect}`, () => {
+    let best: { techId: TechId; net: number; price: number } | null = null;
+    for (const option of guildOptions(k.view, effect).faceUp) {
+      if (!option.legal) continue;
+      const net = techValue(k, option.techId) - option.cost * coinValue(k);
+      if (best === null || net > best.net) best = { techId: option.techId, net, price: option.cost };
+    }
+    return best;
+  });
+}
+
+/** A second Guild Hall take is worth its Coins only above this net value. */
+const SECOND_TECH_THRESHOLD = 0.5;
+
+/**
+ * The Shifu's visit (v1.6.2 L207): up to 2 Techs from different disciplines, face-up or from
+ * the inspected deck, each at its printed cost. Candidates are the legal face-up Techs and,
+ * per unowned discipline with cards left, an estimate of its unseen Techs (the mean of the
+ * two best). The value is the better of 1 take and 2 the Coins cover (at most one estimate,
+ * since only one deck is inspected); `discipline` is the deck to inspect.
+ */
+function guildShifuValue(k: Know): { value: number; price: number; discipline: TechDiscipline | null } {
+  return memo(k, "guild:shifu", () => {
+    type Candidate = { discipline: TechDiscipline; net: number; price: number; unseen: boolean };
+    const coins = k.me.resources.coins;
+    const candidates: Candidate[] = [];
+    for (const option of guildOptions(k.view, "shifu").faceUp) {
+      if (option.legal) candidates.push({ discipline: option.discipline, net: techValue(k, option.techId) - option.cost * coinValue(k), price: option.cost, unseen: false });
+    }
+    const owned = new Set(k.me.techs.map((tech) => TECHS[tech.id].discipline));
+    const visible = new Set<TechId>();
+    for (const pid of k.game.playerOrder) for (const tech of k.game.players[pid]?.techs ?? []) visible.add(tech.id);
+    for (const discipline of DISCIPLINES) for (const techId of k.game.techDisplay[discipline]) visible.add(techId);
+    let bestUnseen: Candidate | null = null;
+    for (const discipline of DISCIPLINES) {
+      if (owned.has(discipline) || k.game.counts.techDecks[discipline] === 0 || k.me.techs.length >= GAME_CONFIG.techs.maxOwned) continue;
+      const unknown = techsOfDiscipline(discipline).filter((techId) => !visible.has(techId) && TECHS[techId].cost <= coins);
+      if (unknown.length === 0) continue;
+      const ranked = unknown.map((techId) => ({ net: techValue(k, techId) - TECHS[techId].cost * coinValue(k), price: TECHS[techId].cost })).sort((a, b) => b.net - a.net);
+      const first = ranked[0];
+      const second = ranked[1] ?? first;
+      if (first === undefined || second === undefined) continue;
+      const candidate: Candidate = { discipline, net: (first.net + second.net) / 2, price: Math.max(first.price, second.price), unseen: true };
+      candidates.push(candidate);
+      if (bestUnseen === null || candidate.net > bestUnseen.net) bestUnseen = candidate;
+    }
+    let best: { value: number; price: number; discipline: TechDiscipline | null } = { value: -Infinity, price: 2, discipline: bestUnseen?.discipline ?? null };
+    const pairs = k.me.techs.length + 2 <= GAME_CONFIG.techs.maxOwned && LOCATIONS.guild_hall.effects.shifu.maxTechs >= 2;
+    for (const a of candidates) {
+      if (a.net > best.value) best = { value: a.net, price: a.price, discipline: a.unseen ? a.discipline : (bestUnseen?.discipline ?? a.discipline) };
+      if (!pairs) continue;
+      for (const b of candidates) {
+        if (b === a || b.discipline === a.discipline || (a.unseen && b.unseen) || a.price + b.price > coins || b.net <= SECOND_TECH_THRESHOLD) continue;
+        const value = a.net + b.net;
+        if (value > best.value) {
+          const inspected = a.unseen ? a.discipline : b.unseen ? b.discipline : (bestUnseen?.discipline ?? a.discipline);
+          best = { value, price: a.price + b.price, discipline: inspected };
+        }
+      }
+    }
+    return best;
+  });
+}
+
+/** Exhibition score of a set of Finished ceramics (L444–452, T19). */
+function exhibitionScore(k: Know, ceramics: readonly FinishedCeramic[]): number {
+  const shown = ceramics.filter((c) => c.quality !== "flawed");
+  let score = shown.reduce((sum, c) => sum + (c.quality === "masterpiece" ? 5 : c.quality === "fine" ? 3 : 2), 0);
+  if (new Set(shown.map((c) => c.shape)).size >= 3) score += 3;
+  if (new Set(shown.map((c) => c.glaze)).size >= 3) score += 3;
+  if (ownsTech(k.me, CONNOISSEUR)) score += Math.min(5, shown.filter((c) => c.quality === "fine" || c.quality === "masterpiece").length);
+  return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 7. Decisions by phase
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+function firstValid(k: Know, candidates: Iterable<GameAction>): GameAction | null {
+  for (const candidate of candidates) {
+    k.deadline.check();
+    if (validateAction(k.view, candidate) === null) {
+      return candidate;
     }
   }
-  return { type: "END_ORDER_TURN" };
-}
-
-function locationHasSpace(state: PublicGameState, locationId: LocationId, workerKind: "shifu" | "apprentice"): boolean {
-  return workerKind === "shifu"
-    || state.actionBoard.placements[locationId].length < locationCapacity(locationId, state.playerCount);
-}
-
-/** Zone modifier a Shared Kiln space applies, or 0 for the Imperial Kiln. */
-function zoneModifierOf(kilnSpaceId: KilnSpaceId | "imperial"): number {
-  if (kilnSpaceId === "imperial") return 0;
-  return kilnSpaceId.startsWith("high_") ? 1 : kilnSpaceId.startsWith("low_") ? -1 : 0;
-}
-
-/**
- * The Glaze this workshop should be making.
- *
- * Every ceramic used to be Celadon and Plain. Only 2 of the 8 single-ceramic Crown Orders
- * are reachable that way, and 13 of the 20 Crown Orders demand a Glaze that is not Celadon,
- * so Imperial Recognition was closed off by construction: across 180 measured seats, 138
- * finished on 0 Crowns and not one reached the Imperial Kiln at Recognition 3.
- *
- * One Glaze is chosen for the whole workshop rather than per ceramic. Preferred Heat is a
- * property of the Glaze and one Base Heat serves the entire firing, so a mixed load leaves
- * the Contribution aimed at an average that suits none of it -- the same way wiring Kiln
- * Furniture measured worse than leaving it alone.
- *
- * Crown Orders are weighted double: Recognition compounds, paying a milestone reward on the
- * way and 6 VP at the top, where a commercial Order pays once.
- */
-function targetGlaze(
-  state: PublicGameState,
-  player: PlayerState,
-  additionallyPlanned: readonly Glaze[] = [],
-): Glaze {
-  const route = bestOrderRoute(state, player);
-  if (route === null) return "celadon";
-  const existing = pipelineCeramics(state, player.id)
-    .flatMap((ceramic) => "glaze" in ceramic ? [ceramic.glaze] : []);
-  return plannedValues<Glaze>(route.glazes, [...existing, ...additionallyPlanned], 1, [
-    "celadon", "white", "grey_green", "moon_white",
-  ])[0] ?? "celadon";
-}
-
-/**
- * The Decoration this workshop should apply alongside `glaze`.
- *
- * Six of the eight single-ceramic Crown Orders name a Decoration, and the policy could only
- * make Plain, so those Orders were unreachable whatever it glazed. Unlike a Glaze -- whose
- * Preferred Heat has to agree with one shared Base Heat -- a Decoration has no effect on
- * firing, so it can be aimed per ceramic at whatever the held Orders actually ask for.
- */
-function targetDecoration(
-  state: PublicGameState,
-  player: PlayerState,
-  _glaze: Glaze,
-  additionallyPlanned: readonly Decoration[] = [],
-): Decoration {
-  const route = bestOrderRoute(state, player);
-  if (route === null) return "plain";
-  const existing = pipelineCeramics(state, player.id)
-    .flatMap((ceramic) => "decoration" in ceramic ? [ceramic.decoration] : []);
-  return plannedValues<Decoration>(route.decorations, [...existing, ...additionallyPlanned], 1, [
-    "plain", "carved", "impressed", "painted",
-  ])[0] ?? "plain";
-}
-
-function targetShapes(state: PublicGameState, player: PlayerState, count: number): Shape[] {
-  const route = bestOrderRoute(state, player);
-  const existing = pipelineCeramics(state, player.id).map(({ shape }) => shape);
-  const fallback = [...SHAPES].sort((left, right) =>
-    existing.filter((shape) => shape === left).length - existing.filter((shape) => shape === right).length
-    || SHAPE_COSTS[left] - SHAPE_COSTS[right]
-    || left.localeCompare(right),
-  );
-  return plannedValues(route?.shapes ?? [], existing, count, fallback);
-}
-
-/** An owned Tech that is ready to use this round, or undefined. */
-function ownedUnexhausted(player: PlayerState, techniqueId: TechniqueId) {
-  return player.techniques.find((technique) => technique.id === techniqueId && !technique.exhausted);
-}
-
-/**
- * What an Advanced Tech is worth to *this* policy, measured rather than assumed.
- *
- * Granting each tile free to one seat across 42 games and comparing its final score to the
- * rest of the table, after the activation fields were wired:
- *
- *   T04 Drying Frames       +8.67   fires 4.60x per game
- *   T02 Measuring Calipers  +2.72   fires 1.52x per game
- *   T07 Carving Knives      +2.57   fires 4.48x per game
- *   T08 Seal Stamps         +2.52   fires 4.38x per game
- *   T09 Crackle Slips       +1.91   fires 4.45x per game
- *   T14 Second Firing       +1.91   fires 1.19x per game
- *   T11 Protective Saggars  +1.19   fires 0.86x per game
- *   T10 Colour Samples      +0.90   fires 1.21x per game
- *   T13 Test Pieces         +0.62   fires 0.67x per game
- *   T01 Large Throwing Wheel +0.04  fires 2.05x per game -- fires often, worth nothing
- *
- * These measurements predate the amended Measuring Calipers and Dipping Vats rules.
- * Calipers retains its conservative historical baseline; Dipping Vats uses an estimate
- * for its glazing savings, not the old T03 forming reward. Newly supported route-repair effects use
- * conservative utilities below until a larger post-change self-play sample is available;
- * none is ranked above Drying Frames merely because it has just been implemented.
- */
-const MEASURED_TECHNIQUE_VALUE: Partial<Record<TechniqueId, number>> = {
-  T04: 8.67,
-  T02: 2.72,
-  T07: 2.57,
-  T08: 2.52,
-  T06: 1.50,
-  T05: 1.45,
-  T09: 1.91,
-  T14: 1.91,
-  T03: 1.40, // Dipping Vats: conservative estimate for saving 1–2 Coins per use.
-  T01: 1.50,
-  T12: 1.20,
-  T11: 1.19,
-  T10: 0.90,
-  T15: 0.80,
-  T13: 0.62,
-};
-
-/** Measured worth of a tile to this policy; 0 for anything it cannot currently resolve. */
-function techniqueValue(techniqueId: TechniqueId): number {
-  return MEASURED_TECHNIQUE_VALUE[techniqueId] ?? 0;
-}
-
-/**
- * The tile this workshop should buy from what it can see and afford.
- *
- * V1.2.2 took the first affordable tile in Forming, Glazing, Firing display order. Forming
- * tiles cost 2 and are always affordable, so across 312 measured Guild actions it bought a
- * Firing tile zero times -- including Second Firing, the single most valuable tile it has.
- * Ties break on cost because every tile is worth the same workshop unlock.
- */
-function bestTechniquePurchase(
-  candidates: readonly TechniqueId[],
-  coins: number,
-  discount: number,
-): TechniqueId | null {
-  const affordable = candidates.filter(
-    (id) => Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - discount) <= coins,
-  );
-  return affordable.sort((a, b) =>
-    techniqueValue(b) - techniqueValue(a)
-    || (TECHNIQUE_DEFINITIONS[a]?.cost ?? 99) - (TECHNIQUE_DEFINITIONS[b]?.cost ?? 99)
-  )[0] ?? null;
-}
-
-/**
- * Could this worker take an Advanced Tech at the Guild right now?
- *
- * The Shifu discount is part of the question -- a 2-Coin tile is out of reach for an
- * Apprentice holding 1 Coin but not for a Shifu -- so both placement branches ask through
- * here rather than each carrying its own copy of the affordability rule.
- */
-function guildIsWorthwhile(state: PublicGameState, playerId: PlayerId, kind: WorkerState["kind"]): boolean {
-  const player = state.players[playerId];
-  if (player === undefined || player.techniques.length >= GAME_CONFIG.techniques.maxOwned) return false;
-  if (!locationHasSpace(state, "guild_academy", kind)) return false;
-  const discount = kind === "shifu" ? 1 : 0;
-  return [...state.displays.techniques.forming, ...state.displays.techniques.glazing, ...state.displays.techniques.firing]
-    .some((id) => Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - discount) <= player.resources.coins);
-}
-
-function availableWorker(
-  state: PublicGameState,
-  player: PlayerState,
-  locationId: LocationId,
-  preferShifu: boolean,
-): WorkerState | null {
-  const workers = Object.values(player.workers).filter(({ status }) => status === "available");
-  const shifu = workers.find(({ kind }) => kind === "shifu");
-  const apprentice = workers.find(({ kind }) => kind === "apprentice");
-  if (preferShifu && shifu !== undefined) return shifu;
-  if (apprentice !== undefined && locationHasSpace(state, locationId, "apprentice")) return apprentice;
-  if (shifu !== undefined) return shifu;
   return null;
 }
 
-function locationThreatened(state: PublicGameState, playerId: PlayerId, locationId: LocationId): boolean {
-  const capacity = locationCapacity(locationId, state.playerCount);
-  if (!Number.isFinite(capacity)) return false;
-  const remaining = capacity - state.actionBoard.placements[locationId].length;
-  if (remaining > 1) return false;
-  return Object.values(state.players).some((opponent) =>
-    opponent.id !== playerId
-    && !opponent.passedWorkPhase
-    && Object.values(opponent.workers).some(({ status }) => status === "available"),
+// ── Setup and Start of Round ──────────────────────────────────────────────────────────
+
+const KILN_PREFERENCE: readonly KilnId[] = ["JU", "GE", "DI", "RU", "GU"];
+
+/** The seat's knowledge as if it had already taken `kilnId` (a copy of the view; nothing else
+ * changes), for valuing the Setup Main Order with the Kiln it comes with. */
+function withKiln(k: Know, kilnId: KilnId): Know {
+  const players = { ...k.game.players, [k.pid]: { ...k.me, kilnId } };
+  const view: ActorView = { ...k.view, game: { ...k.game, players } };
+  return { ...k, view, game: view.game, me: players[k.pid] as PlayerState, memo: new Map() };
+}
+
+/**
+ * Setup step 9 (rev. 4 L122, R23): one command takes a Kiln and a face-up Main Order. The Kiln
+ * by `KILN_PREFERENCE` among the available ones; the Main Order is the face-up one with the
+ * highest `reservationValue`, valued as if that Kiln were already taken; ties to the lowest
+ * position.
+ */
+function decideSetup(k: Know): GameAction | null {
+  const options = setupChoiceOptions(k.view);
+  if (options === null) return null;
+  const available = new Set(options.kilns.filter((option) => option.available).map((option) => option.kilnId));
+  const candidates: GameAction[] = [];
+  for (const kilnId of KILN_PREFERENCE.filter((id) => available.has(id))) {
+    const asIf = withKiln(k, kilnId);
+    const slots = options.faceUpSlots
+      .map((slotIndex) => ({ slotIndex, orderId: k.game.market.display[slotIndex] ?? null }))
+      .filter((entry): entry is { slotIndex: number; orderId: OrderId } => entry.orderId !== null)
+      .map((entry) => ({ ...entry, value: reservationValue(asIf, entry.orderId) }))
+      .sort((a, b) => b.value - a.value || a.slotIndex - b.slotIndex);
+    for (const { slotIndex, orderId } of slots) {
+      candidates.push({ type: "SELECT_KILN", kilnId, mainOrder: { slotIndex, orderId } });
+    }
+  }
+  return firstValid(k, candidates);
+}
+
+function decideSettersMark(k: Know): GameAction | null {
+  const spaces = settersMarkOptions(k.view);
+  const glazes = demandedGlazes(k);
+  const scored = spaces
+    .map((spaceId) => {
+      const heat = k.die + zoneModifier(spaceId);
+      const value = Math.max(...glazes.map((glaze) => -Math.abs(preferredHeat(glaze) - heat))) - (heat < 1 || heat > 4 ? 2 : 0);
+      return { spaceId, value: value + (zoneModifier(spaceId) === 0 ? 0.1 : 0) };
+    })
+    .sort((a, b) => b.value - a.value);
+  return firstValid(k, [...scored.map(({ spaceId }): GameAction => ({ type: "PLACE_SETTERS_MARK", spaceId })), { type: "PLACE_SETTERS_MARK", spaceId: null }]);
+}
+
+/** Glazes the held Orders still need on vessels to be loaded (all four when nothing specific). */
+function demandedGlazes(k: Know): Glaze[] {
+  const wanted = new Set<Glaze>();
+  const plan = handPlan(k);
+  for (const order of plan.plans) {
+    const fixed = new Array<number>(GLAZE_COUNT).fill(0);
+    for (const item of order.chosen) if (item.glaze >= 0) fixed[item.glaze] = (fixed[item.glaze] ?? 0) + 1;
+    for (const glaze of GLAZES) if (fits(order.model.glazeSets, withOne(fixed, GLAZES.indexOf(glaze)))) wanted.add(glaze);
+  }
+  return wanted.size === 0 || wanted.size === GLAZE_COUNT ? [...GLAZES] : [...wanted];
+}
+
+// ── Contributions (secret, simultaneous; L253–263, L638) ─────────────────────────────
+
+/** My firing value at a known Base Heat: each ceramic with its Kiln Master marker (chosen at
+ * loading, rev. 4 L628), and Jun's ±1 after the Fire card when ready and affordable. */
+function firingValueAtBase(k: Know, base: number, fire: Dist, woodLeft: number): number {
+  const mine = ceramicsOf(k.game, k.pid, "loaded");
+  if (mine.length === 0) return 0;
+  const entries = mine.map((c) => ({
+    c,
+    utility: loadedUtility(k, c),
+    preferred: preferredHeat(c.glaze),
+    source: c.placement.kiln === "imperial" ? k.die : base,
+    pos: positionModifierOf(k.game, c),
+    marker: markerValueOf(c),
+  }));
+  let total = 0;
+  const heatOf: number[] = [];
+  for (const entry of entries) {
+    const before = entry.source + entry.pos;
+    total += expectQuality(before + entry.marker, entry.preferred, fire, entry.utility);
+    heatOf.push(before + entry.marker);
+  }
+  if (kilnReady(k.me, "JU") && woodLeft >= KILNS.JU.params.wood) {
+    let junGain = 0;
+    for (const [fire1, pf] of fire) {
+      let best = 0;
+      entries.forEach((entry, index) => {
+        const heat = (heatOf[index] ?? 0) + fire1;
+        const current = entry.utility(qualityAt(heat, entry.preferred));
+        for (const delta of [-1, 1]) {
+          best = Math.max(best, entry.utility(qualityAt(heat + delta, entry.preferred)) - current);
+        }
+      });
+      junGain += pf * Math.max(0, best - woodValue(k));
+    }
+    total += junGain;
+  }
+  return total;
+}
+
+/**
+ * A rival participant's likely push: the Contribution card that best suits their public loads. A
+ * Fuel Ledger owner holds 5 cards (v1.6.2 L266, L634, change 26): its plain Bank and Stoke cost
+ * no Wood, so it may push with none, and with 1 Wood it may play Fuel Ledger Bank (−2) or Fuel
+ * Ledger Stoke (+2); a Protective Saggars owner's ceramics are never Flawed (v1.6.2 L628).
+ */
+function rivalPushDist(k: Know, playerId: PlayerId): Dist {
+  const rival = k.game.players[playerId];
+  if (rival === undefined) return [[0, 1]];
+  const loads = ceramicsOf(k.game, playerId, "loaded").filter((c) => c.placement.kiln === "shared");
+  const fuelLedger = ownsTech(rival, FUEL_LEDGER);
+  if (loads.length === 0 || (rival.resources.wood < 1 && !fuelLedger)) return [[0, 1]];
+  const fire = nextFireDist(k);
+  const saggars = ownsTech(rival, PROTECTIVE_SAGGARS);
+  const value = (q: Quality): number => QUALITY_VALUE[saggars && q === "flawed" ? "standard" : q];
+  const scoreAt = (delta: number): number =>
+    loads.reduce((sum, c) => {
+      const before = clampBase(k.die + delta) + positionModifierOf(k.game, c) + markerValueOf(c);
+      return sum + expectQuality(before, preferredHeat(c.glaze), fire, value);
+    }, 0);
+  // The reluctance to spend a Wood card's Wood; almost none when Fuel Ledger makes it free.
+  const woodCard = fuelLedger ? 0.05 : 0.35;
+  const cards: Array<readonly [number, number]> = [
+    [0, scoreAt(0)],
+    [-1, scoreAt(-1) - woodCard],
+    [1, scoreAt(1) - woodCard],
+  ];
+  // Fuel Ledger Bank and Fuel Ledger Stoke cost their printed 1 Wood.
+  if (fuelLedger && rival.resources.wood >= 1) cards.push([-2, scoreAt(-2) - 0.35], [2, scoreAt(2) - 0.35]);
+  let best = cards[0] as readonly [number, number];
+  for (const card of cards) if (card[1] > best[1] + 1e-9) best = card;
+  if (best[0] === 0) return [[-1, 0.1], [0, 0.8], [1, 0.1]];
+  return [[best[0], 0.6], [0, 0.35], [-Math.sign(best[0]), 0.05]];
+}
+
+function convolve(a: Dist, b: Dist): Dist {
+  const result = new Map<number, number>();
+  for (const [x, px] of a) for (const [y, py] of b) result.set(x + y, (result.get(x + y) ?? 0) + px * py);
+  return [...result.entries()].sort((l, r) => l[0] - r[0]);
+}
+
+function decideContribution(k: Know): AuthoritativeCommand | null {
+  // `contributionOptions` carries each card's Wood and Heat (Fuel Ledger included); only the
+  // affordable ones (`legalContributions`, Tend first) are candidates.
+  const options = contributionOptions(k.view).filter((option) => option.affordable);
+  const phase = k.game.phase;
+  if (options.length === 0 || phase.type !== "firing_contributions") return null;
+  let others: Dist = [[0, 1]];
+  for (const playerId of phase.eligiblePlayerIds) {
+    if (playerId !== k.pid) others = convolve(others, rivalPushDist(k, playerId));
+  }
+  // The round's card (R15: from the reshuffled discard once only buried cards are left).
+  const fire = nextFireDist(k);
+  let best: { command: SubmitContributionCommand; score: number } | null = null;
+  for (const { command, heat: delta, woodCost: wood } of options) {
+    let value = 0;
+    for (const [push, p] of others) {
+      value += p * firingValueAtBase(k, clampBase(k.die + delta + push), fire, k.me.resources.wood - wood);
+    }
+    // A Fuel Ledger card (±2) only when it is clearly better than the plain card it extends.
+    const score = value - wood * woodValue(k) - (contributionCard(command.card).techId !== null ? 0.05 : 0);
+    if (best === null || score > best.score + 1e-9) best = { command, score };
+  }
+  return best?.command ?? null;
+}
+
+// ── Test Pieces, Jun ──────────────────────────────────────────────────────────────────
+
+function knownBase(k: Know): number {
+  return k.game.firing?.baseHeat ?? k.die;
+}
+
+/**
+ * The round's card after burying `peeked` (L638, R15): the next unburied card, or, when the
+ * peeked card was the last one (the peek's own reshuffle already counted), the reshuffled
+ * discard.
+ */
+function afterBuryDist(k: Know, peeked: number): Dist {
+  const reshuffledByPeek = unburiedFire(k.game) === 0 && k.game.fireDiscard.length > 0;
+  const rest = reshuffledByPeek ? deckCounts(k.game.fireDiscard) : unseenFire(k.game);
+  removeOne(rest, peeked);
+  const left = reshuffledByPeek ? k.game.fireDiscard.length - 1 : unburiedFire(k.game) - 1;
+  if (left <= 0 && !reshuffledByPeek && k.game.fireDiscard.length > 0) return toDist(deckCounts(k.game.fireDiscard));
+  return toDist(rest);
+}
+
+function decideTestPieces(k: Know): GameAction | null {
+  const options = testPiecesOptions(k.view);
+  if (options === null) return null;
+  const base = knownBase(k);
+  const wood = k.me.resources.wood;
+  if (options.awaiting === "bury") {
+    const peeked = options.peekedModifier;
+    if (peeked === null) return firstValid(k, [{ type: "TEST_PIECES_BURY", bury: false }]);
+    const keep = firingValueAtBase(k, base, [[peeked, 1]], wood);
+    const bury = firingValueAtBase(k, base, afterBuryDist(k, peeked), wood);
+    return firstValid(k, [{ type: "TEST_PIECES_BURY", bury: bury > keep + 0.05 }, { type: "TEST_PIECES_BURY", bury: false }]);
+  }
+  if (!options.canPeek) return firstValid(k, [{ type: "TEST_PIECES_DECIDE", peek: false }]);
+  const fire = nextFireDist(k);
+  const blind = firingValueAtBase(k, base, fire, wood);
+  let informed = 0;
+  for (const [value, p] of fire) {
+    informed += p * Math.max(firingValueAtBase(k, base, [[value, 1]], wood - options.woodCost), firingValueAtBase(k, base, afterBuryDist(k, value), wood - options.woodCost));
+  }
+  const peek = informed - blind > options.woodCost * woodValue(k) + 0.1;
+  return firstValid(k, [{ type: "TEST_PIECES_DECIDE", peek }, { type: "TEST_PIECES_DECIDE", peek: false }]);
+}
+
+function decideJun(k: Know): GameAction | null {
+  const options = junOptions(k.view);
+  const decline: GameAction = { type: "RESOLVE_JUN", adjustment: null };
+  const firing = k.game.firing;
+  if (options === null || firing === null || options.ceramicIds.length === 0) return firstValid(k, [decline]);
+  let best: { action: GameAction; gain: number } | null = null;
+  for (const ceramicId of options.ceramicIds) {
+    const c = k.game.ceramics[ceramicId];
+    const record = firing.ceramics[ceramicId];
+    if (c === undefined || c.stage !== "loaded" || record === undefined) continue;
+    const calculation = record.first;
+    if (calculation === null) continue;
+    const utility = loadedUtility(k, c);
+    const current = utility(qualityAt(calculation.actualHeat, record.preferredHeat));
+    for (const delta of [1, -1] as const) {
+      const gain = utility(qualityAt(calculation.actualHeat + delta, record.preferredHeat)) - current;
+      if (best === null || gain > best.gain) best = { action: { type: "RESOLVE_JUN", adjustment: { ceramicId, delta } }, gain };
+    }
+  }
+  const threshold = options.woodCost * woodValue(k) + 0.05;
+  return firstValid(k, best !== null && best.gain > threshold ? [best.action, decline] : [decline]);
+}
+
+// ── After Quality and sales ──────────────────────────────────────────────────────────
+
+/**
+ * Second Firing's 2 cards (v1.6.2 L631), drawn one after the other without replacement, as
+ * pairs with probabilities (R15): from the deck's unburied cards while any are left, then from
+ * the reshuffled open discard.
+ */
+function secondFiringPairs(k: Know): Array<readonly [number, number, number]> {
+  const pairs: Array<readonly [number, number, number]> = [];
+  const draw = (pool: Map<number, number>): Dist => toDist(pool);
+  const unburied = unburiedFire(k.game);
+  const discard = deckCounts(k.game.fireDiscard);
+  const firstPool = unburied > 0 || k.game.fireDiscard.length === 0 ? drawableFire(k) : discard;
+  for (const [a, pa] of draw(firstPool)) {
+    let secondPool: Map<number, number>;
+    if (unburied >= 2 || (unburied === 1 && k.game.fireDiscard.length === 0)) {
+      secondPool = new Map(drawableFire(k));
+      removeOne(secondPool, a);
+    } else if (unburied === 1) {
+      secondPool = new Map(discard);
+    } else {
+      secondPool = new Map(discard);
+      removeOne(secondPool, a);
+      if ([...secondPool.values()].every((n) => n === 0)) secondPool = new Map(drawableFire(k));
+    }
+    for (const [b, pb] of draw(secondPool)) pairs.push([a, b, pa * pb] as const);
+  }
+  return pairs;
+}
+
+/** The best value of one recalculation with card `fire1`, with R7's Jun when `jun`. */
+function secondFiringValue(k: Know, record: NonNullable<NonNullable<PublicGameState["firing"]>["ceramics"][string]>, utility: (q: Quality) => number, fire1: number, jun: boolean): number {
+  const calculation = record.first;
+  if (calculation === null) return 0;
+  const source = calculation.heatSource - calculation.fireModifier;
+  const heat = source + fire1 + calculation.positionModifier + calculation.kilnMasterMarker;
+  let value = utility(qualityAt(heat, record.preferredHeat));
+  if (jun) {
+    for (const delta of [-1, 1]) value = Math.max(value, utility(qualityAt(heat + delta, record.preferredHeat)) - woodValue(k));
+  }
+  return value;
+}
+
+/**
+ * The value of a Crackle marker on `ceramicId` (rev. 4 L465): its wildcard Decoration and 1 VP
+ * when it is delivered to complete an Order, at the odds its planned Order is completed (a
+ * ceramic no held Order plans for may still meet a later one while rounds remain).
+ */
+function crackleValue(k: Know, ceramicId: CeramicId): number {
+  const plan = handPlan(k).planOf.get(ceramicId);
+  const deliveryP = plan !== undefined ? Math.max(0.3, Math.min(1, plan.p)) : k.roundsAfter >= 1 ? 0.4 : 0.1;
+  return 0.15 + KILNS.GE.params.vpPerDeliveredCrackle * deliveryP;
+}
+
+function decideAfterQuality(k: Know): GameAction | null {
+  const options = afterQualityOptions(k.view);
+  const firing = k.game.firing;
+  const end: GameAction = { type: "END_AFTER_QUALITY" };
+  if (options.length === 0 || firing === null) return firstValid(k, [end]);
+  // Protective Saggars' Standard targets: Ge on the only one would leave Saggars nothing to do
+  // (Ge on a Standard makes it Fine as well), so that Standard → Fine is not Ge's gain
+  // (rev. 4 L641: Saggars first, then Crackle on the same ceramic, is the other order).
+  const saggarsTargets = options.find((option) => option.ability === "protective_saggars")?.ceramicIds ?? [];
+  const candidates: Array<{ action: GameAction; gain: number }> = [];
+  for (const option of options) {
+    for (const ceramicId of option.ceramicIds) {
+      const c = k.game.ceramics[ceramicId];
+      const record = firing.ceramics[ceramicId];
+      if (c === undefined || c.stage !== "loaded" || record === undefined || record.quality === null) continue;
+      const utility = loadedUtility(k, c);
+      const now = utility(record.quality);
+      if (option.ability === "ge_crackle") {
+        // Rev. 4 L463: a Fine or Standard ceramic develops Crackle and is Fine.
+        const lift = utility("fine") - now;
+        const saggarsWouldLift = saggarsTargets.length === 1 && saggarsTargets[0] === ceramicId;
+        candidates.push({ action: { type: "USE_GE_CRACKLE", ceramicId }, gain: (saggarsWouldLift ? 0 : lift) + crackleValue(k, ceramicId) });
+      } else if (option.ability === "protective_saggars") {
+        // Rev. 4 L624: Standard → Fine, no Wood. Ge may crackle the same ceramic afterwards
+        // (rev. 4 L641).
+        const improved = stepQuality(record.quality, 1, "fine");
+        candidates.push({ action: { type: "USE_PROTECTIVE_SAGGARS", ceramicId }, gain: utility(improved) - now });
+      } else {
+        if (record.first === null) continue;
+        const jun = kilnReady(k.me, "JU") && k.me.resources.wood >= KILNS.JU.params.wood;
+        let expected = 0;
+        for (const [a, b, p] of secondFiringPairs(k)) {
+          expected += p * Math.max(secondFiringValue(k, record, utility, a, jun), secondFiringValue(k, record, utility, b, jun));
+        }
+        candidates.push({ action: { type: "USE_SECOND_FIRING", ceramicId }, gain: expected - now - 0.05 });
+      }
+    }
+  }
+  candidates.sort((a, b) => b.gain - a.gain);
+  return firstValid(k, [...candidates.filter((candidate) => candidate.gain > 0.02).map((candidate) => candidate.action), end]);
+}
+
+/**
+ * Second Firing's choice (v1.6.2 L631, R7): both revealed cards are known, so each card with
+ * and without Jun's ±1 is evaluated exactly (Jun's Wood at `woodValue`).
+ */
+function decideSecondFiringChoice(k: Know): GameAction | null {
+  const options = secondFiringChoiceOptions(k.view);
+  const firing = k.game.firing;
+  if (options === null || firing === null) return null;
+  const c = k.game.ceramics[options.ceramicId];
+  const record = firing.ceramics[options.ceramicId];
+  const fallback: GameAction = { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null };
+  if (c === undefined || c.stage !== "loaded" || record === undefined || record.first === null) return firstValid(k, [fallback]);
+  const utility = loadedUtility(k, c);
+  const source = record.first.heatSource - record.first.fireModifier;
+  const fixed = record.first.positionModifier + record.first.kilnMasterMarker;
+  const candidates: Array<{ action: GameAction; value: number }> = [];
+  for (const cardIndex of [0, 1] as const) {
+    const heat = source + options.modifiers[cardIndex] + fixed;
+    candidates.push({ action: { type: "SECOND_FIRING_CHOOSE", cardIndex, jun: null }, value: utility(qualityAt(heat, record.preferredHeat)) });
+    if (options.jun.ready) {
+      for (const delta of [1, -1] as const) {
+        const value = utility(qualityAt(heat + delta, record.preferredHeat)) - options.jun.woodCost * woodValue(k) - 0.05;
+        candidates.push({ action: { type: "SECOND_FIRING_CHOOSE", cardIndex, jun: { delta } }, value });
+      }
+    }
+  }
+  candidates.sort((a, b) => b.value - a.value);
+  return firstValid(k, [...candidates.map((candidate) => candidate.action), fallback]);
+}
+
+/**
+ * R20: sells the seat's Finished Flawed ceramics, one command each, before any other choice of
+ * a Work turn's before-action window, an Order Phase turn or a Cleanup trim. A Finished Flawed
+ * ceramic can complete no Order and enter no Exhibition (rev. 4 L282), so its 2 Coins are pure
+ * gain. In the after-Quality turn it sells nothing: Second Firing may still use a Flawed
+ * ceramic of this firing, and the Order Phase turn always opens for a sale. Null when there is
+ * nothing to sell.
+ */
+function decideSellFlawed(k: Know): GameAction | null {
+  const options = sellFlawedOptions(k.view);
+  if (options === null) return null;
+  const finished = options.ceramicIds.filter((ceramicId) => k.game.ceramics[ceramicId]?.stage === "finished");
+  return firstValid(
+    k,
+    finished.map((ceramicId): GameAction => ({ type: "SELL_FLAWED", ceramicId })),
   );
 }
 
-function openSharedKilnSpaces(state: PublicGameState): KilnSpaceId[] {
-  return activeKilnSpaceIds(state.playerCount).filter((spaceId) =>
-    !Object.values(state.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId === spaceId),
-  );
+// ── Orders (Order Phase) ──────────────────────────────────────────────────────────────
+
+/**
+ * The reward side of completing `options` one after another: printed VP and Coins, each Crown
+ * from the Recognition it reaches, each once-per-round trigger (Ru, Guan, Tribute Ware, Canal
+ * Barge's 2 Coins; L458, L464, v1.6.2 L622, L641) at most once, and the Crackle VP of every
+ * delivered Crackle ceramic (rev. 4 L465). After the last Work
+ * Phase every term is exact end-game VP: Coins through the capped 1-per-3 rule (L494), and a
+ * Crown only for its Grant Coin, the Audience or overflow VP.
+ */
+function completionReward(k: Know, options: readonly OrderMatchOption[]): number {
+  const exact = afterFinalWork(k);
+  let recognition: number = k.me.imperial.recognition;
+  let value = 0;
+  let coins = 0;
+  let ru = false;
+  let guan = false;
+  let tribute = false;
+  let barge = false;
+  for (const option of options) {
+    if (option.triggers.canalBarge && !barge) {
+      barge = true;
+      coins += TECHS.T23.params.coins;
+    }
+    value += option.vp + option.triggers.crackleVp;
+    coins += option.coins;
+    let crowns = option.printedCrowns;
+    if (option.triggers.ru && !ru) {
+      ru = true;
+      value += KILNS.RU.params.vp;
+    }
+    if (option.triggers.guan && !guan) {
+      guan = true;
+      value += KILNS.GU.params.vp;
+      coins += KILNS.GU.params.coins;
+    }
+    if (option.triggers.tributeWare && !tribute) {
+      tribute = true;
+      crowns += 1;
+    }
+    for (let crown = 0; crown < crowns; crown += 1) {
+      if (!exact) {
+        value += crownStepValue(k, recognition);
+      } else if (recognition === 0) {
+        coins += grantCoins();
+        value += RECOGNITION_TIE_BREAK;
+      } else if (recognition < 3) {
+        value += RECOGNITION_TIE_BREAK;
+      } else {
+        value += recognition === 3 ? audienceVp() + RECOGNITION_TIE_BREAK : IMPERIAL_TRACK.overflowVpPerCrown;
+      }
+      recognition = Math.min(4, recognition + 1);
+    }
+  }
+  if (exact) {
+    const held = k.me.resources.coins;
+    // Exact VP, plus a sliver per Coin so equal-VP sets still prefer more Coins (no rule uses it).
+    return value + endCoinVp(held + coins) - endCoinVp(held) + coins * 0.01;
+  }
+  return value + coins * coinValue(k);
 }
 
-function buildKilnAction(state: PublicGameState, player: PlayerState): GameAction | null {
-  const workshop = Object.values(state.ceramics).filter((ceramic): ceramic is WorkshopCeramic =>
-    ceramic.ownerId === player.id && ceramic.stage === "workshop");
-  const imperialEmpty = player.imperialKilnUnlocked && !Object.values(state.ceramics).some(
-    (ceramic) => ceramic.ownerId === player.id && ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial");
-  const destinations: Array<KilnSpaceId | "imperial"> = [...openSharedKilnSpaces(state), ...(imperialEmpty ? ["imperial" as const] : [])];
-  if (workshop.length === 0 || destinations.length === 0) return null;
-  const dippingVatsReady = ownedUnexhausted(player, "T03") !== undefined;
-  const affordable: WorkshopCeramic[] = [];
-  // Free Plain loads come first so a paid vessel cannot crowd them out of a Shifu batch.
-  const byCost = [...workshop].sort((left, right) =>
-    kilnYardGlazingCost([left], dippingVatsReady) - kilnYardGlazingCost([right], dippingVatsReady));
-  for (const ceramic of byCost) {
-    if (kilnYardGlazingCost([...affordable, ceramic], dippingVatsReady) <= player.resources.coins) affordable.push(ceramic);
-    if (affordable.length >= Math.min(2, destinations.length)) break;
+/**
+ * Net value of completing every Order in `options` (disjoint ceramics) now: their reward,
+ * minus what the ceramics would otherwise earn — the Exhibition, and other held Orders the
+ * hand plan has them earmarked for. After the last Work Phase no other Order can still be
+ * completed later, so only the Exhibition counts.
+ */
+function completionSetGain(k: Know, options: readonly OrderMatchOption[]): number {
+  if (options.length === 0) return 0;
+  const finished = ceramicsOf(k.game, k.pid, "finished");
+  const used = new Set(options.flatMap((option) => option.ceramicIds));
+  const keepCost = exhibitionScore(k, finished) - exhibitionScore(k, finished.filter((c) => !used.has(c.id)));
+  let altCost = 0;
+  if (!afterFinalWork(k)) {
+    const plan = handPlan(k);
+    const completing = new Set(options.map((option) => option.orderId));
+    for (const ceramicId of used) {
+      const other = plan.planOf.get(ceramicId);
+      if (other !== undefined && !completing.has(other.orderId)) {
+        altCost += Math.max(0, (other.gross * other.p) / other.model.n - 2.5) * 0.6;
+      }
+    }
   }
-  if (affordable.length === 0) return null;
-  const worker = availableWorker(state, player, "kiln_yard", affordable.length >= 2);
-  if (worker === null) return null;
-  const selectedCeramics = affordable.slice(0, worker.kind === "shifu" ? 2 : 1);
-  const useDippingVats = dippingVatsReady && selectedCeramics.some((ceramic) => ceramic.decoration === "plain");
-  const loads: KilnLoadSelection[] = [];
-  for (const ceramic of selectedCeramics) {
-    const glaze = targetGlaze(state, player, loads.map((load) => load.glaze));
-    const wantedZone = preferredHeat(glaze) - 2;
-    const destination = [...destinations].sort((left, right) =>
-      Math.abs(zoneModifierOf(left) - wantedZone) - Math.abs(zoneModifierOf(right) - wantedZone)
-      || String(left).localeCompare(String(right)))[0];
-    if (destination === undefined) break;
-    loads.push({ ceramicId: ceramic.id, kilnSpaceId: destination, glaze });
-    destinations.splice(destinations.indexOf(destination), 1);
+  const keepWeight = k.lastRound ? 1 : 0.85;
+  return completionReward(k, options) - keepCost * keepWeight - altCost;
+}
+
+/** Net value of completing one held Order with this group now. */
+function completionGain(k: Know, option: OrderMatchOption): number {
+  return completionSetGain(k, [option]);
+}
+
+/** Options kept per held Order, and leaves visited, by the completion-set search. */
+const COMPLETION_OPTIONS_PER_ORDER = 8;
+const COMPLETION_SET_LEAVES = 3_000;
+
+/**
+ * The best set of completions now — at most one option per held Order, no ceramic used
+ * twice — by total `completionSetGain`. Choosing Orders one at a time can spend the only
+ * ceramic that fits a second Order on one that had an equally good alternative; searching the
+ * whole set (a hand holds a few Orders, each with a few options) cannot. Returns the member
+ * to complete first (the best on its own) with the set's total gain, or null when no set
+ * gains.
+ */
+function bestCompletion(k: Know): { action: GameAction; gain: number; single: number } | null {
+  const perOrder: Array<Array<{ option: OrderMatchOption; gain: number }>> = [];
+  for (const orderId of k.hand) {
+    const ranked = orderMatchOptions(k.view, orderId, 24).map((option) => {
+      k.deadline.check();
+      return { option, gain: completionGain(k, option) };
+    });
+    ranked.sort((a, b) => b.gain - a.gain);
+    if (ranked.length > 0) perOrder.push(ranked.slice(0, COMPLETION_OPTIONS_PER_ORDER));
   }
-  if (loads.length === 0) return null;
-  if (ownedUnexhausted(player, "T15") !== undefined) {
-    const load = loads.find((candidate) => candidate.kilnSpaceId !== "imperial"
-      && zoneModifierOf(candidate.kilnSpaceId) !== 0
-      && Math.abs(2 - preferredHeat(candidate.glaze)) < Math.abs(2 + zoneModifierOf(candidate.kilnSpaceId) - preferredHeat(candidate.glaze)));
-    if (load !== undefined) load.useKilnFurniture = true;
-  }
-  return {
-    type: "USE_KILN_YARD", workerId: worker.id, loads,
-    ...(useDippingVats ? { useDippingVats: true } : {}),
-    ...(worker.kind === "shifu" ? { shifuCeramicId: loads[0]!.ceramicId } : {}),
+  perOrder.sort((a, b) => (b[0]?.gain ?? 0) - (a[0]?.gain ?? 0) || (a[0]?.option.orderId ?? "").localeCompare(b[0]?.option.orderId ?? ""));
+  let best: { members: Array<{ option: OrderMatchOption; gain: number }>; gain: number } = { members: [], gain: 0 };
+  const chosen: Array<{ option: OrderMatchOption; gain: number }> = [];
+  const usedIds = new Set<CeramicId>();
+  let leaves = 0;
+  const walk = (index: number): void => {
+    if (leaves >= COMPLETION_SET_LEAVES) return;
+    if (index === perOrder.length) {
+      leaves += 1;
+      k.deadline.check();
+      const gain = completionSetGain(
+        k,
+        chosen.map((entry) => entry.option),
+      );
+      if (gain > best.gain + 1e-9) best = { members: [...chosen], gain };
+      return;
+    }
+    for (const entry of perOrder[index] ?? []) {
+      if (entry.option.ceramicIds.some((id) => usedIds.has(id))) continue;
+      chosen.push(entry);
+      for (const id of entry.option.ceramicIds) usedIds.add(id);
+      walk(index + 1);
+      for (const id of entry.option.ceramicIds) usedIds.delete(id);
+      chosen.pop();
+    }
+    walk(index + 1);
   };
+  walk(0);
+  let first: { option: OrderMatchOption; gain: number } | null = null;
+  for (const member of best.members) {
+    if (first === null || member.gain > first.gain) first = member;
+  }
+  if (first === null) return null;
+  return { action: { type: "COMPLETE_ORDER", orderId: first.option.orderId, ceramicIds: [...first.option.ceramicIds] }, gain: best.gain, single: first.gain };
 }
 
-function paletteImprovement(
-  state: PublicGameState,
-  player: PlayerState,
-  plannedGlazes: readonly Glaze[],
-): { ceramicId: string; glaze: Glaze } | null {
-  if (ownedUnexhausted(player, "T06") === undefined) return null;
-  const route = bestOrderRoute(state, player);
-  if (route === null) return null;
-  const glazed = pipelineCeramics(state, player.id).filter((ceramic): ceramic is LoadedCeramic => ceramic.stage === "loaded");
-  const current = glazed.map(({ glaze }) => glaze);
-  const before = assignmentDeficit(route.glazes, [...current, ...plannedGlazes]);
-  let best: { ceramicId: string; glaze: Glaze; improvement: number } | null = null;
-  for (const ceramic of glazed) {
+function decideOrders(k: Know): GameAction | null {
+  const best = bestCompletion(k);
+  const end: GameAction = { type: "END_ORDER_TURN" };
+  return firstValid(k, best !== null && best.gain > 0 ? [best.action, end] : [end]);
+}
+
+function decideHandLimit(k: Know): GameAction | null {
+  const status = handLimitStatus(k.view, k.pid);
+  if (status.mustDiscard <= 0) return null;
+  const items = poolItems(k);
+  const plan = handPlan(k);
+  const ranked = k.hand
+    .map((orderId) => {
+      const planned = plan.plans.find((p) => p.orderId === orderId) ?? planOrder(k, orderId, items);
+      return { orderId, value: planned === null ? 0 : planned.p * planned.gross };
+    })
+    .sort((a, b) => a.value - b.value || tieHash(k.seed, a.orderId) - tieHash(k.seed, b.orderId));
+  const orderIds = ranked.slice(0, status.mustDiscard).map((entry) => entry.orderId);
+  return firstValid(k, [{ type: "DISCARD_TO_HAND_LIMIT", orderIds }]);
+}
+
+// ── Commission Market and Guild Hall sub-steps ────────────────────────────────────────
+
+/** The second Commission reservation is kept only above this value (overflow-dependent). */
+function secondReservationThreshold(k: Know): number {
+  return reservationOverflows(k, 1) ? 2.2 : 1.2;
+}
+
+/** A reservable Order valued as a first (`p0`) and as a second (`p1`) reservation. */
+interface ReservationCandidate {
+  readonly p0: number;
+  readonly p1: number;
+}
+
+/**
+ * Expected value of a Commission Market visit for a worker effect, from public information
+ * only (v1.6.2 L195–198): the look shows `commissionOptions(…).lookCount` unknown Main
+ * Orders (B1); the seat then reserves the best Order among the display and the look and, for
+ * the Shifu effect, a second one when it clears `secondReservationThreshold`. Exact over the
+ * order statistics of the look, drawn without replacement from the Main Orders the seat
+ * cannot see. `pending` counts reservations made earlier this round in the plan, before
+ * this visit (a repeated visit).
+ */
+function commissionVisitValue(k: Know, effect: WorkerEffect, pending = 0): number {
+  return memo(k, `cmVisit:${effect}:${pending}`, () => {
+    const options = commissionOptions(k.view, effect);
+    if (!options.reservable) return 0;
+    const shifu = options.maxReservations >= 2;
+    const value = (orderId: OrderId): ReservationCandidate => ({
+      p0: reservationValue(k, orderId, pending),
+      p1: shifu ? reservationValue(k, orderId, pending + 1) : 0,
+    });
+    const display = options.faceUpSlots
+      .map((slotIndex) => k.game.market.display[slotIndex])
+      .filter((orderId): orderId is OrderId => orderId !== null && orderId !== undefined)
+      .map(value)
+      .sort((a, b) => b.p0 - a.p0);
+    // Overflow only subtracts a constant from every value, so p0 and p1 rank Orders alike.
+    const unknown = unknownMainOrders(k).map(value).sort((a, b) => a.p0 - b.p0);
+    const total = unknown.length;
+    const draws = Math.min(options.lookCount, total);
+    const threshold = secondReservationThreshold(k);
+    const outcome = (drawn: readonly ReservationCandidate[]): number => {
+      const ranked = [...drawn, ...display.slice(0, 2)].sort((a, b) => b.p0 - a.p0);
+      const first = ranked[0]?.p0 ?? 0;
+      const second = shifu ? (ranked[1]?.p1 ?? 0) : 0;
+      return first + (second > threshold ? second : 0);
+    };
+    if (draws === 0) return outcome([]);
+    const choose = (n: number, r: number): number => {
+      if (r < 0 || r > n) return 0;
+      let result = 1;
+      for (let index = 1; index <= r; index += 1) result = (result * (n - r + index)) / index;
+      return result;
+    };
+    const all = choose(total, draws);
+    let expected = 0;
+    for (let top = 0; top < total; top += 1) {
+      const best = unknown[top] as ReservationCandidate;
+      if (draws === 1 || !shifu) {
+        // Only the look's best card can matter.
+        expected += outcome([best]) * (choose(top, draws - 1) / all);
+        continue;
+      }
+      for (let next = 0; next < top; next += 1) {
+        k.deadline.check();
+        expected += outcome([best, unknown[next] as ReservationCandidate]) * (choose(next, draws - 2) / all);
+      }
+    }
+    return expected;
+  });
+}
+
+/**
+ * `SELECT_CHOOSE` for every Select (v1.6.2 L64, change 25): the Commission Market's (L201–204)
+ * and Colour Samples' when acquired and in its swap (L622). The best Order among the display and
+ * the seat's own look; for the Commission Market Shifu effect also the next best, valued as a
+ * second reservation, when it clears `secondReservationThreshold`. Single picks follow as
+ * fallbacks. The swap keeps the hand size, so its pick is valued without an overflow cost.
+ */
+function decideSelect(k: Know): GameAction | null {
+  const phase = k.game.phase;
+  if (phase.type !== "work_turn") return null;
+  const options = lookedOrderOptions(k.view);
+  if (options === null || options.kind !== phase.step.kind) return null;
+  const pending = options.kind === "colour_samples_swap" ? -1 : 0;
+  const picks: Array<{ pick: SelectPick; orderId: OrderId; value: number }> = [];
+  for (const slotIndex of options.faceUpSlots) {
+    const orderId = k.game.market.display[slotIndex];
+    if (orderId === null || orderId === undefined) continue;
+    picks.push({ pick: { kind: "face_up", slotIndex, orderId }, orderId, value: reservationValue(k, orderId, pending) });
+  }
+  for (const orderId of options.orderIds) picks.push({ pick: { kind: "looked", orderId }, orderId, value: reservationValue(k, orderId, pending) });
+  picks.sort((a, b) => b.value - a.value || tieHash(k.seed, a.orderId) - tieHash(k.seed, b.orderId));
+  const [best, ...rest] = picks;
+  if (best === undefined) return null;
+  const candidates: GameAction[] = [];
+  if (options.maxReservations >= 2) {
+    const second = rest
+      .map((entry) => ({ ...entry, value: reservationValue(k, entry.orderId, 1) }))
+      .sort((a, b) => b.value - a.value || tieHash(k.seed, a.orderId) - tieHash(k.seed, b.orderId))[0];
+    if (second !== undefined && second.value > secondReservationThreshold(k)) {
+      candidates.push({ type: "SELECT_CHOOSE", reservations: [best.pick, second.pick] });
+    }
+  }
+  candidates.push(...picks.map((entry): GameAction => ({ type: "SELECT_CHOOSE", reservations: [entry.pick] })));
+  return firstValid(k, candidates);
+}
+
+/**
+ * The Guild Hall Shifu after its inspection (v1.6.2 L207): the first take is mandatory and
+ * is ranked with the best second take the Coins left would still cover (another discipline);
+ * a second take is made only when it clears `SECOND_TECH_THRESHOLD`; then `GUILD_FINISH`
+ * returns the untaken inspected Techs in look order (B2).
+ */
+function decideGuildTake(k: Know): GameAction | null {
+  const options = guildInspectionOptions(k.view);
+  if (options === null) return null;
+  const net = (option: GuildTechOption): number => techValue(k, option.techId) - option.cost * coinValue(k);
+  const legal = [...options.inspected, ...options.faceUp].filter((option) => option.legal);
+  const coins = k.me.resources.coins;
+  const lookahead = !options.canFinish && options.takesLeft >= 2 && k.me.techs.length + 2 <= GAME_CONFIG.techs.maxOwned;
+  const ranked = legal
+    .map((option) => {
+      let follow = 0;
+      if (lookahead) {
+        for (const other of legal) {
+          if (other.discipline !== option.discipline && option.cost + other.cost <= coins) follow = Math.max(follow, net(other) > SECOND_TECH_THRESHOLD ? net(other) : 0);
+        }
+      }
+      return { option, net: net(option), score: net(option) + follow };
+    })
+    .sort((a, b) => b.score - a.score);
+  const takes = ranked.map(({ option }): GameAction => ({ type: "GUILD_TAKE", take: { kind: option.source, techId: option.techId } }));
+  if (!options.canFinish) return firstValid(k, takes);
+  const finish: GameAction = { type: "GUILD_FINISH", bottomOrder: options.inspected.map((option) => option.techId) };
+  const worth = ranked.filter((entry) => entry.net > SECOND_TECH_THRESHOLD).map(({ option }): GameAction => ({ type: "GUILD_TAKE", take: { kind: option.source, techId: option.techId } }));
+  return firstValid(k, [...worth, finish]);
+}
+
+// ── Before/after-action window: Colour Samples swap, Imperial Priority ────────────────
+
+/**
+ * The Colour Samples swap (v1.6.2 L622, change 25): discard the held Order the plan values least
+ * when the best Order its Select 3 could reserve (the looked cards or a face-up Main Order) is
+ * expected to be worth clearly more. Held Orders are valued like the Cleanup trim
+ * (`decideHandLimit`). The swap leaves the hand size unchanged, so the Select is valued without
+ * the overflow cost of an extra Order (`pending` −1).
+ */
+function colourSamplesSwap(k: Know): GameAction | null {
+  if (!techReady(k.me, COLOUR_SAMPLES)) return null;
+  const options = colourSamplesSwapOptions(k.view);
+  if (!options.usable) return null;
+  const items = poolItems(k);
+  const plan = handPlan(k);
+  let best: { action: GameAction; gain: number } | null = null;
+  for (const discard of options.discards) {
+    if (!discard.legal) continue;
+    const planned = plan.plans.find((p) => p.orderId === discard.orderId) ?? planOrder(k, discard.orderId, items);
+    const held = planned === null ? 0 : planned.p * planned.gross;
+    const gain = expectedBestWithDisplay(k, discard.lookCount, -1) - held - 0.1;
+    if (best === null || gain > best.gain + 1e-9) best = { action: { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }, gain };
+  }
+  return best !== null && best.gain > 0.3 ? firstValid(k, [best.action]) : null;
+}
+
+/**
+ * Imperial Priority (free, no Wood, rev. 4 L291): every vessel × Glaze × Imperial modifier, and,
+ * when Kiln Master is ready, its +1 or −1 marker on the load (R22) at a small bias to none.
+ */
+function imperialPriorityCandidates(k: Know): Array<{ action: GameAction; value: number }> {
+  const options = imperialPriorityOptions(k.view);
+  if (!options.usable) return [];
+  const fire = nextFireDist(k);
+  const markers: Array<HeatDelta | null> = [null, ...(options.kilnMaster ? (kilnMasterOption(k.view, k.pid)?.values ?? []) : [])];
+  const candidates: Array<{ action: GameAction; value: number }> = [];
+  for (const ceramicId of options.ceramicIds) {
+    const vessel = k.game.ceramics[ceramicId];
+    if (vessel === undefined || vessel.stage !== "shaped") continue;
     for (const glaze of GLAZES) {
-      if (glaze === ceramic.glaze) continue;
-      const without = [...current];
-      without.splice(without.indexOf(ceramic.glaze), 1);
-      const after = assignmentDeficit(route.glazes, [...without, glaze, ...plannedGlazes]);
-      const improvement = before - after;
-      if (improvement > (best?.improvement ?? 0)) best = { ceramicId: ceramic.id, glaze, improvement };
+      const utility = vesselUtility(k, vessel, glaze);
+      for (const modifier of FIRING.imperialModifiers) {
+        for (const kilnMaster of markers) {
+          const value = expectQuality(k.die + modifier + (kilnMaster ?? 0), preferredHeat(glaze), fire, utility) - (kilnMaster === null ? 0 : KILN_MASTER_BIAS);
+          candidates.push({
+            action: { type: "USE_IMPERIAL_PRIORITY", ceramicId, glaze, imperialModifier: modifier, ...(kilnMaster === null ? {} : { kilnMaster }) },
+            value,
+          });
+        }
+      }
     }
   }
-  return best === null ? null : { ceramicId: best.ceramicId, glaze: best.glaze };
+  return candidates.sort((a, b) => b.value - a.value);
 }
 
-function buildGlazeAction(state: PublicGameState, player: PlayerState): GameAction | null {
-  const workshop = Object.values(state.ceramics).filter((ceramic): ceramic is WorkshopCeramic =>
-    ceramic.ownerId === player.id && ceramic.stage === "workshop" && ceramic.decoration === "plain");
-  const worker = availableWorker(state, player, "glaze_workshop", workshop.length >= 2 || player.resources.coins < 2);
-  if (worker === null || workshop.length === 0) return null;
-  const selections: Array<{ ceramicId: string; decoration: Decoration; newShape?: Shape }> = [];
-  const route = bestOrderRoute(state, player);
-  const specialised = pipelineCeramics(state, player.id).flatMap((ceramic) => "decoration" in ceramic && ceramic.decoration !== "plain" ? [ceramic.decoration] : []);
-  const wanted = missingFromAssignment(route?.decorations ?? [], specialised).filter((decoration) => decoration !== "plain");
-  if (wanted.length === 0) return null;
-  const useTechniqueIds: TechniqueId[] = [];
-  let coins = player.resources.coins;
-  const count = Math.min(worker.kind === "shifu" ? 2 : 1, wanted.length, workshop.length);
-  for (let index = 0; index < count; index += 1) {
-    const decoration = wanted[index]!;
-    const waiver = decoration === "carved" ? "T07" : decoration === "impressed" ? "T08" : "T09";
-    const freeShifu = worker.kind === "shifu" && index === 0;
-    const waive = !freeShifu && ownedUnexhausted(player, waiver) !== undefined && !useTechniqueIds.includes(waiver);
-    const cost = freeShifu || waive ? 0 : 2;
-    if (cost > coins) break;
-    coins -= cost;
-    if (waive) useTechniqueIds.push(waiver);
-    selections.push({ ceramicId: workshop[index]!.id, decoration });
+function windowAbility(k: Know): GameAction | null {
+  const swap = colourSamplesSwap(k);
+  if (swap !== null) return swap;
+  const priority = imperialPriorityCandidates(k);
+  if (priority.length > 0 && (priority[0]?.value ?? 0) > 1.5) {
+    const valid = firstValid(k, priority.slice(0, 6).map((candidate) => candidate.action));
+    if (valid !== null) return valid;
   }
-  if (selections.length === 0) return null;
-  if (route !== null && ownedUnexhausted(player, "T05") !== undefined) {
-    const currentShapes = pipelineCeramics(state, player.id).map(({ shape }) => shape);
-    const before = assignmentDeficit(route.shapes, currentShapes);
-    const selection = selections[0]!;
-    const ceramic = state.ceramics[selection.ceramicId]!;
-    const others = [...currentShapes]; others.splice(others.indexOf(ceramic.shape), 1);
-    const newShape = missingFromAssignment(route.shapes, others).find((shape) => shape !== ceramic.shape);
-    if (newShape !== undefined && assignmentDeficit(route.shapes, [...others, newShape]) < before) {
-      selection.newShape = newShape; useTechniqueIds.push("T05");
+  return null;
+}
+
+function decideAfterAction(k: Know): GameAction | null {
+  return windowAbility(k) ?? firstValid(k, [{ type: "END_TURN" }]);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 8. Work phase: the round planner and the command builders
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+/** Value of a Shaped vessel with `glaze` reaching each Quality, using its planned Order. */
+function vesselUtility(k: Know, vessel: ShapedCeramic, glaze: Glaze, shape: Shape = vessel.shape): (q: Quality) => number {
+  const plan = handPlan(k).planOf.get(vessel.id);
+  let bonus = 0;
+  let minRank = 4;
+  let mpBonus = 0;
+  if (plan !== undefined) {
+    const fixed = new Array<number>(GLAZE_COUNT).fill(0);
+    for (const item of plan.chosen) if (item.id !== vessel.id && item.glaze >= 0) fixed[item.glaze] = (fixed[item.glaze] ?? 0) + 1;
+    const glazeFits = fits(plan.model.glazeSets, withOne(fixed, GLAZES.indexOf(glaze)));
+    const shapes = new Array<number>(SHAPE_COUNT).fill(0);
+    for (const item of plan.chosen) if (item.id !== vessel.id) shapes[item.shape] = (shapes[item.shape] ?? 0) + 1;
+    const shapeFits = fits(plan.model.shapeSets, withOne(shapes, SHAPES.indexOf(shape)));
+    if (glazeFits && shapeFits) {
+      const need = ceramicNeed(k, vessel.id);
+      bonus = need.bonus;
+      minRank = need.minRank;
+      mpBonus = need.mpBonus;
+    }
+  } else {
+    // An unplanned vessel: does any held Order want this Glaze on this Shape?
+    const alt = bestUnplannedUse(k, shape, vessel.decoration, glaze);
+    bonus = alt.bonus;
+    minRank = alt.minRank;
+  }
+  const ru = k.me.kilnId === "RU" && glaze === KILNS.RU.params.glaze && vessel.decoration === KILNS.RU.params.decoration;
+  const diversity = glazeDiversityBonus(k, glaze);
+  return floored(k, (quality: Quality): number => {
+    if (quality === "flawed") return QUALITY_VALUE.flawed;
+    let value = QUALITY_VALUE[quality] + diversity;
+    if (QUALITY_RANK[quality] >= minRank) value += bonus;
+    if (quality === "masterpiece") {
+      value += mpBonus;
+      if (ru) value += 2.5;
+    }
+    return value;
+  });
+}
+
+function bestUnplannedUse(k: Know, shape: Shape, decoration: Decoration, glaze: Glaze): { bonus: number; minRank: number } {
+  let best = { bonus: 0, minRank: 4 };
+  for (const orderId of k.hand) {
+    const model = orderModel(orderId);
+    if (model.n !== 1) continue;
+    const ok =
+      fits(model.shapeSets, withOne(new Array(SHAPE_COUNT).fill(0), SHAPES.indexOf(shape))) &&
+      fits(model.glazeSets, withOne(new Array(GLAZE_COUNT).fill(0), GLAZES.indexOf(glaze))) &&
+      fits(model.decoSets, withOne(new Array(DECORATION_COUNT).fill(0), DECORATIONS.indexOf(decoration)));
+    if (!ok) continue;
+    const bonus = Math.max(0, orderGross(k, model.def) - 2.4) * 0.5;
+    if (bonus > best.bonus) best = { bonus, minRank: model.minRank };
+  }
+  return best;
+}
+
+function glazeDiversityBonus(k: Know, glaze: Glaze): number {
+  const held = new Set<Glaze>();
+  for (const c of ceramicsOf(k.game, k.pid, "finished")) if (c.quality !== "flawed") held.add(c.glaze);
+  for (const c of ceramicsOf(k.game, k.pid, "loaded")) held.add(c.glaze);
+  return held.has(glaze) || held.size >= 3 ? 0 : 0.35;
+}
+
+/** Base Heat the seat steers toward this round: what suits its own Shared loads, near the die. */
+function targetBase(k: Know): number {
+  return memo(k, "targetBase", () => {
+    const mine = ceramicsOf(k.game, k.pid, "loaded").filter((c) => c.placement.kiln === "shared");
+    if (mine.length === 0) return k.die;
+    const fire = nextFireDist(k);
+    let best = k.die;
+    let bestScore = -Infinity;
+    for (const base of [k.die - 1, k.die, k.die + 1]) {
+      if (base < 0 || base > 5) continue;
+      const score = firingValueAtBase(k, base, fire, k.me.resources.wood) - Math.abs(base - k.die) * 0.8;
+      if (score > bestScore + 1e-9) {
+        bestScore = score;
+        best = base;
+      }
+    }
+    return best;
+  });
+}
+
+/**
+ * Expected value of loading `vessel` with `glaze` at a destination of position `modifier`, with
+ * Kiln Master's `marker` on it (rev. 4 L628; 0 without one).
+ */
+function loadValue(k: Know, vessel: ShapedCeramic, glaze: Glaze, destination: LoadSpec["destination"], modifier: number, shape: Shape, marker = 0): number {
+  const fire = nextFireDist(k);
+  const utility = vesselUtility(k, vessel, glaze, shape);
+  const preferred = preferredHeat(glaze);
+  const bases: Dist =
+    destination.kiln === "imperial"
+      ? [[k.die, 1]]
+      : (() => {
+          const target = targetBase(k);
+          const steer = k.me.resources.wood >= 1 ? 0.15 : 0.22;
+          return [
+            [clampBase(target - 1), steer],
+            [target, 1 - 2 * steer],
+            [clampBase(target + 1), steer],
+          ] as const;
+        })();
+  let total = 0;
+  for (const [base, pb] of bases) {
+    total += pb * expectQuality(base + modifier + marker, preferred, fire, utility);
+  }
+  return total;
+}
+
+interface LoadChoice {
+  readonly load: LoadSpec;
+  readonly value: number;
+}
+
+/** Ranked single loads for the vessels not yet in `earlier`, built from `loadDestinationOptions`. */
+function rankedLoads(k: Know, earlier: readonly LoadSpec[], limit: number): LoadChoice[] {
+  const used = new Set(earlier.map((load) => load.ceramicId));
+  const choices: LoadChoice[] = [];
+  const vessels = ceramicsOf(k.game, k.pid, "shaped").filter((vessel) => !used.has(vessel.id));
+  const seenClass = new Set<string>();
+  const rework = techReady(k.me, REWORKING_TABLE) && !earlier.some((load) => load.reworkShape !== undefined);
+  for (const vessel of vessels) {
+    const planned = handPlan(k).planOf.has(vessel.id);
+    const key = `${vessel.shape}|${vessel.decoration}|${planned ? vessel.id : ""}`;
+    if (seenClass.has(key)) continue;
+    seenClass.add(key);
+    const shapes: Array<Shape | undefined> = [undefined];
+    if (rework) {
+      for (const demand of handPlan(k).demands) {
+        if (demand.shape !== vessel.shape && demand.decoration === vessel.decoration && !shapes.includes(demand.shape)) shapes.push(demand.shape);
+      }
+    }
+    for (const reworkShape of shapes) {
+      k.deadline.check();
+      const destinations = loadDestinationOptions(k.view, k.pid, vessel.id, earlier, reworkShape);
+      const shape = reworkShape ?? vessel.shape;
+      for (const option of destinations) {
+        for (const glaze of GLAZES) {
+          const value = loadValue(k, vessel, glaze, option.destination, option.modifier, shape) + (reworkShape === undefined ? 0 : 0.2);
+          choices.push({
+            load: { ceramicId: vessel.id, glaze, destination: option.destination, ...(reworkShape === undefined ? {} : { reworkShape }) },
+            value: value + (option.destination.kiln === "imperial" ? 0.15 : 0) + (option.returnsSettersMark ? 0.05 : 0),
+          });
+        }
+      }
     }
   }
-  const imperialEmpty = player.imperialKilnUnlocked && !Object.values(state.ceramics).some(
-    (ceramic) => ceramic.ownerId === player.id && ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial");
-  const glaze = targetGlaze(state, player);
-  const destination = [...openSharedKilnSpaces(state), ...(imperialEmpty ? ["imperial" as const] : [])]
-    .sort((a, b) => Math.abs(2 + zoneModifierOf(a) - preferredHeat(glaze)) - Math.abs(2 + zoneModifierOf(b) - preferredHeat(glaze)))[0];
-  return {
-    type: "DECORATE_CERAMICS", workerId: worker.id, selections,
-    ...(useTechniqueIds.length === 0 ? {} : { useTechniqueIds }),
-    ...(player.startingTechniqueId === "ST03" && player.resources.wood >= 1 && coins >= 1 && destination !== undefined
-      ? { rapidDrying: { ceramicId: selections[0]!.ceramicId, kilnSpaceId: destination, glaze } } : {}),
-  };
+  choices.sort((a, b) => b.value - a.value || tieHash(k.seed, JSON.stringify(a.load)) - tieHash(k.seed, JSON.stringify(b.load)));
+  return choices.slice(0, limit);
 }
 
-function buildFormAction(state: PublicGameState, player: PlayerState): GameAction | null {
-  const shifu = Object.values(player.workers).find(({ kind, status }) => kind === "shifu" && status === "available");
-  const dingReady = player.kilnId === "DI" && !player.kilnAbilityUsedThisRound
-    && DING_EXTRA_SHAPES.includes(targetShapes(state, player, 1)[0] as (typeof DING_EXTRA_SHAPES)[number]);
-  const preferred = availableWorker(state, player, "forming_studio", !dingReady && shifu !== undefined && player.resources.clay >= 2);
-  if (preferred === null) return null;
-  const maximum = preferred.kind === "shifu" ? 2 : 1;
-  const formShapes = targetShapes(state, player, maximum);
-  const techniqueIds: TechniqueId[] = [];
-  const formCost = (values: readonly Shape[], useWheel: boolean, ding: Shape | undefined) =>
-    Math.max(0, values.reduce((sum, shape) => sum + SHAPE_COSTS[shape], 0)
-      - (preferred.kind === "shifu" && values.length === 2 ? 1 : 0)
-      - (useWheel ? 2 : 0))
-      + (ding === undefined ? 0 : SHAPE_COSTS[ding]);
-  while (formShapes.length > 0) {
-    const wheel = ownedUnexhausted(player, "T01") !== undefined && formShapes.some((shape) => shape === "vase" || shape === "censer");
-    if (formCost(formShapes, wheel, undefined) <= player.resources.clay) break;
-    formShapes.pop();
+/**
+ * The Glaze & Load candidates: the best 1–3 first loads, each with the best second load for the
+ * Shifu when it is worth it (the second load into the Shared Kiln costs no more Wood, R24), Kiln
+ * Master's marker where it helps most (`withKilnMaster`), and the single load as a fallback.
+ * Shared destinations need the action's 1 Wood; `loadDestinationOptions` offers none without it.
+ */
+function buildGlazeLoad(k: Know, workerId: string, effect: WorkerEffect): GameAction[] {
+  const maxLoads = LOCATIONS.glaze_load.effects[effect].maxLoads;
+  const firstChoices = rankedLoads(k, [], 6);
+  const actions: GameAction[] = [];
+  for (const first of firstChoices.slice(0, 3)) {
+    const loads: LoadSpec[] = [first.load];
+    if (maxLoads >= 2) {
+      const second = rankedLoads(k, loads, 3)[0];
+      if (second !== undefined && second.value > 1.0) loads.push(second.load);
+    }
+    const marked = withKilnMaster(k, loads);
+    if (marked !== null) actions.push({ type: "PLACE_GLAZE_LOAD", workerId, loads: marked });
+    actions.push({ type: "PLACE_GLAZE_LOAD", workerId, loads });
+    if (loads.length > 1) {
+      const single = withKilnMaster(k, [first.load]);
+      if (single !== null) actions.push({ type: "PLACE_GLAZE_LOAD", workerId, loads: single });
+      actions.push({ type: "PLACE_GLAZE_LOAD", workerId, loads: [first.load] });
+    }
   }
-  if (formShapes.length === 0) return null;
-  const useWheel = ownedUnexhausted(player, "T01") !== undefined && formShapes.some((shape) => shape === "vase" || shape === "censer");
-  if (useWheel) techniqueIds.push("T01");
-  const dingExtraShape = player.kilnId === "DI" && preferred.kind === "apprentice" && !player.kilnAbilityUsedThisRound
-    ? formShapes.find((shape): shape is (typeof DING_EXTRA_SHAPES)[number] => DING_EXTRA_SHAPES.includes(shape as (typeof DING_EXTRA_SHAPES)[number]))
-    : undefined;
-  const affordableDing = dingExtraShape !== undefined
-    && formCost(formShapes, useWheel, dingExtraShape) <= player.resources.clay
-    ? dingExtraShape
-    : undefined;
-
-  const glaze = targetGlaze(state, player);
-  const decoration = targetDecoration(state, player, glaze);
-  const selectedRewards = formingTechniqueRewards(state, player, [...formShapes, ...(affordableDing === undefined ? [] : [affordableDing])]);
-  techniqueIds.push(...selectedRewards);
-  const availableCoins = player.resources.coins + selectedRewards.length * FORMING_TECH_COINS;
-  const whiteWanted = decoration === "painted";
-  const canWhiteSlip = player.startingTechniqueId === "ST02" && availableCoins >= 2;
-  // White Slip is optional: use it only when the current Order route actually wants White.
-  // Automatically glazing every vessel White merely because Drying Frames is absent can
-  // break an otherwise coherent Celadon, Grey-green, or Moon-white plan.
-  const whiteSlipIndex = canWhiteSlip && whiteWanted ? 0 : undefined;
-  const dryingIndex = ownedUnexhausted(player, "T04") !== undefined && decoration !== "plain"
-    ? whiteSlipIndex === 0 ? ((formShapes.length + Number(affordableDing !== undefined)) >= 2 ? 1 : undefined) : 0
-    : undefined;
-  const dryingCost = dryingIndex === undefined ? 0 : DECORATION_COSTS[decoration];
-  const whiteCost = whiteSlipIndex === undefined ? 0 : 2;
-  const affordableDryingIndex = dryingIndex !== undefined && dryingCost + whiteCost <= availableCoins
-    ? dryingIndex
-    : undefined;
-  if (affordableDryingIndex !== undefined) techniqueIds.push("T04");
-  return {
-    type: "FORM_CERAMICS",
-    workerId: preferred.id,
-    shapes: formShapes,
-    ...(techniqueIds.length === 0 ? {} : { useTechniqueIds: techniqueIds }),
-    ...(affordableDing === undefined ? {} : { dingExtraShape: affordableDing }),
-    ...(whiteSlipIndex === undefined ? {} : { whiteSlip: { formedIndex: whiteSlipIndex } }),
-    ...(affordableDryingIndex === undefined ? {} : {
-      dryingFrames: { formedIndex: affordableDryingIndex, decoration },
-    }),
-  };
+  return actions;
 }
 
-function buildMaterialsAction(state: PublicGameState, player: PlayerState): GameAction | null {
-  if (player.resources.clay + player.resources.wood >= 6) return null;
-  const worker = availableWorker(state, player, "materials_yard", player.resources.clay + player.resources.wood <= 2);
-  if (worker === null) return null;
-  const amount = worker.kind === "shifu" ? 4 : 3;
-  const wantedShape = targetShapes(state, player, 1)[0] ?? "bowl";
-  const preparedCost = SHAPE_COSTS[wantedShape] + 1;
-  let clay = player.startingTechniqueId === "ST01"
-    ? Math.min(amount, Math.max(2, preparedCost - player.resources.clay))
-    : Math.ceil(amount / 2);
-  clay = Math.max(0, Math.min(amount, clay));
-  const wood = amount - clay;
-  const gainedClay = clay;
-  const preparedClayShape = player.startingTechniqueId === "ST01" && player.resources.clay + gainedClay >= preparedCost
-    ? wantedShape
-    : undefined;
-  const selectedRewards = formingTechniqueRewards(state, player, preparedClayShape === undefined ? [] : [preparedClayShape]);
-  return {
-    type: "GAIN_MATERIALS",
-    workerId: worker.id,
-    clay,
-    wood,
-    ...(worker.kind === "shifu" && player.resources.coins > 1 ? { buyShifuBonus: true } : {}),
-    ...(preparedClayShape === undefined ? {} : { preparedClayShape }),
-    ...(selectedRewards.length === 0 ? {} : { useTechniqueIds: selectedRewards }),
-  };
+/** A small preference for keeping Kiln Master's once-per-round use when its marker barely helps. */
+const KILN_MASTER_BIAS = 0.01;
+
+/**
+ * Kiln Master (T24, rev. 4 L628, R22): when it is ready, the loads with its +1 or −1 marker on
+ * the one load where the expected Quality gains most (the same heat model that chooses the Glaze
+ * and the space); null when it is not ready or no marker beats none by `KILN_MASTER_BIAS`.
+ */
+function withKilnMaster(k: Know, loads: readonly LoadSpec[]): LoadSpec[] | null {
+  const option = kilnMasterOption(k.view, k.pid);
+  if (option === null || !option.ready) return null;
+  let best: { index: number; value: HeatDelta; gain: number } | null = null;
+  loads.forEach((load, index) => {
+    const vessel = k.game.ceramics[load.ceramicId];
+    if (vessel === undefined || vessel.stage !== "shaped") return;
+    const shape = load.reworkShape ?? vessel.shape;
+    const modifier =
+      load.destination.kiln === "imperial"
+        ? load.destination.imperialModifier
+        : (load.destination.kilnFurniture ?? k.game.sharedKiln.spaces[load.destination.spaceId].kilnFurniture?.modifier ?? zoneModifier(load.destination.spaceId));
+    const plain = loadValue(k, vessel, load.glaze, load.destination, modifier, shape);
+    for (const value of option.values) {
+      const gain = loadValue(k, vessel, load.glaze, load.destination, modifier, shape, value) - plain;
+      if (best === null || gain > best.gain) best = { index, value, gain };
+    }
+  });
+  const chosen = best as { index: number; value: HeatDelta; gain: number } | null;
+  if (chosen === null || chosen.gain <= KILN_MASTER_BIAS) return null;
+  return loads.map((load, index) => (index === chosen.index ? { ...load, kilnMaster: chosen.value } : load));
 }
 
-function workAction(state: PublicGameState, playerId: PlayerId): GameAction {
-  const player = state.players[playerId];
-  if (player === undefined) throw new Error("Computer worker disappeared");
-  if (!Object.values(player.workers).some(({ status }) => status === "available")) return { type: "PASS_WORK_PHASE" };
-
-  const shifu = Object.values(player.workers).find(({ kind, status }) => kind === "shifu" && status === "available");
-  if (
-    shifu !== undefined
-    && guildIsWorthwhile(state, playerId, "shifu")
-    && !guildIsWorthwhile(state, playerId, "apprentice")
-  ) {
-    return { type: "BEGIN_GUILD_ACTION", workerId: shifu.id };
-  }
-
-  const glazeAction = buildGlazeAction(state, player);
-  const formAction = buildFormAction(state, player);
-  // Secure a final contested production space before taking an uncapped Kiln Yard action.
-  // This is intentionally local opponent awareness, not access to any hidden information.
-  if (glazeAction !== null && locationThreatened(state, playerId, "glaze_workshop")) return glazeAction;
-  if (formAction !== null && locationThreatened(state, playerId, "forming_studio")) return formAction;
-
-  // A load already prepared for this firing has the highest tempo value. Otherwise advance
-  // the oldest stage of the Order route, preserving the Shifu for a two-item action or an
-  // over-capacity placement whenever an Apprentice can do the same job.
-  const kilnAction = buildKilnAction(state, player);
-  if (glazeAction !== null) return glazeAction;
-  if (kilnAction !== null) return kilnAction;
-  if (formAction !== null) return formAction;
-
-  const guildWorker = availableWorker(
-    state,
-    player,
-    "guild_academy",
-    guildIsWorthwhile(state, playerId, "shifu") && !guildIsWorthwhile(state, playerId, "apprentice"),
+/** Vessels to form: the most valuable planned demands, else cheap Shapes that add variety. */
+function formingWishes(k: Know, count: number): FormVesselSpec[] {
+  const wishes: FormVesselSpec[] = handPlan(k)
+    .demands.slice(0, count)
+    .map((demand) => ({ shape: demand.shape, decoration: demand.decoration }));
+  const owned = new Set<Shape>();
+  for (const c of Object.values(k.game.ceramics)) if (c.ownerId === k.pid && c.stage !== "delivered") owned.add(c.shape);
+  const cheap = [...SHAPES].sort(
+    (a, b) => shapeClay(a) - shapeClay(b) || Number(owned.has(a)) - Number(owned.has(b)) || tieHash(k.seed, a) - tieHash(k.seed, b),
   );
-  if (guildWorker !== null && guildIsWorthwhile(state, playerId, guildWorker.kind)) {
-    return { type: "BEGIN_GUILD_ACTION", workerId: guildWorker.id };
+  let index = 0;
+  while (wishes.length < count) {
+    const shape = cheap[index % cheap.length] as Shape;
+    index += 1;
+    if (wishes.some((wish) => wish.shape === shape) && index < cheap.length) continue;
+    wishes.push({ shape, decoration: k.me.kilnId === "RU" ? "plain" : GENERIC_DECORATION });
   }
-  const orderSourceAvailable = state.displays.market.length > 0
-    || state.decks.marketRemaining + state.discards.market.length > 0;
-  const marketWorker = availableWorker(state, player, "market_imperial_office", player.orderHand.length <= 1);
-  // V1.4 has no hand limit during the round. Keeping at most one speculative Order above
-  // the Cleanup limit gives the bot room to improve its hand without spending every spare
-  // worker on Orders it already knows it must discard.
-  if (marketWorker !== null && orderSourceAvailable && player.orderHand.length < orderHandLimit() + 1) {
-    return {
-      type: "BEGIN_OFFICE_ORDERS",
-      workerId: marketWorker.id,
-      mode: marketWorker.kind === "shifu" ? "take_up_to_two" : "take_one",
-    };
-  }
-  const materials = buildMaterialsAction(state, player);
-  if (materials !== null) return materials;
-  const courtWorker = availableWorker(state, player, "court_patronage", false);
-  if (courtWorker !== null && player.imperialRecognition < 3 && player.resources.coins >= ACTION_LOCATION_PRICES.courtPatronageCoins && (player.resources.coins >= 8 || player.imperialRecognition === 1)) return { type: "USE_COURT_PATRONAGE", workerId: courtWorker.id, imperialGrantChoice: "resources" };
-  const labourWorker = availableWorker(state, player, "labour", false);
-  return labourWorker === null ? { type: "PASS_WORK_PHASE" } : { type: "USE_LABOUR", workerId: labourWorker.id };
+  return wishes;
 }
 
-function chooseStartingOrders(
-  state: PublicGameState,
-  player: PlayerState,
-  offered: readonly OrderId[],
-): OrderId[] {
-  const candidates = offered
-    .map((id) => ORDER_DEFINITIONS[id])
-    .filter((definition): definition is OrderDefinition => definition !== undefined);
-  const pairs = combinations(candidates, Math.min(2, candidates.length));
-  return (pairs.sort((left, right) => {
-    const value = (pair: readonly OrderDefinition[]) => {
-      const routes = pair.map((definition) => routeForOrder(state, player, definition, true));
-      const glazeHeatSpread = routes.length < 2
-        ? 0
-        : Math.abs(preferredHeat(routes[0]?.glazes[0] ?? "celadon") - preferredHeat(routes[1]?.glazes[0] ?? "celadon"));
-      return routes.reduce((sum, route) => sum + route.score, 0) - glazeHeatSpread;
-    };
-    return value(right) - value(left)
-      || left.map(({ id }) => id).join("|").localeCompare(right.map(({ id }) => id).join("|"));
-  })[0] ?? candidates).slice(0, 2).map(({ id }) => id);
-}
-
-function chooseStartingTechnique(state: PublicGameState, player: PlayerState): StartingTechniqueId {
-  const routes = player.orderHand
-    .map((id) => ORDER_DEFINITIONS[id])
-    .filter((definition): definition is OrderDefinition => definition !== undefined)
-    .map((definition) => routeForOrder(state, player, definition, true));
-  const paintedDemand = routes.reduce((sum, route) => sum + route.decorations.filter((decoration) => decoration === "painted").length, 0);
-  const expensiveShapes = routes.reduce((sum, route) => sum + route.shapes.filter((shape) => SHAPE_COSTS[shape] >= 2).length, 0);
-  const scores: Record<StartingTechniqueId, number> = {
-    ST01: 3 + expensiveShapes * 1.25,
-    ST02: 2.5 + paintedDemand * 3,
-    ST03: 4 + routes.length * 0.5,
+function formVariants(k: Know, workerId: string, vessels: FormVesselSpec[]): GameAction[] {
+  const base: ActionOf<"PLACE_FORM_DECORATE"> = { type: "PLACE_FORM_DECORATE", workerId, vessels };
+  const wheel = techReady(k.me, LARGE_THROWING_WHEEL) && vessels.some((v) => (TECHS.T01.params.triggerShapes as readonly Shape[]).includes(v.shape));
+  const kitIndex = techReady(k.me, DECORATORS_KIT) ? vessels.findIndex((v) => (TECHS.T16.params.decorations as readonly Decoration[]).includes(v.decoration)) : -1;
+  const discounted: ActionOf<"PLACE_FORM_DECORATE"> = {
+    ...base,
+    ...(wheel ? { useLargeThrowingWheel: true } : {}),
+    ...(kitIndex >= 0 ? { decoratorsKitVesselIndex: kitIndex } : {}),
   };
-  return STARTING_TECHNIQUES.map(({ id }) => id)
-    .sort((left, right) => scores[right] - scores[left] || left.localeCompare(right))[0] ?? "ST03";
-}
-
-function bestReservableOrder(
-  state: PublicGameState,
-  player: PlayerState,
-  orderIds: readonly OrderId[],
-): OrderId | null {
-  const remainingRounds = 6 - state.round;
-  const pipelineCount = pipelineCeramics(state, player.id).length;
-  return orderIds
-    .map((orderId) => ORDER_DEFINITIONS[orderId])
-    .filter((definition): definition is OrderDefinition => definition !== undefined)
-    .map((definition) => routeForOrder(state, player, definition, false))
-    .filter((route) =>
-      (route.definition.ceramics.length === 1 || route.definition.ceramics.length <= pipelineCount)
-      && route.remainingCeramics <= Math.max(1, remainingRounds),
-    )
-    .sort((left, right) => right.score - left.score || left.definition.id.localeCompare(right.definition.id))[0]
-    ?.definition.id ?? null;
-}
-
-function commissionAdvanceResource(state: PublicGameState, player: PlayerState): "clay" | "wood" | "coins" {
-  const route = bestOrderRoute(state, player);
-  const neededClay = route?.shapes.reduce((sum, shape) => sum + SHAPE_COSTS[shape], 0) ?? 2;
-  const neededCoins = route?.decorations.reduce((sum, decoration) => sum + DECORATION_COSTS[decoration], 0) ?? 1;
-  if (player.resources.clay < Math.min(4, neededClay)) return "clay";
-  if (player.resources.coins < Math.min(3, neededCoins + 1)) return "coins";
-  return "wood";
-}
-
-function kilnYardAdjustment(state: PublicGameState, player: PlayerState, knownFire: number | null): GameAction {
-  const ceramicId = player.kilnYardShifuCeramicId;
-  const ceramic = ceramicId === null ? undefined : state.ceramics[ceramicId];
-  if (ceramic === undefined || ceramic.ownerId !== player.id || ceramic.stage !== "loaded") {
-    return { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null };
+  const variants: GameAction[] = [];
+  const dingIndex = kilnReady(k.me, "DI") ? vessels.findIndex((v) => (KILNS.DI.params.shapes as readonly Shape[]).includes(v.shape)) : -1;
+  if (dingIndex >= 0 && !k.lastRound) {
+    const copy = vessels[dingIndex] as FormVesselSpec;
+    const demand = handPlan(k).demands.find((d) => d.shape === copy.shape && !vessels.some((v) => v.shape === d.shape && v.decoration === d.decoration));
+    variants.push({ ...discounted, dingExtra: { copyOfVesselIndex: dingIndex, decoration: demand?.decoration ?? copy.decoration } });
   }
-  const currentModifier = ceramic.kilnFurnitureUsed === true ? 0 : zoneModifierOf(ceramic.kilnSpaceId);
-  const predictedGlobalHeat = (state.firingContext?.baseHeat ?? 2) + (knownFire ?? 0);
-  const before = Math.abs(predictedGlobalHeat + currentModifier - preferredHeat(ceramic.glaze));
-  const adjustment = ([-1, 1] as const)
-    .map((delta) => ({
-      delta,
-      difference: Math.abs(predictedGlobalHeat + currentModifier + delta - preferredHeat(ceramic.glaze)),
-    }))
-    .filter(({ difference }) => difference < before)
-    .sort((left, right) => left.difference - right.difference || left.delta - right.delta)[0]?.delta;
-  return adjustment === undefined
-    ? { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null }
-    : { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId, adjustment };
+  variants.push(discounted, base);
+  return variants;
 }
 
-function qualityAdjustmentAction(state: PublicGameState, player: PlayerState): GameAction {
-  const second = state.phase.type === "firing_second_before_quality" ? state.phase.ceramicId : null;
-  const results = Object.values(state.firingContext?.ceramicResults ?? {})
-    .filter((result) => state.ceramics[result.ceramicId]?.ownerId === player.id && (second === null || result.ceramicId === second))
-    .sort((left, right) => right.finalHeatDifference - left.finalHeatDifference || left.ceramicId.localeCompare(right.ceramicId));
-  if (player.kilnId === "JU" && !player.kilnAbilityUsedThisRound && player.resources.wood > 0) {
-    const result = results.find(({ finalHeatDifference }) => finalHeatDifference > 0);
-    if (result !== undefined) {
-      const ceramic = state.ceramics[result.ceramicId];
-      if (ceramic?.stage === "loaded") {
-        return {
-          type: "RESOLVE_JUN",
-          ceramicId: result.ceramicId,
-          delta: result.finalActualHeat < preferredHeat(ceramic.glaze) ? 1 : -1,
-        };
-      }
+function buildFormDecorate(k: Know, workerId: string, effect: WorkerEffect): GameAction[] {
+  const maxVessels = LOCATIONS.form_decorate.effects[effect].maxVessels;
+  const wishes = formingWishes(k, Math.max(2, maxVessels));
+  const actions: GameAction[] = [];
+  if (maxVessels >= 2) actions.push(...formVariants(k, workerId, wishes.slice(0, 2)));
+  actions.push(...formVariants(k, workerId, wishes.slice(0, 1)));
+  if (wishes.length > 1) actions.push(...formVariants(k, workerId, wishes.slice(1, 2)));
+  // Cheaper fallbacks: a Bowl with the wished Decoration, then a Plain Bowl.
+  const firstDecoration = wishes[0]?.decoration ?? GENERIC_DECORATION;
+  actions.push(...formVariants(k, workerId, [{ shape: "bowl", decoration: firstDecoration }]));
+  actions.push(...formVariants(k, workerId, [{ shape: "bowl", decoration: GENERIC_DECORATION }]));
+  return actions;
+}
+
+/**
+ * The Clay/Wood split of a Materials Yard gain (4 or 8, rev. 4 L176–177): the Clay the next
+ * vessels need, then Wood up to the round's fuel and firing needs (1 Wood per Glaze & Load
+ * action into the Shared Kiln this round and the next, R24), the rest as Clay once the Wood is
+ * covered.
+ */
+function materialsSplit(k: Know, total: number, clayHave: number, woodHave: number): { clay: number; wood: number } {
+  const need = resourceNeed(k);
+  const wantClay = clamp(need.clay - clayHave, 0, total);
+  const wantWood = clamp((k.lastRound ? 2 : 4) - woodHave, 0, total - wantClay);
+  const rest = total - wantClay - wantWood;
+  const clay = wantClay + (woodHave + wantWood < 3 ? 0 : rest);
+  return { clay, wood: total - clay };
+}
+
+function buildMaterialsYard(k: Know, workerId: string, effect: WorkerEffect, senior: boolean): GameAction[] {
+  // 4 resources, or 8 for the Shifu effect (Senior Apprentice included), with no Coin option (rev. 4 L176–177).
+  const total = LOCATIONS.materials_yard.effects[effect].resources;
+  const r = k.me.resources;
+  const split = materialsSplit(k, total, r.clay, r.wood);
+  const base: ActionOf<"PLACE_MATERIALS_YARD"> = { type: "PLACE_MATERIALS_YARD", workerId, clay: split.clay, wood: split.wood, ...(senior ? { seniorApprentice: true } : {}) };
+  const actions: GameAction[] = [];
+  if (!senior && techReady(k.me, PREPARED_CLAY) && (k.roundsAfter >= 1 || freePersonalSpaces(k.me, "glaze_load") > 0)) {
+    const wish = formingWishes(k, 1)[0];
+    if (wish !== undefined) {
+      // Shift the split toward Clay so Prepared Clay can pay its Shape + 1.
+      const needClay = shapeClay(wish.shape) + TECHS.T17.params.claySurcharge;
+      const clay = clamp(Math.max(split.clay, needClay - r.clay), 0, total);
+      actions.push({ ...base, clay, wood: total - clay, preparedClay: { shape: wish.shape, decoration: wish.decoration } });
     }
   }
-  return { type: "RESOLVE_JUN", ceramicId: null, delta: null };
+  actions.push(base);
+  return actions;
 }
 
-function remainingFireCards(state: PublicGameState): number[] {
-  const remaining = [...FIRE_CARDS];
-  for (const discarded of state.discards.fire) {
-    const index = remaining.indexOf(discarded);
-    if (index >= 0) remaining.splice(index, 1);
-  }
-  return remaining.length === state.decks.fireRemaining && remaining.length > 0 ? remaining : [...FIRE_CARDS];
+/** The placement only opens the Select (v1.6.2 L201–202); the reservations follow in SELECT_CHOOSE. */
+function buildCommission(workerId: string, senior: boolean): GameAction[] {
+  return [{ type: "PLACE_COMMISSION_MARKET", workerId, ...(senior ? { seniorApprentice: true } : {}) }];
 }
 
-function afterQualityAction(state: PublicGameState, player: PlayerState): GameAction {
-  const eligible = Object.values(state.firingContext?.ceramicResults ?? {})
-    .filter((result) => state.ceramics[result.ceramicId]?.ownerId === player.id
-      && state.ceramics[result.ceramicId]?.stage === "loaded"
-      && (result.assignedQuality === "flawed" || result.assignedQuality === "standard"));
-  if (state.phase.type !== "firing_after_quality") {
-    return { type: "RESOLVE_SECOND_FIRING", ceramicId: null };
+function buildGuildHall(k: Know, workerId: string, effect: WorkerEffect): GameAction[] {
+  if (effect === "apprentice") {
+    return guildOptions(k.view, "apprentice")
+      .faceUp.filter((option) => option.legal)
+      .map((option) => ({ option, net: techValue(k, option.techId) - option.cost * coinValue(k) }))
+      .sort((a, b) => b.net - a.net)
+      .map(({ option }): GameAction => ({ type: "PLACE_GUILD_HALL", workerId, choice: { kind: "buy_face_up", techId: option.techId } }));
   }
-  if (state.phase.geAvailable) {
-    return { type: "RESOLVE_GE", ceramicId: eligible.find((result) => result.assignedQuality === "standard")?.ceramicId ?? null };
-  }
-  if (state.phase.techniqueIds.includes("T11")) {
-    const best = eligible.map((result) => {
-      const ceramic = state.ceramics[result.ceramicId];
-      if (ceramic?.stage !== "loaded" || result.assignedQuality === null) {
-        return { result, gain: Number.NEGATIVE_INFINITY };
-      }
-      const currentQuality = qualityForOrderOrExhibition({ ...ceramic, quality: result.assignedQuality }, player.kilnId);
-      return { result, gain: QUALITY_RANK.fine - QUALITY_RANK[currentQuality] };
-    }).sort((left, right) => right.gain - left.gain || left.result.ceramicId.localeCompare(right.result.ceramicId))[0];
-    return {
-      type: "RESOLVE_PROTECTIVE_SAGGARS",
-      ceramicId: player.resources.wood > 0 && best !== undefined && best.gain > 0 ? best.result.ceramicId : null,
-    };
-  }
+  const shifu = guildShifuValue(k);
+  const disciplines = [shifu.discipline, ...DISCIPLINES].filter((d): d is TechDiscipline => d !== null);
+  return [...new Set(disciplines)].map((discipline): GameAction => ({ type: "PLACE_GUILD_HALL", workerId, choice: { kind: "inspect", discipline } }));
+}
 
-  const baseHeat = state.firingContext?.baseHeat ?? 2;
-  const fireCards = remainingFireCards(state);
-  const best = eligible.map((result) => {
-    const ceramic = state.ceramics[result.ceramicId];
-    const assignedQuality = result.assignedQuality;
-    if (ceramic?.stage !== "loaded" || assignedQuality === null) {
-      return { result, gain: Number.NEGATIVE_INFINITY };
+// ── The round planner ─────────────────────────────────────────────────────────────────
+
+type PlanAction = "MY" | "CW" | "FD" | "GL" | "CM" | "GH" | "MH";
+const PLAN_ACTIONS: readonly PlanAction[] = ["GL", "FD", "MY", "CW", "CM", "GH", "MH"];
+
+interface PlanWorker {
+  readonly kind: "shifu" | "apprentice";
+  readonly effect: WorkerEffect;
+  readonly senior: boolean;
+}
+
+interface AbsState {
+  clay: number;
+  wood: number;
+  coins: number;
+  shifu: boolean;
+  appr: number;
+  senior: boolean;
+  fd: number;
+  gl: number;
+  shaped: number;
+  loads: number;
+  imperialLoads: number;
+  sharedLoads: number;
+  step: number;
+  my: number;
+  cm: number;
+  gh: number;
+  mh: number;
+  techBought: boolean;
+  cmUsed: number;
+  recognition: number;
+  prepared: boolean;
+  ding: boolean;
+  kit: boolean;
+  wheel: boolean;
+  tending: boolean;
+}
+
+interface PlanParams {
+  readonly vLoad: number;
+  readonly vShaped: number;
+  readonly backlogCap: number;
+  readonly sharedOpen: number;
+  readonly imperialOpen: boolean;
+  readonly oppRate: number;
+  readonly demandClay: readonly number[];
+  /** A first Commission Market visit this round, per worker effect (v1.6.2 L195–198). */
+  readonly cmValue: Readonly<Record<WorkerEffect, number>>;
+  /** A later visit in the same round: its reservations come after the first visit's. */
+  readonly cmRepeat: Readonly<Record<WorkerEffect, number>>;
+  /** The Canal Wharf Shifu's unseen top Main Order (v1.6.2 L220); 0 with no supply (B1). */
+  readonly cwDraw: number;
+  readonly gh: Readonly<Record<WorkerEffect, { value: number; price: number; unlocks: "form_decorate" | "glaze_load" | null } | null>>;
+  readonly mhStep: (recognition: number) => number;
+  /** The Magistrate's Hall Shifu's best face-up Crown Order (rev. 4 L241, R21), 0 when none is
+   * worth taking. */
+  readonly mhCrown: number;
+}
+
+function planParams(k: Know): PlanParams {
+  const plan = handPlan(k);
+  const demandBonus = plan.demands.length > 0 ? Math.min(2, plan.demands.slice(0, 2).reduce((sum, d) => sum + d.value, 0) / 2) : 0;
+  const vLoad = 4.3 + demandBonus;
+  const vShaped = k.roundsAfter >= 1 ? 0.7 * vLoad : 0;
+  const backlogCap = k.roundsAfter * (1.5 + (freePersonalSpacesTotal(k.me, "glaze_load") > 1 ? 1 : 0));
+  let oppRate = 0;
+  for (const pid of k.game.playerOrder) {
+    if (pid === k.pid) continue;
+    const rival = k.game.players[pid];
+    if (rival === undefined || availableWorkerCount(rival) === 0 || freePersonalSpaces(rival, "glaze_load") === 0) continue;
+    oppRate += ceramicsOf(k.game, pid, "shaped").length > 0 ? 0.45 : 0.2;
+  }
+  const demandClay = plan.demands.map((d) => shapeClay(d.shape));
+  const ghFor = (effect: WorkerEffect): PlanParams["gh"][WorkerEffect] => {
+    if (effect === "shifu") {
+      const shifu = guildShifuValue(k);
+      if (!Number.isFinite(shifu.value)) return null;
+      const offer = bestTechOffer(k, "shifu");
+      return { value: shifu.value + shifu.price * coinValue(k), price: shifu.price, unlocks: offer === null ? null : TECHS[offer.techId].unlocks };
     }
-    const zone = ceramic.kilnSpaceId === "imperial" || ceramic.kilnFurnitureUsed === true
-      ? 0
-      : zoneModifierOf(ceramic.kilnSpaceId);
-    const expectedRank = fireCards.reduce((sum, fire) => sum + QUALITY_RANK[
-      qualityForOrderOrExhibition({
-        ...ceramic,
-        quality: qualityFromDifference(Math.abs(baseHeat + fire + zone + (ceramic.shifuHeatAdjustment ?? 0) - preferredHeat(ceramic.glaze))),
-      }, player.kilnId)
-    ], 0) / fireCards.length;
-    const currentRank = QUALITY_RANK[qualityForOrderOrExhibition({ ...ceramic, quality: assignedQuality }, player.kilnId)];
-    return { result, gain: expectedRank - currentRank };
-  }).sort((left, right) => right.gain - left.gain || left.result.ceramicId.localeCompare(right.result.ceramicId))[0];
+    const offer = bestTechOffer(k, "apprentice");
+    return offer === null ? null : { value: offer.net + offer.price * coinValue(k), price: offer.price, unlocks: TECHS[offer.techId].unlocks };
+  };
   return {
-    type: "RESOLVE_SECOND_FIRING",
-    ceramicId: best !== undefined && best.gain > 0.2 ? best.result.ceramicId : null,
+    vLoad,
+    vShaped,
+    backlogCap,
+    sharedOpen: openSharedSpaces(k.game, k.pid),
+    imperialOpen: imperialOpen(k.game, k.pid),
+    oppRate,
+    demandClay,
+    cmValue: { apprentice: commissionVisitValue(k, "apprentice"), shifu: commissionVisitValue(k, "shifu") },
+    cmRepeat: { apprentice: 0.8 * commissionVisitValue(k, "apprentice", 1), shifu: 0.8 * commissionVisitValue(k, "shifu", 1) },
+    cwDraw: k.game.counts.mainDeck + k.game.counts.mainDiscard > 0 ? Math.max(0, expectedBestOf(k, 1)) : 0,
+    gh: { apprentice: ghFor("apprentice"), shifu: ghFor("shifu") },
+    mhStep: (recognition: number) => (recognition <= 2 ? crownStepValue(k, recognition) : 0),
+    mhCrown: bestMagistratesCrownOrder(k)?.value ?? 0,
   };
 }
 
-function cleanupOrders(state: PublicGameState, player: PlayerState): GameAction {
-  const overflow = Math.max(0, player.orderHand.length - orderHandLimit());
-  const ranked = player.orderHand
-    .map((orderId) => ({ orderId, definition: ORDER_DEFINITIONS[orderId] }))
-    .filter((entry): entry is { orderId: OrderId; definition: OrderDefinition } => entry.definition !== undefined)
-    .map((entry) => ({ ...entry, route: routeForOrder(state, player, entry.definition, true) }))
-    .sort((left, right) => left.route.score - right.route.score || left.orderId.localeCompare(right.orderId));
-  return { type: "DISCARD_ORDERS_FOR_CLEANUP", orderIds: ranked.slice(0, overflow).map(({ orderId }) => orderId) };
+/** A face-up Crown Order is taken at the Magistrate's Hall only when it is worth this much. */
+const MH_CROWN_ORDER_THRESHOLD = 0.3;
+
+/**
+ * The Magistrate's Hall Shifu's optional Crown Order (rev. 4 L241, R21): the face-up Order
+ * showing a Crown with the highest `reservationValue` (which already counts the Cleanup hand
+ * limit, `reservationOverflows`), when it clears `MH_CROWN_ORDER_THRESHOLD`; ties to the lowest
+ * position. Null when none is worth taking or none shows.
+ */
+function bestMagistratesCrownOrder(k: Know): { slotIndex: number; orderId: OrderId; value: number } | null {
+  return memo(k, "mhCrown", () => {
+    let best: { slotIndex: number; orderId: OrderId; value: number } | null = null;
+    for (const slotIndex of magistratesHallQuote(k.view, "shifu").crownOrderSlots) {
+      const orderId = k.game.market.display[slotIndex];
+      if (orderId === null || orderId === undefined) continue;
+      const value = reservationValue(k, orderId);
+      if (best === null || value > best.value + 1e-9) best = { slotIndex, orderId, value };
+    }
+    return best !== null && best.value > MH_CROWN_ORDER_THRESHOLD ? best : null;
+  });
 }
 
-function presentationAction(state: PublicGameState, playerId: PlayerId): GameAction {
-  const eligible = Object.values(state.ceramics).filter(
-    (ceramic): ceramic is FinishedCeramic & { quality: "standard" | "fine" | "masterpiece" } =>
-      ceramic.ownerId === playerId && ceramic.stage === "finished" && ceramic.quality !== "flawed",
-  );
-  return { type: "SUBMIT_PRESENTATION", ceramicIds: eligible.map(({ id }) => id) };
+function initialAbs(k: Know): AbsState {
+  const me = k.me;
+  const workers = Object.values(me.workers).filter((w) => w.placement === null);
+  const capOf = (locationId: "materials_yard" | "commission_market" | "guild_hall" | "magistrates_hall"): number => {
+    const capacity = LOCATIONS[locationId].capacity?.[String(k.game.playerCount) as "2" | "3" | "4"] ?? 0;
+    let used = 0;
+    for (const pid of k.game.playerOrder) for (const w of Object.values(k.game.players[pid]?.workers ?? {})) if (w.placement?.locationId === locationId) used += 1;
+    return Math.max(0, (capacity ?? 0) - used);
+  };
+  return {
+    clay: me.resources.clay,
+    wood: me.resources.wood,
+    coins: me.resources.coins,
+    shifu: workers.some((w) => w.kind === "shifu"),
+    appr: workers.filter((w) => w.kind === "apprentice").length,
+    senior: techReady(me, SENIOR_APPRENTICE),
+    fd: freePersonalSpaces(me, "form_decorate"),
+    gl: freePersonalSpaces(me, "glaze_load"),
+    shaped: ceramicsOf(k.game, k.pid, "shaped").length,
+    loads: 0,
+    imperialLoads: 0,
+    sharedLoads: 0,
+    step: 0,
+    my: capOf("materials_yard"),
+    cm: capOf("commission_market"),
+    gh: capOf("guild_hall"),
+    mh: me.imperial.recognition <= 2 ? capOf("magistrates_hall") : 0,
+    techBought: false,
+    cmUsed: 0,
+    recognition: me.imperial.recognition,
+    prepared: techReady(me, PREPARED_CLAY),
+    ding: kilnReady(me, "DI"),
+    kit: techReady(me, DECORATORS_KIT),
+    wheel: techReady(me, LARGE_THROWING_WHEEL),
+    tending: techReady(me, KILN_TENDING),
+  };
 }
 
-export async function chooseOnlineComputerAction(
-  observation: ComputerObservation,
-  seat: StoredSeat,
-): Promise<AuthoritativeCommand> {
-  if (!seat.isComputer || seat.aiPolicyVersion !== ONLINE_COMPUTER_POLICY_VERSION || seat.aiSeed === null) {
-    throw new Error(`Seat ${seat.seatId} is not a configured V1.4 computer seat`);
+function absKey(s: AbsState): string {
+  return [
+    s.clay, s.wood, s.coins, s.shifu ? 1 : 0, s.appr, s.senior ? 1 : 0, s.fd, s.gl, s.shaped, s.loads, s.imperialLoads, s.sharedLoads,
+    s.step, s.my, s.cm, s.gh, s.mh, s.techBought ? 1 : 0, s.cmUsed, s.recognition, s.prepared ? 1 : 0, s.ding ? 1 : 0, s.kit ? 1 : 0, s.wheel ? 1 : 0, s.tending ? 1 : 0,
+  ].join(",");
+}
+
+/** Applies one abstract action; returns the next state and the immediate value, or null. */
+function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, action: PlanAction): { next: AbsState; gain: number } | null {
+  if (worker.kind === "shifu" ? !s.shifu : s.appr <= 0) return null;
+  if (worker.senior && (!s.senior || (action !== "MY" && action !== "CM"))) return null;
+  const next: AbsState = { ...s, step: s.step + 1 };
+  if (worker.kind === "shifu") next.shifu = false;
+  else next.appr -= 1;
+  if (worker.senior) next.senior = false;
+  const effect = worker.effect;
+  let gain = 0;
+  switch (action) {
+    case "MY": {
+      if (s.my <= 0) return null;
+      next.my -= 1;
+      const total = LOCATIONS.materials_yard.effects[effect].resources;
+      const split = materialsSplit(k, total, s.clay, s.wood);
+      next.clay += split.clay;
+      next.wood += split.wood;
+      if (next.prepared && !worker.senior && (k.roundsAfter >= 1 || next.gl > 0)) {
+        const clay = (params.demandClay[0] ?? 1) + TECHS.T17.params.claySurcharge;
+        if (next.clay >= clay && next.coins >= vesselCoins()) {
+          next.clay -= clay;
+          next.coins -= vesselCoins();
+          next.shaped += 1;
+          next.prepared = false;
+        }
+      }
+      break;
+    }
+    case "CW":
+      next.coins += LOCATIONS.canal_wharf.effects[effect].coins;
+      // The Shifu also takes the top Main Order unseen into the hand (v1.6.2 L220).
+      if (effect === "shifu") gain += params.cwDraw;
+      break;
+    case "FD": {
+      if (s.fd <= 0) return null;
+      next.fd -= 1;
+      const maxVessels = LOCATIONS.form_decorate.effects[effect].maxVessels;
+      let formed = 0;
+      for (let index = 0; index < maxVessels; index += 1) {
+        const clay = params.demandClay[index] ?? 1;
+        let coins = vesselCoins();
+        if (index === 1) coins -= LOCATIONS.form_decorate.effects.shifu.twoVesselDiscount;
+        if (next.kit && index === 0) coins -= 1;
+        const clayCost = next.wheel && clay >= 2 ? Math.max(0, clay - TECHS.T01.params.clayReduction) : clay;
+        if (next.clay < clayCost || next.coins < coins) break;
+        next.clay -= clayCost;
+        next.coins -= coins;
+        formed += 1;
+      }
+      if (formed === 0) return null;
+      if (next.kit) next.kit = false;
+      if (next.wheel && params.demandClay.slice(0, formed).some((clay) => clay >= 2)) next.wheel = false;
+      if (next.ding && (params.demandClay[0] ?? 1) === 1 && next.clay >= KILNS.DI.params.clay && next.coins >= KILNS.DI.params.coins && !k.lastRound) {
+        next.clay -= KILNS.DI.params.clay;
+        next.coins -= KILNS.DI.params.coins;
+        next.ding = false;
+        formed += 1;
+      }
+      next.shaped += formed;
+      break;
+    }
+    case "GL": {
+      if (s.gl <= 0 || s.shaped <= 0) return null;
+      const maxLoads = LOCATIONS.glaze_load.effects[effect].maxLoads;
+      // Kiln fuel (rev. 4 L197, R24): 1 Wood for the action when any load goes into the Shared
+      // Kiln; without it, only the Imperial Kiln (free) can take a load.
+      const fuel = LOCATIONS.glaze_load.effects[effect].sharedKilnWood;
+      const sharedFree = s.wood >= fuel ? Math.floor(Math.max(0, params.sharedOpen - params.oppRate * s.step - s.sharedLoads)) : 0;
+      const imperialFree = params.imperialOpen && s.imperialLoads === 0 ? 1 : 0;
+      const loads = Math.min(maxLoads, s.shaped, sharedFree + imperialFree);
+      if (loads <= 0) return null;
+      next.gl -= 1;
+      next.shaped -= loads;
+      next.loads += loads;
+      const imperial = Math.min(imperialFree, loads);
+      next.imperialLoads += imperial;
+      next.sharedLoads += loads - imperial;
+      if (loads - imperial > 0) next.wood -= fuel;
+      gain += imperial * 0.5 + (effect === "shifu" ? 0.35 : 0);
+      if (next.tending) {
+        next.tending = false;
+        next.clay += TECHS.T20.params.clay;
+        next.wood += TECHS.T20.params.wood;
+      }
+      break;
+    }
+    case "CM": {
+      if (s.cm <= 0) return null;
+      next.cm -= 1;
+      next.cmUsed += 1;
+      // No resource at the Commission Market (v1.6.2 L31).
+      gain += s.cmUsed === 0 ? params.cmValue[effect] : params.cmRepeat[effect];
+      break;
+    }
+    case "GH": {
+      const offer = params.gh[effect];
+      if (s.gh <= 0 || s.techBought || offer === null || next.coins < offer.price || offer.value <= 0) return null;
+      next.gh -= 1;
+      next.coins -= offer.price;
+      next.techBought = true;
+      gain += offer.value;
+      if (offer.unlocks === "form_decorate") next.fd += 1;
+      if (offer.unlocks === "glaze_load") next.gl += 1;
+      break;
+    }
+    case "MH": {
+      const cost = LOCATIONS.magistrates_hall.effects[effect].coins;
+      if (s.mh <= 0 || s.recognition > 2 || next.coins < cost) return null;
+      next.mh -= 1;
+      next.coins -= cost;
+      gain += params.mhStep(s.recognition);
+      // The Shifu then may reserve a face-up Crown Order (R21): counted for the plan's first
+      // Magistrate's Hall visit only (each visit advances Recognition).
+      if (effect === "shifu" && s.recognition === k.me.imperial.recognition) gain += params.mhCrown;
+      next.recognition += 1;
+      break;
+    }
   }
-  const aiSeed = seat.aiSeed;
-  const { ownPrivate, playerId } = observation;
-  const state = withOwnOrderHand(observation.game, playerId, ownPrivate.orderHand);
-  if (playerId !== seat.playerId) throw new Error(`Observation does not belong to ${seat.playerId}`);
-  if (nextOnlineDecisionActor(state) !== playerId) throw new Error(`Computer ${playerId} is not the current actor`);
-  const player = state.players[playerId];
-  if (player === undefined) throw new Error("Computer player disappeared");
-  switch (state.phase.type) {
-    case "setup_kiln_selection": {
-      const available = AVAILABLE_KILN_IDS.filter((id) => !Object.values(state.players).some((entry) => entry.kilnId === id));
-      // Kiln Traditions are intentionally asymmetric. A stable per-seat seed breaks
-      // otherwise identical opening choices so computer workshops develop distinct plans.
-      const kilnId = [...available].sort((left, right) =>
-        seededTieRank(aiSeed, left) - seededTieRank(aiSeed, right)
-        || left.localeCompare(right)
-      )[0] ?? "RU";
-      return { type: "SELECT_KILN", kilnId };
+  return { next, gain };
+}
+
+function absTerminal(k: Know, params: PlanParams, s: AbsState): number {
+  const shapedValue = Math.min(s.shaped, Math.max(0, params.backlogCap)) * params.vShaped + Math.max(0, s.shaped - params.backlogCap) * 0.2 * params.vShaped;
+  return s.loads * params.vLoad + shapedValue + resourceValue(k, s.clay, s.wood, s.coins);
+}
+
+const WORKER_KINDS: readonly PlanWorker[] = [
+  { kind: "shifu", effect: "shifu", senior: false },
+  { kind: "apprentice", effect: "apprentice", senior: false },
+  { kind: "apprentice", effect: "shifu", senior: true },
+];
+
+function absBest(k: Know, params: PlanParams, s: AbsState, table: Map<string, number>): number {
+  if (!s.shifu && s.appr <= 0) return absTerminal(k, params, s);
+  const key = absKey(s);
+  const cached = table.get(key);
+  if (cached !== undefined) return cached;
+  k.deadline.check();
+  let best = -Infinity;
+  for (const worker of WORKER_KINDS) {
+    for (const action of PLAN_ACTIONS) {
+      const applied = absApply(k, params, s, worker, action);
+      if (applied === null) continue;
+      const value = applied.gain + absBest(k, params, applied.next, table);
+      if (value > best) best = value;
     }
-    case "setup_starting_orders":
-      return { type: "SUBMIT_STARTING_ORDERS", orderIds: chooseStartingOrders(state, player, ownPrivate.startingOrderOffer) };
-    case "setup_starting_tech":
-      return { type: "SELECT_STARTING_TECH", techniqueId: chooseStartingTechnique(state, player) };
-    case "work": {
-      const plannedWork = workAction(state, playerId);
-      const priorityCeramic = Object.values(state.ceramics).find(
-        (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "workshop",
-      );
-      const imperialOccupied = Object.values(state.ceramics).some(
-        (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial",
-      );
-      if (
-        plannedWork.type !== "PASS_WORK_PHASE"
-        && player.imperialPriorityAvailable
-        && player.imperialKilnUnlocked
-        && !imperialOccupied
-        && priorityCeramic !== undefined
-        && player.resources.coins >= 1
-      ) {
-        return { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: priorityCeramic.id, glaze: targetGlaze(state, player) };
-      }
-      return plannedWork;
+  }
+  if (best === -Infinity) best = absTerminal(k, params, s);
+  table.set(key, best);
+  return best;
+}
+
+const LOCATION_OF: Readonly<Record<PlanAction, "materials_yard" | "canal_wharf" | "form_decorate" | "glaze_load" | "commission_market" | "guild_hall" | "magistrates_hall">> = {
+  MY: "materials_yard",
+  CW: "canal_wharf",
+  FD: "form_decorate",
+  GL: "glaze_load",
+  CM: "commission_market",
+  GH: "guild_hall",
+  MH: "magistrates_hall",
+};
+
+function buildPlacement(k: Know, action: PlanAction, workerId: string, effect: WorkerEffect, senior: boolean): GameAction[] {
+  switch (action) {
+    case "MY":
+      return buildMaterialsYard(k, workerId, effect, senior);
+    case "CW":
+      return [{ type: "PLACE_CANAL_WHARF", workerId }];
+    case "FD":
+      return buildFormDecorate(k, workerId, effect);
+    case "GL":
+      return buildGlazeLoad(k, workerId, effect);
+    case "CM":
+      return buildCommission(workerId, senior);
+    case "GH":
+      return buildGuildHall(k, workerId, effect);
+    case "MH": {
+      // The Shifu's optional Crown Order (R21), when one is worth taking; the bare step after.
+      const crown = effect === "shifu" ? bestMagistratesCrownOrder(k) : null;
+      const base: GameAction = { type: "PLACE_MAGISTRATES_HALL", workerId };
+      return crown === null ? [base] : [{ type: "PLACE_MAGISTRATES_HALL", workerId, crownOrder: { slotIndex: crown.slotIndex, orderId: crown.orderId } }, base];
     }
-    case "work_imperial_priority": {
-      const priorityCeramic = Object.values(state.ceramics).find(
-        (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "workshop",
-      );
-      return { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: player.resources.coins >= 1 ? priorityCeramic?.id ?? null : null, glaze: targetGlaze(state, player) };
+  }
+}
+
+function decidePlacement(k: Know): GameAction | null {
+  const params = planParams(k);
+  const start = initialAbs(k);
+  const table = new Map<string, number>();
+  const legal = placementOptions(k.view);
+  const roots: Array<{ action: PlanAction; workerId: string; effect: WorkerEffect; senior: boolean; value: number }> = [];
+  for (const action of PLAN_ACTIONS) {
+    const location = legal.find((option) => option.locationId === LOCATION_OF[action]);
+    if (location === undefined) continue;
+    for (const option of location.workers) {
+      if (!option.legal) continue;
+      const worker: PlanWorker = { kind: option.kind, effect: option.effect, senior: option.seniorApprentice };
+      const applied = absApply(k, params, start, worker, action);
+      if (applied === null) continue;
+      const value = applied.gain + absBest(k, params, applied.next, table);
+      roots.push({ action, workerId: option.workerId, effect: option.effect, senior: option.seniorApprentice, value });
     }
-    case "work_office_orders":
-      if (state.phase.step === "gain_advance") return { type: "COMMISSION_GAIN_ADVANCE", resource: commissionAdvanceResource(state, player) };
-      if (state.phase.step === "colour_samples_or_skip") {
-        return player.techniques.some((technique) => technique.id === "T10" && !technique.exhausted)
-          && state.decks.marketRemaining + state.discards.market.length > 0
-          ? { type: "OFFICE_USE_COLOUR_SAMPLES", deck: "market" }
-          : { type: "OFFICE_SKIP_COLOUR_SAMPLES" };
+  }
+  k.deadline.checkNow();
+  roots.sort((a, b) => b.value - a.value || PLAN_ACTIONS.indexOf(a.action) - PLAN_ACTIONS.indexOf(b.action));
+  for (const root of roots) {
+    const chosen = firstValid(k, buildPlacement(k, root.action, root.workerId, root.effect, root.senior));
+    if (chosen !== null) return chosen;
+  }
+  // Canal Wharf is always legal (L143).
+  const anyWorker = legal.find((option) => option.locationId === "canal_wharf")?.workers.find((option) => option.legal);
+  return anyWorker === undefined ? null : firstValid(k, [{ type: "PLACE_CANAL_WHARF", workerId: anyWorker.workerId }]);
+}
+
+function decideBeforeAction(k: Know): GameAction | null {
+  return decideSellFlawed(k) ?? windowAbility(k) ?? decidePlacement(k);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 9. Entry point
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * One strategic decision for `view.viewerId`, which must be one of
+ * `decisionPrompt(view.game).actorIds`. Returns null when the seat has nothing to decide or
+ * none of its preferred commands validates (the service then falls back).
+ */
+export function chooseStrategicCommand(
+  view: ActorView,
+  seat: ComputerSeatContext | null = null,
+  deadline: Deadline = new Deadline(defaultNow, DIRECT_DECISION_BUDGET_MS),
+): AuthoritativeCommand | null {
+  const game = view.game;
+  if (game.phase.type === "finished" || !decisionPrompt(game).actorIds.includes(view.viewerId)) {
+    return null;
+  }
+  const k = knowledge(view, seat, deadline);
+  const command = decide(k);
+  // A decision that finished past its budget is discarded too, so a slow decision always
+  // falls back rather than depending on where the last cooperative check happened to fall.
+  deadline.checkNow();
+  return command;
+}
+
+function decide(k: Know): AuthoritativeCommand | null {
+  const phase = k.game.phase;
+  switch (phase.type) {
+    case "setup_kiln_selection":
+      return decideSetup(k);
+    case "round_start_setters_mark":
+      return decideSettersMark(k);
+    case "work_turn":
+      switch (phase.step.kind) {
+        case "before_action":
+          return decideBeforeAction(k);
+        case "commission_market":
+        case "colour_samples":
+        case "colour_samples_swap":
+          return decideSelect(k);
+        case "guild_inspection":
+          return decideGuildTake(k);
+        case "after_action":
+          return decideAfterAction(k);
       }
-      if (state.phase.step === "colour_samples_choose") {
-        const selected = bestReservableOrder(state, player, [...ownPrivate.colourSamplesChoices, ...state.displays.market])
-          ?? ownPrivate.colourSamplesChoices[0]
-          ?? state.displays.market[0];
-        if (selected === undefined) throw new Error("Colour Samples produced no selectable Order");
-        return { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: selected };
-      }
-      if (state.phase.remainingTakes > 0) {
-        const best = bestReservableOrder(state, player, state.displays.market);
-        if (best !== null) return { type: "OFFICE_TAKE_ORDER", orderId: best };
-        if (state.decks.marketRemaining + state.discards.market.length > 0) return { type: "OFFICE_TAKE_TOP_ORDER" };
-        const fallback = state.displays.market[0];
-        if (fallback !== undefined) return { type: "OFFICE_TAKE_ORDER", orderId: fallback };
-      }
-      return { type: "OFFICE_END_ORDERS" };
-    case "work_guild":
-      if (state.phase.step === "inspect") {
-        const discipline = DISCIPLINES.reduce((best, current) =>
-          state.decks.techniqueRemaining[current] > state.decks.techniqueRemaining[best] ? current : best,
-        DISCIPLINES[0]!);
-        return { type: "GUILD_INSPECT_DISCIPLINE", discipline };
-      }
-      {
-        const isShifu = player.workers[state.phase.workerId]?.kind === "shifu";
-        const chosen = bestTechniquePurchase([
-          ...ownPrivate.inspectedTechniqueIds,
-          ...state.displays.techniques.forming,
-          ...state.displays.techniques.glazing,
-          ...state.displays.techniques.firing,
-        ], player.resources.coins, isShifu ? 1 : 0);
-        if (chosen === null) throw new Error("No affordable Advanced Tech after Guild validation");
-        return { type: "GUILD_BUY_TECHNIQUE", techniqueId: chosen, returnTechniqueIds: ownPrivate.inspectedTechniqueIds.filter((id) => id !== chosen) };
-      }
-    case "work_glaze_palette": {
-      const improvement = paletteImprovement(state, player, []);
-      return { type: "RESOLVE_GLAZE_PALETTE", ceramicId: improvement?.ceramicId ?? null, glaze: improvement?.glaze ?? null };
-    }
-    case "firing_before_contribution":
-      return { type: "RESOLVE_TEST_PIECES", use: player.resources.wood > 2 };
+      return null;
     case "firing_contributions":
-      return chooseContribution(state, playerId, state.phase.windowId, ownPrivate.firePeek);
-    case "firing_shifu_adjustment":
-      return kilnYardAdjustment(state, player, ownPrivate.firePeek);
-    case "firing_reveal_fire":
-      return { type: "REVEAL_FIRE_CARD" };
-    case "firing_before_quality":
-    case "firing_second_before_quality":
-      return qualityAdjustmentAction(state, player);
+      return decideContribution(k);
+    case "firing_test_pieces":
+      return decideTestPieces(k);
+    case "firing_heat_adjustment":
+      return decideJun(k);
+    case "firing_second_firing_choice":
+      return decideSecondFiringChoice(k);
     case "firing_after_quality":
-      return afterQualityAction(state, player);
-    case "firing_workshop_seconds":
-      return {
-        type: "RESOLVE_WORKSHOP_SECONDS",
-        ceramicId: Object.values(state.firingContext?.ceramicResults ?? {})
-            .find((result) => result.assignedQuality === "flawed" && state.ceramics[result.ceramicId]?.ownerId === playerId)
-            ?.ceramicId ?? null,
-      };
+      return decideAfterQuality(k);
     case "orders":
-      return orderAction(state, playerId);
-    case "cleanup_orders":
-      return cleanupOrders(state, player);
-    case "presentation":
-      return presentationAction(state, playerId);
+      return decideSellFlawed(k) ?? decideOrders(k);
+    case "cleanup_hand_limit":
+      return decideSellFlawed(k) ?? decideHandLimit(k);
     case "finished":
-      throw new Error("Finished games have no computer action");
+      return null;
   }
-}
-
-export function computerPolicyLabel(policyVersion: string | null): string {
-  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.4 Strategic";
-  if (policyVersion === PREVIOUS_ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.7 Strategic";
-  if (policyVersion === LEGACY_ONLINE_COMPUTER_POLICY_VERSION) return "V003";
-  return policyVersion ?? "—";
 }

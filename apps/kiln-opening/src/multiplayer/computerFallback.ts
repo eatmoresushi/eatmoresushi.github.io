@@ -1,255 +1,192 @@
-import { withOwnOrderHand } from "./projection.ts";
-import {
-  DECORATION_COSTS,
-  DISCIPLINES,
-  GAME_CONFIG,
-  AVAILABLE_KILN_IDS,
-  STARTING_TECHNIQUES,
-  TECHNIQUE_DEFINITIONS,
-  activeKilnSpaceIds,
-  kilnYardGlazingCost,
-  orderHandLimit,
-} from "../game/index.ts";
-import type {
-  FinishedCeramic,
-  WorkshopCeramic,
-  TechniqueId,
-} from "../game/index.ts";
-import type { ComputerObservation } from "./computerObservation.ts";
-import type { AuthoritativeCommand } from "./types.ts";
+/**
+ * The computer seat's safety net (DESIGN §3.6, §4.6): when the policy throws, times out,
+ * declines or proposes an illegal command, the service tries these candidates in order and
+ * commits the first the engine accepts.
+ *
+ * 1. `legalCommands(view, {mode: "canonical"})`: built from the same validators the server
+ *    runs. In `firing_contributions` it is `legalContributions(view)` with TEND first, which
+ *    is always affordable (L261).
+ * 2. `safeExitCommands(view)`: the progress-guarantee exit of every decision (DESIGN §3.6),
+ *    built from the view alone without the enumerator, so the seat still has a way forward
+ *    even if enumeration itself fails. Each one is validated by the service like any other
+ *    candidate, but each must also be legal whenever it is offered: the canonical baseline
+ *    policy samples its proposal from this whole list, so an illegal exit would become a
+ *    rejected proposal (`computer_legality.test.ts`).
+ *
+ * Everything here reads only the seat's `PlayerView` (public projection plus its own private
+ * data), never `GameState`.
+ */
+
+import { KILN_IDS, guildInspectionOptions, handLimitStatus, legalCommands, lookedOrderOptions } from "../game/index.ts";
+import type { AuthoritativeCommand, LegalActionOptions, PlayerView } from "../game/index.ts";
+
+export const FALLBACK_LEGAL_ACTION_OPTIONS: LegalActionOptions = { mode: "canonical", perFamilyLimit: 8 };
 
 /**
- * Conservative phase exits used only when the strategic policy proposes an illegal command.
- * The authoritative service still preflights every entry and accepts the first legal one.
+ * The always-available way out of the viewer's current decision (DESIGN §3.6), in preference
+ * order. Empty when the viewer has nothing to decide.
  */
-export function fallbackComputerCommands(
-  observation: ComputerObservation,
-): AuthoritativeCommand[] {
-  const { ownPrivate, playerId } = observation;
-  const game = withOwnOrderHand(observation.game, playerId, ownPrivate.orderHand);
-  const player = game.players[playerId];
-  if (player === undefined) return [];
+export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
+  const viewerId = view.viewerId;
+  const game = view.game;
+  const me = viewerId === null ? undefined : game.players[viewerId];
+  if (viewerId === null || me === undefined || view.own === null) return [];
   const phase = game.phase;
-
   switch (phase.type) {
     case "setup_kiln_selection": {
-      const occupied = new Set(Object.values(game.players).map((entry) => entry.kilnId));
-      return AVAILABLE_KILN_IDS.filter((kilnId) => !occupied.has(kilnId)).map((kilnId) => ({
-        type: "SELECT_KILN" as const,
+      // Setup step 9 (rev. 4 L122, R23): an available Kiln with the first face-up Main Order.
+      // The display is refilled after every take, so it is full at every choice.
+      const taken = new Set(game.playerOrder.map((playerId) => game.players[playerId]?.kilnId ?? null));
+      const slotIndex = game.market.display.findIndex((orderId) => orderId !== null);
+      const orderId = slotIndex < 0 ? null : game.market.display[slotIndex];
+      if (orderId === null || orderId === undefined) return [];
+      return KILN_IDS.filter((kilnId) => !taken.has(kilnId)).map((kilnId): AuthoritativeCommand => ({
+        type: "SELECT_KILN",
         kilnId,
+        mainOrder: { slotIndex, orderId },
       }));
     }
-    case "setup_starting_orders":
-      return [{ type: "SUBMIT_STARTING_ORDERS", orderIds: ownPrivate.startingOrderOffer.slice(0, 2) }];
-    case "setup_starting_tech":
-      return STARTING_TECHNIQUES.map(({ id: techniqueId }) => ({
-        type: "SELECT_STARTING_TECH" as const,
-        techniqueId,
-      }));
-    case "work": {
-      const workers = Object.values(player.workers).filter((worker) => worker.status === "available");
-      const forcedWorkerAction = phase.imperialPriorityUsedBeforeAction === true;
-      const commands: AuthoritativeCommand[] = [];
-      for (const worker of workers) {
-        commands.push({ type: "USE_LABOUR", workerId: worker.id });
-        {
-          const amount = worker.kind === "shifu" ? 4 : 3;
-          commands.push({
-            type: "GAIN_MATERIALS",
-            workerId: worker.id,
-            clay: amount,
-            wood: 0,
+    case "round_start_setters_mark":
+      return [{ type: "PLACE_SETTERS_MARK", spaceId: null }];
+    case "work_turn": {
+      const step = phase.step;
+      switch (step.kind) {
+        case "before_action":
+          // The Canal Wharf is uncapped and costs nothing (L143): always legal for an
+          // available worker. Workers in ID order (never Record key order).
+          return Object.keys(me.workers)
+            .sort()
+            .filter((workerId) => me.workers[workerId]?.placement === null)
+            .map((workerId): AuthoritativeCommand => ({ type: "PLACE_CANAL_WHARF", workerId }));
+        case "after_action":
+          return [{ type: "END_TURN" }];
+        case "commission_market":
+        case "colour_samples":
+        case "colour_samples_swap": {
+          // Every Select (v1.6.2 L64, change 25): one reservation is always possible and always
+          // enough (B1: a Select opens only with a looked card or a face-up Main Order). Every
+          // single pick, the face-up positions first, then the looked cards in look order.
+          const options = lookedOrderOptions(view);
+          if (options === null || options.kind !== step.kind) return [];
+          const faceUp = options.faceUpSlots.flatMap((slotIndex): AuthoritativeCommand[] => {
+            const orderId = game.market.display[slotIndex];
+            return orderId === null || orderId === undefined
+              ? []
+              : [{ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex, orderId }] }];
           });
+          const looked = options.orderIds.map((orderId): AuthoritativeCommand => ({
+            type: "SELECT_CHOOSE",
+            reservations: [{ kind: "looked", orderId }],
+          }));
+          return [...faceUp, ...looked];
         }
-        if (player.resources.clay >= 1) {
-          commands.push({ type: "FORM_CERAMICS", workerId: worker.id, shapes: ["bowl"] });
-        }
-        const shaped = Object.values(game.ceramics).find(
-          (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "workshop" && ceramic.decoration === "plain",
-        );
-        if (shaped !== undefined && (worker.kind === "shifu" || player.resources.coins >= 2)) {
-          commands.push({
-            type: "DECORATE_CERAMICS",
-            workerId: worker.id,
-            selections: [{ ceramicId: shaped.id, decoration: "carved" }],
-          });
-        }
-        const dippingVatsReady = player.techniques.some((technique) => technique.id === "T03" && !technique.exhausted);
-        const glazed = Object.values(game.ceramics).filter((ceramic): ceramic is WorkshopCeramic =>
-          ceramic.ownerId === playerId && ceramic.stage === "workshop",
-        ).find((ceramic) => kilnYardGlazingCost([ceramic], dippingVatsReady) <= player.resources.coins);
-        const openSharedSpace = activeKilnSpaceIds(game.playerCount).find((spaceId) =>
-          !Object.values(game.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId === spaceId),
-        );
-        const imperialEmpty = player.imperialKilnUnlocked && !Object.values(game.ceramics).some((ceramic) =>
-          ceramic.ownerId === playerId && ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial");
-        const openKilnSpace = openSharedSpace ?? (imperialEmpty ? "imperial" : undefined);
-        if (glazed !== undefined && openKilnSpace !== undefined) {
-          commands.push({
-            type: "USE_KILN_YARD",
-            workerId: worker.id,
-            loads: [{ ceramicId: glazed.id, kilnSpaceId: openKilnSpace, glaze: "celadon" }],
-            ...(dippingVatsReady && glazed.decoration === "plain" ? { useDippingVats: true } : {}),
-            ...(worker.kind === "shifu" ? { shifuCeramicId: glazed.id } : {}),
-          });
-        }
-        const discount = worker.kind === "shifu" ? 1 : 0;
-        if (
-          player.techniques.length < GAME_CONFIG.techniques.maxOwned
-          && [...game.displays.techniques.forming, ...game.displays.techniques.glazing, ...game.displays.techniques.firing]
-            .some((techniqueId) => Math.max(0, (TECHNIQUE_DEFINITIONS[techniqueId]?.cost ?? 99) - discount) <= player.resources.coins)
-        ) {
-          commands.push({ type: "BEGIN_GUILD_ACTION", workerId: worker.id });
-        }
-        if (game.decks.marketRemaining + game.discards.market.length + game.displays.market.length > 0) {
-          commands.push({
-            type: "BEGIN_OFFICE_ORDERS",
-            workerId: worker.id,
-            mode: worker.kind === "shifu" ? "take_up_to_two" : "take_one",
-          });
+        case "guild_inspection": {
+          // Placement legality guaranteed an affordable face-up Tech for the first take (v1.6.2
+          // L212); after a take, stopping is always legal, with the untaken inspected Techs in
+          // look order (v1.6.2 L207, B2).
+          const options = guildInspectionOptions(view);
+          if (options === null) return [];
+          if (options.canFinish) {
+            return [{ type: "GUILD_FINISH", bottomOrder: options.inspected.map((option) => option.techId) }];
+          }
+          return [...options.inspected, ...options.faceUp]
+            .filter((option) => option.legal)
+            .map((option): AuthoritativeCommand => ({ type: "GUILD_TAKE", take: { kind: option.source, techId: option.techId } }));
         }
       }
-      return commands;
+      return [];
     }
-    case "work_office_orders":
-      if (phase.step === "colour_samples_or_skip") return [{ type: "OFFICE_SKIP_COLOUR_SAMPLES" }];
-      if (phase.step === "colour_samples_choose") {
-        return [
-          ...ownPrivate.colourSamplesChoices.map((orderId) => ({
-            type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER" as const,
-            orderId,
-          })),
-          ...game.displays.market.map((orderId) => ({
-            type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER" as const,
-            orderId,
-          })),
-        ];
-      }
-      if (phase.step === "gain_advance") {
-        return (["clay", "wood", "coins"] as const).map((resource) => ({
-          type: "COMMISSION_GAIN_ADVANCE" as const,
-          resource,
-        }));
-      }
-      return [
-        ...game.displays.market.map((orderId) => ({ type: "OFFICE_TAKE_ORDER" as const, orderId })),
-        ...(game.decks.marketRemaining + game.discards.market.length > 0
-          ? [{ type: "OFFICE_TAKE_TOP_ORDER" as const }]
-          : []),
-        { type: "OFFICE_END_ORDERS" },
-      ];
-    case "work_guild":
-      if (phase.step === "inspect") {
-        return DISCIPLINES.map((discipline) => ({
-          type: "GUILD_INSPECT_DISCIPLINE" as const,
-          discipline,
-        }));
-      }
-      return techniqueFallbacks(observation, phase.workerId);
-    case "work_imperial_priority":
-      return [{ type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: null }];
-    case "work_glaze_palette":
-      return [{ type: "RESOLVE_GLAZE_PALETTE", ceramicId: null, glaze: null }];
-    case "firing_before_contribution":
-      return [{ type: "RESOLVE_TEST_PIECES", use: false }];
     case "firing_contributions":
-      return [{
-        type: "SUBMIT_WOOD_CONTRIBUTION",
-        windowId: phase.windowId,
-        card: "TEND",
-      }];
-    case "firing_shifu_adjustment":
-      return [{ type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null }];
-    case "firing_reveal_fire":
-      return [{ type: "REVEAL_FIRE_CARD" }];
-    case "firing_before_quality":
-    case "firing_second_before_quality":
-      return [{ type: "RESOLVE_JUN", ceramicId: null, delta: null }];
+      return [{ type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card: "TEND" }];
+    case "firing_test_pieces":
+      return phase.awaiting === "decision" ? [{ type: "TEST_PIECES_DECIDE", peek: false }] : [{ type: "TEST_PIECES_BURY", bury: false }];
+    case "firing_heat_adjustment":
+      return [{ type: "RESOLVE_JUN", adjustment: null }];
+    case "firing_second_firing_choice":
+      // A card must be chosen (v1.6.2 L631); the first one without Jun is always legal.
+      return [{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }];
     case "firing_after_quality":
-      return [
-        ...(phase.geAvailable ? [{ type: "RESOLVE_GE" as const, ceramicId: null }] : []),
-        ...(phase.techniqueIds.includes("T11") ? [{ type: "RESOLVE_PROTECTIVE_SAGGARS" as const, ceramicId: null }] : []),
-        ...(phase.techniqueIds.includes("T14") ? [{ type: "RESOLVE_SECOND_FIRING" as const, ceramicId: null }] : []),
-      ];
-    case "firing_workshop_seconds":
-      return [
-        ...Object.values(game.firingContext?.ceramicResults ?? {})
-            .filter((result) => result.assignedQuality === "flawed" && game.ceramics[result.ceramicId]?.ownerId === playerId)
-            .map((result) => ({ type: "RESOLVE_WORKSHOP_SECONDS" as const, ceramicId: result.ceramicId })),
-        { type: "RESOLVE_WORKSHOP_SECONDS", ceramicId: null },
-      ];
+      return [{ type: "END_AFTER_QUALITY" }];
     case "orders":
       return [{ type: "END_ORDER_TURN" }];
-    case "cleanup_orders":
-      return [{
-        type: "DISCARD_ORDERS_FOR_CLEANUP",
-        orderIds: player.orderHand.slice(0, Math.max(0, player.orderHand.length - orderHandLimit())),
-      }];
-    case "presentation": {
-      const ceramics = Object.values(game.ceramics).filter(
-        (ceramic): ceramic is FinishedCeramic =>
-          ceramic.ownerId === playerId && ceramic.stage === "finished" && ceramic.quality !== "flawed",
-      );
-      return [{
-        type: "SUBMIT_PRESENTATION",
-        ceramicIds: ceramics.map((ceramic) => ceramic.id),
-      }];
+    case "cleanup_hand_limit": {
+      const excess = handLimitStatus(view, viewerId).mustDiscard;
+      const hand = view.own.orderHand;
+      return excess > 0 && excess <= hand.length ? [{ type: "DISCARD_TO_HAND_LIMIT", orderIds: hand.slice(hand.length - excess) }] : [];
     }
     case "finished":
       return [];
   }
 }
 
-function techniqueFallbacks(
-  observation: ComputerObservation,
-  workerId: string,
-): AuthoritativeCommand[] {
-  const { ownPrivate, playerId } = observation;
-  const game = withOwnOrderHand(observation.game, playerId, ownPrivate.orderHand);
-  const player = game.players[playerId];
-  const worker = player?.workers[workerId];
-  if (player === undefined || worker === undefined) return [];
-  const discount = worker.kind === "shifu" ? 1 : 0;
-  const candidates: TechniqueId[] = [
-    ...ownPrivate.inspectedTechniqueIds,
-    ...game.displays.techniques.forming,
-    ...game.displays.techniques.glazing,
-    ...game.displays.techniques.firing,
-  ];
-  return [...new Set(candidates)]
-    .filter((techniqueId) => {
-      const cost = TECHNIQUE_DEFINITIONS[techniqueId]?.cost;
-      return cost !== undefined && Math.max(0, cost - discount) <= player.resources.coins;
-    })
-    .map((techniqueId) => ({ type: "GUILD_BUY_TECHNIQUE" as const, techniqueId, returnTechniqueIds: ownPrivate.inspectedTechniqueIds.filter((id) => id !== techniqueId) }));
+/**
+ * The fallback candidates: the canonical legal commands, then the safe exits, without
+ * duplicates. If the enumerator fails, the safe exits alone are returned (the service still
+ * validates every candidate before committing it).
+ */
+export function fallbackComputerCommands(view: PlayerView): AuthoritativeCommand[] {
+  let canonical: AuthoritativeCommand[] = [];
+  try {
+    canonical = legalCommands(view, FALLBACK_LEGAL_ACTION_OPTIONS);
+  } catch {
+    canonical = [];
+  }
+  const seen = new Set<string>();
+  const candidates: AuthoritativeCommand[] = [];
+  for (const command of [...canonical, ...safeExitCommands(view)]) {
+    const key = JSON.stringify(command);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    candidates.push(command);
+  }
+  return candidates;
 }
 
 export interface ComputerCandidateFailure {
-  command: AuthoritativeCommand;
+  command: unknown;
   code: string;
   message: string;
 }
 
-export interface ComputerCandidateSelection {
+export interface ComputerCandidateSelection<T> {
   command: AuthoritativeCommand;
+  result: T;
   usedFallback: boolean;
   rejected: ComputerCandidateFailure[];
 }
 
-/** Selects the first command accepted by the caller's authoritative preflight. */
-export function selectFirstLegalComputerCommand(
-  strategic: AuthoritativeCommand,
-  fallbacks: readonly AuthoritativeCommand[],
-  isLegal: (command: AuthoritativeCommand) => { ok: true } | { ok: false; code: string; message: string },
-): ComputerCandidateSelection | null {
-  const candidates = [strategic, ...fallbacks].filter((candidate, index, all) =>
-    all.findIndex((other) => JSON.stringify(other) === JSON.stringify(candidate)) === index,
-  );
+export type CandidateCheck<T> = (command: unknown) => { ok: true; command: AuthoritativeCommand; result: T } | { ok: false; code: string; message: string };
+
+/**
+ * Tries the policy's choice, then each fallback, and returns the first one `check`
+ * accepts. Identical candidates are tried once. `fallbacks` is evaluated lazily, only
+ * when the policy's choice is missing or rejected.
+ */
+export function selectFirstLegalComputerCommand<T>(
+  preferred: unknown,
+  fallbacks: () => readonly unknown[],
+  check: CandidateCheck<T>,
+): ComputerCandidateSelection<T> | null {
+  const tried = new Set<string>();
   const rejected: ComputerCandidateFailure[] = [];
-  for (const command of candidates) {
-    const result = isLegal(command);
-    if (result.ok) return { command, usedFallback: rejected.length > 0, rejected };
-    rejected.push({ command, code: result.code, message: result.message });
+  const attempt = (candidate: unknown): ComputerCandidateSelection<T> | null => {
+    const key = JSON.stringify(candidate) ?? "undefined";
+    if (tried.has(key)) return null;
+    tried.add(key);
+    const outcome = check(candidate);
+    if (outcome.ok) {
+      return { command: outcome.command, result: outcome.result, usedFallback: rejected.length > 0 || preferred === null, rejected };
+    }
+    rejected.push({ command: candidate, code: outcome.code, message: outcome.message });
+    return null;
+  };
+  if (preferred !== null && preferred !== undefined) {
+    const chosen = attempt(preferred);
+    if (chosen !== null) return chosen;
+  }
+  for (const candidate of fallbacks()) {
+    const chosen = attempt(candidate);
+    if (chosen !== null) return { ...chosen, usedFallback: true };
   }
   return null;
 }

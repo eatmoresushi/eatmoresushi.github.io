@@ -1,0 +1,34 @@
+- complementary "你的决断":
+  - paragraph: 烧窑阶段·轮到你了
+  - heading "是否使用「火照」？" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望0／4 0分
+  - form "是否使用「火照」？":
+    - paragraph: 烧窑步骤1
+    - paragraph:
+      - strong: 每轮一次，基础火候定后、翻窑火前，本窑有己方器物时：
+      - text: 可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
+    - heading "顺序" [level=3]
+    - list "顺序":
+      - listitem: Player 1（你）：决断中
+    - group "火照":
+      - button "火照"
+      - radio "付1柴，私看窑火牌堆顶的牌 只有你看到此牌。看后再决定是否把它放到窑火牌堆底。"
+      - text: 付1柴，私看窑火牌堆顶的牌 只有你看到此牌。看后再决定是否把它放到窑火牌堆底。
+      - radio "不使用"
+      - text: 不使用
+    - paragraph: 请选择一项。
+    - button "取消"
+    - button "确认" [disabled]

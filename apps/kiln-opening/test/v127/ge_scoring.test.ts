@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ORDER_DEFINITIONS, applyAction, findGeGlazes, matchesOrder, matchesOrderWithGe } from "../../src/game/index.ts";
-import type { GameAction, GameState, GeGlazeChoice } from "../../src/game/index.ts";
+import { ORDER_DEFINITIONS, applyAction, findGeGlazes, matchesOrder, matchesOrderWithGe } from "../../src/game-v14/index.ts";
+import type { GameAction, GameState, GeGlazeChoice } from "../../src/game-v14/index.ts";
 import { addFinished, addLoaded, addTechnique, expectError, mustApply, mustResult, startedGame } from "./helpers.ts";
 
 function orderPhase(state: GameState): void {

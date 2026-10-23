@@ -1,0 +1,104 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "派工" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "9"
+      - text: 泥
+      - strong: "9"
+      - text: 柴
+      - strong: "9"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望1／4 0分
+  - form "派工":
+    - paragraph: 你还有4名工人未派（共4名）。派工阶段不能跳过。
+    - region "派师傅到施釉装窑":
+      - heading "派师傅到施釉装窑" [level=3]
+      - text: 你的第1工位
+      - paragraph: 至多2件坯施釉装窑（仍是1柴）
+      - group "施釉装窑":
+        - paragraph: 第1件
+        - group "坯":
+          - text: ""
+          - radio "碗 · 素面" [checked]
+          - text: 碗 · 素面
+          - radio "盘 · 刻花"
+          - text: 盘 · 刻花
+        - group "釉":
+          - text: ""
+          - radio "白釉" [checked]
+          - text: 白釉
+          - radio "青釉"
+          - text: 青釉
+          - radio "灰青釉"
+          - text: 灰青釉
+          - radio "月白釉"
+          - text: 月白釉
+        - group "装进 也可点选高亮窑位":
+          - text: ""
+          - radio "高温区1（+1）" [checked]
+          - text: 高温区1（+1）
+          - radio "高温区2（+1）"
+          - text: 高温区2（+1）
+          - radio "中温区1（0）"
+          - text: 中温区1（0）
+          - radio "低温区1（−1）"
+          - text: 低温区1（−1）
+        - paragraph: 第2件
+        - group "坯":
+          - text: ""
+          - radio "盘 · 刻花" [checked]
+          - text: 盘 · 刻花
+        - group "釉":
+          - text: ""
+          - radio "白釉" [checked]
+          - text: 白釉
+          - radio "青釉"
+          - text: 青釉
+          - radio "灰青釉"
+          - text: 灰青釉
+          - radio "月白釉"
+          - text: 月白釉
+        - group "装进 也可点选高亮窑位":
+          - text: ""
+          - radio "高温区2（+1）" [checked]
+          - text: 高温区2（+1）
+          - radio "中温区1（0）"
+          - text: 中温区1（0）
+          - radio "低温区1（−1）"
+          - text: 低温区1（−1）
+        - checkbox "再装第二件坯" [checked]
+        - text: 再装第二件坯
+        - group "「窑工」：放窑工标（可选）":
+          - text: ""
+          - paragraph: 面朝上放，所有人都看得到。它计入该器物本次烧窑的实际火候，复烧时仍留在原处。每轮一次。
+          - radio "不放"
+          - text: 不放
+          - radio "+1放在碗 · 素面上" [checked]
+          - text: +1放在碗 · 素面上
+          - radio "−1放在碗 · 素面上"
+          - text: −1放在碗 · 素面上
+          - radio "+1放在盘 · 刻花上"
+          - text: +1放在盘 · 刻花上
+          - radio "−1放在盘 · 刻花上"
+          - text: −1放在盘 · 刻花上
+        - button "完整规则：窑工"
+        - group "烧窑要烧柴":
+          - paragraph: 烧窑要烧柴
+          - text: 装进共窑 1柴
+          - paragraph: 一次向共窑装窑的行动付1柴，装一件或两件都一样。只装进御窑不花柴。
+        - group "行动后你的资源": 行动后 泥9 → 9 柴9 → 8 铜钱9 → 9
+      - paragraph: 要改派别处，在桌面上另点一个派工按钮。
+    - paragraph:
+      - text: 派
+      - strong: 师傅
+      - text: 到
+      - strong: 施釉装窑
+      - text: ：碗 · 素面施白釉，装进高温区1（+1）；盘 · 刻花施白釉，装进高温区2（+1）；窑工标+1放在碗 · 素面上；付1柴（烧窑要烧柴）
+    - button "取消"
+    - button "确认"

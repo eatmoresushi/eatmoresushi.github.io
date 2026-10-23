@@ -1,0 +1,90 @@
+{
+  "rulesVersion": "1.4",
+  "orderCards": {
+    "status": "REGENERATE_FROM_DATA",
+    "source": "data/orders.json",
+    "total": 56,
+    "main": 48,
+    "starting": 8,
+    "mustShowCrowns": true,
+    "obsoleteSheetsDirectory": "assets/obsolete_v061"
+  },
+  "centralBoard": {
+    "status": "GENERATE_FROM_DATA_NOT_OLD_RASTER",
+    "locationsSource": "data/action_locations.json",
+    "sharedKilnSource": "data/firing.json",
+    "mustNotContain": [
+      "Refining House",
+      "Refined Clay",
+      "fixed 0-2 / 3-5 / 6+ Base Heat reference",
+      "Kiln Yard Shifu repositioning"
+    ],
+    "mustContain": [
+      "Materials Yard",
+      "Potter's Wheel",
+      "Decoration Workshop",
+      "Kiln Yard",
+      "Commission Market",
+      "Craft Academy",
+      "Paid Work",
+      "Imperial Recognition",
+      "2/3/4 shared action spaces by player count",
+      "Shifu overfill",
+      "Shifu +1/-1 Heat markers after Base Heat and before Fire",
+      "Imperial Court"
+    ],
+    "mustShowPlayerCountKilnCovers": true
+  },
+  "playerBoards": {
+    "status": "GENERATE_FROM_data/kilns.json",
+    "resources": [
+      "Clay",
+      "Wood",
+      "Coins"
+    ],
+    "noWorkerStorageRequiredOnPhysicalMat": true,
+    "mustNotContain": [
+      "Refined Clay"
+    ]
+  },
+  "kilnContributionCards": {
+    "status": "GENERATE_EXACTLY",
+    "sets": 4,
+    "cardsPerSet": [
+      "BANK",
+      "TEND",
+      "STOKE"
+    ],
+    "totalCards": 12,
+    "source": "data/firing.json",
+    "fuelLedgerCards": [
+      "BANK_2",
+      "STOKE_2"
+    ],
+    "fuelLedgerTotal": 2
+  },
+  "fireCards": {
+    "status": "REGENERATE_FROM_DATA",
+    "source": "data/firing.json",
+    "distribution": {
+      "-2": 1,
+      "-1": 3,
+      "0": 4,
+      "1": 3,
+      "2": 1
+    },
+    "totalCards": 12
+  },
+  "craftTechniques": {
+    "status": "GENERATE_FROM_data/techniques.json",
+    "total": 15,
+    "note": "Use exact English and Chinese names and descriptions from JSON."
+  },
+  "playerReference": {
+    "status": "GENERATE_FROM_CURRENT_RULES",
+    "roundSource": "data/round_structure.json",
+    "firingSource": "data/firing.json",
+    "mustUseBaseHeatStartTwo": true,
+    "mustShowSixCardMainOrderDisplay": true
+  }
+}

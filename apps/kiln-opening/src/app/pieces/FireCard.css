@@ -1,0 +1,40 @@
+/* FireCard (pieces; wireframe `.firec`). */
+@layer components {
+  .firec {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.625rem;
+    height: 1.875rem;
+    padding: 0 var(--sp-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-xs);
+    background: var(--fire-zero);
+    color: var(--ink);
+    font-size: var(--fs-12);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .firec--neg {
+    background: var(--fire-neg);
+    color: var(--fire-neg-ink);
+  }
+
+  .firec--pos {
+    background: var(--fire-pos);
+    color: var(--fire-pos-ink);
+  }
+
+  .firec--back {
+    background: repeating-linear-gradient(135deg, var(--fire-back-a) 0 3px, var(--fire-back-b) 3px 6px);
+    color: var(--on-fire-back);
+  }
+
+  .firec--lg {
+    min-width: 2.5rem;
+    height: 3.125rem;
+    font-family: var(--serif);
+    font-size: var(--fs-18);
+    font-weight: 700;
+  }
+}

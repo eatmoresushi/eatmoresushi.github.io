@@ -1,0 +1,61 @@
+/* TechSlots (B2; wireframe `.tslots`, `.tslot`). An owned Tech shows its printed short text
+   (owner review, 2026-10-17), so the slots stack in one column unless the board (PlayerBoard's
+   `board` container) is wide enough for three readable tiles side by side in its second column
+   (about 42rem of 1.3fr). */
+@layer components {
+  .tslots {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @container board (min-width: 76rem) {
+    .tslots {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .tslot {
+    display: grid;
+    align-content: start;
+    gap: var(--sp-1);
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--line-2);
+    border-top: 3px solid var(--dc);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    font-size: var(--fs-meta);
+  }
+
+  .tslot--empty {
+    border-style: dashed;
+    border-top-style: solid;
+    background: transparent;
+    color: var(--ink-3);
+  }
+
+  .tslot-disc {
+    color: var(--ink-3);
+  }
+
+  .tslot-t1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+    min-width: 0;
+  }
+
+  .tslot-name {
+    min-width: 0;
+    color: var(--ink);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+}

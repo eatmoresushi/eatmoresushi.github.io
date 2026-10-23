@@ -1,0 +1,45 @@
+- complementary "你的决断":
+  - paragraph: 烧窑阶段·轮到你了
+  - heading "钧窑·窑变天成" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望0／4 0分
+  - form "钧窑·窑变天成":
+    - paragraph: 烧窑步骤3
+    - paragraph:
+      - strong: 每轮一次，实际火候算出后、定品前：
+      - text: 可付1柴→己方1件器物的实际火候+1或−1。
+    - heading "顺序" [level=3]
+    - list "顺序":
+      - listitem: Player 1（你）：决断中
+    - group "器物":
+      - text: ""
+      - radio "白釉碗 · 素面（中温区1）"
+      - text: 白釉碗 · 素面（中温区1）
+      - radio "青釉盘 · 素面（高温区1）"
+      - text: 青釉盘 · 素面（高温区1）
+    - group "调整 费用：1柴":
+      - text: ""
+      - paragraph: 在定品前计入这件器物的实际火候。
+      - radio "+1"
+      - text: "+1"
+      - radio "−1"
+      - text: −1
+    - heading "能力 钧窑 · 窑变天成" [level=3]:
+      - text: ""
+      - button "钧窑 · 窑变天成"
+    - paragraph: 不使用时，「窑变天成」本轮仍算未用。
+    - paragraph: 请选择器物与调整，或不使用。
+    - button "不使用"
+    - button "确认" [disabled]

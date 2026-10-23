@@ -1,0 +1,36 @@
+{
+  "rulesVersion": "1.4",
+  "roundCount": 5,
+  "phases": [
+    {
+      "order": 1,
+      "id": "start",
+      "name": "Start of Round",
+      "summary": "In Rounds 2-5, discard the two leftmost face-up Main Orders, slide the remaining four left and reveal two new Main Orders into the rightmost positions; refill Tech displays and ready once-per-round abilities."
+    },
+    {
+      "order": 2,
+      "id": "work",
+      "name": "Work Phase",
+      "summary": "Players alternate placing one worker and resolving that shared location until every worker has been placed; passing is not allowed. Printed spaces are global; a Shifu may overfill a fully occupied action location. A worker may be placed only if it can perform at least one instance of that location's main action. After every worker and associated effect, resolve end-of-Work abilities, including Glaze Palette, in First Player order."
+    },
+    {
+      "order": 3,
+      "id": "firing",
+      "name": "Firing Phase",
+      "summary": "If ceramics are loaded in either kiln, resolve Test Pieces, secret Contribution-card choices, simultaneous reveal and payment, Base Heat, optional Shifu Heat markers in First Player order, Fire, Actual Heat, Heat adjustments, Quality, then after-Quality abilities including Ge in each owner's chosen order. Recheck eligibility after each ability use, then allow optional salvage of one still-Flawed ceramic for 2 Coins per player."
+    },
+    {
+      "order": 4,
+      "id": "orders",
+      "name": "Order Phase",
+      "summary": "In reverse turn order, each opportunity completes at most one held or face-up Order or passes. Continue until a full circuit has no completion. Each Crown advances Imperial Recognition by one."
+    },
+    {
+      "order": 5,
+      "id": "cleanup",
+      "name": "Cleanup",
+      "summary": "Return workers and discard held Orders down to the limit of 3. If the round was not the fifth, pass First Player clockwise and advance the round."
+    }
+  ]
+}

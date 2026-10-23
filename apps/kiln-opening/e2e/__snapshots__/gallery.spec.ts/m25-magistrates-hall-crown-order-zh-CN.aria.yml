@@ -1,0 +1,53 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "派工" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "9"
+      - text: 泥
+      - strong: "9"
+      - text: 柴
+      - strong: "9"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望1／4 0分
+  - form "派工":
+    - paragraph: 你还有4名工人未派（共4名）。派工阶段不能跳过。
+    - region "派师傅到州衙":
+      - heading "派师傅到州衙" [level=3]
+      - text: 已占0／1
+      - paragraph: 付4铜钱，声望+1（0→1、1→2或2→3），并承接榜上1张御令委托（榜上没有则不承接）
+      - group "州衙":
+        - paragraph: 付4铜钱
+        - paragraph: 御府声望1 → 2
+        - paragraph: 到达2时的奖励：
+        - paragraph:
+          - strong: 赐御窑
+          - text: · 获得你的御窑板块：一座私人单格窑，由御匠代烧，实际火候 = 窑骰点数 + 窑火修正 + 装窑时选定的御窑修正，不受控火影响。
+        - button "完整规则：声望2 · 赐御窑"
+        - group "再承接一张御令委托（可选）":
+          - text: ""
+          - paragraph: 推进声望后，承接委托榜上一张印有御令的委托。它的榜位空着，到你的回合结束再补。
+          - radio "不承接"
+          - text: 不承接
+          - radio "#2 O17 6分 2铜钱 1个御令 笔洗 · 白釉 · 画花 上品以上" [checked]
+          - text: "#2 O17 6分 2铜钱 1个御令 笔洗 · 白釉 · 画花 上品以上"
+          - button "完整规则：委托O17"
+          - radio /#4 O40 \d+分 0铜钱 2个御令 碗 \+ 笔洗；白釉、灰青釉各1件；印花、画花各1件 均上品以上，至少1件臻品/
+          - text: /#4 O40 \d+分 0铜钱 2个御令 碗 \+ 笔洗；白釉、灰青釉各1件；印花、画花各1件 均上品以上，至少1件臻品/
+          - button "完整规则：委托O40"
+        - group "行动后你的资源": 行动后 泥9 → 9 柴9 → 9 铜钱9 → 5
+      - paragraph: 要改派别处，在桌面上另点一个派工按钮。
+    - paragraph:
+      - text: 派
+      - strong: 师傅
+      - text: 到
+      - strong: 州衙
+      - text: ：付4铜钱，再承接
+      - strong: O17
+    - button "取消"
+    - button "确认"

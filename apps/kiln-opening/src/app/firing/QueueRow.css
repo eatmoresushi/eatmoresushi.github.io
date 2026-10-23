@@ -1,0 +1,64 @@
+/* Firing queue and Contribution submissions (wireframe `.queue`, `.qn`). */
+@layer components {
+  .queue {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+    min-width: 0;
+    margin: 0;
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .queue-list {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .queue-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 1px var(--sp-4) 1px var(--sp-1);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+  }
+
+  .queue-swatch {
+    width: 0.375rem;
+    height: 0.875rem;
+    border-radius: 2px;
+    background: var(--pc);
+  }
+
+  .queue-item--now {
+    border-color: var(--cinnabar);
+    box-shadow: 0 0 0 1px var(--cinnabar);
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .queue-item--done,
+  .queue-item--chosen {
+    color: var(--ink-2);
+  }
+
+  .queue-item--choosing {
+    border-style: dashed;
+  }
+
+  .queue-glyph {
+    font-weight: 700;
+  }
+
+  .queue-note {
+    color: var(--ink-2);
+  }
+}

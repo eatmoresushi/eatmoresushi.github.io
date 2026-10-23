@@ -1,0 +1,59 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Take a Tech" [level=2]
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
+    - group "Resources":
+      - strong: "1"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "9"
+      - text: Coins
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 4 Orders in hand Recognition 0/4 4 VP
+  - form "Take a Tech":
+    - paragraph: Take up to 2 Techs from different disciplines, inspected or face up, each at its printed cost.
+    - group "Inspected Form & Decorate Techs Tech 1 of up to 2":
+      - text: ""
+      - radio "Reworking Table 2 Coins"
+      - text: Reworking Table 2 Coins Form & Decorate
+      - strong: "Once per round, when you glaze and load a Shaped vessel:"
+      - text: first change its Shape to any other Shape. Pay no Clay; its Decoration stays.
+      - radio "Senior Apprentice 3 Coins"
+      - text: Senior Apprentice 3 Coins Form & Decorate
+      - strong: "Once per round:"
+      - text: 1 Apprentice you place at the Materials Yard or Commission Market uses the Shifu effect instead.
+    - group "Or a face-up Tech":
+      - text: ""
+      - radio "Large Throwing Wheel 2 Coins"
+      - text: Large Throwing Wheel 2 Coins Form & Decorate
+      - strong: "Once per round, during a Form & Decorate action forming at least 1 Vase or Censer:"
+      - text: reduce that action's total Clay cost by 2, minimum 0.
+      - radio "Connoisseur's Cabinet 3 Coins"
+      - text: Connoisseur's Cabinet 3 Coins Form & Decorate
+      - strong: "Game end:"
+      - text: each Fine or Masterpiece ceramic in your Exhibition scores +1 VP, maximum +5 VP.
+      - radio "Kiln Furniture 2 Coins"
+      - text: Kiln Furniture 2 Coins Glazing & Loading
+      - strong: "Once per round, when you load 1 ceramic into the Shared Kiln:"
+      - text: "place this tile beneath it → choose its zone modifier for this firing: −1, 0 or +1."
+      - radio "Inverted Firing 2 Coins"
+      - text: Inverted Firing 2 Coins Glazing & Loading
+      - strong: "Once per round, when you load a Bowl, Plate or Brush Washer into the Shared Kiln:"
+      - text: you may place it in a space holding exactly 1 of your ceramics. Both use that space's modifier.
+      - radio "Protective Saggars 3 Coins"
+      - text: Protective Saggars 3 Coins Firing
+      - strong: "Always:"
+      - text: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard.
+      - strong: "Once per round, after Quality is assigned:"
+      - text: 1 of your Standard ceramics from this firing → Fine.
+      - radio "Test Pieces 3 Coins"
+      - text: Test Pieces 3 Coins Firing
+      - strong: "Once per round, after Base Heat, before the Fire card, if you have a ceramic in this firing:"
+      - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
+    - paragraph: Choose a Tech to take.
+    - button "Clear"
+    - button "Confirm" [disabled]

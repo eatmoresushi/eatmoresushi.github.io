@@ -1,0 +1,559 @@
+/*
+ * Printable Order card sheets (tools/print/printOrderCards.ts): A4 portrait, up to 4 × 4 cards
+ * of 50 × 71 mm with dashed cut lines, each front sheet followed by its back sheet (styles at
+ * the end of this file); the outer cuts sit 6.5 mm from the top and bottom paper
+ * edges, inside what most printers can print. A sheet that is not full (the 8 Starting Orders)
+ * sets the height of its `.bleed` and `.grid` to the rows it uses (sheet.ts, inline style). All text stays at least 2.5 mm inside each cut
+ * (cardPage.js checks it). Fonts are local system faces so the build is offline; Chromium
+ * embeds the used subsets in the PDF.
+ *
+ * Card layout, top to bottom (mm from the card's top edge): ID row 3.15; picture 4.2–27.2;
+ * REQUIREMENT heading 27.8; requirement box 31.25–47.65; divider; QUALITY heading 50.6;
+ * quality box 53.7–57.9; reward row centred at 63.0. The reward row stays between the bottom
+ * fret corners (x 7.05–42.95 mm; a row of six coins overlaps its coins a little to fit).
+ * Every card uses one requirement size, one quality size and one icon size (cardPage.js).
+ */
+@font-face { font-family: "KO Serif"; font-weight: 400; font-style: normal; src: local("IowanOldStyle-Roman"), local("Iowan Old Style Roman"); }
+@font-face { font-family: "KO Serif"; font-weight: 400; font-style: italic; src: local("IowanOldStyle-Italic"), local("Iowan Old Style Italic"); }
+@font-face { font-family: "KO Serif"; font-weight: 700; font-style: normal; src: local("IowanOldStyle-Bold"), local("Iowan Old Style Bold"); }
+@font-face { font-family: "KO Serif"; font-weight: 900; font-style: normal; src: local("IowanOldStyle-Black"), local("Iowan Old Style Black"); }
+@font-face { font-family: "KO Titling"; font-weight: 400; font-style: normal; src: local("IowanOldStyle-Titling"), local("Iowan Old Style Titling"); }
+@font-face { font-family: "KO Song"; font-weight: 400; font-style: normal; src: local("STSongti-SC-Regular"), local("Songti SC Regular"); }
+@font-face { font-family: "KO Song"; font-weight: 700; font-style: normal; src: local("STSongti-SC-Bold"), local("Songti SC Bold"); }
+@font-face { font-family: "KO Song"; font-weight: 900; font-style: normal; src: local("STSongti-SC-Black"), local("Songti SC Black"); }
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+:root {
+  --paper: #f5ecd7;
+  --paper-hi: rgba(255, 252, 242, 0.75);
+  --paper-edge: rgba(150, 108, 52, 0.13);
+  --gold: #b89355;
+  --gold-soft: #cdb07a;
+  --ink: #33241a;
+  --ink-2: #6f5638;
+  --req: #8e2b1f;
+  --qual: #2c4a36;
+  --masterpiece: #9e2a1d;
+  --vp-fill: #4a2c1d;
+  --vp-line: #a07e52;
+  --vp-text: #f4e6c6;
+  --coin: #a87a2f;
+  --coin-hi: #c99a4c;
+  --coin-edge: #6e4c1c;
+  --crown: #b8893f;
+  --crown-ink: #6d4f1c;
+  --cut: #8f8f8f;
+  /* Cut lines over the parchment: the tone of the card's own darkened edge. */
+  --cut-card: #b59d72;
+  --serif: "KO Serif", "Iowan Old Style", "Palatino", serif;
+  --titling: "KO Titling", "KO Serif", "Iowan Old Style", serif;
+  --song: "KO Song", "Songti SC", "STSong", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  font-family: var(--serif);
+  color: var(--ink);
+  font-kerning: normal;
+  text-rendering: geometricPrecision;
+}
+
+html[lang="zh-CN"] body {
+  font-family: "KO Serif", var(--song);
+}
+
+/* ---- Sheet -------------------------------------------------------------------------------- */
+
+.sheet {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  break-after: page;
+  background: #ffffff;
+}
+
+.sheet:last-child {
+  break-after: auto;
+}
+
+/* 1 mm of parchment beyond the outer cut lines, so a slightly wide cut shows no white (height: sheet.ts). */
+.bleed {
+  position: absolute;
+  left: 4mm;
+  top: 5.5mm;
+  width: 202mm;
+  height: 286mm;
+  background: var(--paper);
+}
+
+.grid {
+  position: absolute;
+  left: 5mm;
+  top: 6.5mm;
+  width: 200mm;
+  height: 284mm;
+  display: grid;
+  grid-template-columns: repeat(4, 50mm);
+  grid-template-rows: repeat(4, 71mm);
+}
+
+.cuts {
+  position: absolute;
+  inset: 0;
+  width: 210mm;
+  height: 297mm;
+  pointer-events: none;
+}
+
+.cuts line {
+  stroke: var(--cut);
+  stroke-width: 0.18;
+  stroke-dasharray: 1.3 0.9;
+}
+
+.cuts line.on-card {
+  stroke: var(--cut-card);
+  stroke-width: 0.15;
+}
+
+/* ---- Card --------------------------------------------------------------------------------- */
+
+.card {
+  position: relative;
+  width: 50mm;
+  height: 71mm;
+  overflow: hidden;
+  /*
+   * The parchment is one opaque image the size of the card, drawn once (cardPage.js
+   * `cardPaper`: --paper, the --paper-edge vignette, the --paper-hi highlight and the texture).
+   * A repeating or semi-transparent background tile would show hairline seams in Apple's PDF
+   * renderer; the PDF check refuses any repeating tiling pattern. The image overhangs the card
+   * by 2 px (0.53 mm) on every side, clipped at the card's edge: Chromium paints the background
+   * area pixel-snapped but sizes the image from the unsnapped box, which otherwise leaves a
+   * 0.2 mm strip of flat paper colour along some cut lines.
+   */
+  background-color: var(--paper);
+  background-image: var(--card-paper, none);
+  background-size: calc(100% + 4px) calc(100% + 4px);
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.frame,
+.clouds {
+  position: absolute;
+  inset: 0;
+  width: 50mm;
+  height: 71mm;
+}
+
+.frame .outer {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.3;
+}
+
+.frame .inner {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.13;
+}
+
+.frame .fret {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.2;
+  stroke-linecap: square;
+}
+
+.frame .fret-bg {
+  fill: var(--paper);
+}
+
+.clouds path {
+  fill: none;
+  stroke: #b49a6c;
+  stroke-width: 0.15;
+  stroke-linecap: round;
+  opacity: 0.34;
+}
+
+/* Top row: kind word and printed ID. */
+.id-row {
+  position: absolute;
+  top: 3.15mm;
+  right: 3.9mm;
+  display: flex;
+  align-items: baseline;
+  gap: 1.1mm;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* A zero-size mark on the ID row's baseline, for the illustration clearance check. */
+.id-row .baseline {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: baseline;
+}
+
+.id {
+  font-family: var(--serif);
+  font-size: 9.6pt;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.kind {
+  font-family: var(--titling);
+  font-size: 5.4pt;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+html[lang="zh-CN"] .kind {
+  font-family: var(--song);
+  font-size: 6pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
+/* Illustration. */
+/* The top 2 mm (beside the printed ID) is used only by a narrow single ceramic (cardPage.js). */
+.art {
+  position: absolute;
+  left: 4.5mm;
+  right: 4.5mm;
+  top: 4.2mm;
+  height: 23mm;
+}
+
+.art .fig,
+.art .shadow {
+  position: absolute;
+  display: block;
+}
+
+.art .shadow {
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(74, 52, 28, 0.34) 0%, rgba(74, 52, 28, 0.16) 45%, rgba(74, 52, 28, 0) 72%);
+}
+
+/* Text column: 42.6 mm wide, 1.3 mm inside the inner gold rule. */
+.text {
+  position: absolute;
+  left: 3.7mm;
+  right: 3.7mm;
+  top: 27.8mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.h {
+  font-family: var(--serif);
+  font-size: 8.3pt;
+  line-height: 3mm;
+  height: 3mm;
+  letter-spacing: 0.085em;
+  margin-right: -0.085em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+html[lang="zh-CN"] .h {
+  font-family: var(--song);
+  font-weight: 700;
+  font-size: 9.6pt;
+  letter-spacing: 0.42em;
+  margin-right: -0.42em;
+}
+
+.h-req {
+  color: var(--req);
+}
+
+/* Chinese glyphs fill the em box: a little more air under the picture. */
+html[lang="zh-CN"] .h-req {
+  position: relative;
+  top: 0.35mm;
+}
+
+.h-qual {
+  color: var(--qual);
+}
+
+.req,
+.qual {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The requirement sits just under its heading (cardPage.js sets its top margin). */
+.req {
+  height: 16.4mm;
+  margin-top: 0.45mm;
+  align-items: flex-start;
+}
+
+.qual {
+  height: 4.2mm;
+  margin-top: 0.1mm;
+}
+
+.req > p,
+.qual > p {
+  margin: 0;
+  max-width: 100%;
+  text-align: center;
+  text-wrap: balance;
+  hyphens: none;
+}
+
+.req > p {
+  font-size: var(--fs, 8.2pt);
+  line-height: var(--lh, 1.15);
+}
+
+.qual > p {
+  font-size: var(--fs, 9.4pt);
+  font-weight: 700;
+  line-height: 1.12;
+}
+
+html[lang="zh-CN"] .req > p {
+  font-family: "KO Serif", var(--song);
+  line-height: var(--lh, 1.3);
+}
+
+html[lang="zh-CN"] .qual > p {
+  font-family: "KO Serif", var(--song);
+}
+
+.seg,
+.ch {
+  white-space: nowrap;
+}
+
+/*
+ * A segment wider than the box may break, but only between its chunks, and then takes lines of
+ * its own: no line holds the end of one clause and the start of a broken one.
+ */
+.seg.wrap {
+  display: block;
+  white-space: normal;
+}
+
+.mp {
+  color: var(--masterpiece);
+}
+
+/* A line-final full-width "；"/"，"/"、": cardPage.js sets the trim (its blank right half). */
+.pz.trim {
+  margin-right: var(--trim, -0.5em);
+}
+
+.divider {
+  display: block;
+  width: 33mm;
+  height: 2.2mm;
+  margin: 0.45mm 0 0.3mm;
+}
+
+.divider path,
+.divider line {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.17;
+  stroke-linecap: round;
+}
+
+.divider .dot {
+  fill: var(--gold);
+  stroke: none;
+}
+
+/* Bottom row: VP badge and number | one coin per Coin, then one crown per Crown. */
+.reward {
+  position: absolute;
+  left: 3.8mm;
+  right: 3.8mm;
+  bottom: 5mm;
+  height: 6mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --icon: 4.4mm;
+  white-space: nowrap;
+}
+
+.vp-badge {
+  width: 5mm;
+  height: 5.625mm;
+  flex: none;
+}
+
+.vp-badge .hex {
+  fill: var(--vp-fill);
+}
+
+.vp-badge .hex-line {
+  fill: none;
+  stroke: var(--vp-line);
+  stroke-width: 0.5;
+}
+
+.vp-badge text {
+  fill: var(--vp-text);
+  font-family: var(--titling);
+  font-size: 7.4px;
+  letter-spacing: 0.02em;
+}
+
+html[lang="zh-CN"] .vp-badge text {
+  font-family: var(--song);
+  font-weight: 700;
+  font-size: 8.4px;
+}
+
+.vp-num {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 14pt;
+  line-height: 1;
+  margin-left: 1mm;
+  color: var(--ink);
+}
+
+/* Chinese: the number, then the 分 hexagon. */
+html[lang="zh-CN"] .vp-num {
+  margin-left: 0;
+  margin-right: 0.8mm;
+}
+
+.sep {
+  width: 0;
+  height: 4.8mm;
+  border-left: 0.28mm solid var(--ink-2);
+  margin: 0 1.6mm 0 1.6mm;
+  opacity: 0.75;
+  flex: none;
+}
+
+.icons {
+  display: flex;
+  align-items: center;
+}
+
+/* `--gap` is negative (coins overlap) only where a row would otherwise reach the frets. */
+.icons > .ico + .ico {
+  margin-left: var(--gap, calc(var(--icon) * 0.08));
+}
+
+/* Chromium clips an inline SVG to its box snapped to whole CSS pixels: never clip an icon. */
+.ico,
+.vp-badge {
+  overflow: visible;
+}
+
+.ico {
+  width: var(--icon);
+  height: var(--icon);
+  flex: none;
+  display: block;
+}
+
+.ico.crown {
+  width: calc(var(--icon) * 1.12);
+  height: calc(var(--icon) * 0.9);
+}
+
+.icons > .coin + .crown {
+  margin-left: calc(var(--icon) * 0.36);
+}
+
+.coin .ri-body {
+  fill: url(#coin-grad);
+  stroke: var(--coin-edge);
+  stroke-width: 0.55;
+}
+
+.coin .ri-cut {
+  stroke: var(--paper);
+}
+
+.coin .ri-fill {
+  fill: var(--paper);
+  stroke: var(--coin-edge);
+  stroke-width: 0.35;
+}
+
+.crown path {
+  fill: url(#crown-grad);
+  stroke: var(--crown-ink);
+  stroke-width: 0.55;
+  stroke-linejoin: round;
+}
+
+/* ---- Card backs ----------------------------------------------------------------------------- */
+/*
+ * A back sheet (sheet.ts `backSheetHtml`) is one SVG over the whole page, in millimetres: the
+ * continuous striped field and a back in every grid cell. Colours come from the app's light-theme
+ * tokens (printOrderCards.ts `backPalette`), written into the markup; the disc is the fronts'
+ * parchment. Back layout, mm from the card's top edge (BACK_LAYOUT): medallion centred at 28.7
+ * (EN) / 29.2 (ZH), outline 13.5 (Main: round; Starting: eight lobes, 13.35–14.45), inner ring
+ * 12.85, parchment disc 12.1 with the faint kiln drawing (cardPage.js) and the 开窑 seal; divider,
+ * then KILN OPENING and the deck name (EN) or the deck name alone (ZH). No frame and nothing near
+ * the edges; nothing comes within 4 mm of a cut (cardPage.js and the PDF check measure it).
+ */
+.back-page {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+}
+
+.back-page .disc {
+  fill: var(--paper);
+}
+
+.seal-ch {
+  font-family: var(--song);
+  font-weight: 700;
+  fill: var(--paper);
+}
+
+/* The word lines: English in the fronts' heading face (Iowan Old Style Roman, in capitals). */
+.bt {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-kerning: normal;
+}
+
+html[lang="zh-CN"] .bt.deck {
+  font-family: var(--song);
+  font-weight: 700;
+}

@@ -1,0 +1,34 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "Use Test Pieces?" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 0 Orders in hand Recognition 0/4 0 VP
+  - form "Use Test Pieces?":
+    - paragraph: Firing step 1
+    - paragraph:
+      - strong: "Once per round, after Base Heat, before the Fire card, if you have a ceramic in this firing:"
+      - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
+    - heading "Queue" [level=3]
+    - list "Queue":
+      - listitem: "Player 1 (you): deciding"
+    - group "Test Pieces":
+      - button "Test Pieces"
+      - radio "Pay 1 Wood and look at the top Fire card Only you see the card. You then decide whether to put it on the bottom of the Fire deck."
+      - text: Pay 1 Wood and look at the top Fire card Only you see the card. You then decide whether to put it on the bottom of the Fire deck.
+      - radio "Decline"
+      - text: Decline
+    - paragraph: Choose one.
+    - button "Clear"
+    - button "Confirm" [disabled]

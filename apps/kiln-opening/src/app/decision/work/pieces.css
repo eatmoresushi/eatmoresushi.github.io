@@ -1,0 +1,287 @@
+/* B4 form pieces (wireframe `.delta`, `.sub`, `.quote`, `.err`, `.dstep`). */
+@layer components {
+  .b4-form {
+    display: grid;
+    gap: var(--sp-6);
+    min-width: 0;
+  }
+
+  .b4-prompt {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .b4-sub {
+    display: grid;
+    gap: var(--sp-5);
+    min-width: 0;
+    margin-top: var(--sp-2);
+    padding: var(--sp-4) var(--sp-5);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--teal);
+    border-radius: var(--r-md);
+    background: var(--panel);
+  }
+
+  .b4-sub-block {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .b4-sub-title {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+  }
+
+  .b4-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+    min-width: 0;
+  }
+
+  .b4-delta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-1) var(--sp-4);
+    font-size: var(--fs-meta);
+  }
+
+  .b4-delta-title {
+    color: var(--ink-3);
+  }
+
+  .b4-delta-item[data-change="up"] {
+    color: var(--ok-ink);
+    font-weight: 700;
+  }
+
+  .b4-delta-item[data-change="down"] {
+    color: var(--cinnabar-ink);
+    font-weight: 700;
+  }
+
+  .b4-quote {
+    display: grid;
+    gap: var(--sp-1);
+    padding: var(--sp-3) var(--sp-4);
+    border-radius: var(--r-sm);
+    background: var(--paper-2);
+    font-size: var(--fs-meta);
+  }
+
+  .b4-quote-line {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-4);
+  }
+
+  .b4-quote-total {
+    border-top: 1px solid var(--line);
+    padding-top: var(--sp-1);
+    font-weight: 700;
+  }
+
+  .b4-note {
+    font-size: var(--fs-meta);
+  }
+
+  .b4-note--muted {
+    color: var(--ink-3);
+  }
+
+  /* On the quote's darker paper (the kiln-fuel block), --ink-3 falls under 4.5:1. */
+  .b4-quote .b4-note--muted {
+    color: var(--ink-2);
+  }
+
+  .b4-note--error {
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r-sm);
+    background: var(--cinnabar-pale);
+    color: var(--bad-ink);
+  }
+
+  .b4-note--private {
+    color: var(--priv);
+  }
+
+  .b4-order-lines {
+    display: grid;
+    gap: var(--sp-1);
+  }
+
+  .b4-order-quality {
+    color: var(--ink-3);
+  }
+
+  .b4-swatch {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
+    background: var(--g, var(--glz-clay));
+  }
+
+  .b4-disc {
+    display: inline-block;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: var(--r-xs);
+    background: var(--ink-3);
+  }
+
+  .b4-disc[data-discipline="workshop"] {
+    background: var(--d-workshop);
+  }
+
+  .b4-disc[data-discipline="glazing_loading"] {
+    background: var(--d-glazing);
+  }
+
+  .b4-disc[data-discipline="firing"] {
+    background: var(--d-firing);
+  }
+
+  /* The Guild Hall choice made on the Tech display (owner review, 2026-10-17). */
+  .b4-guild-choice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+    min-width: 0;
+    margin: 0;
+  }
+
+  .b4-guild-disc {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .b4-guild-price {
+    margin-inline-start: auto;
+    color: var(--gold-ink);
+    font-weight: 700;
+  }
+
+  /* The chosen placement and its sub-editor. */
+  .b4-chosen {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .b4-chosen-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-1) var(--sp-4);
+  }
+
+  .b4-chosen-title {
+    font-size: var(--fs-15);
+  }
+
+  .b4-chosen-meta {
+    margin-inline-start: auto;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    white-space: nowrap;
+  }
+
+  .b4-chosen-effect {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-rule);
+    line-height: var(--lh-snug);
+  }
+
+  .b4-sub-region {
+    min-width: 0;
+  }
+
+  .b4-privacy {
+    display: grid;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    border: 1px dashed var(--line-2);
+    border-radius: var(--r-md);
+    font-size: var(--fs-meta);
+  }
+
+  .b4-reorder-note {
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+
+  /* A numbered step heading outside a form group (wireframe `.dstep h3 .n`, `.dstep.later`). */
+  .b4-step {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-3);
+    color: var(--ink-2);
+    font-size: var(--fs-12);
+    font-weight: 800;
+    line-height: var(--lh-snug);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .b4-step:lang(zh-Hans) {
+    font-size: var(--fs-label);
+    letter-spacing: 0;
+  }
+
+  .b4-step-n {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--on-teal);
+    letter-spacing: 0;
+  }
+
+  .b4-step--later {
+    color: var(--ink-3);
+  }
+
+  .b4-step--later .b4-step-n {
+    border: 1px solid var(--line-2);
+    background: transparent;
+    color: var(--ink-3);
+  }
+
+  /* An Order already reserved in this action (wireframe `decLook` "Already reserved"). */
+  .b4-reserved {
+    display: grid;
+    gap: var(--sp-2);
+    min-width: 0;
+    padding: var(--sp-3) var(--sp-4);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--paper-2);
+    font-size: var(--fs-meta);
+  }
+
+  /* On the reserved card's darker paper, --ink-3 falls under 4.5:1 at 12px (axe color-contrast,
+     light theme); --ink-2 keeps it readable (B6 integration fix, gallery.spec). */
+  .b4-reserved .b4-order-quality {
+    color: var(--ink-2);
+  }
+
+  .b4-reserved-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--sp-2) var(--sp-4);
+  }
+}

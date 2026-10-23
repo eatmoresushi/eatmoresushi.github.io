@@ -1,0 +1,21 @@
+/* KilnMasterMarker (pieces; wireframe `.hm`): Kiln Master's face-up ±1 marker, square. */
+@layer components {
+  .hm {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.375rem;
+    height: 1.375rem;
+    padding: 0 var(--sp-1);
+    box-shadow: 0 0 0 2px var(--surface);
+    font-size: var(--fs-12);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .hm--kiln-master {
+    border-radius: 5px;
+    background: var(--kiln-body);
+    color: var(--kiln-ink);
+  }
+}

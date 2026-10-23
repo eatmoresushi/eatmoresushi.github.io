@@ -1,0 +1,164 @@
+/* LocationCard (B2; wireframe `.loc`, `.pbtn`, `.pip`). */
+@layer components {
+  .loc {
+    container: location / inline-size;
+    display: grid;
+    align-content: start;
+    gap: var(--sp-3);
+    min-width: 0;
+    height: 100%;
+    padding: var(--sp-4) var(--sp-5) var(--sp-5);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+
+  .loc--chosen {
+    border-color: var(--teal);
+    box-shadow: inset 0 0 0 2px var(--teal);
+  }
+
+  .loc-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-1) var(--sp-4);
+  }
+
+  .loc-name {
+    font-size: var(--fs-15);
+  }
+
+  .loc-count {
+    margin-inline-start: auto;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .loc-count--full {
+    color: var(--cinnabar-ink);
+    font-weight: 700;
+  }
+
+  .loc-cap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+    min-height: 1.75rem;
+  }
+
+  .pip {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border: 1.5px dashed var(--line);
+    border-radius: 50%;
+  }
+
+  .loc-here {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .loc-rec {
+    margin: 0;
+    color: var(--gold-ink);
+    font-size: var(--fs-meta);
+    font-weight: 600;
+  }
+
+  /* Both one-line effects, plain text (the action spaces open no rules details, owner review
+     2026-10-17). */
+  .loc-fx {
+    display: grid;
+    gap: var(--sp-1);
+    min-width: 0;
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-rule);
+    line-height: var(--lh-snug);
+    text-align: start;
+  }
+
+  .loc-fx strong {
+    color: var(--ink);
+  }
+
+  .loc-effect {
+    display: block;
+  }
+
+  .loc-place {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  .loc-place-h {
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+
+  .pbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1);
+    border: 1px solid var(--teal);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--teal-ink);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+  }
+
+  .pbtn:hover {
+    background: var(--teal-pale);
+  }
+
+  /* The worker's name shows only where the card has room, and always in Chinese (wireframe `.pw`);
+     the accessible name always carries the full "Place ⟨worker⟩ at ⟨location⟩". */
+  .pbtn-w {
+    display: none;
+    padding-inline-end: var(--sp-2);
+  }
+
+  :lang(zh-Hans) .pbtn-w {
+    display: inline;
+  }
+
+  @container location (min-width: 200px) {
+    .pbtn-w {
+      display: inline;
+    }
+  }
+
+  .loc-why {
+    font-size: var(--fs-meta);
+    color: var(--bad-ink);
+  }
+
+  .loc-why p {
+    margin: 0 0 var(--sp-2);
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .pbtn {
+      min-width: var(--target-min);
+      min-height: var(--target-min);
+    }
+  }
+}
+
+@layer states {
+  .pbtn[aria-pressed="true"] {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: var(--on-teal);
+  }
+}

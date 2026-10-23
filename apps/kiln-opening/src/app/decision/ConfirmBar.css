@@ -1,0 +1,47 @@
+/* ConfirmBar (A2; wireframe `.confirm`). */
+@layer components {
+  .confirm {
+    display: grid;
+    gap: var(--sp-3);
+    padding: var(--sp-4) var(--sp-6) var(--sp-5);
+    border-block-start: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .confirm-summary {
+    font-size: var(--fs-label);
+    overflow-wrap: anywhere;
+  }
+
+  .confirm-summary strong {
+    color: var(--teal-ink);
+  }
+
+  .confirm-error {
+    font-size: var(--fs-meta);
+    color: var(--bad-ink);
+    overflow-wrap: anywhere;
+  }
+
+  /* The alternative (or Clear) keeps its label on one line, its full width, beside a Confirm
+     that takes the rest; a label never breaks mid-word (取/消, 结束回/合, End/turn). Only when
+     the two cannot share a row (a long label, 200% text on a phone) does Confirm wrap to its own
+     full-width row (flex lines break on each button's max-content size); a label wider than the
+     pane shrinks to it and wraps at word boundaries only (`keep-all`: never inside 取消). */
+  .confirm-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+  }
+
+  .confirm-buttons > .kit-btn:not(.kit-btn--block) {
+    flex: 0 1 auto;
+    word-break: keep-all;
+  }
+
+  .confirm-buttons > .kit-btn--block {
+    flex: 1 1 8rem;
+    width: auto;
+    white-space: nowrap;
+  }
+}

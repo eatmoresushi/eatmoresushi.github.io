@@ -13,7 +13,7 @@ import {
   currentDecisionActor,
   locationCapacity,
   turnOrderFromFirst,
-} from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
 import { createdGame, mustApply, mustResult, startedGame } from "./helpers.ts";
 
 describe("v1.4 setup and authoritative content", () => {

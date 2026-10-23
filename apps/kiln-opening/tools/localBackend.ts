@@ -4,8 +4,8 @@ import type { Plugin } from "vite";
 import {
   AuthoritativeGameService,
   InMemoryMultiplayerStore,
-} from "../src/multiplayer";
-import type { SecurityProvider } from "../src/multiplayer";
+} from "../src/multiplayer-v14";
+import type { SecurityProvider } from "../src/multiplayer-v14";
 
 class BrowserTestSecurity implements SecurityProvider {
   private sequence = 0;

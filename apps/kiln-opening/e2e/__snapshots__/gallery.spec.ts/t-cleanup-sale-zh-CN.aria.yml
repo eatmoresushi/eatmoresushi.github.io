@@ -1,0 +1,46 @@
+- complementary "你的决断":
+  - paragraph: 收工·轮到你了
+  - heading "弃到委托上限" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中5张委托 声望0／4 0分
+  - form "弃到委托上限":
+    - paragraph: 你持有5张委托，上限4张：必须恰好弃置1张。起始委托放回盒中；主委托面朝下弃置。
+    - group "委托 仅你可见":
+      - text: ""
+      - paragraph: 已选0／1张
+      - checkbox "S01 3分 4铜钱 任意器型 · 白釉 · 任意纹饰 · 良品以上"
+      - text: S01 3分 4铜钱 任意器型 · 白釉 · 任意纹饰 · 良品以上
+      - button "完整规则：委托S01"
+      - checkbox "S02 3分 4铜钱 任意器型 · 青釉 · 任意纹饰 · 良品以上"
+      - text: S02 3分 4铜钱 任意器型 · 青釉 · 任意纹饰 · 良品以上
+      - button "完整规则：委托S02"
+      - checkbox "O01 4分 3铜钱 碗 · 任意釉 · 任意纹饰 · 良品以上"
+      - text: O01 4分 3铜钱 碗 · 任意釉 · 任意纹饰 · 良品以上
+      - button "完整规则：委托O01"
+      - checkbox "O02 4分 3铜钱 盘 · 任意釉 · 任意纹饰 · 良品以上"
+      - text: O02 4分 3铜钱 盘 · 任意釉 · 任意纹饰 · 良品以上
+      - button "完整规则：委托O02"
+      - checkbox "O03 4分 3铜钱 笔洗 · 任意釉 · 任意纹饰 · 良品以上"
+      - text: O03 4分 3铜钱 笔洗 · 任意釉 · 任意纹饰 · 良品以上
+      - button "完整规则：委托O03"
+    - paragraph: 所有玩家同时弃牌；其他玩家只看到你持有的委托张数。
+    - group "卖出瑕品":
+      - text: ""
+      - paragraph: 你可以卖出你的一件瑕品，得2铜钱。它离开游戏，器型卡放回供应堆。
+      - radio "灰青釉盘 · 印花 · 瑕品 得2铜钱"
+      - text: 灰青釉盘 · 印花 · 瑕品 得2铜钱
+    - paragraph: 已选0／1张
+    - button "取消"
+    - button "确认" [disabled]

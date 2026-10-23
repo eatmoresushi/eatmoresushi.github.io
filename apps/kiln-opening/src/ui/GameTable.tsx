@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import actionLocationsJson from "../../data/action_locations.json" with { type: "json" };
+import actionLocationsJson from "../game-v14/data/action_locations.json" with { type: "json" };
 import {
   ACTION_LOCATION_PRICES,
   CONTRIBUTION_CARD_DEFINITIONS,
@@ -15,11 +15,11 @@ import {
   currentDecisionActor,
   locationCapacity,
   preferredHeat,
-} from "../game";
+} from "../game-v14";
 import type {
-  ContributionCardId, CeramicState, FiringContext, LocationId, PlayerId } from "../game";
-import type { OrderDefinition } from "../game/content";
-import type { PublicGameState, PublicPlayerState } from "../multiplayer";
+  ContributionCardId, CeramicState, FiringContext, LocationId, PlayerId } from "../game-v14";
+import type { OrderDefinition } from "../game-v14/content";
+import type { PublicGameState, PublicPlayerState } from "../multiplayer-v14";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 import { OrderFace, TechniqueFace, pieceSurfaceClass } from "./PieceFaces";

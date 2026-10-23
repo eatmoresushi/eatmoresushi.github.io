@@ -1,0 +1,56 @@
+/* CeramicsRow (B2; wireframe `.cerrow`). */
+@layer components {
+  .cerrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--sp-4) var(--sp-6);
+    min-width: 0;
+  }
+
+  .cerrow > .prow-lab {
+    align-self: center;
+  }
+
+  .cerrow-none {
+    align-self: center;
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+
+  .cerrow-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--sp-3) var(--sp-5);
+    min-width: 0;
+  }
+
+  .cerrow-lab {
+    align-self: center;
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+
+  .cerrow-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--sp-4) var(--sp-5);
+    margin: 0;
+    padding: var(--sp-3) var(--sp-3) 0;
+    list-style: none;
+  }
+
+  .cerrow-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cerrow-count {
+    align-self: center;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+}

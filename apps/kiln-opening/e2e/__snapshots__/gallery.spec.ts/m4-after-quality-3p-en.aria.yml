@@ -1,0 +1,42 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "After-Quality abilities" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "6"
+      - text: Clay
+      - strong: "4"
+      - text: Wood
+      - strong: "0"
+      - text: Coins
+    - text: 5 Orders in hand Recognition 0/4 0 VP
+  - form "After-Quality abilities":
+    - paragraph: Firing step 5, in First Player order
+    - paragraph: Use them in any order you like; the options are checked again after each use.
+    - heading "Queue" [level=3]
+    - list "Queue":
+      - listitem: "Lin (you): deciding"
+    - heading "Your ceramics in this firing" [level=3]
+    - text: White Brush Washer, Plain · Standard
+    - group "Protective Saggars":
+      - button "Protective Saggars"
+      - paragraph:
+        - strong: "Always:"
+        - text: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard.
+        - strong: "Once per round, after Quality is assigned:"
+        - text: 1 of your Standard ceramics from this firing → Fine.
+      - radio "White Brush Washer, Plain · Standard"
+      - text: White Brush Washer, Plain · Standard
+    - group "Ge Kiln · Crackle Mastery":
+      - button "Ge Kiln · Crackle Mastery"
+      - paragraph:
+        - strong: "Once per round, after Quality is assigned:"
+        - text: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine.
+        - strong: "Orders:"
+        - text: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
+      - radio "White Brush Washer, Plain · Standard"
+      - text: White Brush Washer, Plain · Standard
+    - paragraph: Pick an ability, or finish.
+    - button "Done — decline the rest"
+    - button "Confirm" [disabled]

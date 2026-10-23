@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { LocationId } from "../game";
+import type { LocationId } from "../game-v14";
 
 const ACTION_ICONS = {
   materials_yard: <>

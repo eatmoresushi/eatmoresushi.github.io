@@ -1,141 +1,69 @@
-import type { GameEvent, GameState, PlayerId, Shape, TechniqueDiscipline } from "../game/index.ts";
-import type {
-  PublicGameEvent,
-  PublicGameState,
-  PublicPlayerState,
-} from "./types.ts";
+/**
+ * Thin wrappers over the engine's hidden-information boundary (`src/game/view.ts`, DESIGN
+ * §4.3). Secrets are structurally separate in V1.6.2 — `GameState.hidden`,
+ * `PrivateFiringState` and each event's `secret` — so nothing here redacts field by field.
+ */
 
-function clone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+import { projectEvent, projectPublicState } from "../game/index.ts";
+import type { GameEvent, GameState, PlayerId } from "../game/index.ts";
+import type { PrivateEventRecord, PublicGameEvent, PublicGameState } from "./types.ts";
+
+/** Throws unless the state is a V1.6.2 schema-9 game: older saves (schema 8 before owner revision 4, schema 7, V1.6.1 schema 6) are never projected. */
+export function assertCurrentGameState(state: GameState): void {
+  if (state.schemaVersion !== 9 || state.rulesVersion !== "1.6.2") {
+    throw new Error("Only schema-9 V1.6.2 games may be projected by the current service");
+  }
 }
 
-function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState {
-  const player = state.players[playerId];
-  if (player === undefined) throw new Error(`Missing player ${playerId}`);
-  return {
-    id: player.id,
-    seatIndex: player.seatIndex,
-    displayName: player.displayName,
-    kilnId: player.kilnId,
-    resources: clone(player.resources),
-    workers: clone(player.workers),
-    orderHand: [],
-    orderHandCount: player.orderHand.length,
-    completedOrders: clone(player.completedOrders),
-    techniques: clone(player.techniques),
-    startingTechniqueId: player.startingTechniqueId,
-    imperialRecognition: player.imperialRecognition,
-    imperialGrantResolved: player.imperialGrantResolved,
-    imperialKilnUnlocked: player.imperialKilnUnlocked,
-    imperialPriorityAvailable: player.imperialPriorityAvailable,
-    imperialAudienceVpAwarded: player.imperialAudienceVpAwarded,
-    passedWorkPhase: player.passedWorkPhase,
-    kilnAbilityUsedThisRound: player.kilnAbilityUsedThisRound,
-    kilnYardShifuUsedThisRound: player.kilnYardShifuUsedThisRound,
-    kilnYardShifuCeramicId: player.kilnYardShifuCeramicId,
-    shapesFormedThisRound: [...(player.shapesFormedThisRound ?? [])],
-    presentationCeramicIds: [...player.presentationCeramicIds],
-    presentationFeaturedCeramicIds: [...(player.presentationFeaturedCeramicIds ?? [])],
-    score: clone(player.score),
-  };
-}
-
+/** The public projection: the state without `hidden`, plus public counts. */
 export function projectPublicGameState(state: GameState): PublicGameState {
-  if (state.schemaVersion !== 5 || state.rulesVersion !== "1.4") {
-    throw new Error("Only schema-5 V1.4 games may be projected by the current client");
-  }
-  if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
-    throw new Error("Unrevealed Contributions must never enter the public firing context");
-  }
-  const players = Object.fromEntries(
-    state.playerOrder.map((playerId) => [playerId, projectPlayer(state, playerId)]),
-  ) as Record<PlayerId, PublicPlayerState>;
-  const vesselSupplyCounts = Object.fromEntries(
-    (Object.keys(state.vesselSupply) as Shape[]).map((shape) => [shape, state.vesselSupply[shape].length]),
-  ) as Record<Shape, number>;
-  const techniqueRemaining = Object.fromEntries(
-    (["forming", "glazing", "firing"] as TechniqueDiscipline[]).map((discipline) => [
-      discipline,
-      state.techniqueDecks[discipline].length,
-    ]),
-  ) as Record<TechniqueDiscipline, number>;
-
-  const phase = clone(state.phase);
-  if (phase.type === "setup_starting_orders") {
-    phase.offeredOrderIds = {};
-    phase.initialOrderIds = {};
-  }
-  if (phase.type === "work_office_orders" && phase.step === "colour_samples_choose") {
-    phase.colourSamplesChoices = [];
-  }
-  if (phase.type === "orders") delete phase.declinedCompletableOrderIdsByPlayer;
-  // The Guild Shifu's inspected Techs are private to that player.
-  if (phase.type === "work_guild" && phase.inspectedTechniqueIds !== undefined) {
-    phase.inspectedTechniqueIds = [];
-  }
-  return {
-    schemaVersion: state.schemaVersion,
-    rulesVersion: state.rulesVersion,
-    gameId: state.gameId,
-    revision: state.revision,
-    eventSequence: state.eventSequence,
-    playerCount: state.playerCount,
-    round: state.round,
-    playerOrder: [...state.playerOrder],
-    firstPlayerId: state.firstPlayerId,
-    phase,
-    players,
-    actionBoard: clone(state.actionBoard),
-    // All ceramic attributes are public, including opponents' workshop/Imperial pieces.
-    ceramics: clone(state.ceramics),
-    vesselSupplyCounts,
-    decks: {
-      marketRemaining: state.marketDeck.length,
-      techniqueRemaining,
-      fireRemaining: state.fireDeck.length,
-    },
-    displays: {
-      market: [...state.marketDisplay],
-      techniques: clone(state.techniqueDisplay),
-    },
-    discards: {
-      market: [...state.marketDiscard],
-      fire: [...state.fireDiscard],
-    },
-    firingContext: clone(state.firingContext),
-    lastFiringResult: state.lastFiringResult === undefined ? null : clone(state.lastFiringResult),
-    finalResult: clone(state.finalResult),
-  };
+  assertCurrentGameState(state);
+  return projectPublicState(state);
 }
 
-export function projectPublicEvent(event: GameEvent): PublicGameEvent {
-  if (event.type === "ORDER_TAKEN") return { type: event.type, playerId: event.playerId, deck: event.deck, acquisition: event.acquisition };
-  if (event.type === "STARTING_ORDERS_REVEALED") return { type: event.type, ordersByPlayer: {} };
-  if (event.type === "ORDERS_DISCARDED_FOR_CLEANUP") return { type: event.type, playerId: event.playerId, count: event.orderIds.length, orderIds: [] };
-  if (event.type === "WOOD_SUBMITTED") {
-    // Construct this record explicitly. Even if the private engine event gains more
-    // fields later, a Fuel Ledger commitment must not cross the public event boundary.
-    return { type: "WOOD_SUBMITTED", playerId: event.playerId, windowId: event.windowId };
-  }
-  if (event.type === "COLOUR_SAMPLES_USED") {
-    return {
-      type: event.type,
-      playerId: event.playerId,
-      deck: event.deck,
-      discardedCount: event.discardedOrderIds.length,
-
-    };
-  }
-  return clone(event) as PublicGameEvent;
-}
-
+/** Every event with its `secret` removed, in order. */
 export function projectPublicEvents(events: readonly GameEvent[]): PublicGameEvent[] {
-  return events.map(projectPublicEvent);
+  return events.map(projectEvent);
 }
 
-/** Owner-only composition for rendering/AI. Never persist or broadcast this view. */
-export function withOwnOrderHand(game: PublicGameState, playerId: PlayerId, orderHand: readonly string[] | undefined): PublicGameState {
-  const player = game.players[playerId];
-  if (player === undefined || orderHand === undefined) return game;
-  return { ...game, players: { ...game.players, [playerId]: { ...player, orderHand: [...orderHand] } } };
+/** The `visibleTo` seat of an event's secret, or null for a fully public event. */
+export function secretRecipient(event: GameEvent): PlayerId | null {
+  const secret = (event as { secret?: { visibleTo?: unknown } }).secret;
+  return secret !== undefined && typeof secret.visibleTo === "string" ? secret.visibleTo : null;
+}
+
+export interface EventLocation {
+  roomId: string;
+  commandId: string;
+  actorId: PlayerId;
+  revision: number;
+  /** `GameState.eventSequence` before these events: the first event is `sequence + 1`. */
+  previousEventSequence: number;
+}
+
+/**
+ * The events of one command that carry a secret for `viewerId`, as private log records.
+ * Sequence numbers match the stored event rows, because every emitted event is persisted
+ * (DESIGN §4.6: `event_sequence` equals the persisted event count).
+ */
+export function ownSecretRecords(
+  events: readonly GameEvent[],
+  viewerId: PlayerId,
+  location: EventLocation,
+): PrivateEventRecord[] {
+  const records: PrivateEventRecord[] = [];
+  events.forEach((event, index) => {
+    if (secretRecipient(event) !== viewerId) {
+      return;
+    }
+    records.push({
+      roomId: location.roomId,
+      sequence: location.previousEventSequence + index + 1,
+      revision: location.revision,
+      commandId: location.commandId,
+      actorId: location.actorId,
+      event: structuredClone(event),
+    });
+  });
+  return records;
 }

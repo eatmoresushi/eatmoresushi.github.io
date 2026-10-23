@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import apprenticeArtwork from "../../assets/current_v04/workers/apprentice-wood-v1.webp";
 import shifuArtwork from "../../assets/current_v04/workers/shifu-wood-v1.webp";
-import type { WorkerKind } from "../game";
-import type { PublicPlayerState } from "../multiplayer";
+import type { WorkerKind } from "../game-v14";
+import type { PublicPlayerState } from "../multiplayer-v14";
 import type { Locale } from "./i18n";
 import "./worker-meeples.css";
 

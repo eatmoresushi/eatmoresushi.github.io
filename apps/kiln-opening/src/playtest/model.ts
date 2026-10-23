@@ -1,11 +1,14 @@
-import { GAME_CONFIG, TECHNIQUES, activeKilnSpaceIds } from "../game/content.ts";
-import type {
-  PlaytestDraft,
-  PlaytestFeedback,
-  PlayerMetrics,
-  RoundMetrics,
-  RoundPlayerMetrics,
-} from "./types.ts";
+/**
+ * Draft model of Playtest Form V3 (rules V1.6.2): empty drafts, resizing, derived values
+ * and restoring a saved draft. Option lists and capacities come from the V1.6.2 content
+ * API through `schema.ts`.
+ */
+
+import { GAME_CONFIG } from "../game/content.ts";
+import type { PlayerCount } from "../game/types.ts";
+import { FUEL_LEDGER_TECH_ID, baseHeatFor, sharedKilnCapacityFor } from "./schema.ts";
+import { PLAYTEST_FORM_VERSION } from "./types.ts";
+import type { PlaytestDraft, PlaytestFeedback, PlayerMetrics, RoundMetrics, RoundPlayerMetrics } from "./types.ts";
 
 function localIsoDate(): string {
   const now = new Date();
@@ -17,9 +20,9 @@ export function emptyPlayer(): PlaytestDraft["players"][number] {
   return {
     name: "",
     kilnId: null,
-    startingTechniqueId: null,
-    advancedTechnique1Id: null,
-    advancedTechnique2Id: null,
+    workshopTechId: null,
+    glazingLoadingTechId: null,
+    firingTechId: null,
     completedOrderIds: [],
     recognition: null,
     coinsRemaining: null,
@@ -44,12 +47,13 @@ function emptyRoundPlayer(playerIndex: number): RoundPlayerMetrics {
   };
 }
 
-export function emptyRound(round: number, playerCount: 2 | 3 | 4): RoundMetrics {
+export function emptyRound(round: number, playerCount: PlayerCount): RoundMetrics {
   return {
     round,
+    kilnDie: null,
     players: Array.from({ length: playerCount }, (_, playerIndex) => emptyRoundPlayer(playerIndex)),
     fireModifier: null,
-    firingTechniqueIds: [],
+    firingTechIds: [],
   };
 }
 
@@ -71,9 +75,9 @@ function emptyFeedback(): PlaytestFeedback {
   };
 }
 
-export function createPlaytestDraft(playerCount: 2 | 3 | 4 = 2): PlaytestDraft {
+export function createPlaytestDraft(playerCount: PlayerCount = 2): PlaytestDraft {
   return {
-    formVersion: 2,
+    formVersion: PLAYTEST_FORM_VERSION,
     rulesVersion: GAME_CONFIG.rulesVersion,
     playedOn: localIsoDate(),
     playerCount,
@@ -85,68 +89,65 @@ export function createPlaytestDraft(playerCount: 2 | 3 | 4 = 2): PlaytestDraft {
   };
 }
 
-export function resizePlayers(draft: PlaytestDraft, playerCount: 2 | 3 | 4): PlaytestDraft {
+export function resizePlayers(draft: PlaytestDraft, playerCount: PlayerCount): PlaytestDraft {
   return {
     ...draft,
     playerCount,
-    players: Array.from(
-      { length: playerCount },
-      (_, index) => draft.players[index] ?? emptyPlayer(),
-    ),
+    players: Array.from({ length: playerCount }, (_, index) => draft.players[index] ?? emptyPlayer()),
     rounds: draft.rounds.map((round) => ({
       ...round,
-      players: Array.from(
-        { length: playerCount },
-        (_, index) => round.players[index] ?? emptyRoundPlayer(index),
-      ),
+      players: Array.from({ length: playerCount }, (_, index) => round.players[index] ?? emptyRoundPlayer(index)),
     })),
     firstPlayerIndex: Math.min(draft.firstPlayerIndex, playerCount - 1),
     winnerIndex: Math.min(draft.winnerIndex, playerCount - 1),
   };
 }
 
-export function sharedKilnCapacity(playerCount: 2 | 3 | 4): number {
-  return activeKilnSpaceIds(playerCount).length;
+export function sharedKilnCapacity(playerCount: PlayerCount): number {
+  return sharedKilnCapacityFor(playerCount);
 }
 
-const FIRING_TECHNIQUE_IDS = new Set(
-  TECHNIQUES.filter((technique) => technique.discipline === "firing").map((technique) => technique.id),
-);
+/** The round's Base Heat from its Kiln Die and revealed Contributions, or null without a die. */
+export function roundBaseHeat(round: RoundMetrics): number | null {
+  return baseHeatFor(
+    round.kilnDie,
+    round.players.map((player) => player.contribution),
+  );
+}
+
+/** Global Heat = Base Heat + the Fire card (L249), or null until both are recorded (CR B3-3). */
+export function roundGlobalHeat(round: RoundMetrics): number | null {
+  const base = roundBaseHeat(round);
+  return base === null || round.fireModifier === null ? null : base + round.fireModifier;
+}
 
 /** Remove firing-use data that no longer has a matching owner in player setup. */
-export function reconcileFiringTechniqueOwnership(draft: PlaytestDraft): PlaytestDraft {
-  const ownedFiringTechniqueIds = new Set(
-    draft.players
-      .flatMap((player) => [player.advancedTechnique1Id, player.advancedTechnique2Id])
-      .filter((techniqueId): techniqueId is NonNullable<typeof techniqueId> => (
-        techniqueId !== null && FIRING_TECHNIQUE_IDS.has(techniqueId)
-      )),
-  );
-  const fuelLedgerOwnerIndex = draft.players.findIndex((player) => (
-    player.advancedTechnique1Id === "T12" || player.advancedTechnique2Id === "T12"
-  ));
-
+export function reconcileFiringTechOwnership(draft: PlaytestDraft): PlaytestDraft {
+  const ownedFiringTechIds = new Set(draft.players.flatMap((player) => (player.firingTechId === null ? [] : [player.firingTechId])));
+  const fuelLedgerOwnerIndex = draft.players.findIndex((player) => player.firingTechId === FUEL_LEDGER_TECH_ID);
   return {
     ...draft,
     rounds: draft.rounds.map((round) => {
       const players = round.players.map((player, playerIndex) => ({
         ...player,
-        contribution: playerIndex === fuelLedgerOwnerIndex
-          ? player.contribution
-          : player.contribution === "bank_2"
-            ? "bank" as const
-            : player.contribution === "stoke_2" ? "stoke" as const : player.contribution,
+        contribution:
+          playerIndex === fuelLedgerOwnerIndex
+            ? player.contribution
+            : player.contribution === "bank_2"
+              ? ("bank" as const)
+              : player.contribution === "stoke_2"
+                ? ("stoke" as const)
+                : player.contribution,
       }));
-      const adjustedContributionRecorded = players.some((player) => (
-        player.contribution === "bank_2" || player.contribution === "stoke_2"
-      ));
+      const adjustedContributionRecorded = players.some(
+        (player) => player.contribution === "bank_2" || player.contribution === "stoke_2",
+      );
       return {
         ...round,
         players,
-        firingTechniqueIds: round.firingTechniqueIds.filter((techniqueId) => (
-          ownedFiringTechniqueIds.has(techniqueId)
-          && (techniqueId !== "T12" || adjustedContributionRecorded)
-        )),
+        firingTechIds: round.firingTechIds.filter(
+          (techId) => ownedFiringTechIds.has(techId) && (techId !== FUEL_LEDGER_TECH_ID || adjustedContributionRecorded),
+        ),
       };
     }),
   };
@@ -157,11 +158,8 @@ export function submissionCandidate(draft: PlaytestDraft): unknown {
     ...draft,
     players: draft.players.map((player, playerIndex) => ({
       ...player,
-      completedOrderIds: player.completedOrderIds.filter((orderId) => orderId !== ""),
-      kilnAbilityUses: draft.rounds.reduce(
-        (total, round) => total + (round.players[playerIndex]?.kilnAbilityUses ?? 0),
-        0,
-      ),
+      completedOrderIds: player.completedOrderIds.filter((orderId) => (orderId as string) !== ""),
+      kilnAbilityUses: draft.rounds.reduce((total, round) => total + (round.players[playerIndex]?.kilnAbilityUses ?? 0), 0),
     })) as PlayerMetrics[],
   };
 }
@@ -170,22 +168,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Restores a saved Form V3 draft; older form versions are not migrated. */
 export function restorePlaytestDraft(serialized: string): PlaytestDraft | null {
   try {
     const value: unknown = JSON.parse(serialized);
-    if (!isRecord(value) || value["formVersion"] !== 2) return null;
+    if (!isRecord(value) || value["formVersion"] !== PLAYTEST_FORM_VERSION) return null;
+    if (value["rulesVersion"] !== GAME_CONFIG.rulesVersion) return null;
     if (![2, 3, 4].includes(Number(value["playerCount"]))) return null;
     if (!Array.isArray(value["players"]) || !Array.isArray(value["rounds"])) return null;
     if (!isRecord(value["feedback"])) return null;
-    if (value["players"].length !== value["playerCount"] || value["rounds"].length !== 5) return null;
+    if (value["players"].length !== value["playerCount"] || value["rounds"].length !== GAME_CONFIG.rounds) return null;
     if (!value["players"].every((player) => isRecord(player) && Array.isArray(player["completedOrderIds"]))) return null;
-    if (!value["rounds"].every((round) => (
-      isRecord(round)
-      && Array.isArray(round["players"])
-      && Array.isArray(round["firingTechniqueIds"])
-      && round["players"].length === value["playerCount"]
-    ))) return null;
-    return reconcileFiringTechniqueOwnership(value as unknown as PlaytestDraft);
+    if (
+      !value["rounds"].every(
+        (round) =>
+          isRecord(round) &&
+          Array.isArray(round["players"]) &&
+          Array.isArray(round["firingTechIds"]) &&
+          round["players"].length === value["playerCount"],
+      )
+    ) {
+      return null;
+    }
+    return reconcileFiringTechOwnership(value as unknown as PlaytestDraft);
   } catch {
     return null;
   }

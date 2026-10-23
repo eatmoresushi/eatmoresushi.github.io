@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DECORATION_COSTS, FORMING_TECH_COINS, GUILD_SHIFU_INSPECT, SHAPE_COSTS, TECHNIQUE_DEFINITIONS, applyAction } from "../../src/game/index.ts";
+import { DECORATION_COSTS, FORMING_TECH_COINS, GUILD_SHIFU_INSPECT, SHAPE_COSTS, TECHNIQUE_DEFINITIONS, applyAction } from "../../src/game-v14/index.ts";
 import {
   finishWork,
   addGlazed,

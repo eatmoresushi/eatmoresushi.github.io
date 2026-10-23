@@ -1,0 +1,113 @@
+/* B5 Order forms (wireframe `decOrders`, `decTrim`): rewards, details triggers, groups, verdicts. */
+@layer components {
+  .ord-details {
+    display: flex;
+    justify-content: flex-end;
+    padding-inline: var(--sp-5);
+    font-size: var(--fs-meta);
+  }
+
+  /* An Order option (`ORDER_OPTION_CLASS`): its "Rules" pill sits inside the card, in the bottom
+     corner, as a sibling of the card's label (never inside it); the label keeps room for it. */
+  .kit-opt.ord-opt {
+    position: relative;
+  }
+
+  .kit-opt.ord-opt > .kit-opt-label {
+    padding-block-end: calc(var(--sp-4) + 1.75rem);
+  }
+
+  .kit-opt.ord-opt > .ord-details {
+    position: absolute;
+    inset-inline-end: var(--sp-4);
+    inset-block-end: var(--sp-3);
+    z-index: 1;
+    padding-inline: 0;
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-opt.ord-opt > .kit-opt-label {
+      padding-block-end: calc(var(--sp-4) + var(--target-min));
+    }
+
+    .kit-opt.ord-opt > .ord-details {
+      inset-block-end: var(--sp-2);
+    }
+  }
+
+  .ord-group-art {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+
+  .ord-decl {
+    display: grid;
+    gap: var(--sp-6);
+  }
+
+  /* The auto mode's recorded Decorations ("Counts as Carved."), on a line of its own. */
+  .ord-decl-record {
+    display: block;
+    margin-block-start: var(--sp-1);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .ord-verdict {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--sp-1) var(--sp-3);
+    font-weight: 700;
+    white-space: normal;
+  }
+
+  .ord-verdict--ok {
+    color: var(--ok-ink);
+  }
+
+  .ord-verdict--no {
+    color: var(--bad-ink);
+  }
+
+  .ord-verdict-why {
+    font-weight: 400;
+  }
+
+  .ord-final-list {
+    display: grid;
+    gap: var(--sp-3);
+    counter-reset: none;
+  }
+
+  .ord-final-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-4);
+    padding: var(--sp-3) var(--sp-4);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+
+  .ord-final-row[data-winner="true"] {
+    box-shadow: inset 0 0 0 1.5px var(--win);
+  }
+
+  .ord-final-rank {
+    min-width: 3ch;
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+  }
+
+  .ord-final-name {
+    font-weight: 700;
+  }
+
+  .ord-final-vp {
+    margin-inline-start: auto;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+}

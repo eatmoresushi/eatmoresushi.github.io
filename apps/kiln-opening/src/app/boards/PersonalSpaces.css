@@ -1,0 +1,101 @@
+/* PersonalSpaces (B2; wireframe `.pspaces`, `.psp`; D7: a second space is added, never unlocked). */
+@layer components {
+  .pspaces {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-3);
+  }
+
+  @container board (max-width: 420px) {
+    .pspaces {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .psp {
+    display: grid;
+    align-content: start;
+    gap: var(--sp-2);
+    min-width: 0;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    font-size: var(--fs-meta);
+  }
+
+  .psp--fd {
+    background: var(--d-workshop-pale);
+  }
+
+  .psp--gl {
+    background: var(--d-glazing-pale);
+  }
+
+  .psp-name {
+    color: var(--ink);
+    font-weight: 700;
+    text-decoration: underline dotted var(--ink-3);
+    text-underline-offset: 3px;
+  }
+
+  .psp-slots {
+    display: flex;
+    gap: var(--sp-3);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .psp-slot {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border: 1.5px dashed var(--line);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--ink-3);
+  }
+
+  .psp-slot--pending {
+    border: 2px solid var(--teal);
+    background: var(--teal-pale);
+  }
+
+  .psp-slot--add {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    gap: var(--sp-3);
+    width: auto;
+    height: auto;
+    min-height: 36px;
+    min-width: 0;
+    padding: var(--sp-1) var(--sp-4);
+    border-color: var(--ink-3);
+    background: transparent;
+    color: var(--ink-2);
+    line-height: var(--lh-snug);
+    text-align: start;
+  }
+
+  .psp-plus {
+    flex: none;
+    color: var(--ink-3);
+    font-family: var(--serif);
+    font-size: var(--fs-16);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .psp-added {
+    margin: 0;
+    color: var(--ink-2);
+  }
+
+  .psp-added strong {
+    color: var(--ink);
+  }
+}

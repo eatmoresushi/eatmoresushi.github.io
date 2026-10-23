@@ -1,0 +1,108 @@
+/* PieceDetail (kit, §7.4): button + panel. In place (absolute) until the body-level layer
+   exists; then the open panel is fixed beside its button, inside the viewport (CR B2-6, B3-5). */
+@layer components {
+  .kit-detail {
+    position: relative;
+    display: inline-flex;
+    max-width: 100%;
+  }
+
+  .kit-detail-trigger {
+    display: inline-flex;
+    max-width: 100%;
+    border-radius: var(--r-sm);
+    text-align: inherit;
+  }
+
+  .kit-detail-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: var(--z-popover);
+    display: grid;
+    gap: var(--sp-3);
+    width: max-content;
+    max-width: min(22rem, calc(100vw - 2 * var(--gutter)));
+    padding: var(--sp-4) var(--sp-5) var(--sp-5);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 14px 34px var(--shadow-c);
+    font-size: var(--fs-rule);
+    line-height: var(--lh-body);
+    text-align: start;
+    translate: var(--detail-shift-x, 0px) 0;
+  }
+
+  .kit-detail-panel[data-size="wide"] {
+    max-width: min(26rem, calc(100vw - 2 * var(--gutter)));
+  }
+
+  /* In the body-level layer: fixed beside the button, placed through custom properties (measured
+     before the first paint of an open panel). */
+  .kit-detail-panel[data-layer="true"] {
+    position: fixed;
+    top: var(--detail-top, 0px);
+    bottom: var(--detail-bottom, auto);
+    left: var(--detail-x, 0px);
+    z-index: var(--z-detail);
+    max-height: var(--detail-max-h, calc(100dvh - 2 * var(--gutter)));
+    overflow: auto;
+    overscroll-behavior: contain;
+    translate: none;
+  }
+
+  .kit-detail-layer {
+    position: relative;
+    z-index: var(--z-detail);
+  }
+
+  .kit-detail-head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-4);
+  }
+
+  .kit-detail-title {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-label);
+  }
+
+  .kit-detail-close {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--r-sm);
+    color: var(--ink-2);
+    font-size: var(--fs-16);
+  }
+
+  .kit-detail-close:hover {
+    background: var(--paper-2);
+  }
+
+  .kit-detail-body {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-detail-trigger {
+      min-width: var(--target-min);
+      min-height: var(--target-min);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .kit-detail-close {
+      width: var(--target-min);
+      height: var(--target-min);
+    }
+  }
+}

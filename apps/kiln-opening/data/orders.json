@@ -1,50 +1,95 @@
 {
-  "rulesVersion": "1.4",
+  "rulesVersion": "1.6.2",
+  "clarifications": {
+    "starting": [
+      {
+        "en": "Starting Orders never enter the Main Order deck and have no Crowns; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order.",
+        "zh": "起始委托永远不进入主委托牌堆，也没有御令；若在收工时从手中弃置，放回盒中。对所有规则与窑口传承能力而言，起始委托都算作委托。玩家没有义务完成任何起始委托。",
+        "source": "L516"
+      },
+      {
+        "en": "When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged.",
+        "zh": "完成委托时，你的每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。",
+        "source": "L465"
+      },
+      {
+        "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup.",
+        "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查。",
+        "source": "L211 · L307"
+      }
+    ],
+    "main": [
+      {
+        "en": "Face-up Main Orders cannot be completed; they are reserved at the Commission Market during the Work Phase.",
+        "zh": "委托榜上的主委托不能完成；它们要在派工阶段到瓷牙行承接。",
+        "source": "L300"
+      },
+      {
+        "en": "Requirements are independent unless a specific pairing is explicitly printed.",
+        "zh": "各项要求彼此独立，除非卡面直接写明配对。",
+        "source": "L418"
+      },
+      {
+        "en": "Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged. Each Crackle ceramic you deliver to complete an Order scores 1 VP.",
+        "zh": "每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。你每交付1件开片器完成委托，得1分。",
+        "source": "L465 · INT Ge Crackle revision 4"
+      },
+      {
+        "en": "Resolve 1 Crown at a time. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4; after that, each further Crown scores 1 VP immediately. Resolve every milestone crossed.",
+        "zh": "逐个结算御令。每个御令使御府声望推进1格，直到声望4。到达声望4之后，每再获得1个御令，立即得1分。途经的每一格奖励都要结算。",
+        "source": "L411"
+      },
+      {
+        "en": "Tribute Ware's bonus Crown is not a printed Crown: it does not trigger Guan and does not count for tie-breaker 2.",
+        "zh": "贡瓷的额外御令不是委托上印有的御令：它不触发官窑，也不计入平局判定②。",
+        "source": "R13"
+      },
+      {
+        "en": "Tie-breaker 2 counts Crown icons printed across completed Orders.",
+        "zh": "平局判定②统计已完成委托上印的御令总数。",
+        "source": "L493"
+      },
+      {
+        "en": "At Setup, in reverse turn order, each player chooses a Kiln and takes 1 face-up Main Order in one turn; the display is refilled to 6 after each take, and everyone sees which Order each player took.",
+        "zh": "游戏准备时，按回合顺序的逆序，每位玩家在同一个回合里选定窑口板，并从委托榜上拿取1张主委托；每拿1张就把委托榜补回6张，大家都看到各人拿的是哪张。",
+        "source": "L122 · R23"
+      },
+      {
+        "en": "At the start of Rounds 2–5, discard the 2 leftmost face-up Main Orders, slide the remaining 4 left and reveal 2 new Orders to restore the display to 6.",
+        "zh": "第2–5轮开工时轮换委托榜：弃置最左边的2张主委托，余下4张向左推，再翻开2张新委托，使委托榜恢复为6张。",
+        "source": "L142 · L144"
+      },
+      {
+        "en": "If the deck and discard are both empty, only available cards can be reserved and display positions stay empty. The round-start rotation discards up to 2 and slides the rest.",
+        "zh": "如果主委托牌堆和弃牌堆都空了，只能承接现有的牌，榜位就空着；开工轮换至多弃置2张，其余的向左推。",
+        "source": "B1"
+      },
+      {
+        "en": "Orders looked at and not reserved, at the Commission Market or with Colour Samples, are discarded face down to the Main Order discard pile. Only the player who looked knows which they are; the discard count is public.",
+        "zh": "在瓷牙行或用色样簿翻看而没有承接的委托，面朝下弃置到主委托弃牌堆；是哪几张只有翻看者知道，弃牌堆张数公开。",
+        "source": "L203 · B3 · R25"
+      },
+      {
+        "en": "The Magistrate's Hall Shifu may also reserve 1 face-up Crown Order after advancing Recognition.",
+        "zh": "州衙的师傅推进声望后，还可以从榜上承接1张御令委托。",
+        "source": "L392 · R21"
+      },
+      {
+        "en": "The Main Order discard pile is face down; only its count is public. Display Orders discarded at round start were already public.",
+        "zh": "主委托弃牌堆面朝下，只公开张数；开工时弃置的榜上委托本来就是公开的。",
+        "source": "B3"
+      },
+      {
+        "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup. Discarded Main Orders go to the Main Order discard pile.",
+        "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查；弃置的主委托进入主委托弃牌堆。",
+        "source": "L211 · L307"
+      }
+    ]
+  },
   "starting": [
     {
       "id": "S01",
-      "ceramics": [
-        {
-          "shape": "bowl"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 2,
-      "coins": 3,
-      "crowns": 0,
-      "requirements": "Bowl · any Glaze · any Decoration",
-      "requirementsZh": "碗 · 任意釉 · 任意纹饰"
-    },
-    {
-      "id": "S02",
-      "ceramics": [
-        {
-          "shape": "plate"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 2,
-      "coins": 3,
-      "crowns": 0,
-      "requirements": "Plate · any Glaze · any Decoration",
-      "requirementsZh": "盘 · 任意釉 · 任意纹饰"
-    },
-    {
-      "id": "S03",
-      "ceramics": [
-        {
-          "shape": "washer"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 2,
-      "coins": 3,
-      "crowns": 0,
-      "requirements": "Brush Washer · any Glaze · any Decoration",
-      "requirementsZh": "笔洗 · 任意釉 · 任意纹饰"
-    },
-    {
-      "id": "S04",
+      "deck": "starting",
       "ceramics": [
         {
           "glaze": "white"
@@ -52,13 +97,14 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 3,
+      "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · White · any Decoration",
       "requirementsZh": "任意器型 · 白釉 · 任意纹饰"
     },
     {
-      "id": "S05",
+      "id": "S02",
+      "deck": "starting",
       "ceramics": [
         {
           "glaze": "celadon"
@@ -66,13 +112,14 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 3,
+      "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · Celadon · any Decoration",
       "requirementsZh": "任意器型 · 青釉 · 任意纹饰"
     },
     {
-      "id": "S06",
+      "id": "S03",
+      "deck": "starting",
       "ceramics": [
         {
           "glaze": "grey_green"
@@ -80,13 +127,14 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 3,
+      "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · Grey-Green · any Decoration",
       "requirementsZh": "任意器型 · 灰青釉 · 任意纹饰"
     },
     {
-      "id": "S07",
+      "id": "S04",
+      "deck": "starting",
       "ceramics": [
         {
           "glaze": "moon_white"
@@ -94,13 +142,33 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 3,
+      "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · Moon White · any Decoration",
       "requirementsZh": "任意器型 · 月白釉 · 任意纹饰"
     },
     {
-      "id": "S08",
+      "id": "S05",
+      "deck": "starting",
+      "ceramics": [
+        {
+          "shapes": [
+            "bowl",
+            "plate",
+            "washer"
+          ]
+        }
+      ],
+      "minQuality": "standard",
+      "vp": 3,
+      "coins": 4,
+      "crowns": 0,
+      "requirements": "Bowl, Plate or Brush Washer · any Glaze · any Decoration",
+      "requirementsZh": "碗、盘或笔洗 · 任意釉 · 任意纹饰"
+    },
+    {
+      "id": "S06",
+      "deck": "starting",
       "ceramics": [
         {
           "shapes": [
@@ -111,15 +179,48 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 3,
+      "coins": 5,
       "crowns": 0,
       "requirements": "Vase or Censer · any Glaze · any Decoration",
       "requirementsZh": "瓶或香炉 · 任意釉 · 任意纹饰"
+    },
+    {
+      "id": "S07",
+      "deck": "starting",
+      "ceramics": [
+        {
+          "decorations": [
+            "carved",
+            "impressed",
+            "painted"
+          ]
+        }
+      ],
+      "minQuality": "standard",
+      "vp": 3,
+      "coins": 3,
+      "crowns": 0,
+      "requirements": "any Shape · any Glaze · Carved, Impressed or Painted",
+      "requirementsZh": "任意器型 · 任意釉 · 刻花、印花或画花"
+    },
+    {
+      "id": "S08",
+      "deck": "starting",
+      "ceramics": [
+        {}
+      ],
+      "minQuality": "standard",
+      "vp": 2,
+      "coins": 4,
+      "crowns": 0,
+      "requirements": "any Shape · any Glaze · any Decoration",
+      "requirementsZh": "任意器型 · 任意釉 · 任意纹饰"
     }
   ],
   "main": [
     {
       "id": "O01",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "bowl"
@@ -127,13 +228,14 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 2,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Bowl · any Glaze · any Decoration",
       "requirementsZh": "碗 · 任意釉 · 任意纹饰"
     },
     {
       "id": "O02",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "plate"
@@ -141,13 +243,14 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 2,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Plate · any Glaze · any Decoration",
       "requirementsZh": "盘 · 任意釉 · 任意纹饰"
     },
     {
       "id": "O03",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "washer"
@@ -155,13 +258,14 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 2,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Brush Washer · any Glaze · any Decoration",
       "requirementsZh": "笔洗 · 任意釉 · 任意纹饰"
     },
     {
       "id": "O04",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "vase",
@@ -177,6 +281,7 @@
     },
     {
       "id": "O05",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "censer",
@@ -184,7 +289,7 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 8,
+      "vp": 6,
       "coins": 3,
       "crowns": 0,
       "requirements": "Censer · any Glaze · Carved",
@@ -192,6 +297,7 @@
     },
     {
       "id": "O06",
+      "deck": "main",
       "ceramics": [
         {
           "glaze": "white"
@@ -199,13 +305,14 @@
       ],
       "minQuality": "fine",
       "vp": 5,
-      "coins": 2,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · White · any Decoration",
       "requirementsZh": "任意器型 · 白釉 · 任意纹饰"
     },
     {
       "id": "O07",
+      "deck": "main",
       "ceramics": [
         {
           "glaze": "celadon"
@@ -213,13 +320,14 @@
       ],
       "minQuality": "fine",
       "vp": 5,
-      "coins": 2,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Celadon · any Decoration",
       "requirementsZh": "任意器型 · 青釉 · 任意纹饰"
     },
     {
       "id": "O08",
+      "deck": "main",
       "ceramics": [
         {
           "glaze": "grey_green"
@@ -227,13 +335,14 @@
       ],
       "minQuality": "fine",
       "vp": 5,
-      "coins": 2,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Grey-Green · any Decoration",
       "requirementsZh": "任意器型 · 灰青釉 · 任意纹饰"
     },
     {
       "id": "O09",
+      "deck": "main",
       "ceramics": [
         {
           "glaze": "moon_white"
@@ -241,31 +350,29 @@
       ],
       "minQuality": "fine",
       "vp": 6,
-      "coins": 2,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Moon White · any Decoration",
       "requirementsZh": "任意器型 · 月白釉 · 任意纹饰"
     },
     {
       "id": "O10",
+      "deck": "main",
       "ceramics": [
         {
-          "decorations": [
-            "carved",
-            "impressed",
-            "painted"
-          ]
+          "decoration": "plain"
         }
       ],
       "minQuality": "fine",
-      "vp": 6,
+      "vp": 5,
       "coins": 3,
       "crowns": 0,
-      "requirements": "any Shape · any Glaze · Carved, Impressed or Painted",
-      "requirementsZh": "任意器型 · 任意釉 · 刻花、印花或彩绘"
+      "requirements": "any Shape · any Glaze · Plain",
+      "requirementsZh": "任意器型 · 任意釉 · 素面"
     },
     {
       "id": "O11",
+      "deck": "main",
       "ceramics": [
         {
           "decoration": "carved"
@@ -280,6 +387,7 @@
     },
     {
       "id": "O12",
+      "deck": "main",
       "ceramics": [
         {
           "decoration": "impressed"
@@ -294,6 +402,7 @@
     },
     {
       "id": "O13",
+      "deck": "main",
       "ceramics": [
         {
           "decoration": "painted"
@@ -304,55 +413,61 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Painted",
-      "requirementsZh": "任意器型 · 任意釉 · 彩绘"
+      "requirementsZh": "任意器型 · 任意釉 · 画花"
     },
     {
       "id": "O14",
+      "deck": "main",
       "ceramics": [
         {
-          "shape": "washer",
-          "glaze": "grey_green"
+          "shapes": [
+            "bowl",
+            "plate",
+            "washer"
+          ]
         }
       ],
       "minQuality": "fine",
-      "vp": 6,
-      "coins": 2,
+      "vp": 5,
+      "coins": 3,
       "crowns": 0,
-      "requirements": "Brush Washer · Grey-Green · any Decoration",
-      "requirementsZh": "笔洗 · 灰青釉 · 任意纹饰"
+      "requirements": "Bowl, Plate or Brush Washer · any Glaze · any Decoration",
+      "requirementsZh": "碗、盘或笔洗 · 任意釉 · 任意纹饰"
     },
     {
       "id": "O15",
+      "deck": "main",
       "ceramics": [
         {
           "shapes": [
             "vase",
             "censer"
-          ],
-          "glaze": "white"
+          ]
         }
       ],
       "minQuality": "fine",
-      "vp": 6,
-      "coins": 3,
+      "vp": 5,
+      "coins": 4,
       "crowns": 0,
-      "requirements": "Vase or Censer · White · any Decoration",
-      "requirementsZh": "瓶或香炉 · 白釉 · 任意纹饰"
+      "requirements": "Vase or Censer · any Glaze · any Decoration",
+      "requirementsZh": "瓶或香炉 · 任意釉 · 任意纹饰"
     },
     {
       "id": "O16",
+      "deck": "main",
       "ceramics": [
         {}
       ],
       "minQuality": "masterpiece",
-      "vp": 7,
-      "coins": 1,
+      "vp": 9,
+      "coins": 2,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · any Decoration",
       "requirementsZh": "任意器型 · 任意釉 · 任意纹饰"
     },
     {
       "id": "O17",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "washer",
@@ -361,14 +476,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 7,
+      "vp": 6,
       "coins": 2,
       "crowns": 1,
       "requirements": "Brush Washer · White · Painted",
-      "requirementsZh": "笔洗 · 白釉 · 彩绘"
+      "requirementsZh": "笔洗 · 白釉 · 画花"
     },
     {
       "id": "O18",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "vase",
@@ -384,6 +500,7 @@
     },
     {
       "id": "O19",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "censer",
@@ -392,7 +509,7 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 8,
+      "vp": 6,
       "coins": 2,
       "crowns": 1,
       "requirements": "Censer · Grey-Green · Impressed",
@@ -400,6 +517,7 @@
     },
     {
       "id": "O20",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "bowl",
@@ -408,7 +526,7 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 8,
+      "vp": 6,
       "coins": 2,
       "crowns": 1,
       "requirements": "Bowl · Moon White · Carved",
@@ -416,41 +534,40 @@
     },
     {
       "id": "O21",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "plate",
           "glaze": "white",
-          "decoration": "impressed"
-        }
-      ],
-      "minQuality": "masterpiece",
-      "vp": 10,
-      "coins": 1,
-      "crowns": 1,
-      "requirements": "Plate · White · Impressed",
-      "requirementsZh": "盘 · 白釉 · 印花"
-    },
-    {
-      "id": "O22",
-      "ceramics": [
-        {
-          "glaze": "celadon",
-          "decorations": [
-            "carved",
-            "impressed",
-            "painted"
-          ]
+          "decoration": "plain"
         }
       ],
       "minQuality": "masterpiece",
       "vp": 9,
       "coins": 1,
       "crowns": 1,
-      "requirements": "any Shape · Celadon · Carved, Impressed or Painted",
-      "requirementsZh": "任意器型 · 青釉 · 刻花、印花或彩绘"
+      "requirements": "Plate · White · Plain",
+      "requirementsZh": "盘 · 白釉 · 素面"
+    },
+    {
+      "id": "O22",
+      "deck": "main",
+      "ceramics": [
+        {
+          "glaze": "celadon",
+          "decoration": "plain"
+        }
+      ],
+      "minQuality": "masterpiece",
+      "vp": 9,
+      "coins": 1,
+      "crowns": 1,
+      "requirements": "any Shape · Celadon · Plain",
+      "requirementsZh": "任意器型 · 青釉 · 素面"
     },
     {
       "id": "O23",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "vase",
@@ -459,21 +576,22 @@
         }
       ],
       "minQuality": "masterpiece",
-      "vp": 11,
+      "vp": 10,
       "coins": 1,
       "crowns": 1,
       "requirements": "Vase · Grey-Green · Painted",
-      "requirementsZh": "瓶 · 灰青釉 · 彩绘"
+      "requirementsZh": "瓶 · 灰青釉 · 画花"
     },
     {
       "id": "O24",
+      "deck": "main",
       "ceramics": [
         {
           "glaze": "moon_white"
         }
       ],
       "minQuality": "masterpiece",
-      "vp": 9,
+      "vp": 10,
       "coins": 1,
       "crowns": 1,
       "requirements": "any Shape · Moon White · any Decoration",
@@ -481,6 +599,7 @@
     },
     {
       "id": "O25",
+      "deck": "main",
       "ceramics": [
         {},
         {}
@@ -492,24 +611,18 @@
             0,
             1
           ]
-        },
-        {
-          "type": "different_decoration",
-          "indices": [
-            0,
-            1
-          ]
         }
       ],
       "minQuality": "standard",
       "vp": 9,
-      "coins": 4,
+      "coins": 5,
       "crowns": 0,
-      "requirements": "2 different Shapes; any Glazes; different Decorations",
-      "requirementsZh": "2种不同器型；任意釉；不同纹饰"
+      "requirements": "2 different Shapes; any Glazes; any Decorations",
+      "requirementsZh": "2种不同器型；任意釉；任意纹饰"
     },
     {
       "id": "O26",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "bowl"
@@ -520,22 +633,23 @@
       ],
       "relations": [
         {
-          "type": "required_glazes",
-          "values": [
-            "white",
-            "white"
+          "type": "same_glaze",
+          "indices": [
+            0,
+            1
           ]
         }
       ],
       "minQuality": "fine",
-      "vp": 10,
-      "coins": 4,
+      "vp": 11,
+      "coins": 5,
       "crowns": 0,
-      "requirements": "Bowl + Plate; both White; any Decorations",
-      "requirementsZh": "碗 + 盘；两件均白釉；任意纹饰"
+      "requirements": "Bowl + Plate; same Glaze; any Decorations",
+      "requirementsZh": "碗 + 盘；釉相同；任意纹饰"
     },
     {
       "id": "O27",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "washer"
@@ -546,22 +660,23 @@
       ],
       "relations": [
         {
-          "type": "required_glazes",
-          "values": [
-            "grey_green",
-            "moon_white"
+          "type": "different_glaze",
+          "indices": [
+            0,
+            1
           ]
         }
       ],
       "minQuality": "fine",
       "vp": 12,
-      "coins": 4,
+      "coins": 5,
       "crowns": 0,
-      "requirements": "Brush Washer + Vase; one Grey-Green, one Moon White; any Decorations",
-      "requirementsZh": "笔洗 + 瓶；1件灰青釉、1件月白釉；任意纹饰"
+      "requirements": "Brush Washer + Vase; different Glazes; any Decorations",
+      "requirementsZh": "笔洗 + 瓶；釉不同；任意纹饰"
     },
     {
       "id": "O28",
+      "deck": "main",
       "ceramics": [
         {},
         {}
@@ -575,22 +690,23 @@
           ]
         },
         {
-          "type": "required_glazes",
-          "values": [
-            "celadon",
-            "moon_white"
+          "type": "different_glaze",
+          "indices": [
+            0,
+            1
           ]
         }
       ],
       "minQuality": "fine",
       "vp": 11,
-      "coins": 4,
+      "coins": 5,
       "crowns": 0,
-      "requirements": "2 ceramics of the same Shape; one Celadon, one Moon White; any Decorations",
-      "requirementsZh": "2件相同器型；1件青釉、1件月白釉；任意纹饰"
+      "requirements": "2 ceramics of the same Shape; different Glazes; any Decorations",
+      "requirementsZh": "2件同器型；釉不同；任意纹饰"
     },
     {
       "id": "O29",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "vase"
@@ -609,14 +725,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 14,
-      "coins": 4,
+      "vp": 12,
+      "coins": 5,
       "crowns": 0,
       "requirements": "Vase + Censer; any Glazes; different Decorations",
-      "requirementsZh": "瓶 + 香炉；任意釉；不同纹饰"
+      "requirementsZh": "瓶 + 香炉；任意釉；纹饰不同"
     },
     {
       "id": "O30",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "bowl"
@@ -635,14 +752,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 12,
-      "coins": 4,
+      "vp": 13,
+      "coins": 5,
       "crowns": 0,
       "requirements": "Bowl + Brush Washer; one White, one Moon White; any Decorations",
-      "requirementsZh": "碗 + 笔洗；1件白釉、1件月白釉；任意纹饰"
+      "requirementsZh": "碗 + 笔洗；白釉、月白釉各1件；任意纹饰"
     },
     {
       "id": "O31",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "plate"
@@ -660,22 +778,22 @@
           ]
         },
         {
-          "type": "different_decoration",
-          "indices": [
-            0,
-            1
+          "type": "required_decorations",
+          "values": [
+            "plain"
           ]
         }
       ],
       "minQuality": "fine",
-      "vp": 13,
-      "coins": 4,
+      "vp": 12,
+      "coins": 5,
       "crowns": 0,
-      "requirements": "Plate + Vase; both Celadon; different Decorations",
-      "requirementsZh": "盘 + 瓶；两件均青釉；不同纹饰"
+      "requirements": "Plate + Vase; both Celadon; at least one Plain, other Decoration any",
+      "requirementsZh": "盘 + 瓶；均为青釉；至少1件素面，另1件纹饰任意"
     },
     {
       "id": "O32",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "vase"
@@ -706,14 +824,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 15,
-      "coins": 4,
+      "vp": 16,
+      "coins": 5,
       "crowns": 0,
       "requirements": "Vase + Bowl; both White; different Decorations",
-      "requirementsZh": "瓶 + 碗；两件均白釉；不同纹饰"
+      "requirementsZh": "瓶 + 碗；均为白釉；纹饰不同"
     },
     {
       "id": "O33",
+      "deck": "main",
       "ceramics": [
         {},
         {}
@@ -747,14 +866,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 14,
-      "coins": 3,
+      "vp": 15,
+      "coins": 5,
       "crowns": 0,
       "requirements": "2 different Shapes; same Glaze; different Decorations",
-      "requirementsZh": "2种不同器型；相同釉；不同纹饰"
+      "requirementsZh": "2种不同器型；釉相同；纹饰不同"
     },
     {
       "id": "O34",
+      "deck": "main",
       "ceramics": [
         {},
         {}
@@ -775,27 +895,28 @@
           ]
         },
         {
-          "type": "at_least_n_quality",
-          "quality": "masterpiece",
-          "count": 1
-        },
-        {
-          "type": "same_nonplain_decoration",
+          "type": "same_decoration",
           "indices": [
             0,
             1
           ]
+        },
+        {
+          "type": "at_least_n_quality",
+          "quality": "masterpiece",
+          "count": 1
         }
       ],
       "minQuality": "fine",
       "vp": 15,
       "coins": 5,
       "crowns": 0,
-      "requirements": "2 different Shapes; different Glazes; same non-Plain Decoration",
-      "requirementsZh": "2种不同器型；不同釉；相同的非素面纹饰"
+      "requirements": "2 different Shapes; different Glazes; same Decoration",
+      "requirementsZh": "2种不同器型；釉不同；纹饰相同"
     },
     {
       "id": "O35",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "bowl"
@@ -818,10 +939,11 @@
       "coins": 2,
       "crowns": 1,
       "requirements": "Bowl + Plate; both Celadon; any Decorations",
-      "requirementsZh": "碗 + 盘；两件均青釉；任意纹饰"
+      "requirementsZh": "碗 + 盘；均为青釉；任意纹饰"
     },
     {
       "id": "O36",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "washer"
@@ -847,14 +969,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 15,
-      "coins": 3,
+      "vp": 14,
+      "coins": 2,
       "crowns": 1,
       "requirements": "Brush Washer + Vase; one White, one Moon White; different Decorations",
-      "requirementsZh": "笔洗 + 瓶；1件白釉、1件月白釉；不同纹饰"
+      "requirementsZh": "笔洗 + 瓶；白釉、月白釉各1件；纹饰不同"
     },
     {
       "id": "O37",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "censer"
@@ -872,7 +995,7 @@
           ]
         },
         {
-          "type": "same_nonplain_decoration",
+          "type": "same_decoration",
           "indices": [
             0,
             1
@@ -880,14 +1003,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 14,
-      "coins": 3,
+      "vp": 12,
+      "coins": 2,
       "crowns": 1,
-      "requirements": "Censer + Bowl; one Grey-Green, one Celadon; same non-Plain Decoration",
-      "requirementsZh": "香炉 + 碗；1件灰青釉、1件青釉；相同的非素面纹饰"
+      "requirements": "Censer + Bowl; one Grey-Green, one Celadon; same Decoration",
+      "requirementsZh": "香炉 + 碗；灰青釉、青釉各1件；纹饰相同"
     },
     {
       "id": "O38",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "plate"
@@ -913,14 +1037,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 14,
-      "coins": 2,
+      "vp": 12,
+      "coins": 1,
       "crowns": 1,
       "requirements": "Plate + Brush Washer; different Glazes; both Carved",
-      "requirementsZh": "盘 + 笔洗；不同釉；两件均刻花"
+      "requirementsZh": "盘 + 笔洗；釉不同；均为刻花"
     },
     {
       "id": "O39",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "vase"
@@ -938,28 +1063,23 @@
           ]
         },
         {
-          "type": "different_decoration",
-          "indices": [
-            0,
-            1
-          ]
-        },
-        {
           "type": "required_decorations",
           "values": [
+            "plain",
             "painted"
           ]
         }
       ],
       "minQuality": "fine",
-      "vp": 14,
+      "vp": 13,
       "coins": 1,
       "crowns": 2,
-      "requirements": "Vase + Censer; one Celadon, one Moon White; different Decorations; at least one Painted",
-      "requirementsZh": "瓶 + 香炉；1件青釉、1件月白釉；不同纹饰；至少1件彩绘"
+      "requirements": "Vase + Censer; one Celadon, one Moon White; one Plain, one Painted",
+      "requirementsZh": "瓶 + 香炉；青釉、月白釉各1件；素面、画花各1件"
     },
     {
       "id": "O40",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "bowl"
@@ -990,14 +1110,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 16,
-      "coins": 1,
+      "vp": 15,
+      "coins": 0,
       "crowns": 2,
       "requirements": "Bowl + Brush Washer; one White, one Grey-Green; one Impressed, one Painted",
-      "requirementsZh": "碗 + 笔洗；1件白釉、1件灰青釉；1件印花、1件彩绘"
+      "requirementsZh": "碗 + 笔洗；白釉、灰青釉各1件；印花、画花各1件"
     },
     {
       "id": "O41",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "plate"
@@ -1032,10 +1153,11 @@
       "coins": 1,
       "crowns": 2,
       "requirements": "Plate + Vase; same Glaze; different Decorations",
-      "requirementsZh": "盘 + 瓶；相同釉；不同纹饰"
+      "requirementsZh": "盘 + 瓶；釉相同；纹饰不同"
     },
     {
       "id": "O42",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "washer"
@@ -1053,100 +1175,86 @@
           ]
         },
         {
-          "type": "at_least_n_quality",
-          "quality": "masterpiece",
-          "count": 1
-        },
-        {
-          "type": "same_nonplain_decoration",
+          "type": "same_decoration",
           "indices": [
             0,
             1
           ]
-        }
-      ],
-      "minQuality": "fine",
-      "vp": 17,
-      "coins": 1,
-      "crowns": 2,
-      "requirements": "Brush Washer + Censer; different Glazes; same non-Plain Decoration",
-      "requirementsZh": "笔洗 + 香炉；不同釉；相同的非素面纹饰"
-    },
-    {
-      "id": "O43",
-      "ceramics": [
-        {},
-        {},
-        {}
-      ],
-      "relations": [
-        {
-          "type": "all_different_shape",
-          "indices": [
-            0,
-            1,
-            2
-          ]
         },
         {
-          "type": "required_glazes",
-          "values": [
-            "white",
-            "celadon",
-            "grey_green"
-          ]
-        },
-        {
-          "type": "at_least_n_distinct_decorations",
-          "indices": [
-            0,
-            1,
-            2
-          ],
-          "count": 2
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 15,
-      "coins": 5,
-      "crowns": 0,
-      "requirements": "3 different Shapes; one White, one Celadon, one Grey-Green; at least 2 different Decorations",
-      "requirementsZh": "3种不同器型；1件白釉、1件青釉、1件灰青釉；至少2种不同纹饰"
-    },
-    {
-      "id": "O44",
-      "ceramics": [
-        {},
-        {},
-        {}
-      ],
-      "relations": [
-        {
-          "type": "all_different_shape",
-          "indices": [
-            0,
-            1,
-            2
-          ]
-        },
-        {
-          "type": "required_glazes",
-          "values": [
-            "celadon",
-            "grey_green",
-            "moon_white"
-          ]
+          "type": "at_least_n_quality",
+          "quality": "masterpiece",
+          "count": 1
         }
       ],
       "minQuality": "fine",
       "vp": 16,
-      "coins": 4,
+      "coins": 0,
+      "crowns": 2,
+      "requirements": "Brush Washer + Censer; different Glazes; same Decoration",
+      "requirementsZh": "笔洗 + 香炉；釉不同；纹饰相同"
+    },
+    {
+      "id": "O43",
+      "deck": "main",
+      "ceramics": [
+        {},
+        {},
+        {}
+      ],
+      "relations": [
+        {
+          "type": "all_different_shape",
+          "indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ],
+      "minQuality": "standard",
+      "vp": 14,
+      "coins": 6,
       "crowns": 0,
-      "requirements": "3 different Shapes; one Celadon, one Grey-Green, one Moon White; any Decorations",
-      "requirementsZh": "3种不同器型；1件青釉、1件灰青釉、1件月白釉；任意纹饰"
+      "requirements": "3 different Shapes; any Glazes; any Decorations",
+      "requirementsZh": "3种不同器型；任意釉；任意纹饰"
+    },
+    {
+      "id": "O44",
+      "deck": "main",
+      "ceramics": [
+        {},
+        {},
+        {}
+      ],
+      "relations": [
+        {
+          "type": "all_different_shape",
+          "indices": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "all_different_glaze",
+          "indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ],
+      "minQuality": "fine",
+      "vp": 18,
+      "coins": 6,
+      "crowns": 0,
+      "requirements": "3 different Shapes; 3 different Glazes; any Decorations",
+      "requirementsZh": "3种不同器型；3种不同釉；任意纹饰"
     },
     {
       "id": "O45",
+      "deck": "main",
       "ceramics": [
         {},
         {},
@@ -1179,14 +1287,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 20,
-      "coins": 2,
+      "vp": 18,
+      "coins": 1,
       "crowns": 2,
       "requirements": "3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations",
-      "requirementsZh": "3种不同器型；1件白釉、1件青釉、1件灰青釉；3种不同纹饰"
+      "requirementsZh": "3种不同器型；白釉、青釉、灰青釉各1件；3种不同纹饰"
     },
     {
       "id": "O46",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "plate"
@@ -1217,14 +1326,15 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 22,
-      "coins": 3,
+      "vp": 20,
+      "coins": 0,
       "crowns": 2,
       "requirements": "Plate + Vase + Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted",
-      "requirementsZh": "盘 + 瓶 + 香炉；1件青釉、1件灰青釉、1件月白釉；1件刻花、1件印花、1件彩绘"
+      "requirementsZh": "盘 + 瓶 + 香炉；青釉、灰青釉、月白釉各1件；刻花、印花、画花各1件"
     },
     {
       "id": "O47",
+      "deck": "main",
       "ceramics": [
         {},
         {},
@@ -1262,7 +1372,7 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 24,
+      "vp": 22,
       "coins": 0,
       "crowns": 3,
       "requirements": "3 different Shapes; 3 different Glazes; 3 different Decorations",
@@ -1270,6 +1380,7 @@
     },
     {
       "id": "O48",
+      "deck": "main",
       "ceramics": [
         {
           "shape": "washer"
@@ -1306,11 +1417,11 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 22,
-      "coins": 1,
+      "vp": 21,
+      "coins": 0,
       "crowns": 3,
       "requirements": "Brush Washer + Vase + Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations",
-      "requirementsZh": "笔洗 + 瓶 + 香炉；1件白釉、1件灰青釉、1件月白釉；至少2种不同纹饰"
+      "requirementsZh": "笔洗 + 瓶 + 香炉；白釉、灰青釉、月白釉各1件；至少2种不同纹饰"
     }
   ]
 }

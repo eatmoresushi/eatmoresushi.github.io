@@ -1,0 +1,295 @@
+/*
+ * GameShell (B1; wireframe `.ko`, `.ko-world`, `.ko-pane`, `.ko-tabs`, phone and short-landscape
+ * grids). Layout only: the same markup at every width (§7.3). `#root` (or the gallery stage) is
+ * the `shell` container, so the breakpoints follow its width; short landscape follows the
+ * viewport height.
+ */
+@layer layout {
+  #root {
+    container: shell / inline-size;
+  }
+
+  .shell {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--pane-w);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "top top"
+      "banner banner"
+      "jump pane"
+      "world pane";
+    height: 100dvh;
+    min-height: 0;
+    /* clip, not hidden: a hidden box can still be scrolled by focus() or scrollIntoView(), which
+       shifted the whole screen out of reach (nothing lets the player scroll it back). */
+    overflow: clip;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  /* The skip link and the live regions take no grid space. */
+  .shell-skip,
+  .shell-live {
+    position: absolute;
+    inset: 0 auto auto 0;
+    z-index: var(--z-toast);
+    width: 0;
+    height: 0;
+  }
+
+  /* Above the phone sheet, so the log dropdown and the session menu open over it. */
+  .shell-top {
+    position: relative;
+    z-index: calc(var(--z-sheet) + 1);
+    grid-area: top;
+    min-width: 0;
+    padding-top: env(safe-area-inset-top, 0);
+    background: var(--surface);
+  }
+
+  .shell-banner {
+    grid-area: banner;
+    min-width: 0;
+  }
+
+  .shell-world {
+    grid-area: world;
+    container: world / inline-size;
+    display: grid;
+    align-content: start;
+    gap: var(--sp-7);
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* The world's own room at its top and bottom; the turn toast's room is added to it. */
+    --world-pad-start: var(--sp-7);
+    --world-pad-end: var(--sp-8);
+    padding: calc(var(--world-pad-start) + var(--turn-toast-lead, 0px)) var(--sp-7) calc(var(--world-pad-end) + var(--turn-toast-tail, 0px));
+    /* The band the turn toast takes at the top of the world's cell, and the room that keeps the
+       table still around it (shell/toastRoom.ts sets all three on the shell): the room a closed
+       toast leaves at the top of the table until it is scrolled past (lead), and the room a short
+       section needs at its bottom to scroll by the band (tail). */
+    margin-block-start: var(--turn-toast-band, 0px);
+  }
+
+  /* The jump bar (JumpNav, desktop and tablet): a row of its own above the world, with the
+     world's side padding; the world never scrolls under it. Phones and short landscape have none
+     (the section bar, the rail). */
+  .shell-jump {
+    grid-area: jump;
+    min-width: 0;
+    padding-inline: var(--sp-7);
+  }
+
+  /* The turn toast's holder (TurnToasts.css), one turn at a time: at the top of the world's cell,
+     under the jump bar (desktop and tablet: the toast at its right end) or the top bar (phones and
+     short landscape: across the world column), in the band the world gives up for it
+     (--turn-toast-band, the holder's height), so it covers nothing; the world's own top padding
+     follows it. The holder lets the pointer through, the toast takes it. Never taller than the
+     cell: a toast that does not fit is hidden and waits (TurnToasts.tsx). Under the top bar (its
+     log dropdown and menu open over the toast). */
+  .shell-toasts {
+    grid-area: world;
+    position: relative;
+    z-index: var(--z-popover);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    align-self: start;
+    min-width: 0;
+    max-height: 100%;
+    padding: var(--sp-4) var(--sp-7) 0;
+    pointer-events: none;
+  }
+
+  .shell-toasts:empty {
+    display: none;
+  }
+
+  .shell-pane {
+    grid-area: pane;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border-inline-start: 1px solid var(--line);
+    background: var(--panel);
+  }
+
+  .shell-pane > * {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .shell-nav {
+    grid-area: nav;
+    display: none;
+    min-width: 0;
+  }
+
+  /* The hidden pane's bar (decision/PaneOpeners: the turn cue, then any openers): a slim row
+     above the world with the world's side padding; no row at all while it is empty (the pane
+     shows). */
+  .shell-bar {
+    grid-area: bar;
+    min-width: 0;
+    padding-inline: var(--sp-7);
+  }
+
+  .shell-bar:empty {
+    display: none;
+  }
+
+  /* The pane hidden (owner review, 2026-10-17: the work turn before a placement is chosen): the
+     world takes the pane's column, under the openers' row. */
+  .shell[data-pane="hidden"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "top"
+      "banner"
+      "bar"
+      "jump"
+      "world";
+  }
+
+  .shell[data-pane="hidden"] > .shell-pane {
+    display: none;
+  }
+
+  /* Tablet: a narrower pane. */
+  @container shell (max-width: 1199px) {
+    .shell {
+      --pane-w: 340px;
+    }
+
+    .shell-world {
+      padding-inline: var(--sp-6);
+    }
+
+    .shell-bar,
+    .shell-jump {
+      padding-inline: var(--sp-6);
+    }
+
+    .shell-toasts {
+      padding-inline: var(--sp-6);
+    }
+  }
+
+  /* Phone (portrait): the pane is the bottom sheet, the nav the section bar. */
+  @container shell (max-width: 899px) {
+    .shell {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+      grid-template-areas:
+        "top"
+        "banner"
+        "world"
+        "pane"
+        "nav";
+    }
+
+    /* The pane hidden: no bottom sheet; the openers' row above the world. */
+    .shell[data-pane="hidden"] {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "top"
+        "banner"
+        "bar"
+        "world"
+        "nav";
+    }
+
+    .shell-world {
+      --world-pad-start: var(--sp-5);
+      --world-pad-end: var(--sp-7);
+      gap: var(--sp-6);
+      padding-inline: var(--gutter);
+    }
+
+    .shell-bar {
+      padding-inline: var(--gutter);
+    }
+
+    .shell-pane {
+      position: relative;
+      z-index: var(--z-sheet);
+      border-inline-start: 0;
+      background: transparent;
+    }
+
+    .shell-nav {
+      display: block;
+    }
+
+    /* No jump bar: the section bar does its job. */
+    .shell-jump {
+      display: none;
+    }
+
+    /* Phones: right under the top bar, across the world column. */
+    .shell-toasts {
+      align-items: stretch;
+      padding: var(--sp-4) var(--gutter) 0;
+    }
+  }
+
+  /* Short landscape (844×390 … 932×430): a left section rail and a side pane, nothing stacks. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .shell {
+      grid-template-columns: 4.75rem minmax(0, 1fr) min(330px, 40vw);
+      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-areas:
+        "nav top top"
+        "nav banner banner"
+        "nav world pane";
+    }
+
+    /* The pane hidden: no side column; the openers' row above the world. */
+    .shell[data-pane="hidden"] {
+      grid-template-columns: 4.75rem minmax(0, 1fr);
+      grid-template-rows: auto auto auto minmax(0, 1fr);
+      grid-template-areas:
+        "nav top"
+        "nav banner"
+        "nav bar"
+        "nav world";
+    }
+
+    .shell-world {
+      --world-pad-start: var(--sp-4);
+      --world-pad-end: var(--sp-6);
+      padding-inline: var(--sp-6);
+    }
+
+    .shell-bar {
+      padding-inline: var(--sp-6);
+    }
+
+    /* No jump bar: the rail does its job. */
+    .shell-jump {
+      display: none;
+    }
+
+    /* Across the top of the world's cell, as on phones. */
+    .shell-toasts {
+      align-items: stretch;
+      padding: var(--sp-3) var(--sp-6) 0;
+    }
+
+    .shell-pane {
+      border-inline-start: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .shell-nav {
+      display: block;
+      padding-inline-start: env(safe-area-inset-left, 0);
+    }
+  }
+}

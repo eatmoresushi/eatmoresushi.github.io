@@ -1,178 +1,735 @@
 {
-  "rulesVersion": "1.4",
-  "starting": [
-    {
-      "id": "ST01",
-      "name": "Prepared Clay",
-      "nameZh": "练泥",
-      "ability": "After each Materials Yard action: form 1 vessel of any Shape by paying 1 more Clay than its Clay cost. It starts Plain for free.",
-      "abilityZh": "每次泥柴场行动后：支付器型费用加1泥，成型1件任意器型器物，免费获得素面。"
-    },
-    {
-      "id": "ST02",
-      "name": "White Slip",
-      "nameZh": "白陶衣",
-      "ability": "After each Potter's Wheel action: choose 1 Plain vessel formed by that action. Pay its 2-Coin Decoration cost to replace Plain with Painted.",
-      "abilityZh": "每次陶车坊行动后：选择该行动成型的1件素面器物，支付2铜钱纹饰费用，将素面替换为彩绘。"
-    },
-    {
-      "id": "ST03",
-      "name": "Rapid Drying",
-      "nameZh": "催干",
-      "ability": "After each Decoration Workshop action: choose 1 vessel decorated by that action. Pay 1 Wood + the 1-Coin Glazing cost, apply any one Glaze, then load it into an empty active Shared Kiln space or your empty Imperial Kiln, if gained.",
-      "abilityZh": "每次纹饰坊行动后：选择该行动施加纹饰的1件器物，支付1柴及1铜钱施釉费用，施加任意釉色，然后装入空置的有效共窑窑位或已获得的空置御窑。"
-    }
-  ],
+  "rulesVersion": "1.6.2",
   "advanced": [
     {
       "id": "T01",
-      "discipline": "forming",
+      "discipline": "workshop",
+      "cost": 2,
+      "oncePerRound": true,
+      "timing": "form_decorate_action",
+      "unlocks": "form_decorate",
+      "params": {
+        "clayReduction": 2,
+        "triggerShapes": [
+          "vase",
+          "censer"
+        ]
+      },
       "name": "Large Throwing Wheel",
       "nameZh": "大陶车",
-      "cost": 2,
-      "ability": "Once per round, during a Potter's Wheel action in which you form at least 1 Vase or Censer, reduce that action's total Clay cost by 2, minimum 0.",
-      "abilityZh": "每轮一次，在至少成型1件瓶或香炉的陶车坊行动中，该行动的泥总费用减少2，最低为0。",
-      "oncePerRound": true
+      "ability": "Once per round, during a Form & Decorate action in which you form at least 1 Vase or Censer, reduce that action's total Clay cost by 2, to a minimum of 0.",
+      "abilityZh": "每轮一次，在一次制坯饰纹行动中，若你至少制了1件瓶或香炉，该行动的泥总费减2，最低为0。",
+      "shortText": "Once per round, during a Form & Decorate action forming at least 1 Vase or Censer: reduce that action's total Clay cost by 2, minimum 0.",
+      "shortTextZh": "每轮一次，制坯饰纹行动中制有至少1件瓶或香炉时：该行动的泥总费−2，最低为0。",
+      "clarifications": [
+        {
+          "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
+          "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
+          "source": "L372 · L223 · D7"
+        },
+        {
+          "en": "Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer.",
+          "zh": "大陶车只减泥；定窑的额外坯不是瓶或香炉。",
+          "source": "L639"
+        }
+      ]
     },
     {
-      "id": "T02",
-      "discipline": "forming",
-      "name": "Measuring Calipers",
-      "nameZh": "量形规",
+      "id": "T16",
+      "discipline": "workshop",
       "cost": 2,
-      "ability": "Once per round, after you form a vessel, if you have another vessel in your workshop, gain 2 Coins.",
-      "abilityZh": "每轮一次，成型1件器物后，若你的作坊内另有1件器物，获得2铜钱。",
-      "oncePerRound": true
-    },
-    {
-      "id": "T03",
-      "discipline": "forming",
-      "name": "Dipping Vats",
-      "nameZh": "浸釉缸",
-      "cost": 2,
-      "ability": "Once per round, during a Kiln Yard action, the Plain ceramics loaded by that action pay no Glazing cost.",
-      "abilityZh": "每轮一次，在一次窑坊行动中，该行动装窑的素面陶瓷无需支付上釉费用。",
-      "oncePerRound": true
-    },
-    {
-      "id": "T04",
-      "discipline": "forming",
-      "name": "Drying Frames",
-      "nameZh": "晾坯架",
-      "cost": 3,
-      "ability": "Once per round, after a Potter's Wheel action: choose 1 Plain vessel formed by that action. Pay its 2-Coin Decoration cost to replace Plain with Carved, Impressed or Painted.",
-      "abilityZh": "每轮一次，陶车坊行动后：选择该行动成型的1件素面器物，支付2铜钱纹饰费用，将素面替换为刻花、印花或彩绘。",
-      "oncePerRound": true
+      "oncePerRound": true,
+      "timing": "form_decorate_action",
+      "unlocks": "form_decorate",
+      "params": {
+        "coinReduction": 1,
+        "decorations": [
+          "carved",
+          "impressed",
+          "painted"
+        ]
+      },
+      "name": "Decorator's Kit",
+      "nameZh": "饰坯匣",
+      "ability": "Once per round, a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less. It may be the same vessel the Shifu's discount reduces.",
+      "abilityZh": "每轮一次，你制的1件刻花、印花或画花的坯少付1铜钱。可以与师傅的减免作用于同一件坯。",
+      "shortText": "Once per round: a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less. Stacks with the Shifu discount.",
+      "shortTextZh": "每轮一次：你制的1件刻花、印花或画花的坯少付1铜钱。可与师傅的减免叠加。",
+      "clarifications": [
+        {
+          "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
+          "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
+          "source": "L372 · L223 · D7"
+        },
+        {
+          "en": "The Shifu's discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same vessel (its 2 Coins become 0). Ding's vessel takes neither.",
+          "zh": "师傅的减免、饰坯匣、定窑的1铜钱额外坯是三项各自独立的减免。前两项可以作用于同一件坯（其2铜钱可降到0）；定窑的额外坯两项都不适用。",
+          "source": "L639"
+        }
+      ]
     },
     {
       "id": "T05",
-      "discipline": "forming",
+      "discipline": "workshop",
+      "cost": 2,
+      "oncePerRound": true,
+      "timing": "glaze_and_load",
+      "unlocks": "form_decorate",
+      "params": {},
       "name": "Reworking Table",
       "nameZh": "改坯案",
-      "cost": 2,
-      "ability": "Once per round, during a Decoration Workshop action: before decorating 1 Plain vessel being worked, change its Shape to any other Shape. Exchange its Vessel card; pay no additional Clay.",
-      "abilityZh": "每轮一次，纹饰坊行动中：为正在处理的1件素面器物施加纹饰前，将其器型改为任意其他器型，交换器物牌，无需额外支付泥。",
-      "oncePerRound": true
+      "ability": "Once per round, when you glaze and load a Shaped vessel, you may first change its Shape to any other Shape: return its Vessel card and take the new one. No Clay is paid; its Decoration stays.",
+      "abilityZh": "每轮一次，当你为1件坯施釉装窑时，可以先把它的器型改为任意其他器型：退回原来的器型卡，换取新的。不付泥，纹饰不变。",
+      "shortText": "Once per round, when you glaze and load a Shaped vessel: first change its Shape to any other Shape. Pay no Clay; its Decoration stays.",
+      "shortTextZh": "每轮一次，为1件坯施釉装窑时：可先将其器型改为任意其他器型。不付泥，纹饰不变。",
+      "clarifications": [
+        {
+          "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
+          "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
+          "source": "L372 · L223 · D7"
+        },
+        {
+          "en": "Vessel cards are not a hard gameplay limit. If all 10 cards of a Shape are in use, use a suitable proxy until a matching Vessel card becomes available.",
+          "zh": "器型卡不是硬性的游戏上限。若某种器型的10张卡都在使用中，先用合适的代用物代替，等有相应的器型卡空出来再换回。",
+          "source": "L332"
+        },
+        {
+          "en": "Provisional ruling: Reworking Table may be used when Imperial Priority glazes and loads a vessel, and this uses its once-per-round allowance. The tile triggers \"when you glaze and load a Shaped vessel\" and does not require the Glaze & Load action.",
+          "zh": "暂定裁定：御烧优先为1件坯施釉装窑时，也可以使用改坯案，并消耗改坯案的“每轮一次”。本牌的时机是“当你为1件坯施釉装窑时”，不限于施釉装窑行动。",
+          "source": "P1"
+        },
+        {
+          "en": "Provisional ruling: during a legal action, the Shape change applies before the Inverted Firing Shape check. Whether a Glaze & Load placement is legal (R5c) looks only at each vessel's current Shape.",
+          "zh": "暂定裁定：在合法的行动中，改器型在覆烧的器型检查之前结算；能否派工到施釉装窑（R5c）只看各件坯当前的器型。",
+          "source": "P3"
+        }
+      ]
     },
     {
-      "id": "T06",
-      "discipline": "glazing",
-      "name": "Glaze Palette",
-      "nameZh": "釉色谱",
-      "cost": 2,
-      "ability": "Once per round, at the end of the Work Phase, before pre-firing abilities: change the Glaze of 1 of your loaded ceramics to any one Glaze at no additional cost.",
-      "abilityZh": "每轮一次，工人阶段结束时、烧成前能力结算前：免费将你已装窑的1件陶瓷改为任意釉色。",
-      "oncePerRound": true
+      "id": "T17",
+      "discipline": "workshop",
+      "cost": 3,
+      "oncePerRound": true,
+      "timing": "materials_yard_action",
+      "unlocks": "form_decorate",
+      "params": {
+        "claySurcharge": 1
+      },
+      "name": "Prepared Clay",
+      "nameZh": "练泥",
+      "ability": "Once per round, during a Materials Yard action, after gaining resources, you may form 1 vessel: pay its Clay cost +1 Clay and 2 Coins, choosing any Decoration. This is a Tech effect, not a Form & Decorate action.",
+      "abilityZh": "每轮一次，在一次泥柴场行动中获得资源后，你可以制1件坯：支付其泥费+1泥外加2铜钱，纹饰任选。这是技艺效果，不算制坯饰纹行动。",
+      "shortText": "Once per round, after gaining resources at the Materials Yard: pay a vessel's Clay cost + 1 Clay and 2 Coins → form 1 vessel, any Decoration.",
+      "shortTextZh": "每轮一次，泥柴场行动得到资源后：可付器型泥费+1泥及2铜钱→制1件坯，纹饰任选。",
+      "clarifications": [
+        {
+          "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
+          "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
+          "source": "L372 · L223 · D7"
+        },
+        {
+          "en": "Prepared Clay is a Tech effect, not a worker action. It never counts as a Form & Decorate action and does not trigger effects that require that action.",
+          "zh": "练泥是技艺效果，不是工人行动。它不算制坯饰纹行动，也不触发需要该行动的效果。",
+          "source": "L633"
+        },
+        {
+          "en": "Ding triggers during its Form & Decorate action, so forming through Prepared Clay does not trigger Ding.",
+          "zh": "定窑在其制坯饰纹行动中触发，所以通过练泥制坯不会触发定窑。",
+          "source": "L481 · L633"
+        },
+        {
+          "en": "The Shifu's discount belongs to the Shifu's Form & Decorate action, so it does not apply to a vessel formed through Prepared Clay.",
+          "zh": "师傅的减免属于师傅的制坯饰纹行动，所以不适用于通过练泥制成的坯。",
+          "source": "L184 · L633"
+        }
+      ]
     },
     {
-      "id": "T07",
-      "discipline": "glazing",
-      "name": "Carving Knives",
-      "nameZh": "刻花刀",
-      "cost": 2,
-      "ability": "Once per round, when replacing Plain with Carved, that Decoration costs 0 Coins.",
-      "abilityZh": "每轮一次，将素面替换为刻花时，该纹饰费用为0铜钱。",
-      "oncePerRound": true
+      "id": "T18",
+      "discipline": "workshop",
+      "cost": 3,
+      "oncePerRound": true,
+      "timing": "worker_placement",
+      "unlocks": "form_decorate",
+      "params": {
+        "locations": [
+          "materials_yard",
+          "commission_market"
+        ]
+      },
+      "name": "Senior Apprentice",
+      "nameZh": "高徒",
+      "ability": "Once per round, 1 Apprentice you place at the Materials Yard or Commission Market resolves the Shifu effect there instead of the Apprentice effect.",
+      "abilityZh": "每轮一次，你派往泥柴场或瓷牙行的1名学徒改为结算该地点的师傅效果，而非学徒效果。",
+      "shortText": "Once per round: 1 Apprentice you place at the Materials Yard or Commission Market uses the Shifu effect instead.",
+      "shortTextZh": "每轮一次：你派往泥柴场或瓷牙行的1名学徒可改按师傅效果结算。",
+      "clarifications": [
+        {
+          "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
+          "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
+          "source": "L372 · L223 · D7"
+        },
+        {
+          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance: an Apprentice that does not use it resolves the Apprentice effect, and the tile stays available for another Apprentice this round.",
+          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”：不使用时，该学徒照常结算学徒效果，本轮仍可以留给另一名学徒使用。",
+          "source": "R4"
+        },
+        {
+          "en": "Senior Apprentice resolves the whole Shifu effect: at the Materials Yard the Apprentice gains 8 resources in any combination of Clay and Wood. It never applies at the Guild Hall, the Canal Wharf or the Magistrate's Hall.",
+          "zh": "高徒结算完整的师傅效果：在泥柴场，该学徒获得8份资源，泥和柴任意搭配。高徒不适用于陶工行、漕运码头和州衙。",
+          "source": "R12"
+        },
+        {
+          "en": "Senior Apprentice at the Commission Market gives that Apprentice the Shifu's effect: Select 3, reserving up to 2.",
+          "zh": "高徒派往瓷牙行时，该学徒按师傅效果结算：精选3，承接至多2张。",
+          "source": "L640"
+        },
+        {
+          "en": "Like a Shifu, that Apprentice must reserve at least 1 Order and may reserve 2. The display is not refilled until your turn ends, so both reservations choose from the Orders showing now.",
+          "zh": "与师傅一样，该学徒至少要承接1张，至多2张。你的回合结束前委托榜不会补牌，所以两次承接都只能从此刻榜上的委托中选。",
+          "source": "L210 · R12"
+        },
+        {
+          "en": "You choose Senior Apprentice when you place the Apprentice, before the look.",
+          "zh": "高徒要在派出该学徒时选定，在查看之前。",
+          "source": "INT Commission Market looks"
+        }
+      ]
     },
     {
-      "id": "T08",
-      "discipline": "glazing",
-      "name": "Seal Stamps",
-      "nameZh": "印花范",
-      "cost": 2,
-      "ability": "Once per round, when replacing Plain with Impressed, that Decoration costs 0 Coins.",
-      "abilityZh": "每轮一次，将素面替换为印花时，该纹饰费用为0铜钱。",
-      "oncePerRound": true
-    },
-    {
-      "id": "T09",
-      "discipline": "glazing",
-      "name": "Painting Brushes",
-      "nameZh": "彩绘笔",
-      "cost": 2,
-      "ability": "Once per round, when replacing Plain with Painted, that Decoration costs 0 Coins.",
-      "abilityZh": "每轮一次，将素面替换为彩绘时，该纹饰费用为0铜钱。",
-      "oncePerRound": true
+      "id": "T19",
+      "discipline": "workshop",
+      "cost": 3,
+      "oncePerRound": false,
+      "timing": "game_end",
+      "unlocks": "form_decorate",
+      "params": {
+        "vpPerCeramic": 1,
+        "qualities": [
+          "fine",
+          "masterpiece"
+        ],
+        "maxVp": 5
+      },
+      "name": "Connoisseur's Cabinet",
+      "nameZh": "清玩斋",
+      "ability": "At game end, each Fine or Masterpiece ceramic in your Exhibition scores +1 VP, up to +5 VP.",
+      "abilityZh": "终局时，你陈列中的每件上品或臻品额外+1分，至多+5分。",
+      "shortText": "Game end: each Fine or Masterpiece ceramic in your Exhibition scores +1 VP, maximum +5 VP.",
+      "shortTextZh": "终局时：你陈列中的每件上品或臻品+1分，至多+5分。",
+      "clarifications": [
+        {
+          "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
+          "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
+          "source": "L372 · L223 · D7"
+        },
+        {
+          "en": "At game end, exhibit any number of your undelivered ceramics of Standard Quality or better. Flawed ceramics cannot be exhibited.",
+          "zh": "游戏结束时，陈列你任意数量的、品质为良品或以上的未交付器物。瑕品不能陈列。",
+          "source": "L439 · L447"
+        },
+        {
+          "en": "Every eligible undelivered ceramic is exhibited automatically.",
+          "zh": "数字版自动陈列所有符合条件的未交付器物。",
+          "source": "INT Exhibition"
+        }
+      ]
     },
     {
       "id": "T10",
-      "discipline": "glazing",
+      "discipline": "glazing_loading",
+      "cost": 2,
+      "oncePerRound": true,
+      "timing": "when_acquired_and_ongoing",
+      "unlocks": "glaze_load",
+      "params": {
+        "select": 3,
+        "handLimit": 5,
+        "swapDiscard": 1,
+        "swapSelect": 3
+      },
       "name": "Colour Samples",
       "nameZh": "色样簿",
+      "ability": "When acquired: Select 3. This is not a Commission Market action. Ongoing: your Order hand limit is 5, and once per round, before or after one of your worker actions, you may discard 1 held Order to Select 3.",
+      "abilityZh": "习得时：精选3。这是技艺效果，不算瓷牙行行动。持续：你的委托上限为5张；每轮一次，在你的一次工人行动之前或之后，你可以弃置1张在手委托，然后精选3。",
+      "shortText": "When acquired: Select 3. Ongoing: your Order hand limit is 5. Once per round, before or after one of your worker actions: discard 1 held Order → Select 3.",
+      "shortTextZh": "习得时：精选3。持续：你的委托上限为5张。每轮一次，你的一次工人行动之前或之后：可弃1张在手委托→精选3。",
+      "clarifications": [
+        {
+          "en": "Select N: Look at the top N cards of the Main Order deck. Reserve 1 of them, or 1 face-up Main Order from the display; discard the rest of the N.",
+          "zh": "精选N：查看主委托牌堆顶N张。承接其中1张，或承接委托榜上的1张主委托；这N张中其余的弃置。",
+          "source": "L72 · R25"
+        },
+        {
+          "en": "Resolve any when acquired effect immediately. When a Guild Hall Shifu takes Colour Samples first, its Select 3 and reservation come before the second take.",
+          "zh": "“习得时”的效果立即结算。陶工行的师傅若先习得色样簿，先结算它的精选3与承接，再拿第2项技艺。",
+          "source": "L225 · INT Guild Hall Shifu takes"
+        },
+        {
+          "en": "The when-acquired Select 3 is mandatory whenever a Main Order can be reserved: a card you look at or a face-up one. The swap is optional; once you discard an Order for it, you must reserve 1 Order with its Select 3.",
+          "zh": "只要有主委托可以承接（看过的牌或委托榜上的委托），习得时的精选3就必须承接。换单是可选的；一旦为换单弃了委托，就必须用这次精选3承接1张委托。",
+          "source": "R4 · INT Colour Samples Select"
+        },
+        {
+          "en": "Each Select 3 it grants is a Tech effect, not a Commission Market action; a face-up Order taken by one is replaced at the end of your turn as usual. Your hand limit of 5 applies at every Cleanup while you own the tile.",
+          "zh": "它的精选是技艺效果，不算瓷牙行行动；由此承接的榜上委托照常在你的回合结束后补上。拥有此牌期间，每次收工的上限都是5张。",
+          "source": "L637"
+        },
+        {
+          "en": "Cards you look at and do not reserve are discarded face down to the Main Order discard pile, as is the Order you discard for a swap; a Starting Order you discard goes to the box.",
+          "zh": "翻看而没有承接的牌面朝下弃置到主委托弃牌堆，换单弃置的主委托也放入那里；换单弃置的起始委托放回盒中。",
+          "source": "L72 · L637 · R25"
+        },
+        {
+          "en": "A swap discards the held Order first, then looks at the top 3. If the deck is empty at that moment, the discard pile is shuffled into a new deck, so the Order you just discarded may be among the cards you look at.",
+          "zh": "换单先弃置在手委托，再查看牌堆顶3张。如果此时牌堆已空，就把弃牌堆洗混组成新牌堆，所以刚弃置的委托可能出现在你查看的牌中。",
+          "source": "R17"
+        },
+        {
+          "en": "Each look sees as many cards as remain, up to 3, when acquired and for a swap. The discard is reshuffled only when the deck is empty as the look starts, never to complete a look. A look that shows no card still lets you reserve from the display; a swap cannot be used if it could reserve no Order at all.",
+          "zh": "每次查看时牌堆不足就看余下的，至多3张，习得时与换单都一样。弃牌堆只在查看开始时牌堆已空才洗混，不会为了凑足张数而洗混。即使查看时一张牌也没有，仍可以从委托榜上承接；如果换单根本无委托可承接，就不能换单。",
+          "source": "B1 · R16"
+        },
+        {
+          "en": "Your looks are private: only you see the cards and which of them you discard. The Main Order discard pile is face down; only the counts of the deck and the discard are public.",
+          "zh": "查看是私下进行的：看过的牌，以及弃置了哪几张，只有你知道。主委托弃牌堆面朝下；牌堆与弃牌堆只公开张数。",
+          "source": "B3 · R25"
+        },
+        {
+          "en": "The swap and Imperial Priority may share a before- or after-action window, in an order you choose.",
+          "zh": "换单与御烧优先同在“工人行动之前或之后”时，二者的先后由你决定。",
+          "source": "INT Before/after-action window"
+        },
+        {
+          "en": "A swap used after a Commission Market action may discard an Order that action reserved. The display refills only when your turn ends, after the swap.",
+          "zh": "在瓷牙行行动之后换单，可以弃置该行动刚承接的委托；委托榜要等你的回合结束、换单之后才补牌。",
+          "source": "INT Deferred refill"
+        }
+      ]
+    },
+    {
+      "id": "T20",
+      "discipline": "glazing_loading",
+      "cost": 3,
+      "oncePerRound": true,
+      "timing": "glaze_load_action_after",
+      "unlocks": "glaze_load",
+      "params": {
+        "clay": 1,
+        "wood": 1
+      },
+      "name": "Kiln Tending",
+      "nameZh": "看火",
+      "ability": "Once per round, after a Glaze & Load action in which you loaded at least 1 ceramic, gain 1 Clay and 1 Wood.",
+      "abilityZh": "每轮一次，在一次至少装窑了1件器物的施釉装窑行动之后，获得1泥和1柴。",
+      "shortText": "Once per round, after a Glaze & Load action that loaded at least 1 ceramic: gain 1 Clay + 1 Wood.",
+      "shortTextZh": "每轮一次，至少装窑1件的施釉装窑行动之后：得1泥1柴。",
+      "clarifications": [
+        {
+          "en": "Kiln Tending resolves automatically on the first qualifying Glaze & Load action each round; saving it gains nothing.",
+          "zh": "数字版在每轮第一次符合条件的施釉装窑行动后自动结算看火；留到以后没有任何好处。",
+          "source": "INT Kiln Tending"
+        },
+        {
+          "en": "Kiln Tending's Clay and Wood come after the Glaze & Load action, so its Wood cannot pay that action's 1 Wood of kiln fuel.",
+          "zh": "看火的泥和柴在施釉装窑行动之后才得到，所以它给的柴不能支付该行动烧窑要花的1柴。",
+          "source": "L614 · L197"
+        },
+        {
+          "en": "Loading includes placing a vessel in your empty Imperial Kiln, so a vessel the action loads into the Imperial Kiln counts as loaded.",
+          "zh": "装窑包括把坯放进你空着的御窑，所以该行动装进御窑的器物也算已装窑。",
+          "source": "L80"
+        },
+        {
+          "en": "Imperial Priority is a token effect, not a Glaze & Load action, so loading through it does not trigger Kiln Tending.",
+          "zh": "御烧优先是令牌效果，不是施釉装窑行动，所以通过它装窑不会触发看火。",
+          "source": "L296 · L633"
+        }
+      ]
+    },
+    {
+      "id": "T15",
+      "discipline": "glazing_loading",
       "cost": 2,
-      "ability": "When acquired: immediately make 1 Selection below without another worker or Commission Market resource bonus. Once per round: during one Commission Market reservation, use the Selection instead of the normal choice. Selection: privately look at the top 3 Main Orders, or as many as remain. Reserve 1 of those Orders or 1 face-up Main Order. Discard looked-at Orders not reserved; update the public display normally.",
-      "abilityZh": "获得时：立即进行下述选择，无需另放工人，也不获得瓷牙行资源奖励。每轮一次：可用此选择替代瓷牙行行动中的1次承接。选择：私下查看牌堆顶3张主委托（不足则尽量查看），承接其中1张或1张公开委托，弃掉其余已查看委托；公开展示正常更新。",
-      "oncePerRound": true
+      "oncePerRound": true,
+      "timing": "loading_shared_kiln",
+      "unlocks": "glaze_load",
+      "params": {
+        "modifiers": [
+          -1,
+          0,
+          1
+        ]
+      },
+      "name": "Kiln Furniture",
+      "nameZh": "支烧窑具",
+      "ability": "Once per round, when you load 1 ceramic into the Shared Kiln, you may place this tile beneath it and choose its zone modifier for this firing: −1, 0 or +1. Return the tile after firing.",
+      "abilityZh": "每轮一次，当你把1件器物装进共窑时，可以把本牌垫在它下面，并为本次烧成选定该器物的温区修正：−1、0或+1。烧成后收回本牌。",
+      "shortText": "Once per round, when you load 1 ceramic into the Shared Kiln: place this tile beneath it → choose its zone modifier for this firing: −1, 0 or +1.",
+      "shortTextZh": "每轮一次，将1件器物装入共窑时：可将本牌垫于其下→本次烧成中，该器物的温区修正由你定为−1、0或+1。",
+      "clarifications": [
+        {
+          "en": "Kiln Furniture, Inverted Firing and Setter's Mark affect the Shared Kiln only. The Imperial Kiln holds 1 ceramic and uses its own modifier.",
+          "zh": "支烧窑具、覆烧、窑位签只作用于共窑。御窑只容纳1件，用它自己的御窑修正。",
+          "source": "L634"
+        },
+        {
+          "en": "Kiln Master's marker is not a zone modifier: it adds to the Kiln Furniture modifier.",
+          "zh": "窑工标不是温区修正：它与支烧窑具的修正相加。",
+          "source": "L255 · L661"
+        },
+        {
+          "en": "A Second Firing recalculation keeps the same Kiln Furniture modifier.",
+          "zh": "复烧重算时沿用相同的窑具修正。",
+          "source": "L627"
+        }
+      ]
+    },
+    {
+      "id": "T21",
+      "discipline": "glazing_loading",
+      "cost": 2,
+      "oncePerRound": true,
+      "timing": "loading_shared_kiln",
+      "unlocks": "glaze_load",
+      "params": {
+        "shapes": [
+          "bowl",
+          "plate",
+          "washer"
+        ]
+      },
+      "name": "Inverted Firing",
+      "nameZh": "覆烧",
+      "ability": "Once per round, when you load a Bowl, Plate or Brush Washer into the Shared Kiln, you may place it in an active space that already holds exactly 1 of your ceramics. Both use that space's modifier (or its Kiln Furniture modifier).",
+      "abilityZh": "每轮一次，当你把1件碗、盘或笔洗装进共窑时，可以把它放进一个恰好已有1件你的器物的启用窑位。两件器物都使用该窑位的温区修正（若该窑位垫有支烧窑具，则用窑具的修正）。",
+      "shortText": "Once per round, when you load a Bowl, Plate or Brush Washer into the Shared Kiln: you may place it in a space holding exactly 1 of your ceramics. Both use that space's modifier.",
+      "shortTextZh": "每轮一次，将1件碗、盘或笔洗装入共窑时：可放入恰有1件己方器物的启用窑位；两件同用该窑位的修正。",
+      "clarifications": [
+        {
+          "en": "The newly loaded ceramic must be a Bowl, Plate or Brush Washer. It may join any active space holding exactly 1 of your ceramics, including one loaded earlier by the same action. Both ceramics use the space's printed modifier, or the Kiln Furniture modifier if Kiln Furniture is in that space.",
+          "zh": "新装进的器物必须是碗、盘或笔洗；它可以放进任意一个恰好已有1件你的器物的启用窑位，包括本次行动先装进的那件。两件器物都用该窑位的温区修正；如果该窑位垫有支烧窑具，就用窑具修正。",
+          "source": "R8"
+        },
+        {
+          "en": "While Inverted Firing is unused this round, an active space holding exactly 1 of your ceramics is a legal destination for a Bowl, Plate or Brush Washer when checking whether a Glaze & Load placement is legal, if you have the 1 Wood that loading into the Shared Kiln costs.",
+          "zh": "覆烧本轮还没有使用时，恰好已有1件你的器物的启用窑位，算作碗、盘或笔洗的合法去处，用于判断能否派工到施釉装窑；前提是你有装进共窑所需的1柴。",
+          "source": "R5 · L198"
+        },
+        {
+          "en": "Kiln Furniture, Inverted Firing and Setter's Mark affect the Shared Kiln only.",
+          "zh": "支烧窑具、覆烧、窑位签只作用于共窑。",
+          "source": "L634"
+        },
+        {
+          "en": "Provisional ruling: during a legal action, a Reworking Table Shape change applies before the Inverted Firing Shape check; placement legality looks only at each vessel's current Shape.",
+          "zh": "暂定裁定：在合法的行动中，改坯案的改器型在覆烧的器型检查之前结算；能否派工只看各件坯当前的器型。",
+          "source": "P3"
+        }
+      ]
+    },
+    {
+      "id": "T22",
+      "discipline": "glazing_loading",
+      "cost": 2,
+      "oncePerRound": true,
+      "timing": "work_phase_start",
+      "unlocks": "glaze_load",
+      "params": {},
+      "name": "Setter's Mark",
+      "nameZh": "窑位签",
+      "ability": "Once per round, at the start of the Work Phase (in First Player order), place this tile on an empty active Shared Kiln space. Only you may load there this round. Return it when you load there, or at Cleanup.",
+      "abilityZh": "每轮一次，派工阶段开始时（按起始玩家顺序），把本牌放在共窑中一个空的启用窑位上。本轮只有你能在这里装窑。你在这里装窑时，或收工时，收回本牌。",
+      "shortText": "Once per round, at the start of the Work Phase: place this tile on an empty active Shared Kiln space → only you may load there this round.",
+      "shortTextZh": "每轮一次，派工阶段开始时：可将本牌置于共窑1个空的启用窑位→本轮只有你能在此装窑。",
+      "clarifications": [
+        {
+          "en": "Placement is optional. A Setter's Mark bought mid-round is first placed at the next Work Phase start.",
+          "zh": "放置是可选的；本轮中途习得的窑位签，要到下一次派工阶段开始时才可以放置。",
+          "source": "INT Setter's Mark"
+        },
+        {
+          "en": "An empty active Shared Kiln space marked by another player's Setter's Mark is not a legal destination for you. Only the Setter's Mark owner may load there this round.",
+          "zh": "共窑中放着其他玩家窑位签的空启用窑位，不是你的合法去处；本轮只有窑位签的主人能在这里装窑。",
+          "source": "R5 · L617"
+        },
+        {
+          "en": "Kiln Furniture, Inverted Firing and Setter's Mark affect the Shared Kiln only.",
+          "zh": "支烧窑具、覆烧、窑位签只作用于共窑。",
+          "source": "L634"
+        }
+      ]
+    },
+    {
+      "id": "T23",
+      "discipline": "glazing_loading",
+      "cost": 2,
+      "oncePerRound": true,
+      "timing": "order_completion",
+      "unlocks": "glaze_load",
+      "params": {
+        "coins": 2
+      },
+      "name": "Canal Barge",
+      "nameZh": "漕船",
+      "ability": "Once per round, when you complete an Order, gain 2 Coins.",
+      "abilityZh": "每轮一次，当你完成一张委托时，获得2铜钱。",
+      "shortText": "Once per round, when you complete an Order: gain 2 Coins.",
+      "shortTextZh": "每轮一次，完成委托时：得2铜钱。",
+      "clarifications": [
+        {
+          "en": "Canal Barge does not complete Orders itself. You gain its 2 Coins in the Order Phase, the only time Orders are completed.",
+          "zh": "漕船本身不能完成委托。它的2铜钱在交货阶段获得，只有交货阶段才能完成委托。",
+          "source": "L300"
+        },
+        {
+          "en": "Canal Barge resolves automatically on the first Order you complete each round, a Starting Order included.",
+          "zh": "数字版在你每轮第一次完成委托时自动结算漕船，起始委托也算。",
+          "source": "INT Canal Barge"
+        }
+      ]
     },
     {
       "id": "T11",
       "discipline": "firing",
+      "cost": 3,
+      "oncePerRound": true,
+      "timing": "after_quality",
+      "unlocks": null,
+      "params": {
+        "floorQuality": "standard",
+        "upgradeFrom": "standard",
+        "upgradeTo": "fine"
+      },
       "name": "Protective Saggars",
       "nameZh": "匣钵护烧",
-      "cost": 2,
-      "ability": "Once per round, after Quality is assigned, pay 1 Wood to improve 1 of your Flawed or Standard ceramics from this firing by one level: Flawed → Standard or Standard → Fine. Cannot create a Masterpiece.",
-      "abilityZh": "每轮一次，决定品质后，支付1柴，将自己参与本次烧成的1件瑕品或良品陶瓷提升一级：瑕品→良品，或良品→上品。不能产生臻品。",
-      "oncePerRound": true
+      "ability": "Your ceramics are never Flawed: for them, a Heat Difference of 3 or more counts as Standard. Once per round, after Quality is assigned, 1 of your Standard ceramics from this firing becomes Fine. This cannot create a Masterpiece.",
+      "abilityZh": "你的器物永远不会是瑕品：对它们而言，火候差3或以上算作良品。每轮一次，定品后，你本次烧成中的1件良品变为上品。不能借此成为臻品。",
+      "shortText": "Always: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard. Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing → Fine.",
+      "shortTextZh": "持续：你的器物永不为瑕品，火候差3或以上算作良品。每轮一次，定品后：己方本窑1件良品→上品。",
+      "clarifications": [
+        {
+          "en": "\"Never Flawed\" is always on; it is not an optional ability. It applies when Quality is assigned, after any Jun adjustment, to your ceramics in the Shared Kiln and your Imperial Kiln. The Heat Difference is unchanged; only the Quality counts as Standard.",
+          "zh": "“永不为瑕品”始终生效，不是可选能力。它在定品时（钧窑调整之后）适用于你在共窑与御窑中的器物。火候差不变，只是品质算作良品。",
+          "source": "INT Protective Saggars floor"
+        },
+        {
+          "en": "A ceramic that is Standard only because it can never be Flawed still counts as Standard, so the once-per-round step may make it Fine.",
+          "zh": "因永不为瑕品而算作良品的器物就是良品，所以每轮一次的升品可以把它升为上品。",
+          "source": "INT Protective Saggars floor"
+        },
+        {
+          "en": "Protective Saggars affects only your own ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds.",
+          "zh": "匣钵护烧只作用于你本次烧成中（共窑或御窑）的器物，不作用于先前各轮烧成的器物。",
+          "source": "L638"
+        },
+        {
+          "en": "With Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' Standard → Fine step and Crackle may both apply to the same ceramic, since Crackle does not change a Fine ceramic's Quality.",
+          "zh": "有匣钵护烧时，本应为瑕品的器物算作良品，可以再开片；匣钵护烧的“良品变上品”与开片可以作用于同一件器物，因为开片不改变上品的品质。",
+          "source": "L641"
+        },
+        {
+          "en": "After-Quality abilities resolve in First Player order. If you control several in this window, you choose their order.",
+          "zh": "定品后能力按起始玩家顺序结算；若你在此时机有多项能力，由你决定先后。",
+          "source": "L663 · L374"
+        }
+      ]
     },
     {
       "id": "T12",
       "discipline": "firing",
+      "cost": 4,
+      "oncePerRound": false,
+      "timing": "contributions",
+      "unlocks": null,
+      "params": {
+        "freeCards": [
+          "BANK",
+          "STOKE"
+        ],
+        "cards": [
+          "FUEL_LEDGER_BANK",
+          "FUEL_LEDGER_STOKE"
+        ]
+      },
       "name": "Fuel Ledger",
       "nameZh": "柴簿",
-      "cost": 3,
-      "ability": "When acquired: gain the +2 Stoke and −2 Bank Contribution cards. Each costs 2 Wood to play. They are additional choices; choose only 1 Contribution card per firing. Return played cards after firing.",
-      "abilityZh": "获得时：取得+2添柴和−2压火控火牌，每张使用费用为2柴。它们是额外可选牌；每次烧成仍只选择1张控火牌。使用后收回。",
-      "oncePerRound": false
+      "ability": "Your Bank the Fire and Stoke the Fire cost no Wood. When you acquire this tile, take the Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2) Contribution cards; choose among all 5 of your cards as usual, playing exactly 1.",
+      "abilityZh": "你的压火与添柴不需要付柴。习得此牌时，拿取柴簿压火（1柴，−2）与柴簿添柴（1柴，+2）两张控火牌；照常从你的5张控火牌中暗选，只打出1张。",
+      "shortText": "Always: your Bank and Stoke cost no Wood. When acquired: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards (pay 1 Wood → −2/+2).",
+      "shortTextZh": "持续：你的压火与添柴不付柴。习得时：获取柴簿压火与柴簿添柴两张控火牌（付1柴→−2或+2）。",
+      "clarifications": [
+        {
+          "en": "Keep the 2 Fuel Ledger Contribution cards beside the Firing deck; they go to whoever acquires Fuel Ledger.",
+          "zh": "把2张柴簿控火牌放在火作叠旁，谁习得柴簿就归谁。",
+          "source": "L117"
+        },
+        {
+          "en": "A player participates in Contributions only if they have at least 1 ceramic in the Shared Kiln. A ceramic in an Imperial Kiln gives no say over the shared fire.",
+          "zh": "只有在共窑中至少有1件器物的玩家才参与控火；玩家不能凭御窑中的器物对共窑的火发表意见。",
+          "source": "L271"
+        },
+        {
+          "en": "Each participant secretly chooses 1 of their Contribution cards and must be able to pay its Wood cost. Your Bank and Stoke cost 0 Wood, so you may choose them with no Wood; each of your 2 Fuel Ledger cards costs 1 Wood.",
+          "zh": "每位控火者暗选1张自己的控火牌，而且必须付得起它的柴费。你的压火与添柴不付柴，没有柴也可以选；两张柴簿控火牌各需1柴。",
+          "source": "L659"
+        },
+        {
+          "en": "Contribution choices remain secret until revealed; Wood is paid only on reveal, so no Wood is set aside beforehand. All 14 Contribution cards share one back, so a face-down card reveals nothing.",
+          "zh": "控火选择在亮牌前保密；柴在亮牌时才支付，事先不必押下。14张控火牌牌背相同，暗牌不泄露任何信息。",
+          "source": "L99 · L499"
+        },
+        {
+          "en": "Reveal all Contribution cards simultaneously, then pay all costs. Start at the Kiln Die result, add all final Contribution modifiers, then clamp to 0–5.",
+          "zh": "同时亮出所有控火牌，然后支付全部费用；以窑骰点数为起点，加上所有最终的控火修正，再限定在0–5。",
+          "source": "L253 · L659"
+        }
+      ]
     },
     {
       "id": "T13",
       "discipline": "firing",
+      "cost": 3,
+      "oncePerRound": true,
+      "timing": "after_base_heat",
+      "unlocks": null,
+      "params": {
+        "wood": 1
+      },
       "name": "Test Pieces",
       "nameZh": "火照",
-      "cost": 3,
-      "ability": "Once per round, before Contributions are chosen, if you have at least 1 ceramic participating in this firing, pay 1 Wood to privately look at the top Fire card, then return it to the top.",
-      "abilityZh": "每轮一次，选择控火牌前，若你至少有1件陶瓷参与本次烧成，支付1柴，私下查看窑火牌堆顶1张，然后放回牌堆顶。",
-      "oncePerRound": true
+      "ability": "Once per round, after Base Heat is determined and before the Fire card is revealed, if you have at least 1 ceramic in this firing, pay 1 Wood to privately look at the top Fire card. You may then put it on the bottom of the deck. You may not show it.",
+      "abilityZh": "每轮一次，基础火候确定后、翻窑火前，若你在本次烧成中至少有1件器物，可以支付1柴，私下查看窑火牌堆顶的1张。然后你可以把它放到牌堆底。不能把牌给别人看。",
+      "shortText": "Once per round, after Base Heat, before the Fire card, if you have a ceramic in this firing: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.",
+      "shortTextZh": "每轮一次，基础火候定后、翻窑火前，本窑有己方器物时：可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。",
+      "clarifications": [
+        {
+          "en": "A buried card stays on the bottom; if the Fire deck runs out, the discard pile is shuffled and placed above it, so the buried card is drawn last. You may discuss what you saw but may not show the card.",
+          "zh": "置底的牌留在牌堆底；若窑火牌堆用尽，把弃牌堆洗混后放在它上面，所以置底的牌最后才翻出。你可以谈论看到的内容，但不能把牌给别人看。",
+          "source": "L636"
+        },
+        {
+          "en": "A Fire deck that holds only buried cards counts as run out: when a card is needed, the discard pile is shuffled and placed above them. A Test Pieces look counts as needing a card.",
+          "zh": "窑火牌堆只剩置底的牌时，算作牌堆用尽：需要翻牌时，把弃牌堆洗混后放在它们上面。火照查看也算需要翻牌。",
+          "source": "R15"
+        },
+        {
+          "en": "Eligibility counts any of your ceramics in this firing, Imperial Kiln included. The Wood payment and the bury are public, and so is the number of buried cards in the deck; the value you looked at is private to you.",
+          "zh": "判断资格时，你本次烧成中的任何器物都算，包括御窑中的器物。付柴与置底是公开信息，牌堆中置底的张数也公开；你看到的内容只有你自己知道。",
+          "source": "INT Test Pieces"
+        }
+      ]
     },
     {
       "id": "T14",
       "discipline": "firing",
+      "cost": 2,
+      "oncePerRound": true,
+      "timing": "after_quality",
+      "unlocks": null,
+      "params": {
+        "extraCards": 2,
+        "chosenCards": 1
+      },
       "name": "Second Firing",
       "nameZh": "复烧",
-      "cost": 2,
-      "ability": "Once per round, after Quality is assigned, choose 1 of your Flawed or Standard ceramics from this firing. Reveal 1 extra Fire card and recalculate that ceramic's Actual Heat and Quality using the same Base Heat, kiln position, Kiln Furniture effect and Shifu Heat marker, but the new Fire modifier. Previous post-Fire Actual Heat adjustments do not carry over. The new Quality replaces the old, even if worse. Discard the extra Fire card.",
-      "abilityZh": "每轮一次，决定品质后，选择自己参与本次烧成的1件瑕品或良品陶瓷，额外揭示1张窑火牌。保留相同基础火候、窑位、支烧窑具效果及师傅火候标记，采用新窑火修正重新计算其实际火候与品质；先前揭示窑火后的实际火候调整不保留。新品质取代旧品质，即使更差也如此。弃掉额外窑火牌。",
-      "oncePerRound": true
+      "ability": "Once per round, after Quality is assigned, choose 1 of your Flawed or Standard ceramics from this firing. Reveal 2 extra Fire cards, choose 1 of them and recalculate that ceramic's Actual Heat and Quality with the same Base Heat, zone or Kiln Furniture modifier and Kiln Master marker and the chosen card's modifier. Jun's adjustment from the first calculation does not carry over; an unused Jun adjustment may be applied to the recalculated heat before the new Quality is assigned. The new Quality replaces the old, even if worse. Discard both extra Fire cards after resolving.",
+      "abilityZh": "每轮一次，定品后，你可以选择你本次烧成中的1件瑕品或良品，额外翻2张窑火牌，选择其中1张，用相同的基础火候、温区或窑具修正与窑工标，配合所选牌的窑火修正，重新计算它的实际火候与品质。第一次计算时的钧窑调整不保留；尚未使用的钧窑调整可以在定新品质前作用于重算后的火候。新品质取代旧品质，即使更差也是如此。结算后弃置这2张额外的窑火牌。",
+      "shortText": "Once per round, after Quality is assigned: 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.",
+      "shortTextZh": "每轮一次，定品后：己方本窑1件瑕品或良品→另翻2张窑火牌，以其中1张重算其品质，即使更差也算。",
+      "clarifications": [
+        {
+          "en": "Second Firing affects only your own eligible ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds. Second Firing's extra Fire cards change nothing for any other ceramic.",
+          "zh": "复烧只作用于你本次烧成中（共窑或御窑）符合条件的器物，不作用于先前各轮烧成的器物；复烧额外翻出的窑火牌不影响任何其他器物。",
+          "source": "L638"
+        },
+        {
+          "en": "The 2 extra Fire cards are revealed face up for everyone to see. If the Fire deck runs out before either card, it is reshuffled first, and any buried card stays at the bottom.",
+          "zh": "2张额外窑火牌正面朝上翻开，所有人都看得到。翻其中任何一张之前若窑火牌堆已用尽，先洗混再翻，置底的牌仍留在牌堆底。",
+          "source": "INT Second Firing choice · R15"
+        },
+        {
+          "en": "On an Imperial Kiln ceramic, Second Firing keeps the same Kiln Die result, the same Imperial modifier and the same Kiln Master marker, with the chosen card's Fire modifier.",
+          "zh": "复烧御窑中的器物时，用相同的窑骰点数、御窑修正与窑工标，配合所选那张牌的窑火修正重新计算。",
+          "source": "INT Imperial Second Firing"
+        },
+        {
+          "en": "After-Quality abilities resolve in First Player order. If you control several in this window, you choose their order.",
+          "zh": "定品后能力按起始玩家顺序结算；若你在此时机有多项能力，由你决定先后。",
+          "source": "L663 · L374"
+        },
+        {
+          "en": "You may sell a Flawed ceramic for 2 Coins during your own turn, your after-Quality turn included; a ceramic of this firing sold then leaves the kiln and can no longer be chosen for Second Firing.",
+          "zh": "你可以在自己的回合中以2铜钱卖出瑕品，包括你的定品后回合；在那时卖出的本窑器物离开窑位，不能再被选作复烧的对象。",
+          "source": "L284 · R20"
+        }
+      ]
     },
     {
-      "id": "T15",
+      "id": "T24",
       "discipline": "firing",
-      "name": "Kiln Furniture",
-      "nameZh": "支烧窑具",
       "cost": 2,
-      "ability": "Once per round, when loading 1 ceramic into a High or Low Shared Kiln space, place this tile beneath it. Its zone modifier is 0 for this firing. Return the tile after firing.",
-      "abilityZh": "每轮一次，将1件陶瓷装入共窑高温区或低温区时，将本牌放在其下方。本次烧成的窑位修正为0，烧成后收回本牌。",
-      "oncePerRound": true
+      "oncePerRound": true,
+      "timing": "when_loading",
+      "unlocks": null,
+      "params": {
+        "values": [
+          1,
+          -1
+        ]
+      },
+      "name": "Kiln Master",
+      "nameZh": "窑工",
+      "ability": "Once per round, when you load a ceramic, you may place a +1 or −1 marker on it. It adds its value to that ceramic's Actual Heat.",
+      "abilityZh": "每轮一次，装窑1件器物时，你可以在它上面放一个+1或−1标记。其数值计入该器物的实际火候。",
+      "shortText": "Once per round, when you load a ceramic: you may place a +1 or −1 marker on it. It adds its value to that ceramic's Actual Heat.",
+      "shortTextZh": "每轮一次，装窑1件器物时：可在它上面放一个+1或−1标记。其数值计入该器物的实际火候。",
+      "clarifications": [
+        {
+          "en": "The marker may be placed at any loading: a Glaze & Load action or Imperial Priority, into the Shared Kiln or your Imperial Kiln. It goes on the ceramic as that ceramic is loaded, never on one already in a kiln.",
+          "zh": "窑工标可以在任何一次装窑时放置：施釉装窑行动或御烧优先，装进共窑或你的御窑都可以。它在器物装窑的当时放上，不能放在已在窑中的器物上。",
+          "source": "R22 · INT Kiln Master at loading"
+        },
+        {
+          "en": "The marker is chosen when the ceramic is loaded, like the Imperial Kiln's modifier, and is open information. It stays in place through a Second Firing recalculation and returns when the firing finishes.",
+          "zh": "窑工标在装窑时选定，与御窑修正的选法相同，且是公开信息。复烧重算时窑工标留在原处，开窑取器时收回。",
+          "source": "L635 · L664"
+        },
+        {
+          "en": "In the Shared Kiln the marker adds to the zone or Kiln Furniture modifier; in your Imperial Kiln it adds to the modifier chosen at loading. Jun's adjustment applies on top of it.",
+          "zh": "在共窑中，窑工标与温区或支烧窑具修正相加；在你的御窑中，它与装窑时选定的御窑修正相加。钧窑的调整叠加在它之上。",
+          "source": "L661 · L635"
+        }
+      ]
+    },
+    {
+      "id": "T25",
+      "discipline": "firing",
+      "cost": 4,
+      "oncePerRound": true,
+      "timing": "order_completion",
+      "unlocks": null,
+      "params": {
+        "bonusCrowns": 1
+      },
+      "name": "Tribute Ware",
+      "nameZh": "贡瓷",
+      "ability": "Once per round, when you complete an Order showing at least 1 Crown, gain 1 additional Crown.",
+      "abilityZh": "每轮一次，当你完成一张印有至少1个御令的委托时，额外获得1个御令。",
+      "shortText": "Once per round, when you complete a Crown Order: gain 1 additional Crown.",
+      "shortTextZh": "每轮一次，完成御令委托时：额外得1个御令。",
+      "clarifications": [
+        {
+          "en": "Tribute Ware's bonus Crown advances Recognition, or scores 1 VP past Recognition 4. It is not a printed Crown: it does not trigger Guan's \"showing a Crown\" and does not count for tie-breaker 2.",
+          "zh": "贡瓷的额外御令会推进御府声望，到达声望4之后改为得1分；但它不是委托上印有的御令，不触发官窑，也不计入平局判定②。",
+          "source": "R13"
+        },
+        {
+          "en": "Starting Orders have no Crowns.",
+          "zh": "起始委托没有御令。",
+          "source": "L516"
+        }
+      ]
     }
   ]
 }

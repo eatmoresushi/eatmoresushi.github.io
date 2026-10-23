@@ -1,0 +1,178 @@
+/* Shared Kiln space (wireframe `.ksp`): active, target, stack, tiles, pending chips. */
+@layer components {
+  .ksp {
+    container: kiln-space / inline-size;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+    min-width: 0;
+    min-height: 4.75rem;
+    padding: var(--sp-1) var(--sp-3) var(--sp-2);
+    border: 1.5px solid transparent;
+    border-radius: var(--r-md);
+    background: var(--kiln-cell);
+    color: var(--kiln-cell-ink);
+    text-align: center;
+  }
+
+  button.ksp {
+    cursor: pointer;
+  }
+
+  .ksp-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-width: 0;
+    font-size: var(--fs-12);
+    line-height: var(--lh-snug);
+    color: var(--kiln-cell-ink-2);
+  }
+
+  .ksp-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: start;
+  }
+
+  .ksp-mod {
+    margin-inline-start: auto;
+    font-weight: 800;
+    color: var(--kiln-cell-ink);
+  }
+
+  .ksp-body {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
+  .ksp-empty {
+    font-size: var(--fs-12);
+    color: var(--kiln-cell-ink-2);
+  }
+
+  .ksp-tiles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--sp-1);
+    min-width: 0;
+  }
+
+  .ktile {
+    display: inline-block;
+    max-width: 100%;
+    padding: 0 var(--sp-2);
+    border-radius: var(--r-xs);
+    font-size: var(--fs-12);
+    line-height: var(--lh-snug);
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .ktile--stack {
+    background: var(--d-glazing-pale);
+    color: var(--ink);
+  }
+
+  .ktile--setter {
+    background: var(--pc);
+    color: var(--on-seat);
+  }
+
+  .ktile--furniture {
+    border-inline-start: 3px solid var(--pc);
+    background: var(--kiln-body);
+    color: var(--kiln-ink);
+  }
+
+  .ktile-detail .kit-detail-trigger {
+    max-width: 100%;
+  }
+
+  /* A Tech tile in a narrow kiln space is still a 44px target (WCAG 2.5.8). */
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-detail.ktile-detail.rd-piece > .kit-detail-trigger {
+      min-width: var(--target-min);
+    }
+  }
+
+  .kstack {
+    display: grid;
+    justify-items: center;
+    gap: var(--sp-1);
+  }
+
+  .kstack-pieces {
+    display: grid;
+  }
+
+  .kstack-pieces > * {
+    grid-area: 1 / 1;
+  }
+
+  .kstack-pieces > *:nth-child(2) {
+    translate: 0.75rem -0.625rem;
+  }
+
+  .kstack-label {
+    font-size: var(--fs-12);
+    line-height: var(--lh-tight);
+    color: var(--kiln-cell-ink-2);
+  }
+
+  .kpend {
+    display: inline-grid;
+    justify-items: center;
+    gap: var(--sp-1);
+  }
+
+  .kpend-swatch {
+    width: 1.875rem;
+    height: 1.875rem;
+    border-radius: 50%;
+    background: var(--glz);
+    box-shadow: 0 0 0 2px var(--pc);
+    outline: 2px dashed var(--teal-ink);
+    outline-offset: 2px;
+  }
+
+  .kpend-tag {
+    font-size: var(--fs-12);
+    line-height: var(--lh-tight);
+    color: var(--kiln-cell-ink-2);
+  }
+
+  @container kiln-space (max-width: 5.5rem) {
+    .ksp-head {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .ksp-mod {
+      margin-inline-start: 0;
+    }
+  }
+}
+
+@layer states {
+  .ksp--target {
+    border-color: var(--celadon);
+    box-shadow: 0 0 0 2px var(--celadon);
+  }
+
+  .ksp--target:hover {
+    box-shadow: 0 0 0 3px var(--celadon);
+  }
+
+  .ksp--chosen {
+    border-color: var(--teal-ink);
+    box-shadow: 0 0 0 3px var(--teal-ink);
+  }
+}

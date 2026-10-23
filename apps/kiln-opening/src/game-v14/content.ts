@@ -1,0 +1,346 @@
+import actionLocationsJson from "./data/action_locations.json" with { type: "json" };
+import componentsJson from "./data/components.json" with { type: "json" };
+import firingJson from "./data/firing.json" with { type: "json" };
+import gameConfigJson from "./data/game_config.json" with { type: "json" };
+import imperialProgressJson from "./data/imperial_progress.json" with { type: "json" };
+import kilnsJson from "./data/kilns.json" with { type: "json" };
+import ordersJson from "./data/orders.json" with { type: "json" };
+import techniquesJson from "./data/techniques.json" with { type: "json" };
+import type {
+  ContributionCardId,
+  Decoration,
+  FireModifier,
+  Glaze,
+  KilnId,
+  KilnSpaceId,
+  LocationId,
+  OrderId,
+  PlayerCount,
+  Quality,
+  Shape,
+  StartingTechniqueId,
+  TechniqueDiscipline,
+  TechniqueId,
+} from "./types.ts";
+
+interface GameConfigDefinition {
+  rulesVersion: "1.4";
+  players: { min: number; max: number };
+  rounds: number;
+  startingResources: { clay: number; wood: number; coins: number };
+  workers: {
+    shifu: number;
+    apprenticesTotal: number;
+    apprenticesStarting: number;
+  };
+  orderDisplay: {
+    market: number;
+    roundStartDiscard: number;
+    baseHandLimit: number;
+  };
+  techniques: { maxOwned: number; faceUpPerDiscipline: number };
+  kiln: {
+    spaces: Record<"high" | "middle" | "low", number>;
+    zoneModifier: Record<"high" | "middle" | "low", number>;
+    activeSpacesByPlayerCount: Record<"2" | "3" | "4", KilnSpaceId[]>;
+  };
+  fireDeck: Record<"-2" | "-1" | "0" | "1" | "2", number>;
+  glazes: Record<Glaze, number>;
+  decorations: Record<Decoration, number>;
+  shapes: Record<Shape, number>;
+  shapeSupplyEach: number;
+  coinEndGame: { coinsPerVp: number; maxVp: number };
+}
+
+interface LocationDefinition {
+  id: LocationId;
+  scope?: "shared";
+  name: string;
+  nameZh: string;
+  apprentice: string;
+  apprenticeZh: string;
+  shifu: string;
+  shifuZh: string;
+  capacity: Record<"2" | "3" | "4", number | null>;
+}
+
+export interface OrderRequirementDefinition {
+  shape?: Shape;
+  shapes?: Shape[];
+  glaze?: Glaze;
+  glazes?: Glaze[];
+  decoration?: Decoration;
+  decorations?: Decoration[];
+}
+
+export interface OrderDefinition {
+  id: OrderId;
+  ceramics: OrderRequirementDefinition[];
+  relations?: OrderRelationDefinition[];
+  minQuality: Quality;
+  vp: number;
+  coins: number;
+  crowns: 0 | 1 | 2 | 3;
+  requirements: string;
+  requirementsZh: string;
+}
+
+export type OrderRelationDefinition =
+  | { type: "same_glaze"; indices: number[] }
+  | { type: "same_shape"; indices: number[] }
+  | { type: "different_glaze"; indices: number[] }
+  | { type: "all_different_glaze"; indices: number[] }
+  | { type: "different_shape"; indices: number[] }
+  | { type: "all_different_shape"; indices: number[] }
+  | { type: "same_decoration"; indices: number[] }
+  | { type: "same_nonplain_decoration"; indices: number[] }
+  | { type: "different_decoration"; indices: number[] }
+  | { type: "at_least_n_quality"; quality: Quality; count: number }
+  | { type: "at_least_n_distinct_glazes"; indices: number[]; count: number }
+  | { type: "at_least_n_distinct_decorations"; indices: number[]; count: number }
+  | { type: "required_glazes"; values: Glaze[] }
+  | { type: "required_decorations"; values: Decoration[] }
+  | { type: "glaze_categories"; indices: number[]; categories: Glaze[][] };
+
+export interface TechniqueDefinition {
+  id: TechniqueId;
+  discipline: TechniqueDiscipline;
+  name: string;
+  nameZh: string;
+  cost: number;
+  ability: string;
+  abilityZh: string;
+  oncePerRound: boolean;
+}
+
+export interface StartingTechniqueDefinition {
+  id: StartingTechniqueId;
+  name: string;
+  nameZh: string;
+  ability: string;
+  abilityZh: string;
+}
+
+export interface ContributionCardDefinition {
+  id: ContributionCardId;
+  name: string;
+  nameZh: string;
+  woodCost: number;
+  heatAdjustment: number;
+  meaning: string;
+  meaningZh: string;
+}
+
+interface FiringDefinition {
+  rulesVersion: "1.4";
+  kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
+  fireDeck: FireModifier[];
+  contributionCards: ContributionCardDefinition[];
+  baseHeatRule: { formula: string; start: number; minimum: number; maximum: number; contributors: string };
+}
+
+interface ComponentDefinition {
+  name: string;
+  qty: number | string;
+}
+
+export interface KilnDefinition {
+  id: KilnId;
+  /** Retain disabled traditions for historical records, but exclude them from new games. */
+  enabled?: boolean;
+  name: string;
+  nameZh: string;
+  abilityName: string;
+  abilityNameZh: string;
+  ability: string;
+  abilityZh: string;
+}
+
+export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
+const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
+  rulesVersion: "1.4";
+  locations: LocationDefinition[];
+};
+const ORDER_FILE = ordersJson as unknown as {
+  rulesVersion: "1.4";
+  starting: OrderDefinition[];
+  main: OrderDefinition[];
+};
+const TECHNIQUE_FILE = techniquesJson as unknown as {
+  rulesVersion: "1.4";
+  starting: StartingTechniqueDefinition[];
+  advanced: TechniqueDefinition[];
+};
+const FIRING_FILE = firingJson as unknown as FiringDefinition;
+const COMPONENT_FILE = componentsJson as unknown as {
+  rulesVersion: "1.4";
+  components: ComponentDefinition[];
+};
+
+export const LOCATION_IDS: readonly LocationId[] = [
+  "materials_yard",
+  "forming_studio",
+  "glaze_workshop",
+  "kiln_yard",
+  "market_imperial_office",
+  "guild_academy",
+  "labour",
+  "court_patronage",
+];
+
+export const SHAPES: readonly Shape[] = ["bowl", "plate", "washer", "vase", "censer"];
+export const GLAZES: readonly Glaze[] = ["white", "celadon", "grey_green", "moon_white"];
+export const DECORATIONS: readonly Decoration[] = ["plain", "carved", "impressed", "painted"];
+export const DISCIPLINES: readonly TechniqueDiscipline[] = ["forming", "glazing", "firing"];
+export const KILN_DEFINITIONS = Object.fromEntries(
+  (kilnsJson as unknown as KilnDefinition[]).map((kiln) => [kiln.id, kiln]),
+) as Record<KilnId, KilnDefinition>;
+export const KILN_IDS = Object.keys(KILN_DEFINITIONS) as KilnId[];
+export const AVAILABLE_KILN_IDS = KILN_IDS.filter((id) => KILN_DEFINITIONS[id].enabled !== false);
+export const KILN_SPACE_IDS = FIRING_FILE.kilnSpaces.map((space) => space.id);
+
+export const LOCATION_DEFINITIONS = Object.fromEntries(
+  ACTION_LOCATION_FILE.locations.map((location) => [location.id, location]),
+) as Record<LocationId, LocationDefinition>;
+
+export const STARTING_ORDERS = ORDER_FILE.starting;
+export const MAIN_ORDERS = ORDER_FILE.main;
+export const ORDER_DEFINITIONS = Object.fromEntries(
+  [...STARTING_ORDERS, ...MAIN_ORDERS].map((order) => [order.id, order]),
+) as Record<OrderId, OrderDefinition>;
+
+export const STARTING_TECHNIQUES = TECHNIQUE_FILE.starting;
+export const STARTING_TECHNIQUE_DEFINITIONS = Object.fromEntries(
+  STARTING_TECHNIQUES.map((technique) => [technique.id, technique]),
+) as Record<StartingTechniqueDefinition["id"], StartingTechniqueDefinition>;
+export const TECHNIQUES = TECHNIQUE_FILE.advanced;
+export const TECHNIQUE_DEFINITIONS = Object.fromEntries(
+  TECHNIQUES.map((technique) => [technique.id, technique]),
+) as Record<TechniqueId, TechniqueDefinition>;
+
+export const FIRE_CARDS = FIRING_FILE.fireDeck;
+export const KILN_SPACE_DEFINITIONS = Object.fromEntries(
+  FIRING_FILE.kilnSpaces.map((space) => [space.id, space]),
+) as Record<KilnSpaceId, FiringDefinition["kilnSpaces"][number]>;
+export const SHAPE_COSTS = GAME_CONFIG.shapes;
+export const DECORATION_COSTS = GAME_CONFIG.decorations;
+
+export interface ImperialProgressDefinition {
+  rulesVersion: "1.4";
+  track: Array<{
+    space: number;
+    title: string;
+    titleZh: string;
+    reward: string | null;
+    rewardZh: string | null;
+  }>;
+  exhibition: {
+    capacity: null;
+    minimumQuality: Quality;
+    qualityVp: Record<"standard" | "fine" | "masterpiece", number>;
+    threeDifferentShapesBonus: number;
+    threeDifferentGlazesBonus: number;
+    flawedEligible: boolean;
+    emptyExhibitionPenalty: number;
+  };
+}
+
+export const IMPERIAL_PROGRESS = imperialProgressJson as unknown as ImperialProgressDefinition;
+
+/** Three standard Contribution cards and the two Fuel Ledger cards. */
+export const CONTRIBUTION_CARDS: readonly ContributionCardDefinition[] = FIRING_FILE.contributionCards;
+
+export const CONTRIBUTION_CARD_DEFINITIONS = Object.fromEntries(
+  CONTRIBUTION_CARDS.map((card) => [card.id, card]),
+) as Record<ContributionCardId, ContributionCardDefinition>;
+
+export const CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] =
+  CONTRIBUTION_CARDS.map((card) => card.id);
+
+/** Where Base Heat starts before any Contribution card is applied. */
+export const BASE_HEAT_START = FIRING_FILE.baseHeatRule.start;
+
+export function locationCapacity(locationId: LocationId, playerCount: PlayerCount): number {
+  return LOCATION_DEFINITIONS[locationId].capacity[String(playerCount) as "2" | "3" | "4"] ?? Number.POSITIVE_INFINITY;
+}
+
+export function activeKilnSpaceIds(playerCount: PlayerCount): KilnSpaceId[] {
+  return [...GAME_CONFIG.kiln.activeSpacesByPlayerCount[String(playerCount) as "2" | "3" | "4"]];
+}
+
+function validateContent(): void {
+  if (
+    GAME_CONFIG.rulesVersion !== "1.4" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.4" ||
+    FIRING_FILE.rulesVersion !== "1.4" ||
+    COMPONENT_FILE.rulesVersion !== "1.4" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.4" ||
+    ORDER_FILE.rulesVersion !== "1.4" ||
+    TECHNIQUE_FILE.rulesVersion !== "1.4"
+  ) {
+    throw new Error("Rules content version mismatch");
+  }
+  const actualLocationIds = new Set(ACTION_LOCATION_FILE.locations.map((location) => location.id));
+  if (
+    ACTION_LOCATION_FILE.locations.length !== 8 ||
+    new Set(LOCATION_IDS).size !== 8 ||
+    LOCATION_IDS.some((locationId) => !actualLocationIds.has(locationId))
+  ) {
+    throw new Error("Expected exactly eight V1.4 action locations");
+  }
+  if (MAIN_ORDERS.length !== 48 || STARTING_ORDERS.length !== 8) {
+    throw new Error("Order deck size mismatch");
+  }
+  if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 8) {
+    throw new Error("Technique, Kiln, or kiln-space count mismatch");
+  }
+  if (AVAILABLE_KILN_IDS.length < GAME_CONFIG.players.max) {
+    throw new Error("Not enough available Kiln Traditions for the maximum player count");
+  }
+  if (new Set([...MAIN_ORDERS, ...STARTING_ORDERS].map((order) => order.id)).size !== 56) {
+    throw new Error("Order IDs must be unique");
+  }
+  if (new Set(TECHNIQUES.map((technique) => technique.id)).size !== 15) {
+    throw new Error("Technique IDs must be unique");
+  }
+  for (const modifier of [-2, -1, 0, 1, 2] as const) {
+    const configured = GAME_CONFIG.fireDeck[String(modifier) as keyof GameConfigDefinition["fireDeck"]];
+    const actual = FIRE_CARDS.filter((card) => card === modifier).length;
+    if (configured !== actual) throw new Error(`Fire card count mismatch for ${modifier}`);
+  }
+  if (FIRE_CARDS.length !== 12) throw new Error("Fire deck must contain exactly 12 cards");
+}
+
+validateContent();
+
+/**
+ * Prices printed on action locations. Previously module-private constants inside
+ * `engine.ts`, which left the printed board text with nothing to check itself against:
+ * the Office advertised a Coin option v1.1.5 had removed, and Court Patronage reported a
+ * cost of 5 while charging 4.
+ */
+export const ACTION_LOCATION_PRICES = {
+  courtPatronageCoins: 5,
+  labourApprenticeCoins: 2,
+  labourShifuCoins: 4,
+  /** Coins the V1.4 firing salvage step pays for a ceramic still Flawed from this firing. */
+  flawedSalvageCoins: 2,
+} as const;
+
+/**
+ * Cards Colour Samples reveals from the chosen deck. Was a bare `splice(0, 2)` in the
+ * engine while the printed card said "top 3 cards" -- a mismatch that survived two rulesets
+ * because nothing named the number, so nothing could compare it to the text.
+ */
+export const COLOUR_SAMPLES_LOOK = 3;
+
+/**
+ * Coins Measuring Calipers pays.
+ *
+ * Kept shared between the engine, UI and computer players so its reward can
+ * fund Decoration costs in the same action without duplicating the amount.
+ */
+export const FORMING_TECH_COINS = 2;
+
+/** Techs a V1.4 Guild Shifu draws off the chosen discipline to inspect. */
+export const GUILD_SHIFU_INSPECT = 2;

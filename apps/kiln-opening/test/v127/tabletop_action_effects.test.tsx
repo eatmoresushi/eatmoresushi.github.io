@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { LOCATION_DEFINITIONS } from "../../src/game/index.ts";
-import { projectPublicGameState } from "../../src/multiplayer/index.ts";
+import { LOCATION_DEFINITIONS } from "../../src/game-v14/index.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/index.ts";
 import { ActionSpace, TABLETOP_BOARD_LOCATIONS } from "../../src/ui/TabletopGameExperience.tsx";
 import { startedGame, workerId } from "./helpers.ts";
 

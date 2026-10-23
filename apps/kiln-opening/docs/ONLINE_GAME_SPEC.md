@@ -1,189 +1,109 @@
-# ONLINE_GAME_SPEC.md
+# ONLINE_GAME_SPEC.md — V1.6.2
 
 ## Goal
 
-Create a synchronous 2–4 player browser version suitable for remote playtesting.
+A synchronous 2–4 player browser version for remote playtesting. The digital version automates administration while preserving every decision and every piece of hidden information.
 
-The digital version should automate administration while preserving decisions and hidden information.
+The [V1.6.2 Player Rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md) and its [audit](./RULEBOOK_AUDIT_V1.6.2.md) govern the rules. The [engine design](./ENGINE_V1.6.1_DESIGN.md), as amended by the [V1.6.2 delta](./ENGINE_V1.6.2_DELTA.md), is the contract for the engine and the multiplayer layer. This document describes how the online game behaves; it restates no rule and never overrides the rulebook.
 
-Clay, Wood and Coins have unlimited shared supplies. Track each player's earned resources and payments without a finite bank counter or physical-token cap.
+## Transition status
 
-## MVP user flow
+- The V1.6.2 engine (`src/game`), multiplayer service (`src/multiplayer`), Edge Functions (`supabase/functions`) and migrations (`202610150001_v161_rules.sql`, `202610150002_playtest_v161.sql`, written for V1.6.1 and edited in place for V1.6.2 before any deployment; nothing has been deployed) are the current server.
+- The browser UI still runs the pinned V1.4 copies (`src/game-v14`, `src/multiplayer-v14`, `src/playtest-v14`) until the UI phase replaces it with the table UI in `src/app`, which the UI stage moves to the V1.6.2 commands. The UI phase also deletes those copies.
+- The SQL migrations, both Edge Functions and the client must be deployed together. The migration replaces the V1.4 signatures of `server_add_computer_seat` and `server_commit_start`, so a V1.4 Edge Function cannot run against it. Checked-in migrations do not apply themselves.
 
-### Home
+## Rooms and seats
 
-- Create Game
-- Join Game
-- Optional local “sandbox/debug” mode for developers
+### Create, join, lobby
 
-### Create Game
-
-Host enters display name.
-
-Server creates short room code.
-
-Host receives a stable player/seat identity token.
-
-### Join Game
-
-Player enters:
-
-- room code;
-- display name.
-
-Maximum 4 seats.
-
-### Lobby
-
-Show:
-
-- players;
-- host;
-- connection status;
-- selected colour if applicable.
-
-Host starts only with 2–4 players.
+- The host enters a display name (1–40 characters). The server creates a six-character room code and a stable seat credential. The browser keeps the raw seat token in durable per-room storage; the server stores only its hash.
+- Players join with the room code and a display name, up to 4 seats. An authenticated account holds at most one seat per room.
+- The lobby shows seats, the host, and computer seats. The host starts the game with 2–4 seats.
+- Every room is stamped `rules_version = content_version = '1.6.2'` and the server's rules fingerprint `r32-<digest>` (`RULES_BEHAVIOUR_REVISION` 32, owner revision 4 and rulings R20–R25). Joining or adding a computer to any other room is refused before a seat is written.
 
 ### Computer players
 
-The host may add or remove computer seats while the room is in the lobby. A room must retain at least one human seat and may contain up to three computer players, for the normal four-seat maximum.
+- The host may add or remove computer seats in the lobby. A room keeps at least one human seat (the host) and may hold up to three computers.
+- Each computer seat has a private seed and a policy label `rules-v1.6.2-<name>-<nnn>`, stamped from the service's configured policy. The database accepts any label of that shape, so a new policy needs no migration.
+- The browser never chooses a computer's command. An authenticated seat asks the service to advance (`advance_computers`); the service decides everything else.
+- **Policy interface.** A policy (`ComputerPolicy` in `src/multiplayer/computerPolicy.ts`) receives only that seat's `ActorView` — the public projection plus its own hand, its own pending look or Test Pieces peek, and its own sealed Contribution — and proposes one command. It never sees `GameState`, deck order, another hand or an unrevealed Contribution. The default is the strategic policy (`rules-v1.6.2-strategic-001`); the canonical policy (`rules-v1.6.2-canonical-001`), a seeded choice among the canonical legal commands, is also available.
+- **Fallback.** The service shape-checks the proposal with `parseCommand` and applies it through the engine. A missing, malformed, illegal or throwing proposal falls back to `legalCommands(view, {mode: "canonical"})` (in the Contribution window: Tend first). The first command the engine accepts is committed with the same revision checks as a human command.
+- **Failures leak nothing.** A policy can see its own private cards, so its exception message may name them. The cause is logged server-side only. If no candidate is legal, the response is `COMPUTER_TURN_FAILED` with the fixed message "<name> could not choose an action." and the state is unchanged.
+- Consecutive computer decisions run in bounded batches (24 per request). Concurrent advance requests are safe: compare-and-swap persistence accepts each revision once.
 
-Computer seats use the single `rules-v1.4-strategic-001` production policy through the V1.4 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of human-calibrated strength. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance. The server derives the active computer, creates a sanitized observation containing public state plus only that seat's private decisions, preflights the strategic command and conservative fallbacks through the engine, and commits the first legal result with the same revision checks as a human command.
+## Who acts
 
-Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Contribution-card choices remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute. The client times out a stalled advance request without changing local game state, pauses automatic retries for that revision, and offers an explicit retry. Successful batches produce a paced public-event recap while the complete authoritative history remains available in the log.
+Every consumer routes on the engine's `decisionPrompt(state)` alone, never on a phase rule of its own:
 
-### Game setup
+| Mode | Phases | Behaviour |
+| --- | --- | --- |
+| `single` | Setup (each player's Kiln and face-up Main Order, one turn each in reverse turn order), Setter's Mark, Work turns (with their private looks and the Colour Samples swap), Test Pieces, Jun windows, after-Quality, the Second Firing choice, Order Phase | Exactly one actor. Commands must name the current revision. |
+| `parallel` | `cleanup_hand_limit` | Several actors, independent choices about their own hand (and their own Flawed ceramics, which a pending player may sell first), in any order. |
+| `simultaneous_secret` | `firing_contributions` | Each eligible participant seals one Contribution; all are revealed together. |
 
-- random First Player;
-- reverse-order Kiln selection from Ru, Guan, Ge and Jun; Ding is disabled for new online games and cannot be selected by humans or computers; its stable `DI` definition remains historical content;
-- the separate Starting Order deck contains eight cards, S01–S08; each player receives 2 Starting Orders and no Main Order in a secret hand; only hand counts are public;
-- each player chooses 1 Starting Tech from Prepared Clay, White Slip and Rapid Drying; multiple players may choose the same Tech; Kiln Tending is no longer available;
-- every player starts with 2 Clay, 2 Wood, 3 Coins, 1 Shifu + 3 Apprentices and an empty Imperial Kiln area;
-- Shared-Kiln High/Middle/Low capacities are 1/2/1, 2/2/2 and 3/2/3 at 2/3/4 players;
-- all eight action locations are shared; Materials Yard, Potter's Wheel, Decoration Workshop, Commission Market, and Craft Academy use 2 / 3 / 4 global printed spaces at 2 / 3 / 4 players, while Kiln Yard, Paid Work and Imperial Court are uncapped;
-- game begins Round 1 with a six-card Main Order queue, oldest on the left and newest on the right.
+- The client calls `advance_computers` whenever any actor in `decisionPrompt(game).actorIds` is a computer seat, whatever the mode (`shouldAdvanceComputers`).
+- The service advances the first computer seat in the prompt's actors, repeatedly, until a human must act, the game ends or the batch cap is reached.
+- **Revision races in shared windows.** In a `parallel` window a human and a computer may act at the same time. A command based on any revision since the window opened (`openedAtRevision`) is validated against the current head while its actor is still pending; a commit conflict is retried up to 3 times with a fresh head. Every other phase requires the exact current revision (`STALE_REVISION` otherwise).
+- Contributions use compare-and-swap on the head and on the window: a submission for a window that is not open is `PRIVATE_WINDOW_MISMATCH`, a second submission per seat and window is refused, and concurrent submissions are retried against the fresh head and the fresh set of sealed choices.
 
-## Synchronous turn model
+## Commands
 
-Production uses Workshop (Plain, no Glaze) → optional Decoration → paid Glaze & Load → Firing. Decoration costs 2 Coins per vessel, with one free for the Shifu. Glazing and loading normally costs 1 Coin per ceramic and chooses Glaze at placement. Once per round, Dipping Vats may waive that cost for every Plain ceramic loaded by one Kiln Yard action into either kiln; specialised ceramics still pay. Rapid Drying and Imperial Priority are not Kiln Yard actions and receive no Dipping Vats waiver. Crackle is a permanent Ge property separate from Decoration and Glaze. When completing an Order, each Crackle ceramic may use one independently chosen virtual Glaze consistently for every requirement of that Order. It cannot substitute Decoration; actual attributes remain unchanged, including Glaze for Exhibition diversity.
+- Every command is untrusted JSON. `parseCommand` shape-checks it — `SUBMIT_CONTRIBUTION` included — before the service branches on its type (`MALFORMED_ACTION` otherwise).
+- Each command carries a UUID `commandId`. Replaying an accepted ID returns the stored response to the same seat and commits nothing; another seat using the ID gets `DUPLICATE_COMMAND` This holds after the room is `finished` or `abandoned`, including for the command that ended the game; only a new ID is refused with `SESSION_ENDED`.
+- The engine validates on the actor's view only, so a rule error can never mention hidden information. Rule errors are typed (`GameRuleError.code` + `details`) and localised from `RULE_ERROR_TEXT`.
+- Worker actions whose choices are all known when they are made are single commands (Materials Yard, Form & Decorate, Glaze & Load with its kiln fuel and any Kiln Master marker, Apprentice Guild purchases, Canal Wharf, Magistrate's Hall with the Shifu's optional Crown Order, Imperial Priority). The Setup choice is one command per player: a Kiln and a face-up Main Order (R23). Selling a Flawed ceramic (`SELL_FLAWED`) is a free command its owner may send only in a turn of theirs where the game waits for them (R20). It is not a worker action: in a Work turn or a pending Cleanup trim the player still owes their action, `END_TURN` or trim; in an after-Quality or Order Phase turn the turn passes automatically after the sale when nothing is left to do there (no eligible after-Quality ability; nothing left to complete or sell), as it does after an ability use or a completion. Steps that follow a private reveal are separate commands: every Select's reservations after its look (`SELECT_CHOOSE`, change 25: the Commission Market's Select 2 or 3, Colour Samples' Select 3 when acquired, and the swap's Select 3 after `USE_COLOUR_SAMPLES_SWAP`; each may also take a face-up Order), the Guild Hall Shifu's takes and bottom order after the inspection (`GUILD_TAKE`, `GUILD_FINISH`), the Second Firing choice after its 2 cards are revealed, and the Test Pieces bury decision.
+- Everything that needs no decision runs inside the command that reaches it: the Kiln Die roll, the Setup display refill after each take, the round-start rotation, readying abilities, skipped windows, kiln fuel, the Fire reveal, Actual Heat, Quality, Canal Barge's 2 Coins, Crackle VP, the end of a Work turn with nothing left in the after-action window, the deferred Order and Tech display refills, Main deck reshuffles, the end of a Guild Hall Shifu's action when no decision is left, skipping a player with nothing to complete and nothing to sell in the Order Phase, and final scoring.
 
-Measuring Calipers requires another vessel still in the owner's workshop after formation, of any Shape and including another formed by the same action. Loaded, fired and delivered ceramics do not qualify.
+## Responses and events
 
-Work Phase has one active player at a time. Every player must place all four workers; there is no Work pass. Imperial Court costs 5 Coins and advances Recognition only from 0, 1 or 2.
-
-UI shows:
-
-- active player;
-- available workers;
-- legal locations;
-- capacity remaining;
-- action-specific modal after location is selected.
-
-Players cannot submit actions out of turn except special simultaneous/timing-window submissions.
-
-All Starting Orders pay 3 Coins. Each of the 28 crownless Commercial Main Orders pays 1 Coin less than before the 2026-09-30 economy amendment, with no reward below 1 Coin. Crown Order rewards, Order requirements and Shifu discounts are unchanged.
-
-The Main Order display behaves as a left-to-right queue. Whenever a face-up Order is reserved or completed, all later cards slide left and the replacement is appended at the right. Blind deck reservations and privately viewed Colour Samples reservations leave the display unchanged. A multi-reservation Commission action resolves one reservation completely before presenting the updated choices for the next. At the start of Rounds 2–5, discard the two leftmost Orders, retain the others in order, then refill. If the deck and discard are both empty, draw only available cards and leave the display short. A reservation must still take an available card.
-
-During the Order Phase, the action panel shows only held or face-up Orders that the active player can fulfil with a legal Finished-ceramic group. An explicit pass remembers the legal Orders declined at that opportunity. When later completions advance and refill the public display, the server checks every player in reverse Work order: it prompts a prior passer again only when a newly displayed Order is now completable, skips unchanged or impossible opportunities, and ends the phase after a complete circuit with no completion. This automates repeated no-choice passes without suppressing a newly created decision.
-
-## Firing multiplayer flow
-
-Firing is the most important digital interaction.
-
-The exact decision sequence is documented in [Implementation decisions](./IMPLEMENTATION_DECISIONS.md#explicit-firing-windows). Resolve Glaze Palette at the end of Work, then Test Pieces, secret Contributions, Shifu Heat markers, initial Fire reveal, Actual Heat, Jun and Quality. Resolve after-Quality choices, including Ge, Protective Saggars and Second Firing, in First Player order; each owner chooses their ability order. Recheck each remaining ability's targets, current Quality, costs and usage limits after every use. Flawed salvage and unloading follow the completed after-Quality window.
-
-Fuel Ledger provides two additional single-card choices, Bank −2 and Stoke +2, each costing 2 Wood. Store them privately until simultaneous reveal. No public payload exposes a pending card, cost or derived Heat.
-
-During Second Firing, reveal the extra Fire card and calculate the selected ceramic's new Actual Heat before offering unused Jun. A previously used Jun ability is unavailable for the rest of that round. The UI shows the new card and calculated Heat before the decision, and the server assigns the replacement Quality afterward.
-
-## No timers in MVP
-
-Do not add chess clocks or automatic turns initially.
-
-## Session lifecycle
-
-The host may end a lobby or active game for everyone after an explicit confirmation. This is a service operation outside the pure rules engine and does not count as normal game completion.
-
-- The authoritative room status changes to `abandoned` and records the ending time and host player ID.
-- The room update is public and broadcast to every connected player.
-- Reconnect remains available but returns an ended-session view; no further gameplay or starting commands are accepted.
-- Repeating the host operation is safe. Non-host attempts return a typed `HOST_ONLY` failure.
-- `Leave view` only returns that browser to the home screen and retains its reconnect credential. The player may resume or explicitly forget the saved seat.
-
-Retain abandoned sessions for 7 days for debugging and finished games for 30 days. A daily database job deletes expired parent rooms; foreign-key cascades remove their snapshots, commands, events, credentials, and submissions.
+- Every response carries the public projection (`PublicGameState`: the state without `hidden`, plus public counts) and the command's public events.
+- The acting seat's response also carries its own `PrivatePlayerView` (hand, own pending look, own Test Pieces peek, own sealed Contribution card) and the `secret` payloads of that command's events addressed to it (`ownSecrets`).
+- In-game VP is public and recorded as it is scored: Orders, Ru/Guan and Crackle VP (Kiln Tradition VP), Imperial Audience and Crowns beyond Recognition 4. Advanced Techs score nothing (change 27, which supersedes owner amendment A1): no Tech line in the ledger, `TECH_ACQUIRED`, `playerSummary(...).recordedVp`, `scorePreview` or the final breakdown. Each player's Contribution cards (`contributionCards`) are public; owning Fuel Ledger is.
+- Events are the presentation timeline, in resolution order. Events with a `secret` — the setup deal of Starting Orders, private looks, reservations from a look and the Canal Wharf Shifu's unseen card, the looked-at Orders a Select discards (`LOOKED_ORDERS_DISCARDED`), the held Order a Colour Samples swap discards, the Guild bottom order, the Test Pieces peek, hand trims — are published without it. The Setup Main Order take and the Magistrate's Hall Shifu's Crown Order are public `ORDER_RESERVED` events; a sale is a public `CERAMIC_SOLD`. `CONTRIBUTION_SUBMITTED` never carries a card; cards appear only in `CONTRIBUTIONS_REVEALED`.
+- The game start persists `createGame`'s events, including each seat's secret deal, so the public event count always equals `eventSequence` and the event log can be reloaded by sequence.
+- The seat-private event log (`list_private_events`) returns, for the authenticated seat only, every event whose secret is addressed to it, with the secret intact. A non-host seat receives its setup deal this way; a reconnecting seat recovers secrets that are not in its private view, such as the Guild bottom order it chose.
 
 ## Reconnect
 
-Refreshing browser or temporary network loss must not forfeit a seat.
+Refreshing the browser or a network loss never forfeits a seat. On reconnect the service:
 
-Store a durable per-room seat token in local storage.
-
-On reconnect:
-
-- recover player seat;
-- fetch current public game state;
-- fetch only private data that player is entitled to see;
-- resume current decision window.
+- authenticates the stored seat credential and re-checks the room's rules version and fingerprint;
+- returns the same seat, the public projection, and the seat's own `PrivatePlayerView`, rebuilt from the authoritative head and the open window's stored submissions — so a seat that already sealed its Contribution sees its own card;
+- returns the seat's own private event log;
+- writes nothing.
 
 ## Hidden information
 
-Every player's undelivered ceramics are public, including Workshop, loaded (Shared or Imperial Kiln), and Finished ceramics, with all recorded attributes. Every seat can inspect them through the player panel, including after reconnect.
+- Public: every ceramic and its attributes (Shaped, loaded, Finished, delivered; Imperial modifier; Kiln Furniture; Kiln Master's marker; Crackle markers), resources, the Kiln Die, the Fire discard, the displays, owned Techs, completed Orders and Recognition, hand counts, the Setup Main Order each player took, the Magistrate's Hall Shifu's Crown Order and every sale.
+- Private to the owner: the Order hand and the 2 Starting Orders dealt at setup; the cards each Select looks at (the Commission Market's 2 or 3, Colour Samples' 3 when acquired and for a swap) and the reservations taken from them (a face-up reservation is public); which looked-at Orders a Select discarded (R25; the discard count is public); the held Order a swap discarded; the Guild Hall Shifu inspection and chosen bottom order; the Test Pieces peek; reservations from a look and the Canal Wharf Shifu's card; Cleanup discards; a sealed Contribution card, Fuel Ledger Bank and Fuel Ledger Stoke included, until every participant has submitted.
+- Private to nobody: deck orders (Main, Tech, Fire; a Main discard reshuffled into a new deck is shuffled by the server, so a looker may know some of its cards but never their order) and the face-down Main discard (only its count is public).
+- The authoritative state, full events, raw commands and sealed submissions live only in the `private` schema, readable by the service role. Browser roles read only their own rooms' public rows under RLS. The commit RPCs refuse a public state that carries `hidden` and a public event that carries `secret`.
 
-Held Starting/Main Orders, Colour Samples top-three choices and ordering, Craft Academy Shifu Tech inspections and chosen return order, Test Pieces peeks, and Contribution/Fuel Ledger submissions are private. Order hand counts are public. Contribution and Fuel Ledger choices remain strictly secret until the simultaneous reveal.
+## Versions and compatibility
 
-Never put unrevealed contribution values in public realtime state.
+- Only V1.6.2 rooms with the server's own `r32-` fingerprint and schema-9 saves continue; rooms from before owner revision 4 (`r31-`, schema 8) and revision 3 (`r30-`, schema 7) are refused like older ones. A V1.6.1 or V1.4 room is refused by version (`UNSUPPORTED_RULES_VERSION`); a room whose fingerprint differs — older revision, missing or foreign digest — is refused with `RULES_FINGERPRINT_MISMATCH`. Nothing is migrated or relabelled; old rows remain as history.
+- The client refuses any snapshot whose room or game is not V1.6.2 / schema 9 and drops its private payload.
 
-## Undo
+## Session lifecycle
 
-MVP default:
+The host may end a lobby or active game for everyone after an explicit confirmation. This is a service operation outside the rules engine and does not count as normal game completion.
 
-- no undo after an action is committed;
-- UI should use confirmation before irreversible actions where appropriate;
-- no undo once hidden/revealed information could have changed decisions.
+- The room status becomes `abandoned` with the ending time and host player ID; the update is broadcast.
+- Reconnect still works and shows the ended session; no further commands are accepted.
+- Repeating the operation is safe. Non-hosts get `HOST_ONLY`.
 
-A developer/debug build may support state rewind via event log.
+Abandoned sessions are kept 7 days and finished games 30 days for debugging; a daily job deletes expired rooms and their cascaded rows.
 
-## Spectators
+## No timers, undo, spectators or chat
 
-Not required for MVP.
-
-## Chat
-
-Not required for MVP. Voice/chat can be external.
-
-## Imperial Recognition synchronization
-
-Imperial Recognition is server-authoritative and public. Every public snapshot and reconnect response includes each player's current 0–4 space, resolved milestone rewards, whether their Imperial Kiln has been gained, whether their Imperial Priority token is available, and immediate VP earned from Crowns beyond 4.
-
-Recognition advances through Crown icons printed on completed Orders or Imperial Court, which costs 5 Coins and may advance only from spaces 0, 1 or 2. The server resolves Crowns one at a time, caps the marker at 4, and resolves every newly crossed milestone in ascending order: Recognition 1 **Imperial Grant** grants either 3 Coins or 1 Clay + 1 Wood + 1 Coin; Recognition 2 **Imperial Gift** grants the Imperial Kiln; Recognition 3 **Imperial Priority** grants its once-per-game token; and Recognition 4 **Imperial Audience** grants 6 VP. Every Crown gained after the marker reaches 4 grants 1 VP immediately, including remaining Crowns from the Order that first reaches 4.
-
-Imperial Priority is a separate choice before or after one of the owner's worker actions. Spending it selects a Glaze, pays 1 Coin and loads one Workshop ceramic into the owner's empty Imperial Kiln; it does not increase Kiln Yard's normal load allowance and cannot move an already loaded ceramic. The client never predicts the unlock, token spend, overflow-Crown VP or Audience VP locally.
-
-Completed Order history, Crown totals and Recognition milestones are persisted and public. Main deck order remains absent from public projections; only cards entering the public display or otherwise legitimately revealed are published.
-
-## Game end
-
-Server calculates final score and tie breakers.
-
-Results screen shows VP breakdown by:
-
-- Orders;
-- Imperial Audience;
-- Crowns beyond Recognition 4;
-- Advanced Techs;
-- End-game Exhibition;
-- Kiln Tradition and other immediate ability VP;
-- leftover Coins.
-
-Every player may submit any number of Finished, undelivered Standard-or-better ceramics to the End-game Exhibition. Standard, Fine, and Masterpiece ceramics score 2/3/5 VP. At least three different Shapes and at least three different Glazes across the entire exhibition each score +3 VP independently. Each owned Advanced Tech scores 1 VP. Remaining Coins score 1 VP per 3 Coins, to a maximum of 5 VP.
+- No clocks or automatic turns.
+- No undo after a command is committed; the UI confirms irreversible actions.
+- Spectators and chat are not part of the MVP.
 
 ## Localization
 
-English is the default language. An always-available `EN / 中文` control switches the normal home, lobby, game, rules-facing labels, cards, rule errors, and results UI between English and Simplified Chinese. The preference is stored locally in the browser and is presentation-only: changing it never sends a game command, replaces authoritative state, or alters reconnect credentials. Both languages render the same stable Order, Technique, Kiln, location, and event IDs.
+English is the default. An `EN / 中文` control switches every player-facing label, card, rule error and result between English and Simplified Chinese. It is presentation only: both languages render the same stable IDs and never change game state.
 
-## Playtest telemetry
+## Playtest form
 
-With room owner consent, record anonymous game-level balance metrics described in `PLAYTEST_TELEMETRY.md`.
-
-Do not record chat, personal information, or hidden choices beyond what is necessary for aggregate game analysis.
+The playtest form records physical-table games as Form V3 for rules V1.6.2 (`src/playtest`): setup per player (Kiln, up to one Tech per discipline), per-round Kiln Die, Contributions (incl. Fuel Ledger's −2/+2), Shared and Imperial loading, Orders completed, Kiln ability use, Fire card and Firing Techs used, and end-game results. See [PLAYTEST_FORM.md](./PLAYTEST_FORM.md) and [PLAYTEST_TELEMETRY.md](./PLAYTEST_TELEMETRY.md).

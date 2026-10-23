@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { GameState, PlayerId } from "../../src/game/index.ts";
-import { ONLINE_COMPUTER_POLICY_VERSION } from "../../src/multiplayer/computerPlayer.ts";
+import type { GameState, PlayerId } from "../../src/game-v14/index.ts";
+import { ONLINE_COMPUTER_POLICY_VERSION } from "../../src/multiplayer-v14/computerPlayer.ts";
 import {
   AuthoritativeGameService,
   InMemoryMultiplayerStore,
   projectPublicGameState,
-} from "../../src/multiplayer/index.ts";
+} from "../../src/multiplayer-v14/index.ts";
 import type {
   CommandSuccess,
   ComputerAdvanceSuccess,
@@ -13,7 +13,7 @@ import type {
   RoomConnection,
   SecurityProvider,
   StoredSeat,
-} from "../../src/multiplayer/index.ts";
+} from "../../src/multiplayer-v14/index.ts";
 
 class TestSecurity implements SecurityProvider {
   private sequence = 0;

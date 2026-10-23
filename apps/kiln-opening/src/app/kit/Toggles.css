@@ -1,0 +1,44 @@
+/* Segmented toggles (kit: LanguageToggle, ThemeToggle). */
+@layer components {
+  .kit-seg {
+    display: inline-flex;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    background: var(--surface-2);
+  }
+
+  .kit-seg-btn {
+    min-height: 1.875rem;
+    padding: var(--sp-1) var(--sp-4);
+    border-inline-end: 1px solid var(--line);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    line-height: var(--lh-snug);
+    white-space: nowrap;
+  }
+
+  .kit-seg-btn:last-child {
+    border-inline-end: 0;
+  }
+
+  .kit-seg-btn:hover {
+    color: var(--ink);
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-seg-btn {
+      min-height: var(--target-min);
+      min-width: var(--target-min);
+    }
+  }
+}
+
+@layer states {
+  .kit-seg-btn[aria-pressed="true"] {
+    background: var(--teal);
+    color: var(--on-teal);
+  }
+}

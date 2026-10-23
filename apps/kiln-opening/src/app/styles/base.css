@@ -1,0 +1,118 @@
+/*
+ * Base (UI_V1.6.1_ARCHITECTURE §7.2): type scale, focus, `.sr-only`, `.num`, headings and the
+ * Chinese serif and size switch. Every font size is a `--fs-*` token (12px floor; Chinese body
+ * and rule text 13px, tokens.css).
+ */
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--serif);
+    font-weight: 600;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  h1 {
+    font-size: var(--fs-28);
+  }
+
+  h2 {
+    font-size: var(--fs-21);
+  }
+
+  h3 {
+    font-size: var(--fs-16);
+  }
+
+  h4 {
+    font-size: var(--fs-15);
+  }
+
+  :lang(zh-Hans) h1,
+  :lang(zh-Hans) h2,
+  :lang(zh-Hans) h3,
+  :lang(zh-Hans) h4 {
+    font-family: var(--serif-zh);
+  }
+
+  small,
+  .small {
+    font-size: var(--fs-meta);
+  }
+
+  code,
+  kbd,
+  samp {
+    font-family: var(--mono);
+    font-size: var(--fs-12);
+  }
+
+  /* Visually hidden, still read. Body size, so text-size checks never see a tiny node. */
+  .sr-only {
+    font-size: var(--fs-body);
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .muted {
+    color: var(--ink-2);
+  }
+
+  .faint {
+    color: var(--ink-3);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-motion] {
+      transition:
+        transform var(--dur-fast) ease,
+        opacity var(--dur-fast) ease,
+        background-color var(--dur-fast) ease,
+        box-shadow var(--dur-fast) ease;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

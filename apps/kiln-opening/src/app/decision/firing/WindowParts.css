@@ -1,0 +1,151 @@
+/* B5 decision-window parts (wireframe `promptBlock`, `.dstep`, `.queue`, `.prow`, `.cerrow`). */
+@layer components {
+  .dw-form {
+    display: grid;
+    gap: var(--sp-7);
+    min-width: 0;
+  }
+
+  .dw-lead {
+    display: grid;
+    gap: var(--sp-2);
+  }
+
+  .dw-lead-step {
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .dw-lead-step:lang(zh-Hans) {
+    letter-spacing: 0;
+  }
+
+  .dw-lead-text {
+    color: var(--ink-2);
+    font-size: var(--fs-rule);
+    line-height: var(--lh-body);
+  }
+
+  .dw-sec {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .dw-sec-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-3);
+    color: var(--ink-2);
+    font-size: var(--fs-12);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .dw-sec-heading:lang(zh-Hans) {
+    font-size: var(--fs-label);
+    letter-spacing: 0;
+  }
+
+  .dw-sec-aside {
+    color: var(--ink-3);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .dw-note {
+    font-size: var(--fs-meta);
+    line-height: var(--lh-body);
+  }
+
+  .dw-note--muted {
+    color: var(--ink-3);
+  }
+
+  .dw-note--private {
+    color: var(--ink-2);
+  }
+
+  .dw-queue {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2) var(--sp-4);
+    font-size: var(--fs-meta);
+  }
+
+  .dw-queue-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1) var(--sp-4);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-pill);
+    color: var(--ink-2);
+  }
+
+  .dw-queue-item--now {
+    border-color: var(--teal);
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .dw-queue-item--done {
+    color: var(--ink-3);
+  }
+
+  .dw-queue-swatch {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--pc, var(--ink-3));
+  }
+
+  .dw-ceramic {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-4);
+    min-width: 0;
+  }
+
+  .dw-ceramic-text {
+    display: grid;
+    gap: var(--sp-1);
+    min-width: 0;
+  }
+
+  .dw-ceramic-name {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .dw-ceramic-extra {
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+
+  .dw-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3) var(--sp-4);
+    min-width: 0;
+  }
+
+  .dw-cerrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+  }
+
+  .dw-big {
+    font-size: var(--fs-18);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+}

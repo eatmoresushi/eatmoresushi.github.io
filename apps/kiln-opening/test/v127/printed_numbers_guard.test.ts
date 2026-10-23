@@ -5,8 +5,8 @@ import {
   GUAN_ORDER_COINS, JUN_ACTIVATION_WOOD,
   KILN_DEFINITIONS, LOCATION_DEFINITIONS, LOCATION_IDS, RU_ORDER_VP,
   SHAPE_COSTS, STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS,
-} from "../../src/game/index.ts";
-import type { KilnId, LocationId } from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
+import type { KilnId, LocationId } from "../../src/game-v14/index.ts";
 
 /**
  * Every number printed on a card or board, in order, must equal what the code says.

@@ -1,63 +1,26 @@
-import type {
-  FireModifier,
-  GameState,
-  OrderId,
-  PlayerId,
-  TechniqueId,
-} from "../game/index.ts";
-import { projectPublicGameState } from "./projection.ts";
-import type { PublicGameState } from "./types.ts";
-
 /**
- * The complete information boundary presented to a computer player.
+ * What a computer seat may know (DESIGN §4.5, §4.6): exactly the `PlayerView` a human in the
+ * same seat would receive — the public projection plus its own hand, private look, Test
+ * Pieces peek and sealed Contribution (from `privateFiring`, rebuilt from the store). It is
+ * `viewOf` for a seated viewer, typed as the `ActorView` the policy and the validators take.
  *
- * Keeping this separate from `GameState` makes it impossible for a policy to accidentally
- * inspect deck order, another workshop's setup offer, a private Guild inspection, or an
- * unrevealed Contribution. Add private fields here only when the acting human would see them.
+ * The policy never receives `GameState`: deck orders, other seats' hands, other seats' looks
+ * and peeks, and unrevealed Contributions cannot reach it, so no choice can depend on them
+ * (`computer_hidden_independence.test.ts`).
  */
-export interface ComputerObservation {
-  game: PublicGameState;
-  playerId: PlayerId;
-  ownPrivate: {
-    orderHand: OrderId[];
-    startingOrderOffer: OrderId[];
-    colourSamplesChoices: OrderId[];
-    inspectedTechniqueIds: TechniqueId[];
-    firePeek: FireModifier | null;
-  };
-}
+
+import { actorViewOf } from "../game/index.ts";
+import type { ActorView, GameState, PlayerId, PlayerView, PrivateFiringState } from "../game/index.ts";
 
 export function createComputerObservation(
   state: GameState,
   playerId: PlayerId,
-): ComputerObservation {
-  if (state.players[playerId] === undefined) {
-    throw new Error(`Cannot observe missing computer player ${playerId}`);
-  }
+  privateFiring: PrivateFiringState | null = null,
+): ActorView {
+  return actorViewOf(state, playerId, privateFiring);
+}
 
-  const startingOrderOffer = state.phase.type === "setup_starting_orders"
-    ? [...(state.phase.offeredOrderIds[playerId] ?? [])]
-    : [];
-  const colourSamplesChoices = state.phase.type === "work_office_orders"
-    && state.phase.actorId === playerId
-    && state.phase.step === "colour_samples_choose"
-    ? [...(state.phase.colourSamplesChoices ?? [])]
-    : [];
-  const inspectedTechniqueIds = state.phase.type === "work_guild"
-    && state.phase.actorId === playerId
-    && state.phase.step === "buy"
-    ? [...(state.phase.inspectedTechniqueIds ?? [])]
-    : [];
-
-  return {
-    game: projectPublicGameState(state),
-    playerId,
-    ownPrivate: {
-      orderHand: [...state.players[playerId]!.orderHand],
-      startingOrderOffer,
-      colourSamplesChoices,
-      inspectedTechniqueIds,
-      firePeek: state.privateFirePeeks?.[playerId] ?? null,
-    },
-  };
+/** True when `observation` carries nothing beyond a `PlayerView` (no server-only state). */
+export function isPlayerViewOnly(observation: PlayerView): boolean {
+  return !Object.hasOwn(observation, "hidden") && !Object.hasOwn(observation.game, "hidden");
 }

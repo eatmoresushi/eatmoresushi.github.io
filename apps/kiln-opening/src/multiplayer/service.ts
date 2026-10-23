@@ -1,37 +1,62 @@
+/**
+ * The server-authoritative V1.6.2 game service (DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9).
+ *
+ * - Every command is shape-checked by `parseCommand` before the service branches on it.
+ *   Contributions go through `submitContribution` with a `PrivateFiringState` rebuilt from
+ *   the stored private submissions (the sealed Contribution card); everything else
+ *   through `applyAction`. The engine validates on the actor's view only.
+ * - Who acts comes from `decisionPrompt(state)` alone (DESIGN §3.4), for humans and for
+ *   computer seats, in `single`, `parallel` and `simultaneous_secret` windows.
+ * - Responses carry the public projection and public events for everyone, plus the
+ *   requesting seat's own `PrivatePlayerView` and secret event payloads.
+ * - Computer policy failures never leak: the cause is logged server-side and the
+ *   response carries a fixed message (DESIGN §4.5).
+ * - Rooms and saves of any other rules version, schema or rules fingerprint are refused,
+ *   never reinterpreted.
+ */
+
 import {
   SeededRandom,
+  actorViewOf,
   applyAction,
-  rulesFingerprint,
-  createPrivateFiringState,
   createGame,
-  submitWoodContribution,
+  decisionPrompt,
+  isGameRuleError,
+  parseCommand,
+  projectPrivateView,
+  rulesFingerprint,
+  submitContribution,
 } from "../game/index.ts";
 import type {
+  AuthoritativeCommand,
+  EngineOptions,
   GameAction,
   GameEvent,
-  GameState,
   GameRuleError,
+  GameState,
   PlayerId,
+  PlayerView,
   PrivateFiringState,
+  PrivatePlayerView,
+  SubmitContributionCommand,
 } from "../game/index.ts";
-import { chooseOnlineComputerAction, nextOnlineDecisionActor } from "./computerPlayer.ts";
-import { createComputerObservation } from "./computerObservation.ts";
-import {
-  fallbackComputerCommands,
-  selectFirstLegalComputerCommand,
-} from "./computerFallback.ts";
-import { projectPublicEvents, projectPublicGameState } from "./projection.ts";
+import { fallbackComputerCommands, selectFirstLegalComputerCommand } from "./computerFallback.ts";
+import { CANONICAL_COMPUTER_POLICY } from "./computerPolicy.ts";
+import { STRATEGIC_COMPUTER_POLICY } from "./computerPlayer.ts";
+import type { ComputerPolicy, ComputerSeatContext } from "./computerPolicy.ts";
+import { ownSecretRecords, projectPublicEvents, projectPublicGameState } from "./projection.ts";
 import type {
   AuthenticatedSeat,
   CommitTransitionInput,
   MultiplayerStore,
+  PrivateCommitInput,
   StoreFailureCode,
   StoreResult,
 } from "./store.ts";
 import type {
-  AuthoritativeHead,
   AddComputerSeatRequest,
   AdvanceComputersRequest,
+  AuthoritativeHead,
   CommandRequest,
   CommandSuccess,
   ComputerAdvanceSuccess,
@@ -39,12 +64,12 @@ import type {
   EndSessionRequest,
   EndSessionSuccess,
   JoinRoomRequest,
+  ListPrivateEventsRequest,
   LobbySeatUpdateSuccess,
   MultiplayerError,
   MultiplayerErrorCode,
   MultiplayerResult,
-  PendingContribution,
-  PrivateDecisionState,
+  PrivateEventRecord,
   PublicRoom,
   PublicSeat,
   ReconnectResult,
@@ -54,15 +79,46 @@ import type {
   StartGameRequest,
   StoredRoom,
   StoredSeat,
-  SubmitWoodCommand,
 } from "./types.ts";
+
+export const CURRENT_RULES_VERSION = "1.6.2" as const;
+export const CURRENT_SCHEMA_VERSION = 9 as const;
 
 const MAX_DISPLAY_NAME_LENGTH = 40;
 const ROOM_CODE_ATTEMPTS = 8;
 const CONTRIBUTION_CAS_ATTEMPTS = 8;
-const MAX_COMPUTER_ACTIONS_PER_REQUEST = 24;
+/** DESIGN §4.6: a parallel-window commit conflict is retried at most 3 times. */
+const PARALLEL_WINDOW_RETRIES = 3;
+const DEFAULT_MAX_COMPUTER_ACTIONS_PER_REQUEST = 24;
 const COMPUTER_CAS_ATTEMPTS = 8;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Server-side diagnostics. Never part of a response. */
+export interface ServiceLogger {
+  error(message: string, context: Record<string, string | number | boolean>): void;
+}
+
+const CONSOLE_LOGGER: ServiceLogger = {
+  error(message, context) {
+    console.error(message, context);
+  },
+};
+
+export interface AuthoritativeGameServiceOptions {
+  /** The policy stamped on new computer seats and used for any seat without a known one
+   * (default: the strategic V1.6.2 policy, `computerPlayer.ts`). */
+  computerPolicy?: ComputerPolicy;
+  /** Further policies, matched by a seat's stored `aiPolicyVersion` (default: the canonical
+   * policy, so seats stamped with it keep it). */
+  additionalComputerPolicies?: readonly ComputerPolicy[];
+  /** The safety net tried after the policy (default `fallbackComputerCommands`). */
+  fallbackCommands?: (view: PlayerView) => readonly unknown[];
+  logger?: ServiceLogger;
+  /** Run `assertInvariants` after every engine command (the service's own
+   * `KILN_ENGINE_INVARIANTS=1`; the engine reads no environment). */
+  checkInvariants?: boolean;
+  maxComputerActionsPerRequest?: number;
+}
 
 function error(
   code: MultiplayerErrorCode,
@@ -71,21 +127,6 @@ function error(
   details: MultiplayerError["details"] = {},
 ): MultiplayerError {
   return { code, message, details, currentRevision };
-}
-
-function privateDecisionState(state: GameState, playerId: PlayerId): PrivateDecisionState {
-  const phase = state.phase;
-  return {
-    orderHand: [...(state.players[playerId]?.orderHand ?? [])],
-    startingOrderIds: phase.type === "setup_starting_orders" ? [...(phase.offeredOrderIds[playerId] ?? [])] : [],
-    colourSamplesOrderIds: phase.type === "work_office_orders" && phase.actorId === playerId && phase.step === "colour_samples_choose"
-      ? [...(phase.colourSamplesChoices ?? [])]
-      : [],
-    guildInspectedTechniqueIds: phase.type === "work_guild" && phase.actorId === playerId
-      ? [...(phase.inspectedTechniqueIds ?? [])]
-      : [],
-    fireModifierPeek: state.privateFirePeeks?.[playerId] ?? null,
-  };
 }
 
 function failed<T>(value: MultiplayerError): MultiplayerResult<T> {
@@ -132,17 +173,18 @@ function validDisplayName(displayName: string): boolean {
   return length > 0 && length <= MAX_DISPLAY_NAME_LENGTH;
 }
 
-function gameFailure(ruleError: GameRuleError, revision: number): MultiplayerError {
+function gameFailure(ruleError: GameRuleError, revision: number | null): MultiplayerError {
   return error(ruleError.code, ruleError.message, revision, ruleError.details);
 }
 
+/** Only schema-9 V1.6.2 saves continue; anything older (V1.6.2 schema 8 before owner revision 4, schema 7 before revision 3, V1.6.1 schema 6) is refused, never migrated (DIG). */
 function gameCompatibilityError(state: GameState, revision: number): MultiplayerError | null {
-  if (state.schemaVersion === 5 && state.rulesVersion === "1.4") return null;
+  if (state.schemaVersion === CURRENT_SCHEMA_VERSION && state.rulesVersion === CURRENT_RULES_VERSION) return null;
   return error(
     "UNSUPPORTED_RULES_VERSION",
-    "This saved game uses an older rules or save format and cannot continue under V1.4. Please create a new room.",
+    "This saved game uses an older rules or save format and cannot continue under V1.6.2. Please create a new room.",
     revision,
-    { schemaVersion: state.schemaVersion, rulesVersion: state.rulesVersion },
+    { schemaVersion: String((state as { schemaVersion?: unknown }).schemaVersion), rulesVersion: String((state as { rulesVersion?: unknown }).rulesVersion) },
   );
 }
 
@@ -153,7 +195,7 @@ function mapStoreFailure(code: StoreFailureCode, revision: number | null = null)
     case "room_not_found":
       return error("ROOM_NOT_FOUND", "The room does not exist.");
     case "room_full":
-      return error("ROOM_FULL", "The room already has four stable seats.");
+      return error("ROOM_FULL", "The room already has four seats.");
     case "game_already_started":
       return error("GAME_ALREADY_STARTED", "The game has already started.", revision);
     case "not_enough_players":
@@ -161,85 +203,99 @@ function mapStoreFailure(code: StoreFailureCode, revision: number | null = null)
     case "seat_already_joined":
       return error("INVALID_REQUEST", "This authenticated account already has a seat in the room.");
     case "host_only":
-      return error("HOST_ONLY", "Only the host may end this session.", revision);
+      return error("HOST_ONLY", "Only the host may do this.", revision);
     case "session_not_active":
-      return error("SESSION_ENDED", "This game session has already ended.", revision);
+      return error("SESSION_ENDED", "This room no longer accepts changes under the current rules.", revision);
     case "duplicate":
       return error("DUPLICATE_COMMAND", "This command ID was already used.", revision);
     case "stale":
       return error("STALE_REVISION", "The authoritative game revision has changed.", revision);
     case "private_duplicate":
-      return error(
-        "CONTRIBUTION_ALREADY_SUBMITTED",
-        "This seat already submitted for the current Wood window.",
-        revision,
-      );
+      return error("CONTRIBUTION_ALREADY_SUBMITTED", "This seat already submitted a Contribution in this window.", revision);
     case "not_computer_seat":
       return error("INVALID_REQUEST", "Only computer seats can be removed from the lobby.", revision);
   }
 }
 
-type ComputerCommandApplication =
-  | {
-      ok: true;
-      rng: SeededRandom;
-      state: GameState;
-      events: GameEvent[];
-      privateSubmission: CommitTransitionInput["privateSubmission"];
-    }
-  | { ok: false; code: string; message: string };
-
-function applyComputerCandidate(
-  head: AuthoritativeHead,
-  privateState: PrivateFiringState,
-  actorId: PlayerId,
-  command: GameAction | SubmitWoodCommand,
-): ComputerCommandApplication {
-  const rng = new SeededRandom(head.rngState);
-  if (command.type === "SUBMIT_WOOD_CONTRIBUTION") {
-    if (
-      head.state.phase.type !== "firing_contributions"
-      || head.state.phase.windowId !== command.windowId
-    ) {
-      return { ok: false, code: "WRONG_PHASE", message: "The Contribution window changed." };
-    }
-    const applied = submitWoodContribution(
-      head.state,
-      privateState,
-      actorId,
-      command.card,
-      rng,
-    );
-    if (!applied.ok) return { ok: false, code: applied.error.code, message: applied.error.message };
-    return {
-      ok: true,
-      rng,
-      state: applied.state,
-      events: applied.events,
-      privateSubmission: {
-        windowId: command.windowId,
-        card: command.card,
-        revealed: applied.privateState.windowId === null,
-      },
-    };
-  }
-
-  const applied = applyAction(head.state, actorId, command, rng);
-  if (!applied.ok) return { ok: false, code: applied.error.code, message: applied.error.message };
-  return {
-    ok: true,
-    rng,
-    state: applied.state,
-    events: applied.events,
-    privateSubmission: null,
-  };
+/** Rebuilt `PrivateFiringState` for the state's open Contribution window, or an empty one. */
+function emptyPrivateFiring(state: GameState): PrivateFiringState {
+  return { gameId: state.gameId, windowId: null, submissions: {} };
 }
 
+/** True when the seat is one of the game's players (not a lobby seat added later). */
+function seated(state: GameState, playerId: PlayerId): boolean {
+  return state.playerOrder.includes(playerId);
+}
+
+function privateViewOf(state: GameState, playerId: PlayerId, privateFiring: PrivateFiringState): PrivatePlayerView | null {
+  return seated(state, playerId) ? projectPrivateView(state, playerId, privateFiring) : null;
+}
+
+/**
+ * Whether a command based on `expectedRevision` may be validated against the current head
+ * (DESIGN §4.6). Strict equality, except in the `parallel` window (`cleanup_hand_limit`, the
+ * only one since revision 4 removed the salvage step): its choices (the trim, and a sale of a
+ * Flawed ceramic, R20) touch only the actor's own hand or ceramics, so a command based on any
+ * revision since the window opened is validated against the newer head while the actor is
+ * still pending.
+ */
+function revisionAcceptance(
+  state: GameState,
+  expectedRevision: number,
+  actorId: PlayerId,
+): { ok: true; tolerant: boolean } | { ok: false } {
+  const prompt = decisionPrompt(state);
+  const phase = state.phase;
+  const window =
+    prompt.mode === "parallel" && phase.type === "cleanup_hand_limit" ? phase : null;
+  if (expectedRevision === state.revision) {
+    return { ok: true, tolerant: window !== null && prompt.actorIds.includes(actorId) };
+  }
+  if (
+    window !== null &&
+    window.openedAtRevision <= expectedRevision &&
+    expectedRevision < state.revision &&
+    prompt.actorIds.includes(actorId)
+  ) {
+    return { ok: true, tolerant: true };
+  }
+  return { ok: false };
+}
+
+interface AppliedCommand {
+  command: AuthoritativeCommand;
+  rng: SeededRandom;
+  state: GameState;
+  events: GameEvent[];
+  /** The private state after the command (contributions only). */
+  privateState: PrivateFiringState | null;
+  privateSubmission: PrivateCommitInput | null;
+}
+
+type Application = { ok: true; value: AppliedCommand } | { ok: false; error: GameRuleError };
+
 export class AuthoritativeGameService {
+  private readonly defaultPolicy: ComputerPolicy;
+  private readonly policies: readonly ComputerPolicy[];
+  private readonly fallbackCommands: (view: PlayerView) => readonly unknown[];
+  private readonly logger: ServiceLogger;
+  private readonly engineOptions: EngineOptions;
+  private readonly maxComputerActions: number;
+
   constructor(
     private readonly store: MultiplayerStore,
     private readonly security: SecurityProvider,
-  ) {}
+    options: AuthoritativeGameServiceOptions = {},
+  ) {
+    this.defaultPolicy = options.computerPolicy ?? STRATEGIC_COMPUTER_POLICY;
+    this.policies = [this.defaultPolicy, ...(options.additionalComputerPolicies ?? [CANONICAL_COMPUTER_POLICY])];
+    this.fallbackCommands = options.fallbackCommands ?? fallbackComputerCommands;
+    this.logger = options.logger ?? CONSOLE_LOGGER;
+    this.engineOptions = options.checkInvariants === true ? { checkInvariants: true } : {};
+    this.maxComputerActions = options.maxComputerActionsPerRequest ?? DEFAULT_MAX_COMPUTER_ACTIONS_PER_REQUEST;
+  }
+
+  // ── Lobby ────────────────────────────────────────────────────────────────────────
 
   async createRoom(request: CreateRoomRequest): Promise<MultiplayerResult<RoomConnection>> {
     const displayName = request.displayName.trim();
@@ -257,8 +313,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "1.4",
-        contentVersion: "1.4",
+        rulesVersion: CURRENT_RULES_VERSION,
+        contentVersion: CURRENT_RULES_VERSION,
         contentDigest: rulesFingerprint(),
         latestRevision: 0,
         endedAt: null,
@@ -281,8 +337,7 @@ export class AuthoritativeGameService {
       const created = await this.store.createRoom({ room, hostSeat, tokenHash });
       if (created.status === "error" && created.code === "room_code_conflict") continue;
       if (created.status !== "ok") {
-        const storeError = created.status === "duplicate" ? "duplicate" : created.code;
-        return failed(mapStoreFailure(storeError));
+        return failed(mapStoreFailure(created.status === "duplicate" ? "duplicate" : created.code));
       }
       const seats = await this.store.getSeats(roomId);
       return {
@@ -293,7 +348,8 @@ export class AuthoritativeGameService {
           seat: publicSeat(created.value.seat),
           seatToken,
           game: null,
-          ownPendingContribution: null,
+          ownPrivateView: null,
+          ownSecrets: [],
         },
       };
     }
@@ -317,8 +373,7 @@ export class AuthoritativeGameService {
       tokenHash,
     });
     if (joined.status !== "ok") {
-      const storeError = joined.status === "duplicate" ? "duplicate" : joined.code;
-      return failed(mapStoreFailure(storeError));
+      return failed(mapStoreFailure(joined.status === "duplicate" ? "duplicate" : joined.code));
     }
     const seats = await this.store.getSeats(joined.value.room.id);
     return {
@@ -329,47 +384,66 @@ export class AuthoritativeGameService {
         seat: publicSeat(joined.value.seat),
         seatToken,
         game: null,
-        ownPendingContribution: null,
+        ownPrivateView: null,
+        ownSecrets: [],
       },
     };
   }
 
+  /**
+   * Restores a seat without changing seat or state: the public projection, the seat's own
+   * private view (its sealed Contribution card included, rebuilt from
+   * the stored submissions) and every secret addressed to it, such as its setup deal.
+   */
   async reconnect(request: { roomCode: string; seatToken: string }): Promise<MultiplayerResult<ReconnectResult>> {
     const authenticated = await this.authenticate(request.roomCode, request.seatToken);
     if (!authenticated.ok) return authenticated;
-    const { room, seat } = authenticated.value;
-    const [seats, head, pending] = await Promise.all([
-      this.store.getSeats(room.id),
-      this.store.loadHead(room.id),
-      this.store.findOwnPendingSubmission(room.id, seat.playerId),
-    ]);
-    if (head !== null) {
-      const compatibilityError = gameCompatibilityError(head.state, head.revision);
-      if (compatibilityError !== null) return failed(compatibilityError);
+    const { room, seat, tokenHash } = authenticated.value;
+    const [seats, head] = await Promise.all([this.store.getSeats(room.id), this.store.loadHead(room.id)]);
+    if (head === null) {
+      return {
+        ok: true,
+        value: {
+          room: publicRoom(room),
+          seats: seats.map(publicSeat),
+          seat: publicSeat(seat),
+          game: null,
+          ownPrivateView: null,
+          ownSecrets: [],
+        },
+      };
     }
+    const compatibilityError = gameCompatibilityError(head.state, head.revision);
+    if (compatibilityError !== null) return failed(compatibilityError);
+    const [privateFiring, ownSecrets] = await Promise.all([
+      this.privateFiringState(room.id, head.state),
+      this.store.listPrivateEvents(room.id, seat.playerId, tokenHash, 0),
+    ]);
     return {
       ok: true,
       value: {
         room: publicRoom(room),
         seats: seats.map(publicSeat),
         seat: publicSeat(seat),
-        game: head === null ? null : projectPublicGameState(head.state),
-        ownPendingContribution:
-          pending === null
-            ? null
-            : {
-                windowId: pending.windowId,
-                card: pending.card,
-                submitted: true,
-              },
-        ...(head === null ? {} : { ownPrivateDecision: privateDecisionState(head.state, seat.playerId) }),
+        game: projectPublicGameState(head.state),
+        ownPrivateView: privateViewOf(head.state, seat.playerId, privateFiring),
+        ownSecrets,
       },
     };
   }
 
-  async addComputerSeat(
-    request: AddComputerSeatRequest,
-  ): Promise<MultiplayerResult<LobbySeatUpdateSuccess>> {
+  /** The requesting seat's secret event payloads after `afterSequence` (DESIGN §4.6). */
+  async listPrivateEvents(request: ListPrivateEventsRequest): Promise<MultiplayerResult<PrivateEventRecord[]>> {
+    if (!Number.isInteger(request.afterSequence) || request.afterSequence < 0) {
+      return failed(error("INVALID_REQUEST", "A non-negative afterSequence is required."));
+    }
+    const authenticated = await this.authenticate(request.roomCode, request.seatToken);
+    if (!authenticated.ok) return authenticated;
+    const { room, seat, tokenHash } = authenticated.value;
+    return { ok: true, value: await this.store.listPrivateEvents(room.id, seat.playerId, tokenHash, request.afterSequence) };
+  }
+
+  async addComputerSeat(request: AddComputerSeatRequest): Promise<MultiplayerResult<LobbySeatUpdateSuccess>> {
     if (!UUID_PATTERN.test(request.commandId)) {
       return failed(error("INVALID_REQUEST", "commandId must be a UUID."));
     }
@@ -383,30 +457,30 @@ export class AuthoritativeGameService {
       return failed(error("GAME_ALREADY_STARTED", "Computer players can only be changed in the lobby.", room.latestRevision));
     }
     const currentSeats = await this.store.getSeats(room.id);
-    const usedComputerNumbers = new Set(currentSeats.flatMap((currentSeat) => {
-      const match = /^Computer (\d+)$/.exec(currentSeat.displayName);
-      return match?.[1] === undefined ? [] : [Number(match[1])];
-    }));
-    const computerNumber = [1, 2, 3, 4].find((number) => !usedComputerNumbers.has(number)) ?? 4;
+    const usedNumbers = new Set(
+      currentSeats.flatMap((currentSeat) => {
+        const match = /^Computer (\d+)$/.exec(currentSeat.displayName);
+        return match?.[1] === undefined ? [] : [Number(match[1])];
+      }),
+    );
+    const computerNumber = [1, 2, 3, 4].find((number) => !usedNumbers.has(number)) ?? 4;
     const added = await this.store.addComputerSeat({
       roomId: room.id,
       hostSeatId: seat.seatId,
       seatId: this.security.randomId(),
       displayName: `Computer ${computerNumber}`,
       aiSeed: this.security.randomSeed() >>> 0,
+      policyVersion: this.defaultPolicy.version,
       commandId: request.commandId,
     });
     if (added.status !== "ok") {
-      const storeError = added.status === "duplicate" ? "duplicate" : added.code;
-      return failed(mapStoreFailure(storeError, room.latestRevision));
+      return failed(mapStoreFailure(added.status === "duplicate" ? "duplicate" : added.code, room.latestRevision));
     }
     const seats = await this.store.getSeats(room.id);
     return { ok: true, value: { room: publicRoom(room), seats: seats.map(publicSeat) } };
   }
 
-  async removeComputerSeat(
-    request: RemoveComputerSeatRequest,
-  ): Promise<MultiplayerResult<LobbySeatUpdateSuccess>> {
+  async removeComputerSeat(request: RemoveComputerSeatRequest): Promise<MultiplayerResult<LobbySeatUpdateSuccess>> {
     if (!UUID_PATTERN.test(request.computerSeatId)) {
       return failed(error("INVALID_REQUEST", "A valid computer seat ID is required."));
     }
@@ -425,13 +499,16 @@ export class AuthoritativeGameService {
       computerSeatId: request.computerSeatId,
     });
     if (removed.status !== "ok") {
-      const storeError = removed.status === "duplicate" ? "duplicate" : removed.code;
-      return failed(mapStoreFailure(storeError, room.latestRevision));
+      return failed(mapStoreFailure(removed.status === "duplicate" ? "duplicate" : removed.code, room.latestRevision));
     }
     const seats = await this.store.getSeats(room.id);
     return { ok: true, value: { room: publicRoom(room), seats: seats.map(publicSeat) } };
   }
 
+  /**
+   * Creates the game and persists `createGame`'s events — including each seat's secret
+   * setup deal — so `public_states.event_sequence` equals the persisted event count.
+   */
   async startGame(request: StartGameRequest): Promise<MultiplayerResult<CommandSuccess>> {
     if (!UUID_PATTERN.test(request.commandId)) {
       return failed(error("INVALID_REQUEST", "commandId must be a UUID."));
@@ -439,20 +516,18 @@ export class AuthoritativeGameService {
     const authenticated = await this.authenticate(request.roomCode, request.seatToken);
     if (!authenticated.ok) return authenticated;
     const { room, seat } = authenticated.value;
+    const prior = await this.store.getProcessed(room.id, request.commandId);
+    if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
     if (room.status === "abandoned" || room.status === "finished") {
       return failed(error("SESSION_ENDED", "This game session has already ended.", room.latestRevision));
     }
-    const prior = await this.store.getProcessed(room.id, request.commandId);
-    if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
     if (!seat.isHost || room.hostSeatId !== seat.seatId) {
       return failed(error("HOST_ONLY", "Only the host may start the game."));
     }
     if (room.status !== "lobby") {
       return failed(error("GAME_ALREADY_STARTED", "The game has already started.", room.latestRevision));
     }
-    const seats = (await this.store.getSeats(room.id)).sort(
-      (left, right) => left.seatIndex - right.seatIndex,
-    );
+    const seats = (await this.store.getSeats(room.id)).sort((left, right) => left.seatIndex - right.seatIndex);
     if (seats.length < 2) {
       return failed(error("NOT_ENOUGH_PLAYERS", "At least two players are required to start."));
     }
@@ -461,33 +536,37 @@ export class AuthoritativeGameService {
     const created = createGame(
       {
         gameId: room.id,
-        players: seats.map((currentSeat) => ({
-          id: currentSeat.playerId,
-          displayName: currentSeat.displayName,
-        })),
+        players: seats.map((currentSeat) => ({ id: currentSeat.playerId, displayName: currentSeat.displayName })),
       },
       rng,
+      this.engineOptions,
     );
     if (!created.ok) return failed(gameFailure(created.error, room.latestRevision));
-    const stateHash = await this.security.hashJson(created.state);
     const head: AuthoritativeHead = {
       roomId: room.id,
       revision: created.state.revision,
       state: created.state,
       rngState: rng.getState(),
       rootSeed,
-      stateHash,
+      stateHash: await this.security.hashJson(created.state),
     };
     const game = projectPublicGameState(created.state);
+    const publicEvents = projectPublicEvents(created.events);
     const response: CommandSuccess = {
       commandId: request.commandId,
       room: roomAfterTransition(room, head),
       actorId: seat.playerId,
       revision: head.revision,
       game,
-      events: [],
-      ownPendingContribution: null,
-      ownPrivateDecision: privateDecisionState(created.state, seat.playerId),
+      events: publicEvents,
+      ownPrivateView: privateViewOf(created.state, seat.playerId, emptyPrivateFiring(created.state)),
+      ownSecrets: ownSecretRecords(created.events, seat.playerId, {
+        roomId: room.id,
+        commandId: request.commandId,
+        actorId: seat.playerId,
+        revision: head.revision,
+        previousEventSequence: 0,
+      }),
     };
     const committed = await this.store.commitStart({
       roomId: room.id,
@@ -495,6 +574,8 @@ export class AuthoritativeGameService {
       actorId: seat.playerId,
       head,
       publicState: game,
+      fullEvents: created.events,
+      publicEvents,
       response,
     });
     return this.commitResult(committed, seat.playerId, room.latestRevision);
@@ -520,20 +601,16 @@ export class AuthoritativeGameService {
       commandId: request.commandId,
     });
     if (ended.status !== "ok") {
-      const storeError = ended.status === "duplicate" ? "duplicate" : ended.code;
-      return failed(mapStoreFailure(storeError, room.latestRevision));
+      return failed(mapStoreFailure(ended.status === "duplicate" ? "duplicate" : ended.code, room.latestRevision));
     }
-    return {
-      ok: true,
-      value: {
-        commandId: request.commandId,
-        room: publicRoom(ended.value),
-      },
-    };
+    return { ok: true, value: { commandId: request.commandId, room: publicRoom(ended.value) } };
   }
+
+  // ── Commands ─────────────────────────────────────────────────────────────────────
 
   async executeCommand(request: CommandRequest): Promise<MultiplayerResult<CommandSuccess>> {
     if (
+      typeof request.commandId !== "string" ||
       !UUID_PATTERN.test(request.commandId) ||
       !Number.isInteger(request.expectedRevision) ||
       request.expectedRevision < 0
@@ -542,29 +619,96 @@ export class AuthoritativeGameService {
     }
     const authenticated = await this.authenticate(request.roomCode, request.seatToken);
     if (!authenticated.ok) return authenticated;
-    if (authenticated.value.room.status === "abandoned" || authenticated.value.room.status === "finished") {
-      return failed(error(
-        "SESSION_ENDED",
-        "This game session has ended and no longer accepts actions.",
-        authenticated.value.room.latestRevision,
-      ));
+    const { room, seat } = authenticated.value;
+    if (room.status === "abandoned" || room.status === "finished") {
+      // A replayed accepted command — including the one that ended the game — returns its
+      // stored response to the same seat and commits nothing; only new IDs are refused.
+      const prior = await this.store.getProcessed(room.id, request.commandId);
+      if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
+      return failed(error("SESSION_ENDED", "This game session has ended and no longer accepts actions.", room.latestRevision));
     }
-    const command = request.command;
-    if (command.type === "SUBMIT_WOOD_CONTRIBUTION") {
-      return this.executeContribution(authenticated.value, { ...request, command });
+    // DESIGN §2.5: shape-check every command, Contributions included, before branching.
+    const parsed = parseCommand(request.command);
+    if (isGameRuleError(parsed)) return failed(gameFailure(parsed, room.latestRevision));
+    if (parsed.type === "SUBMIT_CONTRIBUTION") {
+      return this.executeContribution(authenticated.value, request, parsed);
     }
-    return this.executePublicCommand(authenticated.value, { ...request, command });
+    return this.executePublicCommand(authenticated.value, request, parsed);
   }
 
-  async advanceComputerTurns(
-    request: AdvanceComputersRequest,
-  ): Promise<MultiplayerResult<ComputerAdvanceSuccess>> {
+  private async executePublicCommand(
+    authenticated: AuthenticatedSeat,
+    request: CommandRequest,
+    command: GameAction,
+  ): Promise<MultiplayerResult<CommandSuccess>> {
+    const { room, seat } = authenticated;
+    for (let attempt = 0; attempt <= PARALLEL_WINDOW_RETRIES; attempt += 1) {
+      const prior = await this.store.getProcessed(room.id, request.commandId);
+      if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
+      const head = await this.store.loadHead(room.id);
+      if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
+      const compatibilityError = gameCompatibilityError(head.state, head.revision);
+      if (compatibilityError !== null) return failed(compatibilityError);
+      const acceptance = revisionAcceptance(head.state, request.expectedRevision, seat.playerId);
+      if (!acceptance.ok) {
+        return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
+      }
+      const applied = this.apply(head, emptyPrivateFiring(head.state), seat.playerId, command);
+      if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
+      const committed = await this.commit(room, head, applied.value, request.commandId, seat.playerId, true);
+      if (committed.status === "error" && committed.code === "stale" && acceptance.tolerant) continue;
+      return this.commitResult(committed, seat.playerId, head.revision);
+    }
+    const current = await this.store.loadHead(room.id);
+    return failed(error("PERSISTENCE_CONFLICT", "The command could not be committed after concurrent updates.", current?.revision ?? null));
+  }
+
+  /**
+   * A sealed Contribution. Compare-and-swap on the head and on the window: the engine
+   * rejects a submission for any window but the open one (`PRIVATE_WINDOW_MISMATCH`), the
+   * store refuses a second submission per seat and window, and a concurrent commit is
+   * retried against the fresh head and the fresh set of stored submissions.
+   */
+  private async executeContribution(
+    authenticated: AuthenticatedSeat,
+    request: CommandRequest,
+    command: SubmitContributionCommand,
+  ): Promise<MultiplayerResult<CommandSuccess>> {
+    const { room, seat } = authenticated;
+    for (let attempt = 0; attempt < CONTRIBUTION_CAS_ATTEMPTS; attempt += 1) {
+      const prior = await this.store.getProcessed(room.id, request.commandId);
+      if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
+      const head = await this.store.loadHead(room.id);
+      if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
+      const compatibilityError = gameCompatibilityError(head.state, head.revision);
+      if (compatibilityError !== null) return failed(compatibilityError);
+      if (request.expectedRevision > head.revision) {
+        return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
+      }
+      const privateState = await this.privateFiringState(room.id, head.state);
+      const applied = this.apply(head, privateState, seat.playerId, command);
+      if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
+      const committed = await this.commit(room, head, applied.value, request.commandId, seat.playerId, true);
+      if (committed.status === "error" && (committed.code === "stale" || committed.code === "private_duplicate")) continue;
+      return this.commitResult(committed, seat.playerId, head.revision);
+    }
+    const current = await this.store.loadHead(room.id);
+    return failed(error("PERSISTENCE_CONFLICT", "The Contribution could not be committed after concurrent updates.", current?.revision ?? null));
+  }
+
+  // ── Computer seats ───────────────────────────────────────────────────────────────
+
+  /**
+   * Plays every pending computer decision, routed by `decisionPrompt` alone, until a human
+   * must act, the game ends or the per-request cap is reached.
+   */
+  async advanceComputerTurns(request: AdvanceComputersRequest): Promise<MultiplayerResult<ComputerAdvanceSuccess>> {
     if (!Number.isInteger(request.expectedRevision) || request.expectedRevision < 0) {
       return failed(error("INVALID_REQUEST", "A non-negative expectedRevision is required."));
     }
     const authenticated = await this.authenticate(request.roomCode, request.seatToken);
     if (!authenticated.ok) return authenticated;
-    const { room, seat: requestingSeat } = authenticated.value;
+    const { room, seat: requestingSeat, tokenHash } = authenticated.value;
     if (room.status === "abandoned" || room.status === "finished") {
       return failed(error("SESSION_ENDED", "This game session has ended.", room.latestRevision));
     }
@@ -574,147 +718,63 @@ export class AuthoritativeGameService {
       const compatibilityError = gameCompatibilityError(head.state, head.revision);
       if (compatibilityError !== null) return failed(compatibilityError);
     }
-    if (head.revision !== request.expectedRevision) {
+    if (!this.computerAdvanceAccepted(head.state, request.expectedRevision)) {
       return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
     }
+    const startingEventSequence = head.state.eventSequence;
     const seats = await this.store.getSeats(room.id);
     const seatsByPlayerId = new Map(seats.map((currentSeat) => [currentSeat.playerId, currentSeat]));
-    const publicEvents: CommandSuccess["events"] = [];
+    const publicEvents: ComputerAdvanceSuccess["events"] = [];
     const actorIds: PlayerId[] = [];
     let advancedActions = 0;
     let conflicts = 0;
 
-    while (advancedActions < MAX_COMPUTER_ACTIONS_PER_REQUEST) {
+    while (advancedActions < this.maxComputerActions) {
       if (head.state.phase.type === "finished") break;
-      const actorId = nextOnlineDecisionActor(head.state);
-      const computerSeat = actorId === null ? undefined : seatsByPlayerId.get(actorId);
-      if (computerSeat === undefined || !computerSeat.isComputer) break;
+      const computerSeat = nextComputerSeat(head.state, seatsByPlayerId);
+      if (computerSeat === null) break;
 
-      const privateState = await this.privateFiringState(room.id, head);
-      const observation = createComputerObservation(head.state, computerSeat.playerId);
-      const decisionHead = head;
-      let strategicCommand: Awaited<ReturnType<typeof chooseOnlineComputerAction>>;
-      try {
-        strategicCommand = await chooseOnlineComputerAction(observation, computerSeat);
-      } catch (cause) {
-        return failed(
-          error(
-            "COMPUTER_TURN_FAILED",
-            `${computerSeat.displayName} could not choose a legal action: ${cause instanceof Error ? cause.message : "unknown policy error"}`,
-            head.revision,
-          ),
-        );
-      }
-
-      const successfulApplications = new Map<string, Extract<ComputerCommandApplication, { ok: true }>>();
-      const selection = selectFirstLegalComputerCommand(
-        strategicCommand,
-        fallbackComputerCommands(observation),
-        (candidate) => {
-          const application = applyComputerCandidate(
-            decisionHead,
-            privateState,
-            computerSeat.playerId,
-            candidate,
-          );
-          if (!application.ok) return application;
-          successfulApplications.set(JSON.stringify(candidate), application);
-          return { ok: true };
-        },
-      );
+      const decisionHead: AuthoritativeHead = head;
+      const privateState = await this.privateFiringState(room.id, decisionHead.state);
+      const selection = await this.chooseComputerCommand(decisionHead, privateState, computerSeat);
       if (selection === null) {
-        return failed(error(
-          "COMPUTER_TURN_FAILED",
-          `${computerSeat.displayName} had no legal action or safe phase exit.`,
-          head.revision,
-        ));
-      }
-
-      const command = selection.command;
-      const application = successfulApplications.get(JSON.stringify(command));
-      if (application === undefined) {
-        return failed(error(
-          "COMPUTER_TURN_FAILED",
-          `${computerSeat.displayName}'s selected action could not be reproduced.`,
-          head.revision,
-        ));
+        return failed(error("COMPUTER_TURN_FAILED", `${computerSeat.displayName} could not choose an action.`, decisionHead.revision));
       }
       const commandId = this.security.randomId();
-      const {
-        rng,
-        state: appliedState,
-        events: fullEvents,
-        privateSubmission,
-      } = application;
-
-      const nextHead = await this.makeNextHead(head, appliedState, rng.getState());
-      const projectedEvents = projectPublicEvents(fullEvents);
-      const game = projectPublicGameState(appliedState);
-      const response = this.commandResponse(
-        commandId,
-        room,
-        computerSeat.playerId,
-        nextHead,
-        game,
-        projectedEvents,
-        null,
-      );
-      const committed = await this.store.commitTransition({
-        roomId: room.id,
-        commandId,
-        actorId: computerSeat.playerId,
-        expectedRevision: head.revision,
-        command,
-        previousHead: head,
-        nextHead,
-        fullEvents,
-        publicEvents: projectedEvents,
-        publicState: game,
-        response,
-        privateSubmission,
-      });
+      const committed = await this.commit(room, decisionHead, selection, commandId, computerSeat.playerId, false);
       if (
-        (committed.status === "error" &&
-          (committed.code === "stale" || committed.code === "private_duplicate")) ||
+        (committed.status === "error" && (committed.code === "stale" || committed.code === "private_duplicate")) ||
         committed.status === "duplicate"
       ) {
         conflicts += 1;
         if (conflicts >= COMPUTER_CAS_ATTEMPTS) {
-          return failed(
-            error(
-              "PERSISTENCE_CONFLICT",
-              "Computer turns could not be committed after concurrent updates.",
-              head.revision,
-            ),
-          );
+          return failed(error("PERSISTENCE_CONFLICT", "Computer turns could not be committed after concurrent updates.", decisionHead.revision));
         }
         const current = await this.store.loadHead(room.id);
         if (current === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
-        {
-          const compatibilityError = gameCompatibilityError(current.state, current.revision);
-          if (compatibilityError !== null) return failed(compatibilityError);
-        }
+        const compatibilityError = gameCompatibilityError(current.state, current.revision);
+        if (compatibilityError !== null) return failed(compatibilityError);
         head = current;
         continue;
       }
-      if (committed.status === "error") {
-        return failed(mapStoreFailure(committed.code, head.revision));
-      }
-      head = nextHead;
-      publicEvents.push(...projectedEvents);
+      if (committed.status === "error") return failed(mapStoreFailure(committed.code, decisionHead.revision));
+      head = committed.head;
+      publicEvents.push(...committed.response.events);
       actorIds.push(computerSeat.playerId);
       advancedActions += 1;
       conflicts = 0;
     }
 
-    const game = projectPublicGameState(head.state);
-    const pending = await this.store.findOwnPendingSubmission(room.id, requestingSeat.playerId);
-    const nextActorId = nextOnlineDecisionActor(head.state);
-    const nextSeat = nextActorId === null ? undefined : seatsByPlayerId.get(nextActorId);
+    const privateFiring = await this.privateFiringState(room.id, head.state);
+    const ownSecrets =
+      head.state.eventSequence > startingEventSequence
+        ? await this.store.listPrivateEvents(room.id, requestingSeat.playerId, tokenHash, startingEventSequence)
+        : [];
+    const nextSeat = nextComputerSeat(head.state, seatsByPlayerId);
     const stoppedReason: ComputerAdvanceSuccess["stoppedReason"] =
       head.state.phase.type === "finished"
         ? "finished"
-        : advancedActions >= MAX_COMPUTER_ACTIONS_PER_REQUEST && nextSeat?.isComputer === true
+        : advancedActions >= this.maxComputerActions && nextSeat !== null
           ? "action_limit"
           : "human_turn";
     return {
@@ -722,174 +782,231 @@ export class AuthoritativeGameService {
       value: {
         room: roomAfterTransition(room, head),
         revision: head.revision,
-        game,
+        game: projectPublicGameState(head.state),
         events: publicEvents,
         advancedActions,
         actorIds,
         stoppedReason,
-        ownPendingContribution:
-          pending === null
-            ? null
-            : {
-                windowId: pending.windowId,
-                card: pending.card,
-                submitted: true,
-              },
-        ownPrivateDecision: privateDecisionState(head.state, requestingSeat.playerId),
+        ownPrivateView: privateViewOf(head.state, requestingSeat.playerId, privateFiring),
+        ownSecrets,
       },
     };
   }
 
-  private async executePublicCommand(
-    authenticated: AuthenticatedSeat,
-    request: CommandRequest & { command: GameAction },
-  ): Promise<MultiplayerResult<CommandSuccess>> {
-    const { room, seat } = authenticated;
-    const prior = await this.store.getProcessed(room.id, request.commandId);
-    if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
-    const head = await this.store.loadHead(room.id);
-    if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
-    {
-      const compatibilityError = gameCompatibilityError(head.state, head.revision);
-      if (compatibilityError !== null) return failed(compatibilityError);
+  /**
+   * Strict revision equality, except while a computer may act concurrently with a human:
+   * in a `parallel` window since it opened, and in the Contribution window.
+   */
+  private computerAdvanceAccepted(state: GameState, expectedRevision: number): boolean {
+    if (expectedRevision === state.revision) return true;
+    if (expectedRevision > state.revision) return false;
+    const phase = state.phase;
+    if (phase.type === "cleanup_hand_limit") {
+      return phase.openedAtRevision <= expectedRevision;
     }
-    if (request.expectedRevision !== head.revision) {
-      return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
+    return phase.type === "firing_contributions";
+  }
+
+  private policyFor(seat: StoredSeat): ComputerPolicy {
+    return this.policies.find((policy) => policy.version === seat.aiPolicyVersion) ?? this.defaultPolicy;
+  }
+
+  /**
+   * The policy's proposal, then the fallback list; the first candidate the engine accepts
+   * against `head` wins. Every failure is logged server-side with codes only, and a policy
+   * exception's message is logged but never returned (DESIGN §4.5).
+   */
+  private async chooseComputerCommand(
+    head: AuthoritativeHead,
+    privateState: PrivateFiringState,
+    seat: StoredSeat,
+  ): Promise<AppliedCommand | null> {
+    const view = actorViewOf(head.state, seat.playerId, privateState);
+    const context: ComputerSeatContext = {
+      playerId: seat.playerId,
+      displayName: seat.displayName,
+      aiSeed: seat.aiSeed,
+      aiPolicyVersion: seat.aiPolicyVersion,
+    };
+    const policy = this.policyFor(seat);
+    let preferred: unknown = null;
+    try {
+      preferred = await policy.chooseCommand(view, context);
+    } catch (cause) {
+      this.logger.error("computer policy failed", {
+        roomId: head.roomId,
+        playerId: seat.playerId,
+        revision: head.revision,
+        policy: policy.version,
+        cause: cause instanceof Error ? cause.message : String(cause),
+      });
     }
+    const fallbacks = (): readonly unknown[] => {
+      try {
+        return this.fallbackCommands(view);
+      } catch (cause) {
+        this.logger.error("computer fallback failed", {
+          roomId: head.roomId,
+          playerId: seat.playerId,
+          revision: head.revision,
+          cause: cause instanceof Error ? cause.message : String(cause),
+        });
+        return [];
+      }
+    };
+    const selection = selectFirstLegalComputerCommand<AppliedCommand>(preferred, fallbacks, (candidate) => {
+      const parsed = parseCommand(candidate);
+      if (isGameRuleError(parsed)) return { ok: false, code: parsed.code, message: parsed.message };
+      let applied: Application;
+      try {
+        applied = this.apply(head, privateState, seat.playerId, parsed);
+      } catch (cause) {
+        // An engine invariant failure on one candidate must not abort the others.
+        this.logger.error("computer candidate raised an engine error", {
+          roomId: head.roomId,
+          playerId: seat.playerId,
+          revision: head.revision,
+          type: parsed.type,
+          cause: cause instanceof Error ? cause.message : String(cause),
+        });
+        return { ok: false, code: "INTERNAL_SERVER_ERROR", message: "engine error" };
+      }
+      return applied.ok
+        ? { ok: true, command: parsed, result: applied.value }
+        : { ok: false, code: applied.error.code, message: applied.error.message };
+    });
+    if (selection === null || selection.usedFallback) {
+      this.logger.error(selection === null ? "computer seat has no legal action" : "computer policy proposal rejected", {
+        roomId: head.roomId,
+        playerId: seat.playerId,
+        revision: head.revision,
+        phase: head.state.phase.type,
+        rejected: (selection?.rejected ?? []).map((failure) => failure.code).join(","),
+      });
+    }
+    return selection === null ? null : selection.result;
+  }
+
+  // ── Shared steps ─────────────────────────────────────────────────────────────────
+
+  /** Applies one parsed command on a fresh RNG at the head's stored state. */
+  private apply(
+    head: AuthoritativeHead,
+    privateState: PrivateFiringState,
+    actorId: PlayerId,
+    command: AuthoritativeCommand,
+  ): Application {
     const rng = new SeededRandom(head.rngState);
-    const applied = applyAction(head.state, seat.playerId, request.command, rng);
-    if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
+    if (command.type === "SUBMIT_CONTRIBUTION") {
+      const applied = submitContribution(head.state, privateState, actorId, command, rng, this.engineOptions);
+      if (!applied.ok) return applied;
+      return {
+        ok: true,
+        value: {
+          command,
+          rng,
+          state: applied.state,
+          events: applied.events,
+          privateState: applied.privateState,
+          privateSubmission: {
+            windowId: command.windowId,
+            card: command.card,
+            revealed: applied.privateState.windowId === null,
+          },
+        },
+      };
+    }
+    const applied = applyAction(head.state, actorId, command, rng, this.engineOptions);
+    if (!applied.ok) return applied;
+    return {
+      ok: true,
+      value: { command, rng, state: applied.state, events: applied.events, privateState: null, privateSubmission: null },
+    };
+  }
+
+  /**
+   * Builds the next head and the response, and commits them. A human command's stored
+   * response carries the actor's own private view and secrets (returned again only to that
+   * seat on an idempotent retry); a computer command's stored response carries none.
+   */
+  private async commit(
+    room: StoredRoom,
+    head: AuthoritativeHead,
+    applied: AppliedCommand,
+    commandId: string,
+    actorId: PlayerId,
+    humanActor: boolean,
+  ): Promise<
+    | { status: "ok"; head: AuthoritativeHead; response: CommandSuccess }
+    | Exclude<StoreResult<CommandSuccess>, { status: "ok" }>
+  > {
+    const nextHead: AuthoritativeHead = {
+      roomId: head.roomId,
+      revision: applied.state.revision,
+      state: applied.state,
+      rngState: applied.rng.getState(),
+      rootSeed: head.rootSeed,
+      stateHash: await this.security.hashJson(applied.state),
+    };
     const publicEvents = projectPublicEvents(applied.events);
-    const nextHead = await this.makeNextHead(head, applied.state, rng.getState());
     const game = projectPublicGameState(applied.state);
-    const response = this.commandResponse(
-      request.commandId,
-      room,
-      seat.playerId,
-      nextHead,
+    const privateAfter = applied.privateState ?? emptyPrivateFiring(applied.state);
+    const response: CommandSuccess = {
+      commandId,
+      room: roomAfterTransition(room, nextHead),
+      actorId,
+      revision: nextHead.revision,
       game,
-      publicEvents,
-      null,
-    );
-    const committed = await this.store.commitTransition({
+      events: publicEvents,
+      ownPrivateView: humanActor ? privateViewOf(applied.state, actorId, privateAfter) : null,
+      ownSecrets: humanActor
+        ? ownSecretRecords(applied.events, actorId, {
+            roomId: room.id,
+            commandId,
+            actorId,
+            revision: nextHead.revision,
+            previousEventSequence: head.state.eventSequence,
+          })
+        : [],
+    };
+    const input: CommitTransitionInput = {
       roomId: room.id,
-      commandId: request.commandId,
-      actorId: seat.playerId,
+      commandId,
+      actorId,
       expectedRevision: head.revision,
-      command: request.command,
+      command: applied.command,
       previousHead: head,
       nextHead,
       fullEvents: applied.events,
       publicEvents,
       publicState: game,
       response,
-      privateSubmission: null,
-    });
-    return this.commitResult(committed, seat.playerId, head.revision);
+      privateSubmission: applied.privateSubmission,
+    };
+    const committed = await this.store.commitTransition(input);
+    if (committed.status === "ok") return { status: "ok", head: nextHead, response: committed.value };
+    return committed;
   }
 
-  private async executeContribution(
-    authenticated: AuthenticatedSeat,
-    request: CommandRequest & { command: SubmitWoodCommand },
-  ): Promise<MultiplayerResult<CommandSuccess>> {
-    const { room, seat } = authenticated;
-    if (request.command.windowId.trim().length === 0) {
-      return failed(error("INVALID_REQUEST", "A Wood Contribution windowId is required."));
+  /** `PrivateFiringState` of the open Contribution window, rebuilt from stored rows. */
+  private async privateFiringState(roomId: string, state: GameState): Promise<PrivateFiringState> {
+    if (state.phase.type !== "firing_contributions") return emptyPrivateFiring(state);
+    const windowId = state.phase.windowId;
+    const rows = await this.store.loadPrivateSubmissions(roomId, windowId);
+    const submissions: PrivateFiringState["submissions"] = {};
+    for (const row of rows) {
+      if (row.windowId === windowId) {
+        submissions[row.playerId] = { card: row.card };
+      }
     }
-    for (let attempt = 0; attempt < CONTRIBUTION_CAS_ATTEMPTS; attempt += 1) {
-      const prior = await this.store.getProcessed(room.id, request.commandId);
-      if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
-      const head = await this.store.loadHead(room.id);
-      if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
-      {
-        const compatibilityError = gameCompatibilityError(head.state, head.revision);
-        if (compatibilityError !== null) return failed(compatibilityError);
-      }
-      if (
-        head.state.phase.type !== "firing_contributions" ||
-        head.state.phase.windowId !== request.command.windowId
-      ) {
-        return failed(
-          error("PRIVATE_WINDOW_MISMATCH", "The private submission window has changed.", head.revision),
-        );
-      }
-      if (request.expectedRevision > head.revision) {
-        return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
-      }
-      const storedSubmissions = await this.store.loadPrivateSubmissions(room.id, request.command.windowId);
-      const privateState: PrivateFiringState = {
-        gameId: head.state.gameId,
-        windowId: request.command.windowId,
-        contributions: Object.fromEntries(
-          storedSubmissions.map((submission) => [submission.playerId, submission.card]),
-        ),
-      };
-      const rng = new SeededRandom(head.rngState);
-      const applied = submitWoodContribution(
-        head.state,
-        privateState,
-        seat.playerId,
-        request.command.card,
-        rng,
-      );
-      if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
-      const revealed = applied.privateState.windowId === null;
-      const ownPendingContribution: PendingContribution | null = revealed
-        ? null
-        : {
-            windowId: request.command.windowId,
-            card: request.command.card,
-            submitted: true,
-          };
-      const publicEvents = projectPublicEvents(applied.events);
-      const nextHead = await this.makeNextHead(head, applied.state, rng.getState());
-      const game = projectPublicGameState(applied.state);
-      const response = this.commandResponse(
-        request.commandId,
-        room,
-        seat.playerId,
-        nextHead,
-        game,
-        publicEvents,
-        ownPendingContribution,
-      );
-      const commitInput: CommitTransitionInput = {
-        roomId: room.id,
-        commandId: request.commandId,
-        actorId: seat.playerId,
-        expectedRevision: head.revision,
-        command: request.command,
-        previousHead: head,
-        nextHead,
-        fullEvents: applied.events,
-        publicEvents,
-        publicState: game,
-        response,
-        privateSubmission: {
-          windowId: request.command.windowId,
-          card: request.command.card,
-          revealed,
-        },
-      };
-      const committed = await this.store.commitTransition(commitInput);
-      if (committed.status === "error" && committed.code === "stale") continue;
-      return this.commitResult(committed, seat.playerId, head.revision);
-    }
-    const current = await this.store.loadHead(room.id);
-    return failed(
-      error(
-        "PERSISTENCE_CONFLICT",
-        "The contribution could not be committed after concurrent updates.",
-        current?.revision ?? null,
-      ),
-    );
+    return { gameId: state.gameId, windowId, submissions };
   }
 
   private async authenticate(
     roomCode: string,
     seatToken: string,
-  ): Promise<MultiplayerResult<AuthenticatedSeat>> {
-    if (roomCode.trim().length === 0 || seatToken.length < 16) {
+  ): Promise<MultiplayerResult<AuthenticatedSeat & { tokenHash: string }>> {
+    if (typeof roomCode !== "string" || typeof seatToken !== "string" || roomCode.trim().length === 0 || seatToken.length < 16) {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
     const tokenHash = await this.security.hashSecret(seatToken);
@@ -897,91 +1014,31 @@ export class AuthoritativeGameService {
     if (authenticated === null) {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
-    if (
-      authenticated.room.rulesVersion !== "1.4" ||
-      authenticated.room.contentVersion !== "1.4"
-    ) {
+    if (authenticated.room.rulesVersion !== CURRENT_RULES_VERSION || authenticated.room.contentVersion !== CURRENT_RULES_VERSION) {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.4. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.6.2. Please create a new room.",
         ),
       );
     }
-    // A room can carry the current rules *version* and still have been created under
-    // different rules, because a change can land inside an unchanged version string. Refuse
-    // rather than reinterpret: continuing would silently alter the rules mid-game.
-    // Every V1.4 room is created after fingerprinting was introduced. Missing digests
-    // cannot prove compatibility and must not bypass the version/schema boundary.
+    // A room can carry the current rules version and still have been created under other
+    // rules, because a change can land inside an unchanged version string. Refuse rather
+    // than reinterpret: continuing would change the rules mid-game. Every V1.6.2 room is
+    // created with a fingerprint, so a missing one fails closed too.
     const fingerprint = rulesFingerprint();
     const roomFingerprint = authenticated.room.contentDigest ?? null;
     if (roomFingerprint !== fingerprint) {
       return failed(
         error(
           "RULES_FINGERPRINT_MISMATCH",
-          "This room was created under a different ruleset than the server now runs, so it "
-            + "cannot continue without changing the rules mid-game. Please create a new room.",
+          "This room was created under a different ruleset than the server now runs, so it cannot continue without changing the rules mid-game. Please create a new room.",
           null,
-          {
-            roomFingerprint: roomFingerprint ?? "missing",
-            serverFingerprint: fingerprint,
-          },
+          { roomFingerprint: roomFingerprint ?? "missing", serverFingerprint: fingerprint },
         ),
       );
     }
-    return { ok: true, value: authenticated };
-  }
-
-  private async privateFiringState(
-    roomId: string,
-    head: AuthoritativeHead,
-  ): Promise<PrivateFiringState> {
-    const privateState = createPrivateFiringState(head.state);
-    if (head.state.phase.type !== "firing_contributions") return privateState;
-    const submissions = await this.store.loadPrivateSubmissions(roomId, head.state.phase.windowId);
-    return {
-      gameId: head.state.gameId,
-      windowId: head.state.phase.windowId,
-      contributions: Object.fromEntries(
-        submissions.map((submission) => [submission.playerId, submission.card]),
-      ),
-    };
-  }
-
-  private async makeNextHead(
-    previous: AuthoritativeHead,
-    state: AuthoritativeHead["state"],
-    rngState: number,
-  ): Promise<AuthoritativeHead> {
-    return {
-      roomId: previous.roomId,
-      revision: state.revision,
-      state,
-      rngState,
-      rootSeed: previous.rootSeed,
-      stateHash: await this.security.hashJson(state),
-    };
-  }
-
-  private commandResponse(
-    commandId: string,
-    room: StoredRoom,
-    actorId: PlayerId,
-    head: AuthoritativeHead,
-    game: CommandSuccess["game"],
-    events: CommandSuccess["events"],
-    pending: PendingContribution | null,
-  ): CommandSuccess {
-    return {
-      commandId,
-      room: roomAfterTransition(room, head),
-      actorId,
-      revision: head.revision,
-      game,
-      events,
-      ownPendingContribution: pending,
-      ownPrivateDecision: privateDecisionState(head.state, actorId),
-    };
+    return { ok: true, value: { ...authenticated, tokenHash } };
   }
 
   private processedResult(
@@ -996,14 +1053,31 @@ export class AuthoritativeGameService {
   }
 
   private commitResult(
-    committed: StoreResult<CommandSuccess>,
+    committed: StoreResult<CommandSuccess> | { status: "ok"; head: AuthoritativeHead; response: CommandSuccess },
     actorId: PlayerId,
     revision: number,
   ): MultiplayerResult<CommandSuccess> {
-    if (committed.status === "ok") return { ok: true, value: committed.value };
+    if (committed.status === "ok") {
+      return { ok: true, value: "response" in committed ? committed.response : committed.value };
+    }
     if (committed.status === "duplicate") {
       return this.processedResult(committed.processed.actorId, actorId, committed.processed.response);
     }
     return failed(mapStoreFailure(committed.code, revision));
   }
+}
+
+/** The first computer seat among the current actors (DESIGN §3.4), in prompt order. */
+export function nextComputerSeat(state: GameState, seatsByPlayerId: ReadonlyMap<PlayerId, StoredSeat>): StoredSeat | null {
+  if (state.phase.type === "finished") return null;
+  for (const actorId of decisionPrompt(state).actorIds) {
+    const seat = seatsByPlayerId.get(actorId);
+    if (seat !== undefined && seat.isComputer) return seat;
+  }
+  return null;
+}
+
+/** DESIGN §4.6 `nextOnlineDecisionActor`: the first computer seat in the prompt's actors. */
+export function nextOnlineDecisionActor(state: GameState, seats: readonly StoredSeat[]): PlayerId | null {
+  return nextComputerSeat(state, new Map(seats.map((seat) => [seat.playerId, seat])))?.playerId ?? null;
 }

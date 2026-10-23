@@ -1,0 +1,28 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "After your worker action" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "5"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 1 Order in hand Recognition 3/4 0 VP
+  - form "After your worker action":
+    - group "This step":
+      - text: ""
+      - radio "Imperial Priority After your worker action"
+      - text: Imperial Priority After your worker action
+      - 'radio "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"'
+      - text: "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"
+      - radio "End your turn Nothing more this turn"
+      - text: End your turn Nothing more this turn
+    - paragraph: Choose what to do now.
+    - button "End turn"
+    - button "Confirm" [disabled]

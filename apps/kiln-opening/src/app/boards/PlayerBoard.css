@@ -1,0 +1,107 @@
+/* PlayerBoard (B2; wireframe `.kpb`, `.prow`, `.pgrid`). */
+@layer components {
+  .kpb {
+    container: board / inline-size;
+    display: grid;
+    gap: var(--sp-4);
+    min-width: 0;
+    padding: var(--sp-5) var(--sp-6);
+    border: 1px solid var(--line-2);
+    border-top: 4px solid var(--pc);
+    border-radius: 4px var(--r-md) var(--r-md) var(--r-md);
+    background: var(--surface);
+  }
+
+  .kpb-h {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-4);
+  }
+
+  .kpb-name {
+    font-size: var(--fs-16);
+  }
+
+  .kpb-vp {
+    margin-inline-start: auto;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    white-space: nowrap;
+  }
+
+  .kpb-vp strong {
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: var(--fs-18);
+  }
+
+  .kpb-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-4);
+  }
+
+  @container board (min-width: 620px) {
+    .kpb-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    }
+  }
+
+  .kpb-col {
+    display: grid;
+    align-content: start;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .prow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3) var(--sp-5);
+    min-width: 0;
+  }
+
+  .prow-lab {
+    min-width: 3.625rem;
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+
+  .prow-note {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .kpb-markers {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .kpb-markers strong {
+    color: var(--ink);
+  }
+
+  .kpb-orders {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .kpb-order-face {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--sp-4);
+    border-radius: var(--r-pill);
+    background: var(--paper-2);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+}
