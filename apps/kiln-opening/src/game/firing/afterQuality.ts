@@ -18,8 +18,8 @@
  * Ge (rev. 4 L463, L641, change 29): once per round, 1 of the owner's Fine or Standard ceramics
  * from this firing develops Crackle and is Fine (a Standard one becomes Fine, a Fine one stays
  * Fine). Saggars' Standard → Fine step and then Crackle may both apply to one ceramic; Crackle
- * first leaves no Standard for Saggars' step. A Crackle ceramic is never a Masterpiece: nothing
- * raises it afterwards. Its 1 VP per delivered Crackle ceramic is scored at Order completion
+ * first leaves no Standard for Saggars' step. A Crackle ceramic stays Fine: nothing raises it
+ * afterwards. Its 1 VP per delivered Crackle ceramic is scored at Order completion
  * (`orders/completion.ts`, rev. 4 L465).
  *
  * Second Firing (T14, rev. 4 L627): `USE_SECOND_FIRING` reveals 2 extra Fire cards

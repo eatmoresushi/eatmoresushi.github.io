@@ -15,9 +15,10 @@
  *   Contribution choice and never in the middle of resolving an action (a Work sub-step such
  *   as a Select or the Guild Hall inspection, Test Pieces, Jun, the Second Firing choice,
  *   Setter's Mark, Setup).
- * - The sale is free: it never ends the turn or changes the step by itself. The handler
- *   (`flawedSaleHandler.ts`, layer 5) only lets the after-Quality and Order Phase turns pass
- *   when nothing is left to do in them.
+ * - The sale is free and is not a worker action. In a Work turn or a Cleanup trim nothing else
+ *   changes (the player still owes their action, `END_TURN` or trim). The handler
+ *   (`flawedSaleHandler.ts`, layer 5) lets an after-Quality or Order Phase turn pass after a
+ *   sale when nothing is left to do in it, as after an ability use or a completion.
  *
  * Everything here is public (L508): which ceramics are Flawed, and every sale.
  *

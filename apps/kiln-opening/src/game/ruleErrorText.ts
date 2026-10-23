@@ -493,7 +493,6 @@ export const REASON_TEXT: Readonly<Record<string, RuleErrorTemplate>> = {
   masterpiece_required: { en: "a Masterpiece is required", zh: "需臻品" },
   already_delivered: { en: "the ceramic has been delivered", zh: "器物已交付" },
   flawed: { en: "a Flawed ceramic cannot complete an Order", zh: "瑕品不能完成委托" },
-  crackle_not_masterpiece: { en: "a Crackle ceramic is never a Masterpiece", zh: "开片器永远不是臻品" },
   not_this_firing: { en: "the ceramic is not in this firing", zh: "器物不在本次烧成中" },
   // After-Quality targets (rev. 4 L624, L627, L463): Protective Saggars takes a Standard
   // ceramic, Second Firing a Flawed or Standard one, Ge a Fine or Standard one (change 29).

@@ -16,8 +16,8 @@
  *   cards and any when-acquired effect. Colour Samples (T10, v1.6.2 L622, change 25) Selects 3
  *   (`work/select.ts`): it looks at the top 3 Main Orders (as many as remain, B1) and reserves 1
  *   of them or 1 face-up Main Order, mandatory whenever a reservation is possible (R4 as
- *   extended to the display, INT: Colour Samples Select); the looked cards not reserved go to the
- *   bottom of the Main deck in random order (change 24, R19); no resource. A face-up reservation
+ *   extended to the display, INT: Colour Samples Select); the looked cards not reserved are
+ *   discarded face down (owner ruling R25); no resource. A face-up reservation
  *   leaves its position empty until the turn ends (v1.6.2 L649). When the Shifu takes it, the
  *   inspection waits in the Colour Samples look (`inspection`) and resumes after the reservation
  *   (`afterColourSamples`, called by `SELECT_CHOOSE`).
@@ -197,7 +197,7 @@ function acquire(draft: GameState, playerId: PlayerId, take: GuildTake, ctx: Res
 /**
  * Colour Samples when acquired (v1.6.2 L622, change 25, R4, B1, R16): Select 3, opening the
  * `colour_samples` step (`SELECT_CHOOSE`: 1 reservation, a looked card or a face-up Main Order;
- * the looked cards not reserved go to the deck bottom, change 24). `resume` is the Shifu's
+ * the looked cards not reserved are discarded, owner ruling R25). `resume` is the Shifu's
  * inspection to return to afterwards (its untaken Techs wait in the look). Returns false when no
  * reservation is possible (no face-up Main Order, and the deck and discard both empty, B1): there
  * is then nothing to reserve and no look.

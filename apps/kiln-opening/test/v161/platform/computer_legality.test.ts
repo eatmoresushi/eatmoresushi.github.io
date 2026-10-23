@@ -268,7 +268,7 @@ describe("computer proposals over many seeded engine games", () => {
       "work_turn/after_action",
       "work_turn/commission_market",
       // V1.6.2 decisions: the Guild Hall Shifu's takes (L207), Colour Samples when acquired and
-      // its swap (L617, change 24), and Second Firing's choice of 1 of 2 cards (L631).
+      // its swap (L617, change 25), and Second Firing's choice of 1 of 2 cards (L631).
       "work_turn/guild_inspection",
       "work_turn/colour_samples",
       "work_turn/colour_samples_swap",

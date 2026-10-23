@@ -1,7 +1,7 @@
 /**
- * The keyword **Select N** (v1.6.2 L64, change 25; component text, keyword line): look at the
- * top N cards of the Main Order deck, then reserve 1 of them or 1 face-up Main Order from the
- * display; put the rest of the N on the bottom of the deck. One model for every Select:
+ * The keyword **Select N** (rev. 4 L72, change 25; component text, keyword lines 3 and 5): look
+ * at the top N cards of the Main Order deck, then reserve 1 of them or 1 face-up Main Order from
+ * the display; discard the rest of the N (owner ruling R25). One model for every Select:
  *
  * | Select | N | Reservations | Opened by |
  * | --- | --- | --- | --- |
@@ -13,11 +13,13 @@
  * Every Select may reserve a face-up Main Order instead of a looked card (`SelectSpec.fromDisplay`
  * is true for all four). A face-up position taken stays empty until the end of the turn, then the
  * display refills as usual (`work/turn.endTurn`, v1.6.2 L197, L395). The looked cards not
- * reserved go face down to the bottom of the Main deck, several in random order (change 24, R19).
- * A look shows as many cards as remain and never reshuffles to complete itself (B1, R16); a
- * Select whose look shows no card can still reserve from the display. Which cards were looked at,
- * reserved from the look or put under the deck is private to the looker (B3); the public sees the
- * counts and the face-up picks.
+ * reserved are discarded face down to the Main Order discard (owner ruling R25, 2026-10-23,
+ * which reverses change 24's deck bottom and makes R19 obsolete; rev. 4 L203), so the deck runs
+ * out in long games and the discard is reshuffled when a card is needed (rev. 4 L506). A look
+ * shows as many cards as remain and never reshuffles to complete itself (B1, R16); a Select whose
+ * look shows no card can still reserve from the display. Which cards were looked at, reserved
+ * from the look or discarded is private to the looker (B3); the public sees the counts and the
+ * face-up picks. Resolving a Select uses no randomness.
  *
  * This module holds the shared model (open, validate, resolve). The `SELECT_CHOOSE` handler that
  * continues each kind of step is `work/selectChoose.ts`.
@@ -27,7 +29,7 @@
  */
 
 import { invariant, ruleError } from "../errors.ts";
-import { addToHand, lookCount, putMainOrdersOnBottom, reservable, takeFaceUpOrder, takeTopMainOrders } from "../market.ts";
+import { addToHand, discardMainOrders, lookCount, reservable, takeFaceUpOrder, takeTopMainOrders } from "../market.ts";
 import { emit } from "../state.ts";
 import type {
   ActorView,
@@ -161,10 +163,11 @@ export function selectPicksError(view: ActorView, kind: SelectLookKind, spec: Se
 /**
  * Resolves validated picks in array order: a face-up pick takes the Order off the display (its
  * position stays empty until the turn ends, `refillPendingFor`) with a public `ORDER_RESERVED`; a
- * looked pick goes to the hand with a secret one (B3). Then the looked cards not reserved go face
- * down to the bottom of the Main deck in random order (change 24, R19), with
- * `LOOKED_ORDERS_TO_BOTTOM` naming them in look order. Clears the look and returns it (Colour
- * Samples' carries the waiting Guild Hall inspection). No resource is gained.
+ * looked pick goes to the hand with a secret one (B3). Then the looked cards not reserved are
+ * discarded face down to the Main Order discard (owner ruling R25), in look order, the last on
+ * top, with `LOOKED_ORDERS_DISCARDED` naming them privately in look order. Clears the look and
+ * returns it (Colour Samples' carries the waiting Guild Hall inspection). No resource is gained
+ * and no random draw is used.
  */
 export function resolveSelectPicks(
   draft: GameState,
@@ -197,13 +200,13 @@ export function resolveSelectPicks(
       });
     }
   }
-  // The rest of the N go face down to the bottom of the deck, in random order (v1.6.2 L64,
-  // change 24; R19). The secret names them in look order.
+  // Discard the rest of the N face down (rev. 4 L72, L203; owner ruling R25). The secret names
+  // them in look order.
   const rest = look.orderIds.filter((orderId) => !reservedLooked.has(orderId));
   draft.hidden.pendingLook = null;
   if (rest.length > 0) {
-    putMainOrdersOnBottom(draft, rest, ctx);
-    emit(ctx, { type: "LOOKED_ORDERS_TO_BOTTOM", playerId, count: rest.length, secret: { visibleTo: playerId, orderIds: rest } });
+    discardMainOrders(draft, rest);
+    emit(ctx, { type: "LOOKED_ORDERS_DISCARDED", playerId, count: rest.length, secret: { visibleTo: playerId, orderIds: rest } });
   }
   return look;
 }

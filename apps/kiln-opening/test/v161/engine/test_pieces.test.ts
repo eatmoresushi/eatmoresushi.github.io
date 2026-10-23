@@ -1,6 +1,7 @@
 /**
- * Test Pieces (T13, v1.6.2 L638, L648, L675; INT "Test Pieces"; owner ruling R15): after Base
- * Heat and before the Heat markers, in First Player order; needs a ceramic in this firing
+ * Test Pieces (T13, rev. 4 L626, L636, Appendix D "end of 1"; INT "Test Pieces"; owner ruling
+ * R15): once per round, after Base Heat is determined and before the Fire card is revealed
+ * (there is no Heat-marker step since changes 28 and 31); needs a ceramic in this firing
  * (Imperial counts) and 1 Wood; a private peek, then a public, optional bury to the bottom of
  * the Fire deck. A buried card is drawn last: when only buried cards are left, the open discard
  * is shuffled and placed above them (R15).

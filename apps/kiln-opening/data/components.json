@@ -42,14 +42,6 @@
       "notesZh": "每种颜色3名。"
     },
     {
-      "id": "heat_markers",
-      "name": "Heat markers",
-      "nameZh": "火标",
-      "qty": 4,
-      "notes": "One per player colour; faces +1 and −1.",
-      "notesZh": "每种颜色1个；一面+1，一面−1。"
-    },
-    {
       "id": "clay",
       "name": "Clay",
       "nameZh": "泥",
@@ -62,8 +54,8 @@
       "name": "Wood",
       "nameZh": "柴",
       "qty": 40,
-      "notes": "Resource and firing fuel.",
-      "notesZh": "资源，也是烧窑的燃料。"
+      "notes": "Resource and kiln fuel: 1 per Glaze & Load action into the Shared Kiln, and the cost of Bank and Stoke.",
+      "notesZh": "资源，也是窑火燃料：每次向共窑装窑的行动1柴；压火与添柴也以柴支付。"
     },
     {
       "id": "coins",

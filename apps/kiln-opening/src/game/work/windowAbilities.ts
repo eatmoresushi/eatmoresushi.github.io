@@ -13,8 +13,8 @@
  *   straight back. It is legal only when a reservation is possible: a looked card or a face-up
  *   Main Order (B1: the reservation must take an available Order). `SELECT_CHOOSE` reserves 1 of
  *   the looked cards or 1 face-up Main Order, whose position stays empty until the turn ends
- *   (v1.6.2 L646); the looked cards not reserved go face down to the bottom of the Main deck in
- *   random order (change 24, R19). The hand size is unchanged.
+ *   (v1.6.2 L646); the looked cards not reserved are discarded face down to the Main Order
+ *   discard (owner ruling R25). The hand size is unchanged.
  * - Imperial Priority: once per game, free (no Wood, rev. 4 L291), glaze and load 1 Shaped
  *   vessel into your empty Imperial Kiln with a chosen public modifier (L293, R10, R11).
  *   Reworking Table may change the Shape first (DESIGN §11 Q1 default P1: allowed, using its

@@ -52,9 +52,12 @@ interface Totals {
   kilns: Map<string, number>;
   phases: Map<string, number>;
   loadFeatures: Map<string, number>;
+  deckEvents: Map<string, number>;
 }
 
-const totals: Totals = { games: 0, commands: 0, families: new Map(), techs: new Map(), kilns: new Map(), phases: new Map(), loadFeatures: new Map() };
+const totals: Totals = {
+  games: 0, commands: 0, families: new Map(), techs: new Map(), kilns: new Map(), phases: new Map(), loadFeatures: new Map(), deckEvents: new Map(),
+};
 
 /** Every command type; `satisfies` makes a new `GameActionType` fail to compile until listed. */
 const COMMAND_TYPES = Object.keys({
@@ -116,6 +119,12 @@ const PHASES = [
  * Magistrate's Hall Shifu's optional Crown Order (R21). */
 const LOAD_FEATURES = ["inverted_firing", "kiln_furniture", "rework", "kiln_master", "pair", "imperial", "crown_order"];
 
+/** Owner revision 4 and ruling R25 moments (`FuzzResult.deckEvents`): the public Setup take, a
+ * Select's discarded looked cards, the Main discard reshuffled into a new deck as a look starts
+ * (R16) and for a display refill or the Canal Wharf Shifu's draw (rev. 4 L506), a Flawed sale
+ * (R20) and Crackle VP (change 29). */
+const DECK_EVENTS = ["setup_take", "looked_discarded", "reshuffle_look", "reshuffle_draw", "flawed_sale", "crackle_vp"];
+
 function merge(into: Map<string, number>, from: ReadonlyMap<string, number>): void {
   for (const [key, value] of from) {
     into.set(key, (into.get(key) ?? 0) + value);
@@ -167,6 +176,7 @@ function record(result: FuzzResult): void {
   merge(totals.kilns, result.kilnUses);
   merge(totals.phases, result.phases);
   merge(totals.loadFeatures, result.loadFeatures);
+  merge(totals.deckEvents, result.deckEvents);
 }
 
 describe("fuzz coverage", () => {
@@ -180,6 +190,7 @@ describe("fuzz coverage", () => {
         `families: ${families.map(([type, n]) => `${type}=${n}`).join(" ")}`,
         `phases: ${PHASES.map((phase) => `${phase}=${totals.phases.get(phase) ?? 0}`).join(" ")}`,
         `load choices: ${LOAD_FEATURES.map((feature) => `${feature}=${totals.loadFeatures.get(feature) ?? 0}`).join(" ")}`,
+        `deck and revision-4 moments: ${DECK_EVENTS.map((moment) => `${moment}=${totals.deckEvents.get(moment) ?? 0}`).join(" ")}`,
         `techs: ${techs.join(" ")}`,
         `kilns: ${kilns.join(" ")}`,
       ].join("\n"),
@@ -196,6 +207,7 @@ describe("fuzz coverage", () => {
     expect(missing(COMMAND_TYPES, totals.families), "command types never played").toEqual([]);
     expect(missing(PHASES, totals.phases), "phases never reached").toEqual([]);
     expect(missing(LOAD_FEATURES, totals.loadFeatures), "Glaze & Load choices never made").toEqual([]);
+    expect(missing(DECK_EVENTS, totals.deckEvents), "revision-4 and R25 moments never reached").toEqual([]);
     expect(missing(TECH_IDS, totals.techs), "Techs never used").toEqual([]);
     expect(missing(KILN_IDS, totals.kilns), "Kiln abilities never used").toEqual([]);
   });

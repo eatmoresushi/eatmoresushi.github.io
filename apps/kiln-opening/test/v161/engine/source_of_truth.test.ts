@@ -67,12 +67,15 @@ describe("the V1.6.2 rulebook is the source of truth", () => {
   /** The owner's three V1.6.2 files, byte-identical to the originals (audit, "Authority and
    * provenance"). The English and Chinese rulebooks carry the owner's Guild Hall revision of
    * 2026-10-17; all three carry owner revision 2 of 2026-10-17 (changes 23–24: the 8-card
-   * Starting deck, the Main Order re-pass and looked cards to the deck bottom) and owner revision
-   * 3 of 2026-10-18 (changes 25–27: Select N, Fuel Ledger as cards, no Tech VP). */
+   * Starting deck and the Main Order re-pass), owner revision 3 of 2026-10-18 (changes 25–27:
+   * Select N, Fuel Ledger as cards, no Tech VP) and owner revision 4 of 2026-10-22/23 (changes
+   * 28–35: no Heat marker, Ge, the quick wins, the chosen starting Main Order, the Magistrate's
+   * Hall Shifu, kiln fuel) with owner ruling R25's edit (a Select discards the looked cards it
+   * does not reserve). */
   const V162_FILES: ReadonlyArray<readonly [string, string]> = [
-    [SOURCE_PATH, "93cc8173d14ae0320ea197e45ce68de2ebd2cd6165e215e8709622d2f0f7f8e3"],
-    ["docs/KILN_OPENING_v1.6.2_ZH.md", "1bd43cdc90045682988e8ed155ff08be1645c44d00ad2ef4adb19c62e488fce2"],
-    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "0d2ebf8b9ae0521c991ef06d637a99772645150e68e635f576905822c142cfc6"],
+    [SOURCE_PATH, "4a6647d16ce5a6152a8045f3ec64d624d00d34a2a248885ebcaeff73978f242a"],
+    ["docs/KILN_OPENING_v1.6.2_ZH.md", "dcbc6eedd801fb8da9f102007a4605cdf0a04e32e06a10099a542223f3106eb5"],
+    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "e55d2582ed9cde84875e0ecc10c0923cf9672d44a4c27d4822ac1c2fbe9c371f"],
   ];
 
   it.each(V162_FILES)("%s matches the checksum the audit records", (path, expected) => {
@@ -173,9 +176,11 @@ describe("every data file is V1.6.2 content with current IDs only", () => {
     [/gainAfterEach/, "Commission Market resource"],
     // Owner revision 2026-10-17 (v1.6.2 L207, L714): the Guild Hall Shifu pays the printed cost.
     [/"discount"\s*:|Coins? less, minimum 0|少付2铜钱/, "Guild Hall Shifu discount"],
-    // Owner revision 2 (v1.6.2 changes 23–24): an 8-card Starting deck; looked cards go to the deck bottom.
+    // Owner revision 2 (v1.6.2 change 23): an 8-card Starting deck.
     [/"S(?:09|1[0-6])"/, "retired Starting Order ID (S09–S16)"],
-    [/discard the rest of the [23]|其余弃置|没有承接的弃置/, "looked cards discarded instead of put on the deck bottom"],
+    // Owner ruling R25 (2026-10-23) reversed change 24's deck flow: a Select discards its looked
+    // cards not reserved, so no data text puts them on the bottom of the Main Order deck.
+    [/(?:rest|looked[^."]*|not reserved) (?:go|goes|went|put) (?:face down )?(?:to|on) the bottom of the (?:Main Order )?deck|其余放到牌堆底|放到主委托牌堆底|in random order|洗混后面朝下/, "looked cards put on the bottom of the Main Order deck (change 24, R19)"],
     // Prose of every data file, the clarifications included (engine stage 4: all text derives from V1.6.2).
     [/blind reservation|盲接|top-3 selection|看三取一/i, "blind reservation or the Commission Market top-3 selection"],
     [/resource after each|每次承接后/, "a Commission Market resource"],
@@ -186,6 +191,14 @@ describe("every data file is V1.6.2 content with current IDs only", () => {
     [/swapLookSize|look at the top 2 cards, reserve 1|看牌堆顶2张，承接1张/, "the Colour Samples swap's look of 2"],
     [/"fuelLedger"|extraWood|secretly commit 1 Wood|暗附1柴|暗附加柴|柴簿加柴/, "the Fuel Ledger commitment"],
     [/vpEach|Advanced Tech scores 1 VP|own 1 VP is scored|每习得1项技艺，立即得1分|1分在习得时立即计入/, "Tech VP on gain (owner amendment A1)"],
+    // Owner revision 4 (changes 28–35): no player Heat marker or its step; no firing-step
+    // salvage (a Flawed ceramic is sold, R20); no Decoration cost table; no seat Coin; Ge on Fine
+    // or Standard, with no separate "never a Masterpiece" rule.
+    [/Heat marker|heatMarker|heat_marker|火标/, "the player Heat marker (changes 28, 31)"],
+    [/salvage|折卖/i, "the firing-step salvage (change 30)"],
+    [/decorationCost|Decoration cost table|a Decoration cost\b|Every Decoration costs|纹饰费|纹饰减免/, "Decoration costs (change 30)"],
+    [/seat Coin|extra Coin|座次铜钱/, "the seat Coin (withdrawn by change 35)"],
+    [/never a Masterpiece|永远不是臻品|永远不算臻品/, "Ge's 'never a Masterpiece' clause (change 29)"],
   ];
 
   it.each(DATA_FILES)("%s names no retired ID or mechanic", (file) => {
@@ -238,7 +251,8 @@ describe("the V1.6.2 asset contract (data/asset_specs.json)", () => {
 
   it("specifies the Kiln Die, markers, Fire deck and Contribution cards from the firing data", () => {
     expect(ASSETS.kilnDie.faces).toEqual(FIRING.kilnDie.faces);
-    expect(ASSETS.markers["heatMarkers"]).toMatchObject({ qty: 4, faces: [1, -1] });
+    // Owner revision 4 (changes 28, 31): no player Heat marker; Kiln Master's marker remains.
+    expect(ASSETS.markers).not.toHaveProperty("heatMarkers");
     expect(ASSETS.markers["kilnMasterMarker"]).toMatchObject({ qty: 1, faces: [1, -1] });
     expect(ASSETS.markers["crackleMarkers"]).toMatchObject({ qty: 8 });
     expect(ASSETS.markers["lockTokens"]).toMatchObject({ qty: 8 });

@@ -12,7 +12,6 @@ import {
   drawMainOrder,
   drawTechsForInspection,
   lookCount,
-  putMainOrdersOnBottom,
   refillMainDisplay,
   refillTechDisplay,
   removeFromHand,
@@ -130,7 +129,7 @@ describe("discardMainOrders (face down, B3)", () => {
   it("puts Orders on the face-down discard, last one on top; only the count is public", () => {
     const state = exactSupply(SIX, ["O40"], ["O41"]);
     // Two held Main Orders, as a Cleanup trim or a Colour Samples swap gives them up (L303,
-    // L641). Looked-at Orders never come here: they go under the deck (change 24).
+    // L641). A Select's looked cards not reserved come here too (owner ruling R25).
     const givenUp: MainOrderId[] = ["O42", "O43"];
     for (const id of givenUp) removeFromHand(state, "p2", id);
     discardMainOrders(state, givenUp);
@@ -151,75 +150,46 @@ describe("discardMainOrders (face down, B3)", () => {
   });
 });
 
-describe("putMainOrdersOnBottom (v1.6.2 change 24, L34, L191, L195–196, L617; R19, B3)", () => {
-  const LOOKED: MainOrderId[] = ["O43", "O44", "O45"];
-
-  /** The deck after putting `looked` under a 1-card deck with this seed. */
-  function underDeck(looked: readonly MainOrderId[], seed: number): OrderId[] {
-    const state = exactSupply(SIX, ["O40"], []);
-    for (const id of looked) removeFromHand(state, "p2", id);
-    putMainOrdersOnBottom(state, looked, testContext(seed));
-    return state.hidden.mainDeck;
-  }
-
-  it("puts looked-at Orders under the deck, below every card already there; the discard is untouched; only the count is public", () => {
-    const state = exactSupply(SIX, ["O40", "O41"], ["O42"]);
-    for (const id of LOOKED) removeFromHand(state, "p2", id);
-    putMainOrdersOnBottom(state, LOOKED, testContext(1));
-    expect(state.hidden.mainDeck.slice(0, 2)).toEqual(["O40", "O41"]);
-    expect([...state.hidden.mainDeck.slice(2)].sort()).toEqual(LOOKED);
-    expect(state.hidden.mainDiscard).toEqual(["O42"]);
+describe("a Select's looked cards not reserved are discarded (owner ruling R25, rev. 4 L72, L203, L506; B1, R16, B3)", () => {
+  it("discards them face down, the last on top; the deck is not refilled from below; no random draw; only counts are public", () => {
+    const state = exactSupply(SIX, ["O40", "O41", "O42", "O43"], ["O44"]);
+    const ctx = testContext(11);
+    const looked = takeTopMainOrders(state, 3, ctx);
+    expect(looked).toEqual(["O40", "O41", "O42"]);
+    // The looker reserves O41 (it goes to the hand elsewhere); the other 2 are discarded.
+    const before = ctx.rng.getState();
+    discardMainOrders(state, ["O40", "O42"]);
+    addToHand(state, "p1", "O41");
+    expect(ctx.rng.getState()).toBe(before);
+    expect(state.hidden.mainDeck).toEqual(["O43"]);
+    expect(state.hidden.mainDiscard).toEqual(["O42", "O40", "O44"]);
+    expect(ctx.events).toEqual([]);
     const view = projectPublicState(state);
-    expect(view.counts.mainDeck).toBe(5);
+    expect([view.counts.mainDeck, view.counts.mainDiscard]).toEqual([1, 3]);
     const json = JSON.stringify(view);
-    for (const id of LOOKED) expect(json).not.toContain(`"${id}"`);
+    for (const id of ["O40", "O42", "O44"]) expect(json).not.toContain(`"${id}"`);
     expectConserved(state);
   });
 
-  it("R19: several cards go under in random order, drawn from the seeded RNG", () => {
-    const orders = new Set<string>();
-    for (let seed = 1; seed <= 60; seed += 1) orders.add(underDeck(LOOKED, seed).slice(1).join(" "));
-    // Every one of the 6 orders turns up, the order they were drawn in among them.
-    expect(orders.size).toBe(6);
-    // Deterministic: the same seed always gives the same order, the seeded shuffle's.
-    expect(underDeck(LOOKED, 7)).toEqual(underDeck(LOOKED, 7));
-    expect(underDeck(LOOKED, 7).slice(1)).toEqual(shuffle(LOOKED, new SeededRandom(7)));
-  });
-
-  it("a single card goes straight under and consumes no random draw", () => {
-    const state = exactSupply(SIX, ["O40"], []);
-    removeFromHand(state, "p2", "O41");
-    const ctx = testContext(9);
-    const before = ctx.rng.getState();
-    putMainOrdersOnBottom(state, ["O41"], ctx);
-    expect(state.hidden.mainDeck).toEqual(["O40", "O41"]);
-    expect(ctx.rng.getState()).toBe(before);
-    expect(ctx.events).toEqual([]);
-  });
-
-  it("refills an empty deck without a reshuffle: a later look sees the same cards again", () => {
-    const state = exactSupply(SIX, ["O40", "O41"], ["O42", "O43"]);
+  it("the deck runs out: the next look reshuffles the discard first, so discarded looked cards may come back (B1, R16)", () => {
+    const state = exactSupply(SIX, ["O40", "O41"], []);
     const ctx = testContext(5);
     const looked = takeTopMainOrders(state, 3, ctx);
     expect(looked).toEqual(["O40", "O41"]);
-    putMainOrdersOnBottom(state, looked, ctx);
-    expect([...takeTopMainOrders(state, 2, ctx)].sort()).toEqual(["O40", "O41"]);
-    expect(ctx.events).toEqual([]);
-    expect(state.hidden.mainDiscard).toEqual(["O42", "O43"]);
+    discardMainOrders(state, looked);
+    expect(state.hidden.mainDeck).toEqual([]);
+    const again = takeTopMainOrders(state, 2, ctx);
+    expect([...again].sort()).toEqual(["O40", "O41"]);
+    expect(ctx.events).toEqual([{ type: "MAIN_DECK_RESHUFFLED", cardCount: 2 }]);
+    expect(state.hidden.mainDiscard).toEqual([]);
   });
 
-  it("refuses a Starting Order, a card already in the deck or the discard, and a duplicate", () => {
-    const state = buildState({ players: [{ hand: ["S01"] }, {}], display: SIX, mainDeck: ["O10"] });
-    const discarded = state.hidden.mainDiscard[0] as OrderId;
-    const ctx = testContext(1);
-    expect(() => putMainOrdersOnBottom(state, ["S01"], ctx)).toThrow(InvariantError);
-    expect(() => putMainOrdersOnBottom(state, ["O10"], ctx)).toThrow(InvariantError);
-    expect(() => putMainOrdersOnBottom(state, [discarded], ctx)).toThrow(InvariantError);
-    const fresh = exactSupply(SIX, ["O40"], []);
-    removeFromHand(fresh, "p2", "O41");
-    expect(() => putMainOrdersOnBottom(fresh, ["O41", "O41"], ctx)).toThrow(InvariantError);
-    // A refused call changes nothing.
-    expect(fresh.hidden.mainDeck).toEqual(["O40"]);
+  it("never reshuffles in the middle of a look: a look of 3 on a 1-card deck sees 1, the discard untouched (R16)", () => {
+    const state = exactSupply(SIX, ["O40"], ["O41", "O42"]);
+    const ctx = testContext(5);
+    expect(takeTopMainOrders(state, 3, ctx)).toEqual(["O40"]);
+    expect(state.hidden.mainDiscard).toEqual(["O41", "O42"]);
+    expect(ctx.events).toEqual([]);
   });
 });
 

@@ -26,6 +26,7 @@ import {
   GLAZE_TEXT,
   PHASE_TEXT,
   QUALITY_TEXT,
+  REASON_TEXT,
   RESOURCE_TEXT,
   RULE_ERROR_TEXT,
   SHAPE_TEXT,
@@ -149,8 +150,15 @@ describe("every stable ID resolves to English and Chinese text", () => {
     expect(formatRuleError({ code: "WORKER_UNAVAILABLE", details: { workerId: "p1:shifu" } }, "zh")).toBe("你没有可派的师傅");
     expect(formatRuleError({ code: "NOT_YOUR_DECISION", details: { waitingFor: "p2" } }, "zh", { playerName: () => "乙" }))
       .toBe("尚未轮到你，请等候乙");
-    expect(formatRuleError({ code: "ORDER_REQUIREMENTS_NOT_MET", details: { orderId: "O13", reason: "crackle_not_masterpiece" } }, "zh"))
-      .toBe("所选器物不满足委托O13的要求：开片器永远不是臻品");
+    // Change 29 dropped "a Crackle ceramic is never a Masterpiece": a Fine Crackle ceramic on a
+    // Masterpiece Order is refused with the ordinary reason, and the removed phrase is gone.
+    expect(formatRuleError({ code: "ORDER_REQUIREMENTS_NOT_MET", details: { orderId: "O13", reason: "masterpiece_required" } }, "zh"))
+      .toBe("所选器物不满足委托O13的要求：需臻品");
+    expect(REASON_TEXT["crackle_not_masterpiece"]).toBeUndefined();
+    for (const text of Object.values(REASON_TEXT)) {
+      expect(text.en).not.toMatch(/never a Masterpiece/);
+      expect(text.zh).not.toMatch(/永远不是臻品|永远不算臻品/);
+    }
     expect(formatRuleError({ code: "KILN_SPACE_UNAVAILABLE", details: { spaceId: "low_2" } }, "zh")).toBe("低温区2号窑位不可用：已被盖住或已有器物");
     expect(formatRuleError({ code: "TECH_LIMIT", details: { maxOwned: 3 } }, "zh")).toBe("你已拥有3项技艺");
     // Revision 4: Ge takes a Fine or Standard ceramic (change 29); only a Flawed ceramic is sold (R20).
@@ -210,8 +218,8 @@ describe("Chinese text uses the glossary terms", () => {
     }
     expect(IMPERIAL_TRACK.track[1]?.rewardTextZh).toBe(track.find((cells) => cells[0] === "1")?.[3]);
     expect(IMPERIAL_TRACK.track[4]?.rewardTextZh).toBe(track.find((cells) => cells[0] === "4")?.[3]);
-    // The Imperial Gift formula keeps every term the English reward names (L433: Kiln Die result + Fire + the modifier
-    // chosen when loading). Like the English, it leaves the Heat marker to the Imperial Kiln rules (owner wording, 2026-10-16).
+    // The Imperial Gift formula keeps every term the English reward names (rev. 4 L428: Kiln Die result + Fire + the modifier
+    // chosen when loading). Like the English, it leaves Kiln Master's marker to that Tech's own rule (rev. 4 L628, R22).
     expect(IMPERIAL_TRACK.track[2]?.rewardTextZh).toContain("实际火候 = 窑骰点数 + 窑火修正 + 装窑时选定的御窑修正");
     for (const id of CONTRIBUTION_CARD_IDS) expect(contributionCard(id).nameZh).toBe(glossaryTerm(contributionCard(id).name));
     const roundStructure = JSON.parse(readFileSync(join(ROOT, "data/round_structure.json"), "utf8")) as {
@@ -361,8 +369,9 @@ describe("Chinese strings avoid retired terms and follow the glossary's punctuat
 
   it("collects the Chinese text of every data file", () => {
     expect(strings.length).toBeGreaterThan(300);
-    // Every D10 clarification's Chinese half is checked too (170 items in the V1.6.2 clarifications doc).
-    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(170);
+    // Every D10 clarification's Chinese half is checked too (167 items in the V1.6.2 clarifications doc
+    // since owner revision 4).
+    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(167);
   });
 
   it("uses none of the retired or banned terms (glossary §1.5, §6)", () => {

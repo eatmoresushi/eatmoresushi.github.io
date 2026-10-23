@@ -3,10 +3,11 @@
  * B3; DESIGN §3.2 as amended by ENGINE_V1.6.2_DELTA.md §4.2): the placement always opens the
  * Select (Select 2 for the Apprentice effect, Select 3 reserving up to 2 for the Shifu effect),
  * then `SELECT_CHOOSE` reserves 1 (Apprentice) or 1–2 (Shifu) from the display and the looked
- * cards in any mix; the rest of the look goes face down to the bottom of the Main deck in random
- * order (rulebook change 24, L34; owner ruling R19), never to the discard; no resource; the
- * single deferred refill at the end of the turn; Senior Apprentice; the empty-supply rules (B1);
- * privacy (B3).
+ * cards in any mix; the rest of the look is discarded face down to the Main Order discard
+ * (owner ruling R25, rev. 4 L72, L203; it reversed change 24's deck bottom and R19), so the deck
+ * runs out and the discard is reshuffled when a card is needed (rev. 4 L506); no resource; the
+ * single deferred refill at the end of the turn; Senior Apprentice; the empty-supply rules (B1,
+ * R16); privacy (B3).
  */
 
 import { describe, expect, it } from "vitest";
@@ -127,17 +128,19 @@ describe("the placement opens the private look (v1.6.2 L195–196; INT: Commissi
     const t = table();
     const top = t.state.hidden.mainDeck.slice(0, 2);
     t.act("p1", place("p1:apprentice:1"));
+    const deckAfterLook = t.state.hidden.mainDeck.length;
     const events = t.act("p1", choose(faceUp(0, "O01")));
-    // Both looked cards go face down to the bottom of the deck (change 24), in random order
-    // (R19); the secret names them in look order.
-    expect(only(events, "LOOKED_ORDERS_TO_BOTTOM")).toEqual({
-      type: "LOOKED_ORDERS_TO_BOTTOM",
+    // Both looked cards are discarded face down (R25), the last looked on top; the secret names
+    // them in look order. Nothing goes back under the deck.
+    expect(only(events, "LOOKED_ORDERS_DISCARDED")).toEqual({
+      type: "LOOKED_ORDERS_DISCARDED",
       playerId: "p1",
       count: 2,
       secret: { visibleTo: "p1", orderIds: top },
     });
-    expect(sorted(t.state.hidden.mainDeck.slice(-2))).toEqual(sorted(top));
-    expect(t.state.hidden.mainDiscard).toEqual([]);
+    expect(t.state.hidden.mainDiscard).toEqual([...top].reverse());
+    // Only the end-of-turn refill took a card off the deck.
+    expect(t.state.hidden.mainDeck).toHaveLength(deckAfterLook - 1);
   });
 });
 
@@ -151,7 +154,7 @@ describe("Apprentice effect (v1.6.2 L195): reserve 1 from the display or the 2 l
 
     expect(t.state.hidden.orderHands["p1"]).toEqual(["O03"]);
     expect(t.player("p1").resources).toEqual({ clay: 2, wood: 3, coins: 3 });
-    expect(types(events)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM", "DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(types(events)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED", "DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
     expect(only(events, "ORDER_RESERVED")).toEqual({
       type: "ORDER_RESERVED",
       playerId: "p1",
@@ -164,13 +167,14 @@ describe("Apprentice effect (v1.6.2 L195): reserve 1 from the display or the 2 l
     expect(only(events, "DISPLAY_REFILLED")).toMatchObject({ cause: "end_of_turn", revealedOrderIds: [refillCard] });
     expect(t.state.market.display).toEqual(["O01", "O02", "O04", "O05", "O06", refillCard]);
     expect(t.state.market.refillPendingFor).toBeNull();
-    // The 2 looked cards went to the bottom (in random order, R19) before the refill drew from the top.
-    expect(sorted(t.state.hidden.mainDeck.slice(-2))).toEqual(sorted(top));
-    expect(t.state.hidden.mainDiscard).toEqual([]);
+    // The 2 looked cards were discarded (R25) before the refill drew from the top.
+    expect(t.state.hidden.mainDiscard).toEqual([top[1], top[0]]);
+    expect(t.state.hidden.mainDeck).not.toContain(top[0]);
+    expect(t.state.hidden.mainDeck).not.toContain(top[1]);
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } });
   });
 
-  it("a looked reservation: secret, the other card face down to the deck bottom, no refill", () => {
+  it("a looked reservation: secret, the other card discarded face down, no refill", () => {
     const t = table();
     const [a, b] = t.state.hidden.mainDeck as [OrderId, OrderId];
     const deckBefore = t.state.hidden.mainDeck.length;
@@ -178,12 +182,12 @@ describe("Apprentice effect (v1.6.2 L195): reserve 1 from the display or the 2 l
     const events = t.act("p1", choose(looked(b)));
 
     expect(t.state.hidden.orderHands["p1"]).toEqual([b]);
-    expect(t.state.hidden.mainDeck.at(-1)).toBe(a);
-    expect(t.state.hidden.mainDeck).toHaveLength(deckBefore - 1);
-    expect(t.state.hidden.mainDiscard).toEqual([]);
+    expect(t.state.hidden.mainDeck).not.toContain(a);
+    expect(t.state.hidden.mainDeck).toHaveLength(deckBefore - 2);
+    expect(t.state.hidden.mainDiscard).toEqual([a]);
     expect(t.state.hidden.pendingLook).toBeNull();
-    expect(types(events)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
-    expect(only(events, "LOOKED_ORDERS_TO_BOTTOM")).toEqual({ type: "LOOKED_ORDERS_TO_BOTTOM", playerId: "p1", count: 1, secret: { visibleTo: "p1", orderIds: [a] } });
+    expect(types(events)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(only(events, "LOOKED_ORDERS_DISCARDED")).toEqual({ type: "LOOKED_ORDERS_DISCARDED", playerId: "p1", count: 1, secret: { visibleTo: "p1", orderIds: [a] } });
     const reserved = only(events, "ORDER_RESERVED");
     expect(reserved).toEqual({
       type: "ORDER_RESERVED",
@@ -224,28 +228,28 @@ describe("Shifu effect (v1.6.2 L196, L198): reserve 1–2 from the display and t
     expect(types(events)).toEqual([
       "ORDER_RESERVED",
       "ORDER_RESERVED",
-      "LOOKED_ORDERS_TO_BOTTOM",
+      "LOOKED_ORDERS_DISCARDED",
       "DISPLAY_REFILLED",
       "WORK_TURN_ENDED",
       "WORK_TURN_STARTED",
     ]);
-    expect(only(events, "LOOKED_ORDERS_TO_BOTTOM").count).toBe(3);
-    expect(sorted(t.state.hidden.mainDeck.slice(-3))).toEqual(sorted(top.slice(0, 3)));
+    expect(only(events, "LOOKED_ORDERS_DISCARDED").count).toBe(3);
+    expect(t.state.hidden.mainDiscard).toEqual([top[2], top[1], top[0]]);
     expect(only(events, "DISPLAY_REFILLED")).toMatchObject({ cause: "end_of_turn", revealedOrderIds: [top[3], top[4]] });
     expect(t.state.market.display).toEqual(["O02", "O03", "O05", "O06", top[3], top[4]]);
     expect(t.player("p1").resources).toEqual({ clay: 2, wood: 3, coins: 3 });
   });
 
-  it("two looked reservations: the third card goes to the deck bottom, the display is untouched", () => {
+  it("two looked reservations: the third card is discarded, the display is untouched", () => {
     const t = table();
     const [a, b, c] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId];
     t.act("p1", place("p1:shifu"));
     const events = t.act("p1", choose(looked(c), looked(a)));
     expect(t.state.hidden.orderHands["p1"]).toEqual([c, a]);
-    expect(t.state.hidden.mainDeck.at(-1)).toBe(b);
-    expect(t.state.hidden.mainDiscard).toEqual([]);
-    expect(types(events)).toEqual(["ORDER_RESERVED", "ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
-    expect(only(events, "LOOKED_ORDERS_TO_BOTTOM").secret.orderIds).toEqual([b]);
+    expect(t.state.hidden.mainDeck).not.toContain(b);
+    expect(t.state.hidden.mainDiscard).toEqual([b]);
+    expect(types(events)).toEqual(["ORDER_RESERVED", "ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(only(events, "LOOKED_ORDERS_DISCARDED").secret.orderIds).toEqual([b]);
     expect(t.state.market.display).toEqual(DISPLAY);
   });
 
@@ -256,9 +260,8 @@ describe("Shifu effect (v1.6.2 L196, L198): reserve 1–2 from the display and t
     const events = t.act("p1", choose(looked(b), faceUp(5, "O06")));
     expect(t.state.hidden.orderHands["p1"]).toEqual([b, "O06"]);
     expect(events.filter((e) => e.type === "ORDER_RESERVED").map((e) => (e as { source: string }).source)).toEqual(["looked", "face_up"]);
-    // The unreserved looked cards go to the deck bottom, in random order (R19).
-    expect(sorted(t.state.hidden.mainDeck.slice(-2))).toEqual(sorted([a, c]));
-    expect(t.state.hidden.mainDiscard).toEqual([]);
+    // The unreserved looked cards are discarded in look order, the last on top (R25).
+    expect(t.state.hidden.mainDiscard).toEqual([c, a]);
     expect(t.state.market.display.slice(0, 5)).toEqual(["O01", "O02", "O03", "O04", "O05"]);
   });
 
@@ -271,8 +274,7 @@ describe("Shifu effect (v1.6.2 L196, L198): reserve 1–2 from the display and t
     expect(three.details).toEqual({ limit: 2, requested: 3 });
     t.act("p1", choose(faceUp(1, "O02")));
     expect(t.state.hidden.orderHands["p1"]).toEqual(["O02"]);
-    expect(sorted(t.state.hidden.mainDeck.slice(-3))).toEqual(sorted(top));
-    expect(t.state.hidden.mainDiscard).toEqual([]);
+    expect(t.state.hidden.mainDiscard).toEqual([...top].reverse());
   });
 });
 
@@ -342,7 +344,7 @@ describe("Empty Main supply (B1, L511)", () => {
     expect(types(events)).not.toContain("MAIN_DECK_RESHUFFLED");
     expect(commissionStep(t).select.lookedCount).toBe(0);
     const reserved = t.act("p1", choose(faceUp(1, "O02")));
-    expect(types(reserved)).not.toContain("LOOKED_ORDERS_TO_BOTTOM");
+    expect(types(reserved)).not.toContain("LOOKED_ORDERS_DISCARDED");
     expect(only(reserved, "DISPLAY_REFILLED")).toMatchObject({ revealedOrderIds: [] });
     expect(t.state.market.display).toEqual(["O01", "O03", "O04", "O05", "O06", null]);
   });
@@ -357,47 +359,54 @@ describe("Empty Main supply (B1, L511)", () => {
     t.act("p1", choose(looked("O07")));
   });
 
-  it("a looked card not reserved from a 1-card deck goes back as the whole deck (change 24, B1)", () => {
+  it("R25: a looked card discarded from the last card of the deck comes back through the end-of-turn reshuffle (rev. 4 L506)", () => {
     const t = table(supplySpec(DISPLAY, ["O07"], ["O08", "O09"]));
     t.act("p1", place("p1:apprentice:1"));
     expect(t.state.hidden.mainDeck).toEqual([]);
     const events = t.act("p1", choose(faceUp(0, "O01")));
-    expect(only(events, "LOOKED_ORDERS_TO_BOTTOM").secret.orderIds).toEqual(["O07"]);
-    // The end-of-turn refill draws it straight back onto the display; the discard is untouched.
-    expect(only(events, "DISPLAY_REFILLED")).toMatchObject({ revealedOrderIds: ["O07"] });
-    expect(types(events)).not.toContain("MAIN_DECK_RESHUFFLED");
-    expect(t.state.hidden.mainDiscard).toEqual(["O08", "O09"]);
+    expect(only(events, "LOOKED_ORDERS_DISCARDED").secret.orderIds).toEqual(["O07"]);
+    // The refill needs a card and the deck is empty: the discard, O07 included, is shuffled into
+    // a new deck first.
+    expect(types(events)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED", "MAIN_DECK_RESHUFFLED", "DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(only(events, "MAIN_DECK_RESHUFFLED").cardCount).toBe(3);
+    const revealed = only(events, "DISPLAY_REFILLED").revealedOrderIds;
+    expect(revealed).toHaveLength(1);
+    expect(sorted([...revealed, ...t.state.hidden.mainDeck])).toEqual(["O07", "O08", "O09"]);
+    expect(t.state.hidden.mainDiscard).toEqual([]);
   });
 
-  it("a look never empties the deck by itself: a Shifu look of the last 3 puts the unreserved back (change 24)", () => {
+  it("R25, R16: a Shifu look of the last 3 discards the unreserved; the next look reshuffles the discard as it starts", () => {
     const t = table(supplySpec(DISPLAY, ["O07", "O08", "O09"], ["O10"]));
     t.act("p1", place("p1:shifu"));
     expect(lookOf(t)).toEqual(["O07", "O08", "O09"]);
-    t.act("p1", choose(looked("O08")));
-    expect(sorted(t.state.hidden.mainDeck)).toEqual(["O07", "O09"]);
-    // p2's look sees the same cards again, in the order they went under, without a reshuffle.
-    const deck = [...t.state.hidden.mainDeck];
+    const chosen = t.act("p1", choose(looked("O08")));
+    expect(types(chosen)).not.toContain("MAIN_DECK_RESHUFFLED");
+    expect(t.state.hidden.mainDeck).toEqual([]);
+    expect(t.state.hidden.mainDiscard).toEqual(["O09", "O07", "O10"]);
+    // p2's look starts on an empty deck: the discard is shuffled into a new deck first.
     const next = t.act("p2", place("p2:apprentice:1"));
-    expect(types(next)).not.toContain("MAIN_DECK_RESHUFFLED");
-    expect(only(next, "PRIVATE_LOOK_OPENED").secret.orderIds).toEqual(deck);
-    expect(t.state.hidden.mainDiscard).toEqual(["O10"]);
+    expect(types(next)).toEqual(["WORKER_PLACED", "MAIN_DECK_RESHUFFLED", "PRIVATE_LOOK_OPENED"]);
+    expect(only(next, "MAIN_DECK_RESHUFFLED").cardCount).toBe(3);
+    const seen = only(next, "PRIVATE_LOOK_OPENED").secret.orderIds;
+    expect(seen).toHaveLength(2);
+    expect(sorted([...seen, ...t.state.hidden.mainDeck])).toEqual(["O07", "O09", "O10"]);
+    expect(t.state.hidden.mainDiscard).toEqual([]);
   });
 
-  it("R19: several unreserved looked cards go under the deck in random order; the looker's secret lists them in look order", () => {
-    const bottoms = new Set<string>();
-    for (let seed = 1; seed <= 40; seed += 1) {
+  it("R25: several unreserved looked cards are discarded in look order, the last on top, whatever the seed (no random draw)", () => {
+    const discards = new Set<string>();
+    for (let seed = 1; seed <= 10; seed += 1) {
       const t = table(supplySpec(DISPLAY, ["O07", "O08", "O09", "O11"], ["O10"]), seed);
       t.act("p1", place("p1:shifu"));
       expect(lookOf(t)).toEqual(["O07", "O08", "O09"]);
       const events = t.act("p1", choose(faceUp(0, "O01")));
-      // All 3 go back: the turn-end refill draws O11, the one card that was below them.
+      // The turn-end refill draws O11, the one card left in the deck.
       expect(only(events, "DISPLAY_REFILLED")).toMatchObject({ revealedOrderIds: ["O11"] });
-      expect(only(events, "LOOKED_ORDERS_TO_BOTTOM").secret.orderIds).toEqual(["O07", "O08", "O09"]);
-      expect(sorted(t.state.hidden.mainDeck)).toEqual(["O07", "O08", "O09"]);
-      bottoms.add(t.state.hidden.mainDeck.join(" "));
+      expect(only(events, "LOOKED_ORDERS_DISCARDED").secret.orderIds).toEqual(["O07", "O08", "O09"]);
+      expect(t.state.hidden.mainDeck).toEqual([]);
+      discards.add(t.state.hidden.mainDiscard.join(" "));
     }
-    // Every one of the 6 orders turns up over the seeds, not only the order of the look.
-    expect(bottoms.size).toBe(6);
+    expect([...discards]).toEqual(["O09 O08 O07 O10"]);
   });
 
   it("an empty deck is replaced by the shuffled discard when the look starts (L511)", () => {
@@ -418,7 +427,7 @@ describe("Empty Main supply (B1, L511)", () => {
     t.act("p1", place("p1:shifu"));
     expect(lookedOrderOptions(t.view("p1"))).toEqual({ kind: "commission_market", n: 3, orderIds: ["O07", "O08"], faceUpSlots: [], maxReservations: 2 });
     const events = t.act("p1", choose(looked("O08"), looked("O07")));
-    expect(types(events)).not.toContain("LOOKED_ORDERS_TO_BOTTOM");
+    expect(types(events)).not.toContain("LOOKED_ORDERS_DISCARDED");
     expect(types(events)).not.toContain("DISPLAY_REFILLED");
     expect(t.state.hidden.orderHands["p1"]).toEqual(["O08", "O07"]);
   });
@@ -479,12 +488,12 @@ describe("hidden information (B3)", () => {
     }
     // The face-up Order was already public.
     expect(publicLog).toContain('"O05"');
-    // The 2 unreserved cards went to the deck bottom (change 24): only the deck count shows them.
-    // Public count: −3 for the look, +2 back under the deck, −1 for the end-of-turn refill.
-    expect(t.view(null).game.counts).toMatchObject({ pendingLook: null, mainDiscard: 0, mainDeck: deckBefore - 2 });
-    expect(sorted(t.state.hidden.mainDeck.slice(-2))).toEqual(sorted(look.filter((id) => id !== look[2])));
-    const toBottom = t.events.filter((event) => event.type === "LOOKED_ORDERS_TO_BOTTOM");
-    expect(toBottom.map(projectEvent)).toEqual([{ type: "LOOKED_ORDERS_TO_BOTTOM", playerId: "p1", count: 2 }]);
+    // The 2 unreserved cards were discarded face down (R25): only the discard count shows them.
+    // Public deck count: −3 for the look, −1 for the end-of-turn refill.
+    expect(t.view(null).game.counts).toMatchObject({ pendingLook: null, mainDiscard: 2, mainDeck: deckBefore - 4 });
+    expect(sorted(t.state.hidden.mainDiscard)).toEqual(sorted(look.filter((id) => id !== look[2])));
+    const discarded = t.events.filter((event) => event.type === "LOOKED_ORDERS_DISCARDED");
+    expect(discarded.map(projectEvent)).toEqual([{ type: "LOOKED_ORDERS_DISCARDED", playerId: "p1", count: 2 }]);
     expect(t.view(null).game.counts.orderHands["p1"]).toBe(2);
     expect(t.view("p2").own?.orderHand).toEqual([]);
     expect(t.view("p1").own?.orderHand).toEqual(hand);

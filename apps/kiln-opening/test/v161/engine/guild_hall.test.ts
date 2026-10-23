@@ -417,7 +417,7 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
     expect(t.state.hidden.orderHands["p1"]).toEqual([c]);
     // The swap is usable the round Colour Samples is acquired (v1.6.2 L213, L625): with an Order
     // now held, the after-action window opens, and the Tech display refills only at END_TURN.
-    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM"]);
+    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED"]);
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
     expect(t.state.techDisplay.glazing_loading).toEqual(["T20"]);
     expect(types(t.act("p1", { type: "END_TURN" }))).toEqual(["TECH_DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
@@ -430,11 +430,10 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
       orderId: null,
       secret: { visibleTo: "p1", orderId: c },
     });
-    // The other 2 go to the bottom of the Main deck (change 24), not the discard, in random
-    // order (R19); the secret names them in look order.
-    expect(only(chosen, "LOOKED_ORDERS_TO_BOTTOM")).toMatchObject({ count: 2, secret: { orderIds: [a, b] } });
-    expect([...t.state.hidden.mainDeck.slice(-2)].sort()).toEqual([a, b].sort());
-    expect(t.state.hidden.mainDiscard).toEqual([]);
+    // The other 2 are discarded face down (owner ruling R25), the last looked on top; the secret
+    // names them in look order.
+    expect(only(chosen, "LOOKED_ORDERS_DISCARDED")).toMatchObject({ count: 2, secret: { orderIds: [a, b] } });
+    expect(t.state.hidden.mainDiscard).toEqual([b, a]);
     expect(t.player("p1").resources).toEqual(resources);
     expect(t.state.market.display).toEqual(display);
     expect(t.state.market.refillPendingFor).toBeNull();
@@ -443,16 +442,16 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
     expect(handLimit(t.player("p2"))).toBe(4);
   });
 
-  it("may reserve a face-up Main Order instead: its position stays empty until the turn ends, then refills; all 3 looked cards go under the deck", () => {
+  it("may reserve a face-up Main Order instead: its position stays empty until the turn ends, then refills; all 3 looked cards are discarded (R25)", () => {
     const t = table();
     const [a, b, c, next] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId, OrderId];
     t.act("p1", buy("p1:apprentice:1", "T10"));
     expectDocumentedDetails(t.expectRuleError("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O02" }] }, "ORDER_NOT_AVAILABLE"));
     const chosen = t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 3, orderId: "O04" }] });
-    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM"]);
+    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED"]);
     expect(only(chosen, "ORDER_RESERVED")).toEqual({ type: "ORDER_RESERVED", playerId: "p1", via: "colour_samples", source: "face_up", slotIndex: 3, orderId: "O04" });
-    expect(only(chosen, "LOOKED_ORDERS_TO_BOTTOM")).toMatchObject({ count: 3, secret: { orderIds: [a, b, c] } });
-    expect([...t.state.hidden.mainDeck.slice(-3)].sort()).toEqual([a, b, c].sort());
+    expect(only(chosen, "LOOKED_ORDERS_DISCARDED")).toMatchObject({ count: 3, secret: { orderIds: [a, b, c] } });
+    expect(t.state.hidden.mainDiscard).toEqual([c, b, a]);
     expect(t.state.hidden.orderHands["p1"]).toEqual(["O04"]);
     // The swap window opens (an Order is held); the position stays empty through it.
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
@@ -474,7 +473,7 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
     oneLeft.act("p1", buy("p1:apprentice:1", "T10"));
     expect(oneLeft.state.phase).toMatchObject({ step: { kind: "colour_samples", select: { lookedCount: 1 } } });
     const chosen = oneLeft.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O07" }] });
-    expect(types(chosen)).not.toContain("LOOKED_ORDERS_TO_BOTTOM");
+    expect(types(chosen)).not.toContain("LOOKED_ORDERS_DISCARDED");
 
     // Deck and discard empty, the display full: the Select looks at nothing and must reserve a
     // face-up Order (R4 as extended to the display, INT: Colour Samples Select).
@@ -540,8 +539,8 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
     t.expectRuleError("p1", finish(["T13", "T14"]), "WRONG_PHASE");
 
     const chosen = t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: b }] });
-    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM"]);
-    expect([...t.state.hidden.mainDeck.slice(-2)].sort()).toEqual([a, c].sort());
+    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED"]);
+    expect(t.state.hidden.mainDiscard).toEqual([c, a]);
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection", takes: [{ kind: "face_up", techId: "T10" }] } });
     expect(t.state.hidden.pendingLook).toEqual({ kind: "guild_inspection", playerId: "p1", discipline: "firing", techIds: ["T13", "T14"] });
     expect(t.state.hidden.orderHands["p1"]).toEqual([b]);

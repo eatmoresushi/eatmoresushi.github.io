@@ -5,8 +5,10 @@
  * the before- and after-action windows of their Work turn, their Order Phase turn, their own
  * after-Quality turn (`after_quality.test.ts`) and their pending Cleanup trim. Never during
  * another player's turn, the simultaneous Contribution choice, or the middle of resolving an
- * action. The sale is free: it never ends a turn or opens a window by itself. Revision 3's
- * salvage step is gone.
+ * action. The sale is free and is not a worker action: in a Work turn or a Cleanup trim the
+ * player still owes their action or trim; in an after-Quality or Order Phase turn the turn
+ * passes automatically after the sale when nothing is left to do there (as after an ability use
+ * or a completion), and opens no window by itself. Revision 3's salvage step is gone.
  */
 
 import { describe, expect, it } from "vitest";

@@ -419,7 +419,7 @@ export interface FiredCeramicCore extends CeramicCore {
 
 /**
  * Quality together with the permanent Crackle marker from Ge (L468), kept until delivered or
- * exhibited (L94). The union makes "a Crackle ceramic is never a Masterpiece" a type error
+ * exhibited (L94). The union makes "a Crackle ceramic is always exactly Fine" a type error
  * rather than a comment: Ge targets a Fine or Standard ceramic and leaves it Fine (rev. 4 L463,
  * change 29), and nothing can raise it afterwards (Protective Saggars' step and Second Firing
  * target only Flawed or Standard ceramics, rev. 4 L624, L627), so a Crackle ceramic is always
@@ -569,10 +569,13 @@ export interface FirePeek {
 export interface HiddenState {
   /** Secret Order hands (L201, L401). Counts are public via `PublicCounts`. */
   orderHands: Record<PlayerId, OrderId[]>;
-  /** Main Order deck, top first. Looked-at Orders not reserved are appended at the bottom,
-   * several in random order (v1.6.2 change 24, owner ruling R19). */
+  /** Main Order deck, top first. Nothing is put back under it: since owner ruling R25 a
+   * Select's looked cards not reserved are discarded (`mainDiscard`). */
   mainDeck: OrderId[];
-  /** Face-down Main Order discard (B3); only its count is public. */
+  /** Face-down Main Order discard (B3); only its count is public. It receives the round-start
+   * rotation, the Cleanup trim, the held Order a Colour Samples swap gives up and every Select's
+   * looked cards not reserved (owner ruling R25, rev. 4 L203); it is shuffled into a new deck
+   * when the deck is empty and a card is needed (rev. 4 L506). */
   mainDiscard: OrderId[];
   /** Undealt and discarded Starting Orders, returned to the box (L102, L304). */
   startingBox: StartingOrderId[];
@@ -733,9 +736,9 @@ export interface DecisionQueue {
 }
 
 /**
- * Keyword **Select N** (v1.6.2 L64, change 25): look at the top N cards of the Main Order deck,
- * then reserve 1 of them or 1 face-up Main Order from the display; the rest of the N go to the
- * bottom of the deck (several in random order, R19). One model for every Select: the
+ * Keyword **Select N** (rev. 4 L72, change 25): look at the top N cards of the Main Order deck,
+ * then reserve 1 of them or 1 face-up Main Order from the display; discard the rest of the N
+ * (owner ruling R25, face down to the Main Order discard). One model for every Select: the
  * Commission Market Apprentice (Select 2) and Shifu (Select 3, reserving up to 2, v1.6.2 L202),
  * and Colour Samples when acquired and in its swap (Select 3, v1.6.2 L622). The looked cards are
  * in `hidden.pendingLook`; `SELECT_CHOOSE` makes the reservations.
@@ -813,7 +816,7 @@ export type WorkTurnStep =
       /**
        * Colour Samples swap (v1.6.2 L622, R17): the held Order is discarded and its Select 3 is
        * open, the looked cards in `hidden.pendingLook` (kind `colour_samples_swap`). Next:
-       * SELECT_CHOOSE (the looked cards not reserved go to the deck bottom), then back to the
+       * SELECT_CHOOSE (the looked cards not reserved are discarded, R25), then back to the
        * window it was used in.
        */
       kind: "colour_samples_swap";
@@ -1262,8 +1265,8 @@ export type GameAction =
        * The reservations of an open Select (v1.6.2 L64, change 25): the Commission Market's
        * (L201–204), Colour Samples' when acquired or its swap's (L622). 1 to the step's
        * `select.maxReservations`, each a face-up Main Order (when `select.fromDisplay`) or a
-       * looked card, in any mix. Resolved in array order; the looked cards not reserved then go
-       * face down to the bottom of the Main deck in random order (R19). No resource is gained.
+       * looked card, in any mix. Resolved in array order; the looked cards not reserved are then
+       * discarded face down to the Main Order discard (owner ruling R25). No resource is gained.
        */
       type: "SELECT_CHOOSE";
       reservations: SelectPick[];
@@ -1545,13 +1548,14 @@ export type GameEvent =
     }
   | {
       /**
-       * The looked-at Orders a look did not reserve go face down to the bottom of the Main deck
-       * (v1.6.2 change 24, L34, L191, L195–196, L396; Colour Samples' looks, Appendix B), several
-       * in random order (owner ruling R19). Which cards is private to the looker (B3); the count
-       * is public. `secret.orderIds` lists them in the order they were looked at: it says which
-       * cards went under the deck, never their order there, which nobody knows.
+       * The looked-at Orders a Select did not reserve are discarded face down to the Main Order
+       * discard (owner ruling R25, 2026-10-23; rev. 4 L31, L35, L72, L203, L698; Colour Samples'
+       * Select 3 when acquired and in its swap, rev. 4 L613). Which cards is private to the looker
+       * (B3); the count is public, and so is `counts.mainDiscard`. `secret.orderIds` lists them in
+       * the order they were looked at, the last on top of the discard. Replaces change 24's
+       * deck-bottom event and R19's random order under the deck.
        */
-      type: "LOOKED_ORDERS_TO_BOTTOM";
+      type: "LOOKED_ORDERS_DISCARDED";
       playerId: PlayerId;
       count: number;
       secret: Secret<{ orderIds: OrderId[] }>;
@@ -2002,7 +2006,7 @@ export interface ClarificationDefinition {
   zh: string;
   /**
    * The source label, one or more tags joined by " · ": `L124` (V1.6.2 rulebook line), `A1`
-   * (amendment), `R1`–`R19` / `B1`–`B3` (owner rulings), `ED L124` (editorial correction),
+   * (amendment), `R1`–`R25` / `B1`–`B3` (owner rulings), `ED L124` (editorial correction),
    * `INT <name>` (recorded interpretation), `P1`–`P3` (provisional ruling), `D7` (owner UI decision).
    */
   source: string;
@@ -2486,7 +2490,7 @@ export interface LookedOrderOptions {
   kind: "commission_market" | "colour_samples" | "colour_samples_swap";
   /** N: 2 or 3. */
   n: 2 | 3;
-  /** From `own.pendingLook`; the cards not reserved go to the bottom of the Main deck (change 24). */
+  /** From `own.pendingLook`; the cards not reserved are discarded (owner ruling R25). */
   orderIds: OrderId[];
   /** Display positions also reservable now (every Select, v1.6.2 L64; a position taken this
    * turn stays empty until the turn ends). */

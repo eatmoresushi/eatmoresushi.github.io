@@ -118,8 +118,7 @@
     "prototypeMapping": "Ordinary die: 1-2 = 1, 3-4 = 2, 5-6 = 3"
   },
   "markers": {
-    "heatMarkers": { "status": "GENERATE", "qty": 4, "perPlayerColour": 1, "faces": [1, -1], "faceDownSide": true },
-    "kilnMasterMarker": { "status": "GENERATE", "qty": 1, "comesWithTech": "T24", "faces": [1, -1], "note": "A Heat marker for all rules; visually distinct from the player-colour Heat markers." },
+    "kilnMasterMarker": { "status": "GENERATE", "qty": 1, "comesWithTech": "T24", "faces": [1, -1], "note": "Placed face up on a ceramic when it is loaded, once per round (rev. 4 L628, L635); public, like the Imperial modifier." },
     "crackleMarkers": { "status": "GENERATE", "qty": 8, "kiln": "GE", "existingOverlay": "assets/current_v04/ceramics/ceramic-crackle-overlay-v1.webp", "note": "Marker on a Fine ceramic; never drawn as a Decoration." },
     "lockTokens": { "status": "GENERATE", "qty": 8, "perPlayer": 2 },
     "imperialKilnTiles": { "status": "GENERATE", "qty": 4, "capacity": 1, "mustShowImperialModifierChoice": [-1, 0, 1] },

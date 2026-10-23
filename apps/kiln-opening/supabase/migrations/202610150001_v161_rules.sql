@@ -579,8 +579,9 @@ $$;
 
 -- The secrets addressed to one seat (its setup deal; its own private looks: the Commission
 -- Market top 2 or 3, Colour Samples and its swap, the Guild Hall inspection; the Orders it
--- reserved from a look or took unseen at the Canal Wharf; the looked cards it put under the
--- Main deck; the held Order a swap gave up; its chosen Guild bottom order; own hand trims;
+-- reserved from a look or took unseen at the Canal Wharf; the looked cards it discarded face
+-- down to the Main Order discard (R25); the held Order a swap gave up; its chosen Guild bottom
+-- order; own hand trims;
 -- own Test Pieces peek), with the secret intact. The seat credential is checked here as well as in the
 -- service, so this RPC can never return another seat's secrets.
 create or replace function public.server_list_private_events(

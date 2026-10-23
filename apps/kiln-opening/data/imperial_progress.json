@@ -40,27 +40,27 @@
         {
           "en": "The Imperial Kiln holds 1 ceramic per firing. It does not occupy a Shared Kiln space.",
           "zh": "御窑每次烧成只容纳1件，不占用共窑窑位。",
-          "source": "L292 · L295"
+          "source": "L290 · L293"
         },
         {
-          "en": "During a Glaze & Load action, 1 vessel loaded by that action may be placed in your empty Imperial Kiln instead of the Shared Kiln. Imperial Priority also loads it. No Tech effect loads it.",
-          "zh": "施釉装窑行动中，该行动装窑的器物可以有1件改放进你空着的御窑，而不放进共窑。御烧优先也可以把器物装进御窑。技艺效果一律不能把器物装进御窑。",
-          "source": "L293"
+          "en": "During a Glaze & Load action, 1 vessel loaded by that action may be placed in your empty Imperial Kiln instead of the Shared Kiln. Imperial Priority also loads it. No Tech effect loads it. You pay no Wood when loading into it.",
+          "zh": "施釉装窑行动中，该行动装窑的器物可以有1件改放进你空着的御窑，而不放进共窑。御烧优先也可以把器物装进御窑。技艺效果一律不能把器物装进御窑。装进御窑不花柴。",
+          "source": "L291"
         },
         {
           "en": "Loading it chooses the −1, 0 or +1 Imperial modifier. The modifier is public when chosen and is recorded on the ceramic.",
           "zh": "装窑时，选定御窑修正−1、0或+1；它在选定时就公开，并记录在该器物上。",
-          "source": "L294 · R11"
+          "source": "L292 · R11"
         },
         {
-          "en": "Its Actual Heat is the Kiln Die result + the Fire modifier + that modifier, plus any Heat marker, whatever the Contributions were. It still fires during the shared Firing Phase.",
-          "zh": "它的实际火候 = 窑骰点数 + 窑火修正 + 御窑修正 + 火标（如有），与控火结果无关；它仍在共同的烧窑阶段烧成。",
-          "source": "L294"
+          "en": "Its Actual Heat is the Kiln Die result + the Fire modifier + that modifier (plus the Kiln Master marker if it carries it), whatever the Contributions were. It still fires during the shared Firing Phase.",
+          "zh": "它的实际火候 = 窑骰点数 + 窑火修正 + 御窑修正（+ 窑工标，如有），与控火结果无关；它仍在共同的烧窑阶段烧成。",
+          "source": "L292"
         },
         {
           "en": "It counts as a ceramic in this firing for your Techs and abilities, but it does not make you a Contribution participant: only a ceramic in the Shared Kiln does.",
           "zh": "对你的技艺与能力而言，它算作本次烧成中的器物，但不会让你成为控火的参与者：只有共窑中的器物才算。",
-          "source": "L295"
+          "source": "L293"
         },
         {
           "en": "If only Imperial Kiln ceramics are loaded, Contributions are skipped and Base Heat is the Kiln Die result; the Fire card is still revealed.",
@@ -70,12 +70,12 @@
         {
           "en": "Kiln Furniture, Inverted Firing and Setter's Mark affect the Shared Kiln only.",
           "zh": "支烧窑具、覆烧、窑位签只作用于共窑。",
-          "source": "L643"
+          "source": "L634"
         },
         {
           "en": "After firing, its ceramic resolves Quality and moves to the owner's Finished Ceramics area normally.",
           "zh": "烧成后照常定品，移入主人的成器区。",
-          "source": "L296"
+          "source": "L294"
         }
       ]
     },
@@ -91,19 +91,19 @@
       "rewardTextZh": "从声望轨上取走你颜色的御烧优先标。每局一次，在你的工人行动之前或之后，交出此标，为你的1件坯施釉并装进你空着的御窑。",
       "clarifications": [
         {
-          "en": "Imperial Priority is free. Loading through it chooses the −1, 0 or +1 Imperial modifier like any Imperial load, and the modifier is public.",
-          "zh": "御烧优先免费；通过它装窑时，同样选定御窑修正−1、0或+1，它在选定时就公开。",
-          "source": "R10 · R11"
+          "en": "Imperial Priority is free: it pays no Wood. Loading through it chooses the −1, 0 or +1 Imperial modifier like any Imperial load, and the modifier is public.",
+          "zh": "御烧优先免费，也不花柴；通过它装窑时，同样选定御窑修正−1、0或+1，它在选定时就公开。",
+          "source": "R10 · R11 · L291"
         },
         {
           "en": "Imperial Priority is a token effect, not a worker action. It never counts as a Glaze & Load action and does not trigger effects that require that action.",
           "zh": "御烧优先是令牌效果，不是工人行动。它不算施釉装窑行动，也不触发需要该行动的效果。",
-          "source": "L642"
+          "source": "L633"
         },
         {
-          "en": "A later Glaze & Load Shifu may place the Heat marker on a ceramic loaded by Imperial Priority.",
-          "zh": "之后执行施釉装窑的师傅可以把火标暗置于通过御烧优先装进的器物上。",
-          "source": "R9"
+          "en": "If you own Kiln Master, its once-per-round marker may go on the ceramic Imperial Priority loads.",
+          "zh": "如果你有窑工，每轮一次的窑工标也可以放在通过御烧优先装进的器物上。",
+          "source": "R22"
         },
         {
           "en": "Imperial Priority and the Colour Samples swap may share a before- or after-action window, in an order you choose.",
@@ -132,7 +132,7 @@
         {
           "en": "The Magistrate's Hall cannot advance you to Recognition 4; only Crowns reach it.",
           "zh": "州衙不能把你推进到声望4，只有御令才能到达。",
-          "source": "L431"
+          "source": "L422"
         },
         {
           "en": "Tribute Ware's bonus Crown also advances Recognition.",
@@ -148,7 +148,7 @@
       {
         "en": "A multi-Crown Order may reach Recognition 4 and then score VP from any remaining Crowns on that same Order.",
         "zh": "一张多御令的委托可以先到达声望4，再用同一张委托上余下的御令得分。",
-        "source": "L443"
+        "source": "L434"
       },
       {
         "en": "Tribute Ware's bonus Crown scores past Recognition 4, but it is not a printed Crown and does not count for tie-breaker 2.",
@@ -158,7 +158,7 @@
       {
         "en": "Tie-breaker 2 counts Crown icons printed across completed Orders, including those scored beyond Recognition 4.",
         "zh": "平局判定②统计已完成委托上印的御令总数，包括到达声望4后得分的御令。",
-        "source": "L502"
+        "source": "L493"
       }
     ]
   },

@@ -10,6 +10,8 @@ V1.6.1 replaces the V1.4 engine wholesale. Nothing here changes a rule or a bala
 
 **Revision 2 (2026-10-14)** addresses the rules review and the consumer review of revision 1. §12 records the disposition of every finding.
 
+**V1.6.2 note.** The engine now follows the V1.6.2 rulebook. [ENGINE_V1.6.2_DELTA.md](./ENGINE_V1.6.2_DELTA.md) lists every change to this design and wins where the two disagree; its §15 covers owner revision 4 (changes 28–35) and rulings R20–R25. Passages here on the player Heat marker and the Heat-marker step (`firing_heat_markers`, `RESOLVE_HEAT_MARKERS`, Kiln Master in that step), the salvage step (`firing_salvage`, `SALVAGE_FLAWED`), Decoration costs, the dealt starting Main Order and looked cards under the Main deck describe removed rules. Only the tables the content contract reads are amended in place: `flawedSaleCoins` in §6.2, the GE row of §6.4 and the T24 row of §6.5, each with a note.
+
 ---
 
 ## 1. Principles
@@ -905,8 +907,10 @@ There is no `starting` key. Each entry has `id, discipline, cost, oncePerRound, 
 | T12 | no | contributions | `{extraWood:1, heat:1}` |
 | T13 | yes | after_base_heat | `{wood:1}` |
 | T14 | yes | after_quality | `{}` |
-| T24 | yes | heat_marker_step | `{values:[1,-1]}` |
+| T24 | yes | when_loading | `{values:[1,-1]}` |
 | T25 | yes | order_completion | `{bonusCrowns:1}` |
+
+T24 follows V1.6.2 owner revision 4 (changes 28 and 31, R22; ENGINE_V1.6.2_DELTA.md §15.8): Kiln Master's marker is placed when a ceramic is loaded, and the timing was `heat_marker_step`, the retired Heat-marker step.
 
 `unlocks` is `form_decorate` for Workshop, `glaze_load` for Glazing & Loading and `null` for Firing.
 

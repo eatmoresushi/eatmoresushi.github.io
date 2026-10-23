@@ -239,13 +239,13 @@ function collectTextProblems(value: unknown, path: string, problems: string[]): 
 
 /**
  * One source tag of a clarification (`docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md`, "Source
- * tags"): `L124` line of the V1.6.2 rulebook, `A1` amendment, `R1`–`R19` and `B1`–`B3` owner
+ * tags"): `L124` line of the V1.6.2 rulebook, `A1` amendment, `R1`–`R25` and `B1`–`B3` owner
  * rulings (`docs/RULEBOOK_AUDIT_V1.6.2.md`), `ED L124` editorial correction, `INT <name>`
  * recorded interpretation, `P1`–`P3` provisional ruling, `D7` owner UI decision. A `source`
  * joins one or more tags with " · ". Which rulings are still in force is the content
  * contract's check, not this pattern's.
  */
-export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-9])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
+export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-9]|2[0-5])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
 
 /** The kind of a source tag, which the UI labels (Rulebook, Owner amendment, Owner ruling, …). */
 export type ClarificationSourceKind = "rulebook" | "amendment" | "ruling" | "editorial" | "interpretation" | "provisional" | "wording";
@@ -577,7 +577,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (kiln.params === null || typeof kiln.params !== "object") problems.push(`kilns: ${kiln.id} needs params`);
   }
   // Ge (rev. 4 L463, L465, change 29): Crackle on a Fine or Standard ceramic, which is then Fine
-  // (so a Crackle ceramic is never a Masterpiece), and a VP per delivered Crackle ceramic.
+  // (so a Crackle ceramic is always Fine), and a VP per delivered Crackle ceramic.
   const ge = kilns.kilns.find((kiln) => kiln.id === "GE")?.params as Record<string, unknown> | undefined;
   const geFrom = ge?.["fromQualities"];
   if (

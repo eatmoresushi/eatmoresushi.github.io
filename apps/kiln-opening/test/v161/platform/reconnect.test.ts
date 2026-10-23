@@ -1,14 +1,16 @@
 /**
  * Reconnect without changing seat or state (AGENTS.md, DESIGN §4.6): a seat recovers its
  * public projection, its own private view — including its sealed Contribution card, a Fuel
- * Ledger card included (v1.6.2 change 26) — and its own secrets, and nothing is written.
+ * Ledger card included (v1.6.2 change 26), and its hand mid-way through the Setup pick (rev. 4
+ * change 32, R23) — and its own secrets, and nothing is written.
  */
 
 import { describe, expect, it } from "vitest";
+import { GAME_CONFIG } from "../../../src/game/content.ts";
 import { decisionPrompt } from "../../../src/game/index.ts";
 import type { OrderId } from "../../../src/game/types.ts";
 import { LocalTable } from "../engine/support/localTable.ts";
-import { command, connectionFor, lobby, openedFiringState, seatState, seedState, started, tryCommand, valueOf } from "./support.ts";
+import { command, connectionFor, headState, lobby, openedFiringState, seatState, seedState, started, tryCommand, valueOf } from "./support.ts";
 
 describe("V1.6.2 reconnect", () => {
   it("returns the seat's own sealed card (Fuel Ledger Stoke) during an open window; seat and state unchanged", async () => {
@@ -88,7 +90,7 @@ describe("V1.6.2 reconnect", () => {
     }
   });
 
-  it("restores a Colour Samples swap's Select 3 only to its owner; the discarded Order and the looked cards stay private (v1.6.2 L622, changes 24–25, B3)", async () => {
+  it("restores a Colour Samples swap's Select 3 only to its owner; the discarded Order and the looked cards stay private (v1.6.2 L622, change 25, R25, B3)", async () => {
     const { harness } = await started();
     let look: OrderId[] = [];
     await seedState(harness, (gameId) => {
@@ -118,12 +120,12 @@ describe("V1.6.2 reconnect", () => {
       expect(JSON.stringify(other)).not.toContain(`"${orderId}"`);
       expect(JSON.stringify(own.game)).not.toContain(`"${orderId}"`);
     }
-    // The seat continues where it left off; the other 2 go under the deck, still private.
+    // The seat continues where it left off; the other 2 are discarded face down, still private (R25).
     const chosen = await command(harness, "P1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: look[1] as OrderId }] });
     expect(chosen.ownPrivateView?.orderHand).toEqual([look[1]]);
     const after = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
     for (const orderId of ["O40", ...look]) expect(JSON.stringify(after)).not.toContain(`"${orderId}"`);
-    expect(after.game?.counts.mainDiscard).toBe(1);
+    expect(after.game?.counts.mainDiscard).toBe(3);
   });
 
   it("restores a Second Firing choice with its 2 public cards; only the owner may choose (v1.6.2 L631, R7)", async () => {
@@ -159,6 +161,63 @@ describe("V1.6.2 reconnect", () => {
     // Nothing else is due, so the firing finishes; its record keeps the choice and both cards.
     expect((chosen.game.firing ?? chosen.game.lastFiring)?.ceramics["c1"]).toMatchObject({ second: { fireModifier: -1 }, secondFiringCards: [1, -1] });
     expect(chosen.game.fireDiscard.slice(-3)).toEqual([1, -1, 0]);
+  });
+
+  it("restores the Setup pick mid-way: each seat's own hand, the public take, seat and state unchanged, and the pending chooser picks after (rev. 4 L122, R23)", async () => {
+    const { harness } = await started();
+    const head = await headState(harness);
+    if (head.phase.type !== "setup_kiln_selection") throw new Error(`expected Setup, found ${head.phase.type}`);
+    const [first, second] = head.phase.selectionOrder;
+    if (first === undefined || second === undefined) throw new Error("expected two choosers");
+    const startingOf = (playerId: string): OrderId[] => [...(head.hidden.orderHands[playerId] ?? [])];
+    expect(startingOf(first)).toHaveLength(GAME_CONFIG.setupDeal.startingOrders);
+    expect(startingOf(second)).toHaveLength(GAME_CONFIG.setupDeal.startingOrders);
+
+    // Before any pick: the first chooser gets its 2 Starting Orders back, and nothing is written.
+    const auditBeforePick = harness.store.audit();
+    const pending = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, first).seatToken }));
+    expect(pending.seat).toEqual(connectionFor(harness, first).seat);
+    expect(pending.ownPrivateView?.orderHand).toEqual(startingOf(first));
+    expect(pending.game?.phase).toEqual({ type: "setup_kiln_selection", selectionOrder: [first, second], index: 0 });
+    expect(harness.store.audit()).toEqual(auditBeforePick);
+
+    const taken = head.market.display[3] as OrderId;
+    const picked = await command(harness, first, { type: "SELECT_KILN", kilnId: "JU", mainOrder: { slotIndex: 3, orderId: taken } });
+    const headBefore = await harness.store.loadHead(harness.roomId);
+    const auditBefore = harness.store.audit();
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      // The chooser's taken Main Order comes back from the head: its private deal record
+      // (ORDERS_DEALT) names only the Starting Orders.
+      const own = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, first).seatToken }));
+      expect(own.seat).toEqual(connectionFor(harness, first).seat);
+      expect([...(own.ownPrivateView?.orderHand ?? [])].sort()).toEqual([...startingOf(first), taken].sort());
+      expect(own.ownSecrets.map((record) => record.event.type)).toContain("ORDERS_DEALT");
+      expect(own.game?.revision).toBe(picked.revision);
+      expect(own.game?.phase).toEqual({ type: "setup_kiln_selection", selectionOrder: [first, second], index: 1 });
+      expect(own.game?.counts.orderHands[first]).toBe(GAME_CONFIG.setupDeal.startingOrders + 1);
+      // The pending chooser gets its own Starting Orders back and sees the public take, never
+      // the first chooser's Starting Orders.
+      const waiting = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, second).seatToken }));
+      expect(waiting.seat).toEqual(connectionFor(harness, second).seat);
+      expect(waiting.ownPrivateView?.orderHand).toEqual(startingOf(second));
+      expect(waiting.game?.revision).toBe(picked.revision);
+      expect(waiting.game?.market.display).not.toContain(taken);
+      for (const orderId of startingOf(first)) {
+        expect(JSON.stringify(waiting)).not.toContain(`"${orderId}"`);
+        expect(JSON.stringify(own.game)).not.toContain(`"${orderId}"`);
+      }
+      for (const orderId of startingOf(second)) expect(JSON.stringify(own)).not.toContain(`"${orderId}"`);
+    }
+    expect(await harness.store.loadHead(harness.roomId)).toEqual(headBefore);
+    expect(harness.store.audit()).toEqual(auditBefore);
+
+    // The pending chooser continues where it left off; the first chooser cannot pick again.
+    const display = (await headState(harness)).market.display;
+    const again = await tryCommand(harness, first, { type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 0, orderId: display[0] as OrderId } });
+    expect(again.ok).toBe(false);
+    const secondPick = await command(harness, second, { type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 0, orderId: display[0] as OrderId } });
+    expect([...(secondPick.ownPrivateView?.orderHand ?? [])].sort()).toEqual([...startingOf(second), display[0] as OrderId].sort());
+    expect(secondPick.game.phase.type).not.toBe("setup_kiln_selection");
   });
 
   it("replays an accepted command by its ID without committing it again", async () => {

@@ -527,7 +527,7 @@ describe("Ge Crackle (rev. 4 L463–465, L641; change 29)", () => {
     expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "standard", crackle: false });
   });
 
-  it("refuses a Masterpiece or a Flawed ceramic (INVALID_TARGET not_fine_or_standard): a Crackle ceramic is never a Masterpiece", () => {
+  it("refuses a Masterpiece or a Flawed ceramic (INVALID_TARGET not_fine_or_standard), so a Crackle ceramic is always Fine (rev. 4 L463)", () => {
     const table = openFiringTable(aqSpec(withTechs([], "GE")));
     tendAll(table);
     for (const ceramicId of ["c1", "c4"]) {

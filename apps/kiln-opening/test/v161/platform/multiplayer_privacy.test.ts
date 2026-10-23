@@ -107,7 +107,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     }
   });
 
-  it("keeps the Commission Market look, a looked reservation and the card put on the deck bottom private (v1.6.2 L195, change 24, B3)", async () => {
+  it("keeps the Commission Market look, a looked reservation and the looked card discarded private (rev. 4 L203, owner ruling R25, B3)", async () => {
     const { harness } = await started();
     let top: OrderId[] = [];
     await seedState(harness, (gameId) => {
@@ -116,7 +116,7 @@ describe("V1.6.2 multiplayer privacy", () => {
       return state;
     });
     expect(top).toHaveLength(2);
-    const [kept, bottomed] = top as [OrderId, OrderId];
+    const [kept, discarded] = top as [OrderId, OrderId];
     const opened = await command(harness, "P1", { type: "PLACE_COMMISSION_MARKET", workerId: "P1:apprentice:1" });
     const look = opened.events.find((event) => event.type === "PRIVATE_LOOK_OPENED");
     expect(look).toMatchObject({ type: "PRIVATE_LOOK_OPENED", playerId: "P1", kind: "commission_market", count: 2 });
@@ -130,12 +130,12 @@ describe("V1.6.2 multiplayer privacy", () => {
     const reserved = result.events.find((event) => event.type === "ORDER_RESERVED");
     expect(reserved).toMatchObject({ type: "ORDER_RESERVED", playerId: "P1", via: "commission_market", source: "looked", orderId: null });
     expect(reserved).not.toHaveProperty("secret");
-    expect(result.events.find((event) => event.type === "LOOKED_ORDERS_TO_BOTTOM")).toMatchObject({ playerId: "P1", count: 1 });
+    expect(result.events.find((event) => event.type === "LOOKED_ORDERS_DISCARDED")).toMatchObject({ playerId: "P1", count: 1 });
     expect(result.ownSecrets.map((record) => record.event)).toContainEqual(
       expect.objectContaining({ type: "ORDER_RESERVED", secret: { visibleTo: "P1", orderId: kept } }),
     );
     expect(result.ownSecrets.map((record) => record.event)).toContainEqual(
-      expect.objectContaining({ type: "LOOKED_ORDERS_TO_BOTTOM", secret: { visibleTo: "P1", orderIds: [bottomed] } }),
+      expect.objectContaining({ type: "LOOKED_ORDERS_DISCARDED", secret: { visibleTo: "P1", orderIds: [discarded] } }),
     );
     expect(result.ownPrivateView?.orderHand).toContain(kept);
     expect(result.ownPrivateView?.pendingLook).toBeNull();
@@ -144,10 +144,68 @@ describe("V1.6.2 multiplayer privacy", () => {
     const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
     expectAbsent(other, top);
     expect(other.game?.counts.orderHands["P1"]).toBe(1);
-    // The unreserved card went to the bottom of the deck, not the discard (change 24): only the
-    // deck count shows it.
-    expect(other.game?.counts.mainDiscard).toBe(0);
-    expect(other.game?.counts.mainDeck).toBe(opened.game.counts.mainDeck + 1);
+    // The unreserved card was discarded face down (R25): only the discard count shows it.
+    expect(other.game?.counts.mainDiscard).toBe(opened.game.counts.mainDiscard + 1);
+    expect(other.game?.counts.mainDeck).toBe(opened.game.counts.mainDeck);
+  });
+
+  it("publishes the Setup Main Order take to every seat while the Starting Orders stay secret (rev. 4 L122, R23)", async () => {
+    const { harness } = await started();
+    const head = await headState(harness);
+    if (head.phase.type !== "setup_kiln_selection") throw new Error(`expected Setup, found ${head.phase.type}`);
+    const chooser = head.phase.selectionOrder[head.phase.index];
+    if (chooser === undefined) throw new Error("no chooser");
+    const other = chooser === "P1" ? "P2" : "P1";
+    const taken = head.market.display[2] as OrderId;
+    const result = await command(harness, chooser, { type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 2, orderId: taken } });
+    expect(result.events.find((event) => event.type === "ORDER_RESERVED")).toEqual({
+      type: "ORDER_RESERVED", playerId: chooser, via: "setup", source: "face_up", slotIndex: 2, orderId: taken,
+    });
+    const reconnect = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, other).seatToken }));
+    expect(reconnect.game?.counts.orderHands[chooser]).toBe(DEALT + 1);
+    // The other seat sees which Order was taken (public rows), never the chooser's Starting Orders.
+    const rows = await harness.store.listPublicEvents(harness.roomId);
+    expect(rows.some((row) => row.event.type === "ORDER_RESERVED" && row.event.orderId === taken)).toBe(true);
+    const after = await headState(harness);
+    const starting = (after.hidden.orderHands[chooser] ?? []).filter((id) => id !== taken);
+    expect(starting).toHaveLength(DEALT);
+    expectAbsent(reconnect, starting);
+    expectAbsent(rows, starting);
+  });
+
+  it("publishes Kiln Master's marker and the Magistrate's Hall Shifu's Crown Order to every seat (rev. 4 L635, L241, R21, R22)", async () => {
+    const { harness } = await started();
+    await seedState(harness, (gameId) =>
+      seatState(2, {
+        gameId,
+        players: [
+          { id: "P1", displayName: "Seat 1", techs: ["T24"], recognition: 1, resources: { clay: 2, wood: 3, coins: 9 }, hand: ["S01"] },
+          { id: "P2", displayName: "Seat 2" },
+        ],
+        display: ["O01", "O02", "O18", "O04", "O05", "O06"],
+        ceramics: [{ owner: "P1", stage: "shaped", shape: "bowl" }],
+      }),
+    );
+    const loaded = await command(harness, "P1", {
+      type: "PLACE_GLAZE_LOAD",
+      workerId: "P1:apprentice:1",
+      loads: [{ ceramicId: "c1", glaze: "celadon", destination: { kiln: "shared", spaceId: "middle_1" }, kilnMaster: 1 }],
+    });
+    expect(loaded.events.find((event) => event.type === "KILN_MASTER_PLACED")).toEqual({ type: "KILN_MASTER_PLACED", playerId: "P1", ceramicId: "c1", value: 1 });
+    await command(harness, "P2", { type: "PLACE_CANAL_WHARF", workerId: "P2:apprentice:1" });
+    const crowned = await command(harness, "P1", { type: "PLACE_MAGISTRATES_HALL", workerId: "P1:shifu", crownOrder: { slotIndex: 2, orderId: "O18" } });
+    expect(crowned.events.find((event) => event.type === "ORDER_RESERVED")).toEqual({
+      type: "ORDER_RESERVED", playerId: "P1", via: "magistrates_hall", source: "face_up", slotIndex: 2, orderId: "O18",
+    });
+    const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
+    expect(other.game?.ceramics["c1"]).toMatchObject({ stage: "loaded", kilnMasterMarker: 1 });
+    expect(other.game?.counts.orderHands["P1"]).toBe(2);
+    // P1's held Starting Order stays secret (P2's own log may name its own earlier deal); the
+    // Crown Order was taken in public.
+    expectAbsent(other.game, ["S01"]);
+    expectAbsent(crowned.game, ["S01"]);
+    expectAbsent(crowned.events, ["S01"]);
+    expect(other.ownPrivateView?.orderHand).toEqual([]);
   });
 
   it("keeps the Canal Wharf Shifu's unseen Main Order private to its owner (v1.6.2 L220, B3)", async () => {

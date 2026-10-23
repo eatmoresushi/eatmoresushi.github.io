@@ -311,14 +311,10 @@ describe("determinism and storage key order (DESIGN §7)", () => {
     expect(plain.state.market.display).toEqual(["O01", "O03", "O04", "O05", "O06", "O10"]);
     expect(plain.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "before_action" } });
     expect(plain.state.hidden.orderHands["p2"]).toEqual(["O15"]);
-    // The swap's discarded Order went face down to the discard (L646); every looked card not
-    // reserved went to the deck bottom (change 24), look by look, each look's cards in random
-    // order (R19): the Commission look's O07 and O09, Colour Samples' O12 and O13, and the swap's
-    // Select 3 (change 25) O14 and O16.
-    expect(plain.state.hidden.mainDiscard).toEqual(["O11"]);
-    const bottom = plain.state.hidden.mainDeck.slice(-6);
-    expect([...bottom.slice(0, 2)].sort()).toEqual(["O07", "O09"]);
-    expect([...bottom.slice(2, 4)].sort()).toEqual(["O12", "O13"]);
-    expect([...bottom.slice(4, 6)].sort()).toEqual(["O14", "O16"]);
+    // Every looked card not reserved was discarded face down (owner ruling R25), look by look in
+    // look order, the last on top: the Commission look's O07 and O09, Colour Samples' O12 and
+    // O13; then the swap's discarded O11 (L646), then its Select 3's (change 25) O14 and O16.
+    expect(plain.state.hidden.mainDiscard).toEqual(["O16", "O14", "O11", "O13", "O12", "O09", "O07"]);
+    for (const id of ["O07", "O09", "O11", "O12", "O13", "O14", "O16"]) expect(plain.state.hidden.mainDeck).not.toContain(id);
   });
 });

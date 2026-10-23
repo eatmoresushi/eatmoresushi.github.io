@@ -40,7 +40,7 @@ function breakdown(state: GameState, playerId: PlayerId): FinalScoreBreakdown {
 }
 
 describe("scoring values are the printed ones", () => {
-  it("Exhibition 2/3/5, +3 Shapes at 3, +3 Glazes at 3; Coins 1 per 3, max 5; 1 VP per Tech; Cabinet +1 max 5", () => {
+  it("Exhibition 2/3/5, +3 Shapes at 3, +3 Glazes at 3; Coins 1 per 3, max 5; no VP per Tech (change 27); Cabinet +1 max 5", () => {
     expect(IMPERIAL_TRACK.exhibition).toEqual({
       minimumQuality: "standard",
       qualityVp: { standard: 2, fine: 3, masterpiece: 5 },
@@ -137,6 +137,27 @@ describe("the total (L490–494)", () => {
       coins: 5,
       total: 20 + 5 + 2 + 6 + 16 + 2 + 5,
     });
+  });
+
+  it("Ge's Crackle VP is recorded Kiln Tradition VP in the final result, never a Crown or a Masterpiece (rev. 4 L465, L487)", () => {
+    const state = game([{ kilnId: "GE", hand: ["O26"] }, { score: { orders: 13 } }]);
+    // p1 delivers 2 Crackle ceramics (both Fine) with O26 (11 VP): 2 Crackle VP.
+    const bowl = fin(state, "p1", "bowl white plain fine crackle");
+    const plate = fin(state, "p1", "plate white carved fine crackle");
+    const record = resolveOrderCompletion(state, "p1", { orderId: "O26", ceramicIds: [bowl, plate] }, testContext());
+    expect(record.crackleVp).toBe(2);
+    player(state, "p1").resources.coins = 0;
+    expect(player(state, "p1").score).toEqual({ orders: 11, kilnAbilities: 2, recognitionOverflow: 0, imperialAudience: 0 });
+    const result = computeFinalResult(state);
+    expect(result.scores["p1"]).toMatchObject({ orders: 11, kilnAbilities: 2, total: 13 });
+    expect(result.scores["p1"]).toEqual(breakdown(state, "p1"));
+    // Level at 13 with p2: no Crown and no Masterpiece from the Crackle ceramics, so every
+    // tie-breaker is level and the victory is shared.
+    expect(result.standings.map((s) => [s.playerId, s.total, s.tieBreak])).toEqual([
+      ["p1", 13, { recognition: 0, printedCrowns: 0, masterpieces: 0 }],
+      ["p2", 13, { recognition: 0, printedCrowns: 0, masterpieces: 0 }],
+    ]);
+    expect(result.resolvedBy).toBe("shared_victory");
   });
 
   it.each([

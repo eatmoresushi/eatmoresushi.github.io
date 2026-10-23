@@ -23,8 +23,8 @@
       "id": "firing",
       "name": "Firing Phase",
       "nameZh": "烧窑阶段",
-      "summary": "Contributions → Base Heat → Test Pieces → Heat markers → Fire → Actual Heat → Quality.",
-      "summaryZh": "控火 → 基础火候 → 火照 → 翻火标 → 翻窑火 → 实际火候 → 定品。"
+      "summary": "Contributions → Base Heat → Fire → Actual Heat → Quality.",
+      "summaryZh": "控火 → 基础火候 → 翻窑火 → 实际火候 → 定品。"
     },
     {
       "order": 4,

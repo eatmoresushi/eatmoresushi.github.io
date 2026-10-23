@@ -118,6 +118,59 @@ describe("strategic computer choices", () => {
     expect(Math.abs(preferredHeat(load.glaze) - (heat + 1))).toBeLessThan(Math.abs(preferredHeat(load.glaze) - heat));
   });
 
+  it("with no Wood for the kiln fuel, loads into its empty Imperial Kiln, which burns none (rev. 4 L197–198, L291, R24)", () => {
+    // Round 5, the Shifu left: the Shared Kiln would cost 1 Wood the seat does not have.
+    const table = work({
+      round: 5,
+      players: [{ kilnId: "GE", recognition: 2, resources: { clay: 9, wood: 0, coins: 9 }, hand: ["S08"] }, { kilnId: "DI" }],
+      ceramics: [{ owner: "p1", stage: "shaped", shape: "bowl" }],
+      placements: [
+        { player: "p1", worker: 1, locationId: "canal_wharf" },
+        { player: "p1", worker: 2, locationId: "canal_wharf" },
+        { player: "p1", worker: 3, locationId: "canal_wharf" },
+      ],
+    });
+    const choice = decide(table);
+    expect(choice.type).toBe("PLACE_GLAZE_LOAD");
+    if (choice.type !== "PLACE_GLAZE_LOAD") return;
+    expect(choice.loads).toHaveLength(1);
+    expect(choice.loads[0]?.destination.kiln).toBe("imperial");
+    play(table, choice);
+    expect(table.player("p1").resources.wood).toBe(0);
+  });
+
+  it("takes Wood for the kiln fuel at the Materials Yard when it has none (rev. 4 L176, L197)", () => {
+    const table = work({ round: 2, players: [{ kilnId: "GE", resources: { clay: 0, wood: 0, coins: 3 }, hand: ["S01", "S05"] }, { kilnId: "DI" }] });
+    const choice = decide(table);
+    expect(choice.type).toBe("PLACE_MATERIALS_YARD");
+    if (choice.type !== "PLACE_MATERIALS_YARD") return;
+    expect(choice.clay + choice.wood).toBe(4);
+    expect(choice.wood).toBeGreaterThanOrEqual(1);
+  });
+
+  it("reserves a face-up Crown Order its finished ceramic completes with its Magistrate's Hall Shifu (rev. 4 L241, L245, R21)", () => {
+    // The Commission Market is full; a Fine Celadon Vase completes O18 (1 Crown) at once.
+    const table = work({
+      round: 2,
+      players: [{ kilnId: "GU", recognition: 1, resources: { clay: 2, wood: 3, coins: 9 }, hand: ["S08"] }, { kilnId: "DI" }],
+      ceramics: [{ owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", quality: "fine" }],
+      display: ["O01", "O02", "O18", "O04", "O05", "O06"],
+      placements: [
+        { player: "p2", worker: 1, locationId: "commission_market" },
+        { player: "p2", worker: 2, locationId: "commission_market" },
+        { player: "p1", worker: 1, locationId: "canal_wharf" },
+        { player: "p1", worker: 2, locationId: "canal_wharf" },
+        { player: "p1", worker: 3, locationId: "canal_wharf" },
+      ],
+    });
+    const choice = decide(table);
+    expect(choice).toEqual({ type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crownOrder: { slotIndex: 2, orderId: "O18" } });
+    play(table, choice);
+    expect(table.state.hidden.orderHands["p1"]).toEqual(["S08", "O18"]);
+    expect(table.player("p1").imperial.recognition).toBe(2);
+    expect(table.player("p1").resources.coins).toBe(5);
+  });
+
   it("spends Imperial Priority with a modifier that makes the Imperial heat exact", () => {
     const table = work({
       players: [{ kilnId: "GE", recognition: 3, hand: ["S02"] }, { kilnId: "DI" }],
@@ -439,7 +492,7 @@ describe("strategic computer choices", () => {
     expect(decide(table)).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 2, orderId: "O02" }] });
   });
 
-  it("swaps an Order it cannot complete with Colour Samples, keeps the looked card it can, and sends the other 2 under the deck (v1.6.2 L622, changes 24–25)", () => {
+  it("swaps an Order it cannot complete with Colour Samples, keeps the looked card it can, and discards the other 2 (v1.6.2 L622, change 25, R25)", () => {
     // O47 needs three new vessels with two Masterpieces; O02 takes the Fine Celadon Plate now.
     // Round 5: the display's big Orders would need vessels fired this very round, so the looked
     // O02 beats them (the Select 3 may take a face-up Order too, change 25).
@@ -458,9 +511,9 @@ describe("strategic computer choices", () => {
     expect(choice).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O02" }] });
     play(table, choice);
     expect(table.state.hidden.orderHands["p1"]).toEqual(["O02"]);
-    // The other 2 looked cards went under the deck, in random order (R19).
-    expect([...table.state.hidden.mainDeck].sort()).toEqual(["O40", "O48"]);
-    expect(table.state.hidden.mainDiscard).toContain("O47");
+    // The other 2 looked cards were discarded above the swapped-out O47 (R25).
+    expect(table.state.hidden.mainDeck).toEqual([]);
+    expect(table.state.hidden.mainDiscard.slice(0, 3)).toEqual(["O40", "O48", "O47"]);
     // Once per round: the next decision is a worker placement.
     expect(decide(table).type).toMatch(/^PLACE_/);
   });
@@ -482,10 +535,11 @@ describe("strategic computer choices", () => {
     expect(choice).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 2, orderId: "O02" }] });
     play(table, choice);
     expect(table.state.hidden.orderHands["p1"]).toEqual(["O02"]);
-    // The position stays empty until the turn ends; the 3 looked cards went under the deck.
+    // The position stays empty until the turn ends; the 3 looked cards were discarded (R25).
     expect(table.state.market.display[2]).toBeNull();
     expect(table.state.market.refillPendingFor).toBe("p1");
-    expect([...table.state.hidden.mainDeck.slice(-3)].sort()).toEqual(["O40", "O43", "O48"]);
+    expect(table.state.hidden.mainDeck).toEqual(["O33"]);
+    expect(table.state.hidden.mainDiscard.slice(0, 3)).toEqual(["O40", "O43", "O48"]);
   });
 
   it("keeps its Colour Samples swap when its only held Order is already complete", () => {

@@ -21,7 +21,8 @@
  * - `unseen`: never shown to the viewer, so they may appear nowhere in its payloads;
  * - `rehidden`: shown once and moved unseen since, such as a face-up Order reserved in public
  *   and then given up face down for a Colour Samples swap (B3, v1.6.2 L641), or a card the
- *   viewer looked at and put under the Main deck (change 24) that another seat then drew. They
+ *   viewer looked at and discarded (`LOOKED_ORDERS_DISCARDED`, owner ruling R25) that came back
+ *   through a Main deck reshuffle and another seat then drew or looked at unseen. They
  *   may appear only in event records (`HISTORY_KEYS`), which are exact copies of authoritative
  *   events and show what the viewer saw when the event happened.
  *
@@ -80,7 +81,7 @@ function stringsIn(value: unknown, into: Set<string>): Set<string> {
  * What `viewerId` knows after `events`, replayed in order:
  * - `everKnown`: every string a public event or one of its own secrets has shown it;
  * - `known`: those whose whereabouts it still knows. Another seat's secret payload (a deal, a
- *   looked or unseen draw, a look, cards put under a deck, a discarded or trimmed Order) names
+ *   looked or unseen draw, a look, looked cards discarded, a discarded or trimmed Order) names
  *   IDs that moved where only that seat saw them go, so the viewer forgets where they are,
  *   until a public event or its own secret shows them again.
  */

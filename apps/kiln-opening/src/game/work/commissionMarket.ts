@@ -9,14 +9,14 @@
  *   whatever the cards are.
  * - `SELECT_CHOOSE` (`work/selectChoose.ts`) then makes the reservations: exactly 1 (Apprentice
  *   effect) or 1–2 (Shifu effect), each a face-up Order or a looked card, in any mix (v1.6.2
- *   L201–204). The looked cards not reserved go face down to the bottom of the Main deck, in
- *   random order (change 24; owner ruling R19). No resource is gained.
+ *   L201–204). The looked cards not reserved are discarded face down to the Main Order discard
+ *   (owner ruling R25, rev. 4 L203). No resource is gained.
  * - A face-up position stays empty until the turn ends (v1.6.2 L197, L395): both of a Shifu's
  *   reservations choose from the Orders showing now, and `work/turn.endTurn` refills once.
  * - Placement legality reads public counts only (`market.reservable`): a display Order or a
  *   non-empty deck plus discard, so at least 1 reservation always exists (L144, B1).
  * - Looked identities are private (B3): `PRIVATE_LOOK_OPENED.secret`, `ORDER_RESERVED.secret`
- *   and `LOOKED_ORDERS_TO_BOTTOM.secret`; public payloads carry counts and face-up IDs only.
+ *   and `LOOKED_ORDERS_DISCARDED.secret`; public payloads carry counts and face-up IDs only.
  *
  * Layer 4 (P4). Imports layers 0–3 and the Select model; the reservation hands over through
  * `ctx.flow.workerActionDone` in `work/selectChoose.ts`.

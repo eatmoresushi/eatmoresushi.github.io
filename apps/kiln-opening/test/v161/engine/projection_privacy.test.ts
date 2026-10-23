@@ -253,7 +253,7 @@ describe("events (DESIGN §4.4)", () => {
     { type: "ORDER_RESERVED", playerId: "p2", via: "commission_market", source: "looked", slotIndex: null, orderId: null, secret: { visibleTo: "p2", orderId: "O31" } },
     { type: "ORDER_RESERVED", playerId: "p2", via: "canal_wharf", source: "deck_top", slotIndex: null, orderId: null, secret: { visibleTo: "p2", orderId: "O33" } },
     { type: "PRIVATE_LOOK_OPENED", playerId: "p2", kind: "commission_market", discipline: null, count: 3, secret: { visibleTo: "p2", orderIds: ["O30", "O31", "O32"], techIds: [] } },
-    { type: "LOOKED_ORDERS_TO_BOTTOM", playerId: "p2", count: 2, secret: { visibleTo: "p2", orderIds: ["O30", "O32"] } },
+    { type: "LOOKED_ORDERS_DISCARDED", playerId: "p2", count: 2, secret: { visibleTo: "p2", orderIds: ["O30", "O32"] } },
     { type: "HELD_ORDER_DISCARDED", playerId: "p2", cause: "colour_samples_swap", to: "main_discard", secret: { visibleTo: "p2", orderId: "O34" } },
     { type: "PRIVATE_LOOK_OPENED", playerId: "p2", kind: "colour_samples_swap", discipline: null, count: 2, secret: { visibleTo: "p2", orderIds: ["O35", "O36"], techIds: [] } },
     { type: "ORDER_RESERVED", playerId: "p2", via: "colour_samples_swap", source: "looked", slotIndex: null, orderId: null, secret: { visibleTo: "p2", orderId: "O35" } },

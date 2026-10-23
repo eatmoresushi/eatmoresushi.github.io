@@ -176,7 +176,7 @@ describe("Prepared Clay (T17, rev. 4 L605): after gaining, form 1 vessel for its
     reject(table(), "p1", my("p1:apprentice:1", 4, 0, { preparedClay: { shape: "plate", decoration: "plain" } }), "TECH_NOT_OWNED");
   });
 
-  it("Decorator's Kit may reduce its Coins when Carved, Impressed or Painted (audit INT; rev. 4 L603; branch kept although L211 makes it unreachable)", () => {
+  it("Decorator's Kit may reduce its Coins when Carved, Impressed or Painted (audit INT; rev. 4 L603; branch kept although rev. 4 L222's 1-per-discipline limit makes it unreachable)", () => {
     // T16 and T17 are both Workshop Techs, so no legal fixture owns both; the quote is pure,
     // so the branch is checked on a hand-built view.
     const state = buildState({ players: [{ techs: ["T17"] }, {}] });

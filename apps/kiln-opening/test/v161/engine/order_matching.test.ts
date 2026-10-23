@@ -1,13 +1,15 @@
 /**
  * P6 `orders/matching.ts` and the matching half of `orders/completion.validateOrderCompletion`
- * (L406–423, L470, L485, L654, R6; DESIGN §6.6, §8.2).
+ * (L406–423, L485; rev. 4 L463, L465, L480; DESIGN §6.6, §8.2).
  *
  * - Table-driven: every one of the 8 Starting (v1.6.2 change 23) and 48 Main Orders has a
  *   passing selection and a near miss with the expected mismatch reason, including S07's
  *   Decoration alternative (Carved, Impressed or Painted).
  * - Independent multi-ceramic requirements (L423), every relation in `data/orders.json`.
  * - Crackle wildcards: search mode (fixed order, first hit recorded) and declared mode (used
- *   exactly), both error codes, never a Masterpiece.
+ *   exactly), both error codes; a Crackle ceramic is Fine, so a Masterpiece requirement
+ *   refuses it with the ordinary `masterpiece_required` (change 29 dropped the separate
+ *   "never a Masterpiece" reason).
  */
 
 import { describe, expect, it } from "vitest";
@@ -103,7 +105,7 @@ const TABLE: Row[] = [
   ["O09", ["censer moon_white painted fine"], ["censer grey_green painted fine"], "glaze_mismatch"],
   ["O10", ["bowl white plain fine"], ["bowl white painted fine"], "decoration_mismatch"],
   ["O11", ["bowl white carved mp"], ["bowl white carved fine"], "masterpiece_required"],
-  ["O12", ["plate white impressed mp"], ["plate white plain fine crackle"], "crackle_not_masterpiece"],
+  ["O12", ["plate white impressed mp"], ["plate white plain fine crackle"], "masterpiece_required"],
   ["O13", ["vase celadon painted mp"], ["vase celadon painted fine"], "masterpiece_required"],
   ["O14", ["plate white plain fine"], ["censer white plain fine"], "shape_mismatch"],
   ["O15", ["vase white plain fine"], ["washer white plain fine"], "shape_mismatch"],
@@ -114,7 +116,7 @@ const TABLE: Row[] = [
   ["O20", ["bowl moon_white carved fine"], ["plate moon_white carved fine"], "shape_mismatch"],
   ["O21", ["plate white plain mp"], ["plate white plain fine"], "masterpiece_required"],
   ["O22", ["censer celadon plain mp"], ["censer celadon carved mp"], "decoration_mismatch"],
-  ["O23", ["vase grey_green painted mp"], ["vase grey_green painted fine crackle"], "crackle_not_masterpiece"],
+  ["O23", ["vase grey_green painted mp"], ["vase grey_green painted fine crackle"], "masterpiece_required"],
   ["O24", ["bowl moon_white plain mp"], ["bowl white plain mp"], "glaze_mismatch"],
   // A2 Main two-ceramic Orders
   ["O25", ["bowl white plain std", "plate white plain std"], ["bowl white plain std", "bowl celadon carved fine"], "shape_mismatch"],
@@ -371,13 +373,13 @@ describe("Crackle wildcard: search mode", () => {
     expect(explainOrderMismatch(ORDERS.O20, set("bowl white carved fine crackle"))?.reason).toBe("glaze_mismatch");
   });
 
-  it("a Crackle ceramic is never a Masterpiece (L470, L654)", () => {
+  it("a Crackle ceramic is Fine, so a Masterpiece requirement refuses it as masterpiece_required (rev. 4 L463, change 29)", () => {
     expect(matchOrder(ORDERS.O13, set("vase celadon plain fine crackle"))).toBeNull();
-    expect(explainOrderMismatch(ORDERS.O13, set("vase celadon plain fine crackle"))?.reason).toBe("crackle_not_masterpiece");
-    // O32 needs ≥1 Masterpiece: a Crackle partner cannot supply it.
+    expect(explainOrderMismatch(ORDERS.O13, set("vase celadon plain fine crackle"))?.reason).toBe("masterpiece_required");
+    // O32 needs ≥1 Masterpiece: a Fine Crackle partner cannot supply it.
     const o32 = set("vase white plain fine crackle", "bowl white carved fine");
     expect(matchOrder(ORDERS.O32, o32)).toBeNull();
-    expect(explainOrderMismatch(ORDERS.O32, o32)?.reason).toBe("crackle_not_masterpiece");
+    expect(explainOrderMismatch(ORDERS.O32, o32)?.reason).toBe("masterpiece_required");
     // With a real Masterpiece partner, the Crackle wildcard fills the Decoration side.
     const ok = set("vase white plain fine crackle", "bowl white plain mp");
     expect(matchOrder(ORDERS.O32, ok)?.crackleDeclarations).toEqual([{ ceramicId: "c1", decoration: "carved" }]);

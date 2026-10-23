@@ -400,6 +400,12 @@ export interface FuzzResult {
    * `kiln_master` (T24 at loading, R22), `pair`, `imperial`, and `crown_order` (the Magistrate's
    * Hall Shifu's optional Crown Order, R21). */
   loadFeatures: Map<string, number>;
+  /** Revision-4 and R25 moments: `setup_take` (the public Setup Main Order take, R23),
+   * `looked_discarded` (a Select's unreserved looked cards discarded, R25), `reshuffle_look` (the
+   * Main discard shuffled into a new deck as a look starts, rev. 4 L506, R16), `reshuffle_draw`
+   * (the same for a display refill or the Canal Wharf Shifu's draw), `flawed_sale` (R20) and
+   * `crackle_vp` (an Order completed with a Crackle ceramic, change 29). */
+  deckEvents: Map<string, number>;
 }
 
 function label(options: FuzzOptions): string {
@@ -434,7 +440,23 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
   const kilnUses = new Map<string, number>();
   const phases = new Map<string, number>();
   const loadFeatures = new Map<string, number>();
+  const deckEvents = new Map<string, number>();
   const count = <K>(map: Map<K, number>, key: K) => map.set(key, (map.get(key) ?? 0) + 1);
+  const countDeckEvents = (events: readonly GameEvent[]): void => {
+    events.forEach((event, index) => {
+      if (event.type === "ORDER_RESERVED" && event.via === "setup") count(deckEvents, "setup_take");
+      else if (event.type === "LOOKED_ORDERS_DISCARDED" && event.count > 0) count(deckEvents, "looked_discarded");
+      else if (event.type === "CERAMIC_SOLD") count(deckEvents, "flawed_sale");
+      else if (event.type === "ORDER_COMPLETED" && (event.record.crackleVp ?? 0) > 0) count(deckEvents, "crackle_vp");
+      else if (event.type === "MAIN_DECK_RESHUFFLED") {
+        // What needed the card: the next look, refill or unseen draw in the same command.
+        const next = events.slice(index + 1).find((later) =>
+          later.type === "PRIVATE_LOOK_OPENED" || later.type === "DISPLAY_REFILLED" || (later.type === "ORDER_RESERVED" && later.source === "deck_top"));
+        count(deckEvents, next?.type === "PRIVATE_LOOK_OPENED" ? "reshuffle_look" : "reshuffle_draw");
+      }
+    });
+  };
+  countDeckEvents(table.events);
 
   const createdViolations = eventPrivacyViolations(table.state, table.state, table.events);
   if (createdViolations.length > 0) {
@@ -554,6 +576,7 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
     if (privacy.length > 0) {
       throw new Error(`${context} after ${command.type}: ${privacy.join("; ")}`);
     }
+    countDeckEvents(events);
     for (const event of events) {
       if (event.type === "TECH_USED") {
         count(techUses, event.techId);
@@ -580,7 +603,7 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
       count(techUses, "T19");
     }
   }
-  return { table, initial, initialRngState, commands, families, techUses, kilnUses, phases, loadFeatures };
+  return { table, initial, initialRngState, commands, families, techUses, kilnUses, phases, loadFeatures, deckEvents };
 }
 
 /** End-of-game checks (DESIGN §8.3 "At the end"); returns violations. */
