@@ -16,5 +16,9 @@ export default defineConfig({
     // Several suites play complete authoritative games; CI runners are far slower than a
     // dev machine, and Vitest's 5s default left the slowest under a second of headroom.
     testTimeout: 30_000,
+    // One event-loop turn after every test, so a long file can never starve Vitest's fixed 60 s
+    // worker RPC: "[vitest-worker]: Timeout calling onTaskUpdate" failed the Pages deploy of #25
+    // with every test passing (2026-10-24; see the setup file).
+    setupFiles: ["test/setup/yieldEventLoop.ts"],
   },
 });
