@@ -47,9 +47,9 @@ import type {
 
 const IMPERIAL_MODIFIERS = [-1, 0, 1] as const satisfies readonly ImperialModifier[];
 const KILN_FURNITURE_MODIFIERS = [-1, 0, 1] as const satisfies readonly KilnFurnitureModifier[];
-/** Jun's adjustment and Kiln Master's marker (rev. 4 L628). */
+/** Jun's adjustment and Kiln Master's marker (L647). */
 const HEAT_DELTAS = [1, -1] as const satisfies readonly HeatDelta[];
-/** Second Firing's 2 revealed cards (v1.6.2 L639). */
+/** Second Firing's 2 revealed cards (v1.6.2 L646). */
 const SECOND_FIRING_CARD_INDEXES = [0, 1] as const;
 
 /** Compile-time proof that each literal list names every member of its union. */
@@ -192,8 +192,8 @@ const glazeOf = (value: unknown, field: string) => oneOf(value, GLAZES, field);
 const decorationOf = (value: unknown, field: string) => oneOf(value, DECORATIONS, field);
 const heatDelta = (value: unknown, field: string) => oneOf(value, HEAT_DELTAS, field);
 
-/** A face-up display pick: the Setup Main Order (rev. 4 L122) or the Magistrate's Hall Shifu's
- * Crown Order (rev. 4 L241). Whether the position still shows that Order is a rule check. */
+/** A face-up display pick: the Setup Main Order (L130) or the Magistrate's Hall Shifu's
+ * Crown Order (L259). Whether the position still shows that Order is a rule check. */
 function displayPick(value: unknown, field: string): { slotIndex: number; orderId: OrderId } {
   const o = objectAt(value, field);
   shape(o, field, ["slotIndex", "orderId"]);
@@ -243,7 +243,7 @@ function loadSpec(value: unknown, field: string): LoadSpec {
   };
 }
 
-/** One reservation of a Select (v1.6.2 L64). The count (0, or more than the Select allows) is a
+/** One reservation of a Select (v1.6.2 L80). The count (0, or more than the Select allows) is a
  * rule error of the validator (`RESERVATION_REQUIRED`, `RESERVATION_LIMIT`), not a shape error. */
 function selectPick(value: unknown, field: string): SelectPick {
   const o = objectAt(value, field);

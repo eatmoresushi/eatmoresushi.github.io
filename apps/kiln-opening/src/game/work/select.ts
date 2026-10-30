@@ -1,21 +1,21 @@
 /**
- * The keyword **Select N** (rev. 4 L72, change 25; component text, keyword lines 3 and 5): look
+ * The keyword **Select N** (L80, change 25; component text, keyword lines 3 and 5): look
  * at the top N cards of the Main Order deck, then reserve 1 of them or 1 face-up Main Order from
  * the display; discard the rest of the N (owner ruling R25). One model for every Select:
  *
  * | Select | N | Reservations | Opened by |
  * | --- | --- | --- | --- |
- * | Commission Market, Apprentice effect (v1.6.2 L201) | 2 | 1 | `PLACE_COMMISSION_MARKET` |
- * | Commission Market, Shifu effect incl. Senior Apprentice (v1.6.2 L202, R12) | 3 | up to 2, any mix | `PLACE_COMMISSION_MARKET` |
- * | Colour Samples when acquired (v1.6.2 L622, R4) | 3 | 1 | the Guild Hall take of T10 |
- * | Colour Samples swap (v1.6.2 L622, R17) | 3 | 1 | `USE_COLOUR_SAMPLES_SWAP` |
+ * | Commission Market, Apprentice effect (v1.6.2 L225) | 2 | 1 | `PLACE_COMMISSION_MARKET` |
+ * | Commission Market, Shifu effect incl. Senior Apprentice (v1.6.2 L226, R12) | 3 | up to 2, any mix | `PLACE_COMMISSION_MARKET` |
+ * | Colour Samples when acquired (v1.6.2 L632, R4) | 3 | 1 | the Guild Hall take of T10 |
+ * | Colour Samples swap (v1.6.2 L632, R17) | 3 | 1 | `USE_COLOUR_SAMPLES_SWAP` |
  *
  * Every Select may reserve a face-up Main Order instead of a looked card (`SelectSpec.fromDisplay`
  * is true for all four). A face-up position taken stays empty until the end of the turn, then the
- * display refills as usual (`work/turn.endTurn`, v1.6.2 L197, L395). The looked cards not
+ * display refills as usual (`work/turn.endTurn`, v1.6.2 L221, L405). The looked cards not
  * reserved are discarded face down to the Main Order discard (owner ruling R25, 2026-10-23,
- * which reverses change 24's deck bottom and makes R19 obsolete; rev. 4 L203), so the deck runs
- * out in long games and the discard is reshuffled when a card is needed (rev. 4 L506). A look
+ * which reverses change 24's deck bottom and makes R19 obsolete; L221), so the deck runs
+ * out in long games and the discard is reshuffled when a card is needed (L525). A look
  * shows as many cards as remain and never reshuffles to complete itself (B1, R16); a Select whose
  * look shows no card can still reserve from the display. Which cards were looked at, reserved
  * from the look or discarded is private to the looker (B3); the public sees the counts and the
@@ -55,7 +55,7 @@ type SelectLook = Extract<PendingLook, { kind: SelectLookKind }>;
 export type WaitingInspection = { discipline: TechDiscipline; techIds: TechId[] } | null;
 
 /** A Select's spec: N, the reservations allowed and the cards its look showed (B1). The display
- * option is part of every Select (v1.6.2 L64). */
+ * option is part of every Select (v1.6.2 L80). */
 export function selectSpec(n: number, maxReservations: number, lookedCount: number): SelectSpec {
   invariant(n === 2 || n === 3, `A Select looks at 2 or 3 cards, not ${n}`);
   invariant(maxReservations === 1 || maxReservations === 2, `A Select reserves 1 or 2 Orders, not ${maxReservations}`);
@@ -200,7 +200,7 @@ export function resolveSelectPicks(
       });
     }
   }
-  // Discard the rest of the N face down (rev. 4 L72, L203; owner ruling R25). The secret names
+  // Discard the rest of the N face down (L80, L221; owner ruling R25). The secret names
   // them in look order.
   const rest = look.orderIds.filter((orderId) => !reservedLooked.has(orderId));
   draft.hidden.pendingLook = null;

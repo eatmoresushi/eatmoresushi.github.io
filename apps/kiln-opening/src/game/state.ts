@@ -73,7 +73,7 @@ export function player(game: PublicCore, playerId: PlayerId): PlayerState {
 
 // ── Turn order and decisions ─────────────────────────────────────────────────────────
 
-/** First Player, then clockwise (L136, L378). */
+/** First Player, then clockwise (L158, L393). */
 export function turnOrder(game: PublicCore): PlayerId[] {
   const order = game.playerOrder;
   const start = order.indexOf(game.firstPlayerId);
@@ -148,7 +148,7 @@ export function workStep<K extends WorkTurnStep["kind"]>(
   return phase.step as Extract<WorkTurnStep, { kind: K }>;
 }
 
-/** The Work-turn steps that hold an open Select (v1.6.2 L64, change 25). */
+/** The Work-turn steps that hold an open Select (v1.6.2 L80, change 25). */
 export type SelectStep = Extract<WorkTurnStep, { kind: "commission_market" | "colour_samples" | "colour_samples_swap" }>;
 
 /** The current Work-turn step if it holds an open Select (the Commission Market, Colour Samples
@@ -170,7 +170,7 @@ export function lookOrderIds(look: PendingLook | null): OrderId[] {
 /**
  * The Techs a pending look holds: a Guild Hall Shifu's inspected Techs not yet taken, also
  * while they wait in a Colour Samples look the Shifu opened by taking Colour Samples
- * (v1.6.2 L207, L214).
+ * (v1.6.2 L237, L243).
  */
 export function lookTechIds(look: PendingLook | null): TechId[] {
   if (look === null) {
@@ -201,7 +201,7 @@ export function canAfford(resources: ResourceState, cost: Partial<ResourceState>
 }
 
 /**
- * Adds resources (supply is unlimited, L502) and emits `RESOURCES_CHANGED` with the
+ * Adds resources (supply is unlimited, L516) and emits `RESOURCES_CHANGED` with the
  * positive deltas. No event when every amount is 0.
  */
 export function gain(
@@ -297,7 +297,7 @@ const PROXY_PATTERN = /-proxy-[1-9][0-9]*$/;
 
 /**
  * Takes the top Vessel card of a Shape, or mints a proxy when that supply is empty
- * (Vessel cards are not a limit, L329). Used by `formCeramic` and by Reworking Table.
+ * (Vessel cards are not a limit, L350). Used by `formCeramic` and by Reworking Table.
  */
 export function takeVesselCard(draft: GameState, shape: Shape): VesselInstanceId {
   const card = draft.vesselSupply[shape].shift();
@@ -358,13 +358,13 @@ export function loadedCeramics(game: PublicCore): LoadedCeramic[] {
   return ceramicsInOrder(game).filter((c): c is LoadedCeramic => c.stage === "loaded");
 }
 
-/** The loaded ceramic of this player carrying the Kiln Master marker (T24, rev. 4 L628), else
+/** The loaded ceramic of this player carrying the Kiln Master marker (T24, L647), else
  * null. There is one T24 tile, so at most one carrier in the game. */
 export function kilnMasterCarrier(game: PublicCore, playerId: PlayerId): LoadedCeramic | null {
   return loadedCeramics(game).find((c) => c.ownerId === playerId && c.kilnMasterMarker !== null) ?? null;
 }
 
-/** This firing's ceramic in the player's Imperial Kiln, if any (L287). */
+/** This firing's ceramic in the player's Imperial Kiln, if any (L308). */
 export function imperialKilnCeramic(game: PublicCore, playerId: PlayerId): LoadedCeramic | null {
   return loadedCeramics(game).find((c) => c.ownerId === playerId && c.placement.kiln === "imperial") ?? null;
 }

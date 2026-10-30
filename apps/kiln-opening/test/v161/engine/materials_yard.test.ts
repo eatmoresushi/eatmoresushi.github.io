@@ -1,9 +1,9 @@
 /**
- * Materials Yard (rev. 4 L172–177, change 34): the Apprentice effect's 4 and the Shifu effect's 8
- * Clay/Wood, Senior Apprentice (T18, rev. 4 L606, R12) and Prepared Clay (T17, rev. 4 L605: the
+ * Materials Yard (L190–195, change 34): the Apprentice effect's 4 and the Shifu effect's 8
+ * Clay/Wood, Senior Apprentice (T18, L625, R12) and Prepared Clay (T17, L624: the
  * Shape's Clay +1 and 2 Coins, any Decoration), resolved split → Prepared Clay against the
  * running totals (DESIGN §3.5). V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood option.
- * Starting resources are 2 Clay, 3 Wood and 3 Coins (rev. 4 L125, change 35).
+ * Starting resources are 2 Clay, 3 Wood and 3 Coins (L133, change 35).
  */
 
 import { describe, expect, it } from "vitest";
@@ -31,7 +31,7 @@ function my(workerId: string, clay: number, wood: number, extra: Partial<Omit<MY
   return { type: "PLACE_MATERIALS_YARD", workerId, clay, wood, ...extra };
 }
 
-describe("Apprentice effect: 4 Clay/Wood in any mix (rev. 4 L176)", () => {
+describe("Apprentice effect: 4 Clay/Wood in any mix (L194)", () => {
   it.each([
     [4, 0],
     [0, 4],
@@ -70,7 +70,7 @@ describe("Apprentice effect: 4 Clay/Wood in any mix (rev. 4 L176)", () => {
   });
 });
 
-describe("Shifu effect: 8 Clay/Wood in any mix, no Coin option (rev. 4 L177)", () => {
+describe("Shifu effect: 8 Clay/Wood in any mix, no Coin option (L195)", () => {
   it.each([0, 1, 2, 3, 4, 5, 6, 7, 8])("gains %i Clay and the rest as Wood, in one event, with no Coin spent", (clay) => {
     const t = table();
     const events = t.act("p1", my("p1:shifu", clay, 8 - clay));
@@ -96,7 +96,7 @@ describe("Shifu effect: 8 Clay/Wood in any mix, no Coin option (rev. 4 L177)", (
   });
 });
 
-describe("Senior Apprentice (T18, rev. 4 L606, R12): an Apprentice resolves the whole Shifu effect", () => {
+describe("Senior Apprentice (T18, L625, R12): an Apprentice resolves the whole Shifu effect", () => {
   it("gains 8 and uses T18 once", () => {
     const t = table({ players: [{ techs: ["T18"] }, {}] });
     const events = t.act("p1", my("p1:apprentice:1", 2, 6, { seniorApprentice: true }));
@@ -126,7 +126,7 @@ describe("Senior Apprentice (T18, rev. 4 L606, R12): an Apprentice resolves the 
   });
 });
 
-describe("Prepared Clay (T17, rev. 4 L605): after gaining, form 1 vessel for its Clay +1 and 2 Coins", () => {
+describe("Prepared Clay (T17, L624): after gaining, form 1 vessel for its Clay +1 and 2 Coins", () => {
   it("spends Clay gained by the same action and forms a Shaped vessel (a Tech effect, not F&D)", () => {
     const t = table({ players: [{ techs: ["T17"], resources: { clay: 0 } }, {}] });
     const events = t.act("p1", my("p1:apprentice:1", 3, 1, { preparedClay: { shape: "vase", decoration: "painted" } }));
@@ -142,7 +142,7 @@ describe("Prepared Clay (T17, rev. 4 L605): after gaining, form 1 vessel for its
       formedBy: "prepared_clay",
     });
     expect(ceramicsOf(t.state, "p1", "shaped")).toMatchObject([{ id: "c1", shape: "vase", decoration: "painted", formedBy: "prepared_clay" }]);
-    // Not a Form & Decorate action (L646): no personal space was used.
+    // Not a Form & Decorate action (L652): no personal space was used.
     expect(nextPersonalSpace(t.state, "p1", "form_decorate")).toBe(0);
     expectPublicEvents(events);
   });
@@ -176,7 +176,7 @@ describe("Prepared Clay (T17, rev. 4 L605): after gaining, form 1 vessel for its
     reject(table(), "p1", my("p1:apprentice:1", 4, 0, { preparedClay: { shape: "plate", decoration: "plain" } }), "TECH_NOT_OWNED");
   });
 
-  it("Decorator's Kit may reduce its Coins when Carved, Impressed or Painted (audit INT; rev. 4 L603; branch kept although rev. 4 L222's 1-per-discipline limit makes it unreachable)", () => {
+  it("Decorator's Kit may reduce its Coins, any Decoration (audit INT; rev. 5 L622, change 37; branch kept although L240's 1-per-discipline limit makes it unreachable)", () => {
     // T16 and T17 are both Workshop Techs, so no legal fixture owns both; the quote is pure,
     // so the branch is checked on a hand-built view.
     const state = buildState({ players: [{ techs: ["T17"] }, {}] });
@@ -197,12 +197,12 @@ describe("Prepared Clay (T17, rev. 4 L605): after gaining, form 1 vessel for its
         { kind: "decorators_kit", resource: "coins", amount: -1, itemIndex: null },
       ],
     });
+    // Since change 37 the Kit reduces any vessel, a Plain one included (rev. 5 L622).
     const plain = quoteMaterialsYard(
       actorViewOf(state, "p1"),
       my("p1:apprentice:1", 4, 0, { preparedClay: { shape: "censer", decoration: "plain", useDecoratorsKit: true } }),
     );
-    expect(plain.error?.code).toBe("INVALID_VESSEL_CHOICE");
-    expectDocumentedDetails(plain.error);
+    expect(plain).toMatchObject({ ok: true, error: null, pay: { clay: 3, wood: 0, coins: 1 } });
     const noKit = buildState({ players: [{ techs: ["T17"] }, {}] });
     const quoteNoKit = quoteMaterialsYard(
       actorViewOf(noKit, "p1"),

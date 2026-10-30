@@ -1,11 +1,11 @@
 /**
- * `SELECT_CHOOSE`: the reservations of an open Select (v1.6.2 L64, change 25; the model is
+ * `SELECT_CHOOSE`: the reservations of an open Select (v1.6.2 L80, change 25; the model is
  * `work/select.ts`). One command for every Select, continued by the step that opened it:
  *
- * - `commission_market` (v1.6.2 L201–204): the worker action ends (`ctx.flow.workerActionDone`);
- * - `colour_samples`, when acquired (v1.6.2 L622): the Guild Hall Shifu's inspection resumes, or
+ * - `commission_market` (v1.6.2 L225–228): the worker action ends (`ctx.flow.workerActionDone`);
+ * - `colour_samples`, when acquired (v1.6.2 L632): the Guild Hall Shifu's inspection resumes, or
  *   the Apprentice's action ends (`guildHall.afterColourSamples`);
- * - `colour_samples_swap` (v1.6.2 L622, L646): back to the window the swap was used in, then
+ * - `colour_samples_swap` (v1.6.2 L632, L656): back to the window the swap was used in, then
  *   `work/turn.afterWindowAbilityUsed`, which ends the turn after the worker action when the
  *   window has nothing left.
  *

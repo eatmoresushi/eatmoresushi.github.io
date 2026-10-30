@@ -71,11 +71,12 @@ describe("the V1.6.2 rulebook is the source of truth", () => {
    * Select N, Fuel Ledger as cards, no Tech VP) and owner revision 4 of 2026-10-22/23 (changes
    * 28–35: no Heat marker, Ge, the quick wins, the chosen starting Main Order, the Magistrate's
    * Hall Shifu, kiln fuel) with owner ruling R25's edit (a Select discards the looked cards it
-   * does not reserve). */
+   * does not reserve), and owner revision 5 of 2026-10-28 (changes 36–42: free actions,
+   * Decorator's Kit for any vessel, four prices, Ge on any ceramic, Ding's vessel at 2 Coins). */
   const V162_FILES: ReadonlyArray<readonly [string, string]> = [
-    [SOURCE_PATH, "4a6647d16ce5a6152a8045f3ec64d624d00d34a2a248885ebcaeff73978f242a"],
-    ["docs/KILN_OPENING_v1.6.2_ZH.md", "dcbc6eedd801fb8da9f102007a4605cdf0a04e32e06a10099a542223f3106eb5"],
-    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "e55d2582ed9cde84875e0ecc10c0923cf9672d44a4c27d4822ac1c2fbe9c371f"],
+    [SOURCE_PATH, "387bf0630ed116cce6bdb80a2ca4fbae11d2e65a1684d0a164f63c5e015e8070"],
+    ["docs/KILN_OPENING_v1.6.2_ZH.md", "ee841679feaf062e1b4489ba9c11ddd63f6414c79823981a81132bdcca141dea"],
+    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "f2220d7cf3a06346691633d9e62f5de42562c3ec37c698a8ed2c5da5fe5aebe0"],
   ];
 
   it.each(V162_FILES)("%s matches the checksum the audit records", (path, expected) => {
@@ -174,7 +175,7 @@ describe("every data file is V1.6.2 content with current IDs only", () => {
     [/buyShifuBonus|"bonus"\s*:/, "Materials Yard Shifu bonus"],
     [/"blind"|look_top_three|commission_top_three|topThreeLooks/, "blind reservation or Commission top-3 selection"],
     [/gainAfterEach/, "Commission Market resource"],
-    // Owner revision 2026-10-17 (v1.6.2 L207, L714): the Guild Hall Shifu pays the printed cost.
+    // Owner revision 2026-10-17 (v1.6.2 L237, L713): the Guild Hall Shifu pays the printed cost.
     [/"discount"\s*:|Coins? less, minimum 0|少付2铜钱/, "Guild Hall Shifu discount"],
     // Owner revision 2 (v1.6.2 change 23): an 8-card Starting deck.
     [/"S(?:09|1[0-6])"/, "retired Starting Order ID (S09–S16)"],
@@ -199,7 +200,34 @@ describe("every data file is V1.6.2 content with current IDs only", () => {
     [/decorationCost|Decoration cost table|a Decoration cost\b|Every Decoration costs|纹饰费|纹饰减免/, "Decoration costs (change 30)"],
     [/seat Coin|extra Coin|座次铜钱/, "the seat Coin (withdrawn by change 35)"],
     [/never a Masterpiece|永远不是臻品|永远不算臻品/, "Ge's 'never a Masterpiece' clause (change 29)"],
+    // Owner revision 5 (changes 36–42): Orders are completed as free actions, not only in the
+    // Order Phase; a Flawed ceramic is sold only in a free-action window (not "at any time", not in
+    // the after-Quality step or at Cleanup, I1); Decorator's Kit reduces any vessel; Ding's vessel
+    // costs 1 Clay + 2 Coins with no no-discount clause; Ge crackles any ceramic of the firing; the
+    // withdrawn draft's Wood-in-hand note. (The four Tech prices are pinned numerically by the
+    // content contract; no data prose states a price.)
+    [/only in the Order Phase|the only time Orders are completed|only place Orders are completed|while completing an Order in the Order Phase|只在交货阶段|只有交货阶段才能完成|在交货阶段完成委托时/, "Order completion only in the Order Phase (change 36)"],
+    [/(?:sold?|sell)[^."。]{0,40}at any time|随时[^。"]{0,12}卖出|after-Quality turn included|定品后回合|(?:sold?|sell)[^."]{0,40}(?:during|in) (?:the |your |its owner's )?(?:after-Quality|Cleanup|hand trim)|(?:定品后|收工时)[^。"]{0,12}卖出/i, "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+    [/with a Carved, Impressed or Painted Decoration costs|刻花、印花或画花的坯少付/, "Decorator's Kit's Decoration condition (change 37)"],
+    [/1 Clay (?:and|\+) 1 Coin|1泥和1铜钱|1泥1铜钱|1-Coin (?:extra )?vessel|1铜钱额外坯|no (?:further )?discounts?\b|不享减免|takes neither|两项都不适用|not one of the 2 vessels|不算师傅减免/, "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
+    [/Fine or Standard|上品或良品/, "Ge limited to a Fine or Standard ceramic (change 39)"],
+    [/must be in hand when|必须在烧窑开始时已在手中|柴必须在手/, "the withdrawn Wood-in-hand note (changes 38, 41)"],
   ];
+
+  it("would catch the revision-4 wording that revision 5 retired (positive controls)", () => {
+    const samples = [
+      "You gain its 2 Coins in the Order Phase, the only time Orders are completed.",
+      "Ru triggers while completing an Order in the Order Phase.",
+      "你可以在自己的回合中以2铜钱卖出瑕品，包括你的定品后回合。",
+      "A Flawed ceramic may be sold at any time for 2 Coins.",
+      "a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less",
+      "you may pay 1 Clay and 1 Coin to form one additional vessel",
+      "Ding's vessel takes neither.",
+      "选择你本次烧成中的1件上品或良品",
+      "自由行动现注明烧窑所需的柴必须在烧窑开始时已在手中。",
+    ];
+    for (const sample of samples) expect(RETIRED.some(([pattern]) => pattern.test(sample)), sample).toBe(true);
+  });
 
   it.each(DATA_FILES)("%s names no retired ID or mechanic", (file) => {
     // Legacy art file names under the approved directory are stable paths, not IDs.
@@ -259,7 +287,7 @@ describe("the V1.6.2 asset contract (data/asset_specs.json)", () => {
     const distribution = Object.fromEntries([-2, -1, 0, 1, 2].map((m) => [String(m), FIRING.fireDeck.filter((card) => card === m).length]));
     expect(ASSETS.fireCards.distribution).toEqual(distribution);
     expect(ASSETS.fireCards.totalCards).toBe(FIRING.fireDeck.length);
-    // 3 per player and Fuel Ledger's 2, 14 in all with one shared back (v1.6.2 L93, change 26).
+    // 3 per player and Fuel Ledger's 2, 14 in all with one shared back (v1.6.2 L107, change 26).
     expect(ASSETS.kilnContributionCards.cardsPerSet).toEqual(FIRING.contributionCards.filter((card) => card.techId === null).map((card) => card.id));
     expect(ASSETS.kilnContributionCards.fuelLedgerCards).toEqual(FIRING.contributionCards.filter((card) => card.techId === "T12").map((card) => card.id));
     expect(ASSETS.kilnContributionCards.totalCards).toBe(14);

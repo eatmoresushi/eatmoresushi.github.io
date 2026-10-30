@@ -45,6 +45,7 @@ import { validateAction } from "./engine.ts";
 import { ruleError } from "./errors.ts";
 import { legalContributions } from "./firing/contributions.ts";
 import { contributionHeat, contributionWood } from "./firing/heat.ts";
+import { colourSamplesSwapUsable, freeActionWindowOf, imperialPriorityUsable, sellableFlawed } from "./freeActionWindow.ts";
 import { availableKilns, kilnAbilityReady } from "./kilns.ts";
 import { kilnMasterOptionFor, loadDestinationOptions } from "./kilnLoading.ts";
 import { lookCount, reservable } from "./market.ts";
@@ -57,7 +58,6 @@ import { scorePreview as scorePreviewOf } from "./scoring.ts";
 import { ceramicSequence, ceramicsOf, decisionPrompt, imperialKilnCeramic, kilnMasterCarrier, lookup, player, selectStep, turnOrder, workStep } from "./state.ts";
 import { acquisitionError, handLimit, ownsTech, techPrice, techReady } from "./techs.ts";
 import { commissionLimits } from "./work/commissionMarket.ts";
-import { colourSamplesSwapUsable, imperialPriorityUsable } from "./work/turn.ts";
 import { swapLookCount, validateColourSamplesSwap } from "./work/windowAbilities.ts";
 import type {
   ActorView,
@@ -75,6 +75,7 @@ import type {
   FiringStep,
   FinishedCeramic,
   FormVesselSpec,
+  FreeActionOptions,
   GameAction,
   GameRuleError,
   Glaze,
@@ -152,7 +153,7 @@ const PREPARED_CLAY: TechId = "T17";
  * Rule-error codes that depend only on the phase, the actor, the worker, the location and the
  * worker effect — never on the rest of a placement command. Every placement validator checks
  * them before anything command-specific (`validatePlacement`, then the location's "at least 1
- * instance of the main action" test, L142; the Magistrate's Hall Recognition gate). When one
+ * instance of the main action" test, L164; the Magistrate's Hall Recognition gate). When one
  * placement command fails with one of these, every command for that worker and location
  * fails the same way, so enumerators and probes may stop there.
  */
@@ -318,8 +319,8 @@ export function playerSummary(view: PlayerView, playerId: PlayerId): PlayerSumma
   };
 }
 
-/** The owned Tech whose `unlocks` added a second personal space (L212, D7). At most one Tech
- * per discipline is owned (L211), so at most one matches. */
+/** The owned Tech whose `unlocks` added a second personal space (L241, D7). At most one Tech
+ * per discipline is owned (L240), so at most one matches. */
 function addedByTech(p: PlayerState, locationId: PersonalLocationId): TechId | null {
   return p.techs.find((tech) => TECHS[tech.id].unlocks === locationId)?.id ?? null;
 }
@@ -330,7 +331,7 @@ export function scorePreview(view: PlayerView, playerId: PlayerId): ScorePreview
 }
 
 /**
- * Held Orders against the Cleanup hand limit (4, or 5 with Colour Samples; L200, L304).
+ * Held Orders against the Cleanup hand limit (4, or 5 with Colour Samples; L229, L325).
  * `trimDue` uses Cleanup's own predicate: Rounds 1–4 only (INT: Round 5 skips the trim).
  */
 export function handLimitStatus(view: PlayerView, playerId: PlayerId): HandLimitStatus {
@@ -340,7 +341,7 @@ export function handLimitStatus(view: PlayerView, playerId: PlayerId): HandLimit
   return { held, limit, mustDiscard, trimDue: !isFinalRound(view.game.round) && mustDiscard > 0 };
 }
 
-/** The Shared Kiln cover for this player count (L100) and which active spaces hold nothing
+/** The Shared Kiln cover for this player count (L122) and which active spaces hold nothing
  * (UI_V1.6.1_ARCHITECTURE §5 gap 5). A Setter's Mark does not fill a space. */
 export function kilnLayout(view: PlayerView): KilnLayoutView {
   const game = view.game;
@@ -352,12 +353,12 @@ export function kilnLayout(view: PlayerView): KilnLayoutView {
   };
 }
 
-/** Appendix D steps the rulebook resolves in First Player order (rev. 4 L655–672): only step 5,
+/** Appendix D steps the rulebook resolves in First Player order (L674–691): only step 5,
  * the after-Quality abilities. Test Pieces (end of step 1) and Jun (step 3) each have a single
  * owner, so no order is printed for them since revision 4. */
 const FIRST_PLAYER_ORDER_STEPS: readonly FiringStep[] = [5];
 
-/** The Appendix D step a firing phase decides (rev. 4 L655–672); null outside the Firing Phase.
+/** The Appendix D step a firing phase decides (L674–691); null outside the Firing Phase.
  * Revision 4 has no Heat-marker step (changes 28, 31). */
 function firingStepOf(phase: PublicGameState["phase"]): FiringStep | null {
   switch (phase.type) {
@@ -405,7 +406,6 @@ function stageOf(game: PublicGameState, firing: FiringContext, step: FiringStep,
         kilnMasterMarker,
         quality: record.quality,
         crackle: record.crackle,
-        sold: record.sold,
         secondFireModifier: record.second?.fireModifier ?? null,
         secondFireRevealed: record.secondFiringCards === null ? null : [...record.secondFiringCards],
         saggarsFloor: record.saggarsFloor,
@@ -466,7 +466,7 @@ export function firingSummary(view: PlayerView): FiringContext | null {
 // ── Setup and Start of Round ─────────────────────────────────────────────────────────
 
 /**
- * Setup step 9 for the viewer while it is their choice (rev. 4 L122, R23): every Kiln with its
+ * Setup step 9 for the viewer while it is their choice (L130, R23): every Kiln with its
  * availability, and the display positions holding a Main Order to take with it in the same
  * `SELECT_KILN`. Null when it is not the viewer's choice.
  */
@@ -488,7 +488,7 @@ export function kilnSelectionOptions(view: PlayerView): KilnSelectionOption[] {
   }));
 }
 
-/** Spaces where the viewer may place their Setter's Mark now (T22, L630); `[]` when it is
+/** Spaces where the viewer may place their Setter's Mark now (T22, L636); `[]` when it is
  * not their decision. Declining (`spaceId: null`) is always possible in the window. */
 export function settersMarkOptions(view: PlayerView): KilnSpaceId[] {
   if (!viewerActs(view) || view.game.phase.type !== "round_start_setters_mark") {
@@ -567,7 +567,8 @@ function gateProbe(view: ActorView, locationId: LocationId, option: WorkerOption
   }
 }
 
-/** Form & Decorate discount variants of a vessel list (Large Throwing Wheel, Decorator's Kit). */
+/** Form & Decorate discount variants of a vessel list (Large Throwing Wheel; Decorator's Kit on
+ * the first vessel, any Decoration, rev. 5 L622, change 37). */
 export function formDiscountVariants(
   view: PlayerView,
   playerId: PlayerId,
@@ -579,23 +580,22 @@ export function formDiscountVariants(
     return variants;
   }
   const wheelShapes: readonly string[] = TECHS.T01.params.triggerShapes;
-  const kitDecorations: readonly string[] = TECHS.T16.params.decorations;
   const wheel = techReady(p, LARGE_THROWING_WHEEL) && vessels.some((v) => wheelShapes.includes(v.shape));
-  const kitIndex = techReady(p, DECORATORS_KIT) ? vessels.findIndex((v) => kitDecorations.includes(v.decoration)) : -1;
+  const kitIndex = techReady(p, DECORATORS_KIT) && vessels.length > 0 ? 0 : -1;
   if (wheel) {
     variants.push({ useLargeThrowingWheel: true });
   }
   if (kitIndex >= 0) {
     variants.push({ decoratorsKitVesselIndex: kitIndex });
     if (wheel) {
-      // Unreachable under L211 (both Workshop Techs), kept for completeness.
+      // Unreachable under L240 (both Workshop Techs), kept for completeness.
       variants.push({ useLargeThrowingWheel: true, decoratorsKitVesselIndex: kitIndex });
     }
   }
   return variants;
 }
 
-/** Commands that between them prove a location legal for a worker choice (L142). */
+/** Commands that between them prove a location legal for a worker choice (L164). */
 function* placementProbes(view: ActorView, locationId: LocationId, option: WorkerOption): Generator<GameAction> {
   const workerId = option.workerId;
   const game = view.game;
@@ -658,7 +658,7 @@ function placementWorkerOption(view: PlayerView, locationId: LocationId, option:
 
 /**
  * Every location with the viewer's worker choices (Shifu, lowest Apprentice, Apprentice via
- * Senior Apprentice) and whether each may be placed now (L140–144, L142). `legal` means some
+ * Senior Apprentice) and whether each may be placed now (L162–166, L164). `legal` means some
  * command placing that worker there passes `validateAction`.
  */
 export function placementOptions(view: PlayerView): PlacementOption[] {
@@ -721,13 +721,13 @@ export function placementLimits<L extends LocationId, E extends WorkerEffect>(
 }
 
 /**
- * Materials Yard choices for one `placementOptions` worker entry (rev. 4 L176–177, L605; §5
+ * Materials Yard choices for one `placementOptions` worker entry (L194–195, L624; §5
  * gap 14), probed through `validateAction`:
  * - `resources`: the Clay/Wood split total for the worker's effect (4, or 8 for the Shifu
  *   effect, Senior Apprentice included);
  * - `preparedClay`: every Shape + Decoration pair some legal command names (any split), and
- *   the Shapes and Decorations of those pairs; null for a Senior Apprentice placement (L350:
- *   both Form & Decorate Techs, L211) or when Prepared Clay (T17) is not owned and ready.
+ *   the Shapes and Decorations of those pairs; null for a Senior Apprentice placement (both
+ *   Form & Decorate Techs, L240) or when Prepared Clay (T17) is not owned and ready.
  *   Legality is per pair: Shape Clay comes from the split, so `shapes` × `decorations` may
  *   contain illegal combinations.
  */
@@ -748,7 +748,7 @@ export function materialsYardOptions(view: PlayerView, worker: PlacementWorkerOp
   const pairs: PreparedClayPair[] = [];
   for (const shape of SHAPES) {
     for (const decoration of DECORATIONS) {
-      // Prepared Clay is paid after gaining the split (L618), so a pair is legal when some
+      // Prepared Clay is paid after gaining the split (L624), so a pair is legal when some
       // split validates.
       for (let clay = resources; clay >= 0; clay -= 1) {
         if (validates(actor, command(clay, { shape, decoration }))) {
@@ -769,7 +769,7 @@ export function materialsYardOptions(view: PlayerView, worker: PlacementWorkerOp
 }
 
 /**
- * The Shaped vessels a Glaze & Load load may name after `earlierLoads` (L177–185, L344, L617;
+ * The Shaped vessels a Glaze & Load load may name after `earlierLoads` (L209–218, L358, L623;
  * §5 gap 15), each with its Glazes (any, when it has a legal destination with its Shape or a
  * reworked one) and its Reworking Table Shapes (T05 ready, no earlier load of this action
  * reworked, a legal destination for the new Shape). Destinations come from
@@ -793,7 +793,7 @@ export function glazeLoadVesselOptions(view: PlayerView, playerId: PlayerId, ear
 }
 
 /**
- * Indexes of `draft.vessels` that Ding may copy (L474, R1): a Bowl, Plate or Brush Washer of
+ * Indexes of `draft.vessels` that Ding may copy (L488, R1): a Bowl, Plate or Brush Washer of
  * this action, with Ding owned and ready. Affordability is the quote's business
  * (`quoteFormDecorate`), so an index stays listed when only the resources fall short.
  */
@@ -826,13 +826,13 @@ function isDingError(error: GameRuleError): boolean {
   return error.code === "KILN_ABILITY_NOT_OWNED" || error.code === "ABILITY_ALREADY_USED" || (typeof field === "string" && field.startsWith("dingExtra"));
 }
 
-/** The player's Shaped vessels in sequence order (L357). */
+/** The player's Shaped vessels in sequence order (L371). */
 export function shapedVessels(view: PlayerView, playerId: PlayerId): ShapedCeramic[] {
   return ceramicsOf(view.game, playerId, "shaped").map((c) => structuredClone(c));
 }
 
 /**
- * Kiln Master (T24, rev. 4 L628, R22) for a player's next loading command — a Glaze & Load load
+ * Kiln Master (T24, L647, R22) for a player's next loading command — a Glaze & Load load
  * or Imperial Priority, into either kiln: null without the tile; else whether it is unused this
  * round (`LoadSpec.kilnMaster` / `USE_IMPERIAL_PRIORITY.kilnMaster` may then name a face) and
  * its faces (+1, −1). Public facts only.
@@ -842,9 +842,9 @@ export function kilnMasterOption(view: PlayerView, playerId: PlayerId): KilnMast
 }
 
 /**
- * The Commission Market at placement time for a worker effect (v1.6.2 L189–200, B1), from
+ * The Commission Market at placement time for a worker effect (v1.6.2 L219–230, B1), from
  * public information only: how many cards the look would show, the reservation limit and the
- * display positions holding an Order. `reservable` is the placement's main-action test (L142):
+ * display positions holding an Order. `reservable` is the placement's main-action test (L164):
  * a display Order or a non-empty deck plus discard (then the look shows at least 1 card).
  */
 export function commissionOptions(view: PlayerView, effect: WorkerEffect): CommissionOptions {
@@ -862,7 +862,7 @@ export function commissionOptions(view: PlayerView, effect: WorkerEffect): Commi
 }
 
 /**
- * The viewer's own open Select (v1.6.2 L64, change 25): the Commission Market, Colour Samples
+ * The viewer's own open Select (v1.6.2 L80, change 25): the Commission Market, Colour Samples
  * when acquired or its swap, while `SELECT_CHOOSE` is due. It lists N, the looked cards, the
  * display positions reservable now (every Select may take a face-up Main Order) and the
  * reservation limit (1, or 2 for the Commission Market Shifu effect). Null otherwise.
@@ -884,8 +884,8 @@ export function lookedOrderOptions(view: PlayerView): LookedOrderOptions | null 
 
 /**
  * One Tech a Guild Hall worker could take, with the validator's own checks in its order:
- * the Shifu's take limit (`takesLeft`), the 3-total / 1-per-discipline limit (L211), then
- * the printed cost (v1.6.2 L206–207).
+ * the Shifu's take limit (`takesLeft`), the 3-total / 1-per-discipline limit (L240), then
+ * the printed cost (v1.6.2 L236–237).
  */
 function techOption(p: PlayerState | null, techId: TechId, source: "face_up" | "inspected", takesLeft: number): GuildTechOption {
   const cost = techPrice(techId);
@@ -901,7 +901,7 @@ function techOption(p: PlayerState | null, techId: TechId, source: "face_up" | "
   return { techId, discipline: TECHS[techId].discipline, source, cost, legal: reason === null, reason };
 }
 
-/** Guild Hall choices for a worker effect (v1.6.2 L202–214): Techs to buy (Apprentice) or
+/** Guild Hall choices for a worker effect (v1.6.2 L232–244): Techs to buy (Apprentice) or
  * take after inspecting (Shifu), at printed cost; the Shifu may inspect any discipline (B2). */
 export function guildOptions(view: PlayerView, effect: WorkerEffect): GuildOptions {
   const game = view.game;
@@ -914,7 +914,7 @@ export function guildOptions(view: PlayerView, effect: WorkerEffect): GuildOptio
 }
 
 /**
- * The viewer's Guild Hall Shifu inspection (v1.6.2 L207, B2) while it is open: the inspected
+ * The viewer's Guild Hall Shifu inspection (v1.6.2 L237, B2) while it is open: the inspected
  * Techs not taken yet and the face-up Techs showing now, each with the legality of taking it
  * next (`GUILD_TAKE`), and what `GUILD_FINISH` needs. Null otherwise.
  */
@@ -939,7 +939,7 @@ export function guildInspectionOptions(view: PlayerView): GuildInspectionOptions
 
 /**
  * The display positions the Magistrate's Hall Shifu could take a Crown Order from now (rev. 4
- * L241, R21): positions holding a face-up Order that shows at least 1 Crown. Public.
+ * L259, R21): positions holding a face-up Order that shows at least 1 Crown. Public.
  */
 function crownOrderSlots(game: PublicGameState): number[] {
   return reservable(game).faceUpSlots.filter((slotIndex) => {
@@ -949,7 +949,7 @@ function crownOrderSlots(game: PublicGameState): number[] {
 }
 
 /**
- * The Magistrate's Hall for a worker effect (rev. 4 L234–245, change 33): 4 Coins for either
+ * The Magistrate's Hall for a worker effect (L252–263, change 33): 4 Coins for either
  * worker, +1 Recognition, only from Recognition 0–2 and never to 4; `reachable` is the
  * Recognition it would reach. `crownOrderSlots`: for the Shifu effect, the display positions
  * whose Order shows a Crown — the optional reservation that follows the step (R21; `[]` when
@@ -992,14 +992,15 @@ export function magistratesHallQuote(
     return { ok: false, error, pay, gain: zero, lines, reachable, crownOrderSlots: slots };
   }
   // The milestone crossed is part of the action's result: the Imperial Grant at Recognition 1
-  // (L432) if it is not yet received; the later milestones give no resources.
+  // (L446) if it is not yet received; the later milestones give no resources.
   const gain = milestoneResourcesCrossed(p, from, reachable);
   return { ok: true, error: null, pay, gain, lines, reachable, crownOrderSlots: slots };
 }
 
 /**
- * The Colour Samples swap now (T10, v1.6.2 L622, change 25): `usable` on the public facts that
- * open the window (T10 ready, a held Order, the viewer's own before/after-action window); per
+ * The Colour Samples swap now (T10, rev. 5 L632, change 25): `usable` on the public facts that
+ * open the window (T10 ready, a held Order, the viewer's own before/after-action window of a Work
+ * turn; it is not a free action, so never in the Order Phase); per
  * held Order, in hand order, how many cards its Select 3 would show after discarding it (B1, R16,
  * R17) and the validator's verdict on that discard; and the display positions the Select could
  * take instead.
@@ -1020,27 +1021,47 @@ export function colourSamplesSwapOptions(view: PlayerView): ColourSamplesSwapOpt
   };
 }
 
-/** The player's own before- or after-action window of a Work turn. */
+/** The player's own before- or after-action window of a Work turn (the Colour Samples swap's). */
 function ownActionWindow(game: PublicGameState, playerId: PlayerId): boolean {
-  const phase = game.phase;
-  return (
-    phase.type === "work_turn" &&
-    phase.activePlayerId === playerId &&
-    (phase.step.kind === "before_action" || phase.step.kind === "after_action")
-  );
+  const window = freeActionWindowOf(game, playerId);
+  return window === "before_action" || window === "after_action";
 }
 
 function imperialPriorityWindowUsable(game: PublicGameState, playerId: PlayerId): boolean {
-  return seatedPlayer(game, playerId) !== null && ownActionWindow(game, playerId) && imperialPriorityUsable(game, playerId);
+  return seatedPlayer(game, playerId) !== null && freeActionWindowOf(game, playerId) !== null && imperialPriorityUsable(game, playerId);
 }
 
+/**
+ * The viewer's free actions now (rev. 5 L168–176): null outside the viewer's free-action windows
+ * (before or after the worker action of their own Work turn, their own Order Phase turn);
+ * otherwise the window, the held Orders their Finished ceramics can complete now (hand order;
+ * the same matcher as the validator), the Flawed ceramics they may sell and whether Imperial
+ * Priority is usable. Reads only the viewer's own hand.
+ */
+export function freeActionOptions(view: PlayerView): FreeActionOptions | null {
+  const viewerId = view.viewerId;
+  if (viewerId === null || view.own === null || seatedPlayer(view.game, viewerId) === null) {
+    return null;
+  }
+  const window = freeActionWindowOf(view.game, viewerId);
+  if (window === null) {
+    return null;
+  }
+  return {
+    window,
+    completableOrderIds: completableOrders(view).map((option) => option.orderId),
+    sellableCeramicIds: sellableFlawed(view.game, viewerId),
+    imperialPriority: imperialPriorityUsable(view.game, viewerId),
+  };
+}
 
 /**
- * Imperial Priority now (L293, R10): usable in your before/after-action window with the token
- * held, an empty gained Imperial Kiln and a Shaped vessel, which may be any of them. Free: no
- * Wood (rev. 4 L291). Per vessel (§5 gap 16), probed through `validateAction`: its Glazes,
- * Imperial modifiers and Reworking Table Shapes (DESIGN §11 Q1). `kilnMaster`: Kiln Master's
- * marker may go on this load (T24 ready, rev. 4 L628, R22).
+ * Imperial Priority now (rev. 5 L174, L314, R10): a free action, usable in any of your free-action
+ * windows (before or after your worker action, your Order Phase turn) with the token held, an
+ * empty gained Imperial Kiln and a Shaped vessel, which may be any of them. Free: no Wood. Per
+ * vessel (§5 gap 16), probed through `validateAction`: its Glazes, Imperial modifiers and
+ * Reworking Table Shapes (DESIGN §11 Q1). `kilnMaster`: Kiln Master's marker may go on this load
+ * (T24 ready and its marker not on a ceramic still in a kiln, L647, R22, P7).
  */
 export function imperialPriorityOptions(view: PlayerView): ImperialPriorityOptions {
   const actor = asActorView(view);
@@ -1062,7 +1083,7 @@ export function imperialPriorityOptions(view: PlayerView): ImperialPriorityOptio
   return { usable: true, ceramicIds: vessels.map((c) => c.id), ceramics, kilnMaster };
 }
 
-// ── Orders (Order Phase pickers) ─────────────────────────────────────────────────────
+// ── Orders (completion pickers, any free-action window) ──────────────────────────────
 
 function finishedPool(game: PublicGameState, playerId: PlayerId): FinishedCeramic[] {
   return ceramicsOf(game, playerId, "finished");
@@ -1086,7 +1107,8 @@ export function orderMatchOption(game: PublicGameState, playerId: PlayerId, orde
   };
 }
 
-/** One entry per completable held Order (its first match), in hand order. */
+/** One entry per completable held Order (its first match), in hand order. Phase-agnostic: the
+ * UI offers it in every free-action window (`freeActionOptions`). */
 export function completableOrders(view: PlayerView): OrderMatchOption[] {
   const viewerId = view.viewerId;
   const own = view.own;
@@ -1156,7 +1178,7 @@ export function orderSelectionCheck(
 }
 
 /**
- * Validator verdicts for a Crackle declaration picker (L470, L485; §5 gap 8). For the selected
+ * Validator verdicts for a Crackle declaration picker (L484, L499; §5 gap 8). For the selected
  * ceramics of one held Order and the picker's current explicit `declarations`:
  * - `auto`: declarations omitted, the engine searches (the picker's explicit "auto" mode);
  * - `declared`: the declarations exactly as given;
@@ -1212,7 +1234,7 @@ export function crackleDeclarationChecks(
 const CONTRIBUTION_OFFER_ORDER: readonly SubmitContributionCommand["card"][] = ["TEND", "BANK", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"];
 
 /**
- * The viewer's Contribution choices while they may submit (v1.6.2 L246, L260–266, L634, change
+ * The viewer's Contribution choices while they may submit (v1.6.2 L271, L283–289, L644, change
  * 26): 1 per card they hold, Tend, Bank, Stoke, then Fuel Ledger Bank and Fuel Ledger Stoke when
  * Fuel Ledger is owned, each with its Wood (paid on reveal; a Fuel Ledger owner's Bank and Stoke
  * cost none), Heat and whether it is legal now (`legalContributions`, i.e. `validateContribution`).

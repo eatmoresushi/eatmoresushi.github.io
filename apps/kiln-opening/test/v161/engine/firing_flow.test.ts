@@ -1,8 +1,8 @@
 /**
  * The whole Firing Phase as a state machine (DESIGN §3.1, §3.3, §3.6, §3.7, §7; Appendix D as
- * owner revision 4 left it, rev. 4 L655–664: Contributions (Base Heat) → Test Pieces → Fire →
+ * owner revision 4 left it, L674–683: Contributions (Base Heat) → Test Pieces → Fire →
  * Actual Heat (Jun) → Quality → after-Quality → finish; no Heat-marker step, changes 28, 31, and
- * no salvage step, change 30: a Flawed ceramic is sold during its owner's turn instead, R20):
+ * no salvage step, change 30; no free action during the firing, rev. 5 L176, so no sale, I1):
  * the skip check, every window in Appendix D order with the right actors, automatic steps
  * inside the command that reaches them, an always-legal exit in every window, card
  * conservation, and determinism under a `jsonb`-style key-sorted round trip.
@@ -37,12 +37,12 @@ import type { LocalTable } from "./support/localTable.ts";
 /**
  * Three players, First Player p1, every firing window in play:
  * - p1 Jun Kiln + Test Pieces; c1 Celadon in High;
- * - p2 Ge Kiln + Kiln Master, its marker +1 placed on c3 when it was loaded (rev. 4 L628, R22);
+ * - p2 Ge Kiln + Kiln Master, its marker +1 placed on c3 when it was loaded (L647, R22);
  *   c2 White in High (Standard), c3 Grey-Green in its Imperial Kiln;
  * - p3 Second Firing; c4 Moon White in Low (Flawed), c5 White in Low (Masterpiece), and c6, a
- *   Finished Flawed Bowl from an earlier round, which p3 may sell in their after-Quality turn
- *   (R20).
- * Fire deck: the round's 0, then −1 and −2 for Second Firing (rev. 4 L627).
+ *   Finished Flawed Bowl from an earlier round, which p3 may not sell during the firing (rev. 5
+ *   L176, I1): it waits for p3's next free-action window.
+ * Fire deck: the round's 0, then −1 and −2 for Second Firing (L646).
  */
 function everyWindow(fire: FireModifier[] = [0, -1, -2]): StateSpec {
   return {
@@ -76,8 +76,6 @@ const FULL_SCRIPT: Step[] = [
   { actor: "p1", action: { type: "TEST_PIECES_BURY", bury: false } },
   { actor: "p1", action: { type: "RESOLVE_JUN", adjustment: { ceramicId: "c1", delta: -1 } } },
   { actor: "p2", action: { type: "USE_GE_CRACKLE", ceramicId: "c2" } },
-  // R20: a sale in p3's own after-Quality turn keeps the turn (Second Firing is still eligible).
-  { actor: "p3", action: { type: "SELL_FLAWED", ceramicId: "c6" } },
   { actor: "p3", action: { type: "USE_SECOND_FIRING", ceramicId: "c4" } },
   { actor: "p3", action: { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null } },
 ];
@@ -112,8 +110,8 @@ const ABILITY_ACTIONS: Record<AfterQualityAbility, (ceramicId: CeramicId) => Gam
 /**
  * Selector–validator agreement (DESIGN §5.4) for the P5 option selectors: every listed option
  * validates, every unlisted target is rejected, and the window's decline always validates. The
- * sale of a Flawed ceramic (R20) agrees with `sellFlawedOptions` for every player in every
- * window: only the after-Quality queue head may sell.
+ * sale of a Flawed ceramic agrees with `sellFlawedOptions` for every player in every window:
+ * nobody may sell during the firing (rev. 5 L176, I1).
  */
 function expectSelectorsAgree(table: LocalTable): void {
   const prompt = table.prompt();
@@ -121,9 +119,7 @@ function expectSelectorsAgree(table: LocalTable): void {
   for (const player of table.state.playerOrder) {
     const view = table.actorView(player);
     const listed = sellFlawedOptions(view)?.ceramicIds ?? [];
-    if (prompt.phaseType !== "firing_after_quality" || !prompt.actorIds.includes(player)) {
-      expect(listed, `${prompt.phaseType} / ${player} sale`).toEqual([]);
-    }
+    expect(listed, `${prompt.phaseType} / ${player} sale`).toEqual([]);
     for (const ceramicId of ceramicIds) {
       const ok = validateAction(view, { type: "SELL_FLAWED", ceramicId }) === null;
       expect(ok, `${prompt.phaseType} / ${player} sells ${ceramicId}`).toBe(listed.includes(ceramicId));
@@ -193,7 +189,7 @@ function expectSelectorsAgree(table: LocalTable): void {
   }
 }
 
-describe("the skip check through the production hand-over (L237, L670)", () => {
+describe("the skip check through the production hand-over (L267, L676)", () => {
   it("work_phase_done → openFiringPhase → FIRING_SKIPPED → firing_done, in one call", () => {
     const halts: FlowHalt[] = [];
     const flow = haltingFlow(halts, { pass: ["work_phase_done"] });
@@ -242,7 +238,6 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
       { phaseType: "firing_heat_adjustment", actorIds: ["p1"], mode: "single" },
       { phaseType: "firing_after_quality", actorIds: ["p2"], mode: "single" },
       { phaseType: "firing_after_quality", actorIds: ["p3"], mode: "single" },
-      { phaseType: "firing_after_quality", actorIds: ["p3"], mode: "single" },
       { phaseType: "firing_second_firing_choice", actorIds: ["p3"], mode: "single" },
     ]);
     expect(phases).toHaveLength(prompts.length);
@@ -268,7 +263,6 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
       "QUALITY_ASSIGNED",
       "QUALITY_IMPROVED",
       "CRACKLE_APPLIED",
-      "CERAMIC_SOLD",
       "SECOND_FIRING_REVEALED",
       "SECOND_FIRING_CHOSEN",
       "QUALITY_ASSIGNED",
@@ -296,16 +290,17 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
     ]);
     const final = table.state;
     expect(final.firing).toBeNull();
-    // c6 was sold; c4 stays Flawed after Second Firing and finishes (sellable in p3's next turn).
-    expect(final.ceramics["c6"]).toBeUndefined();
+    // Nothing is sold during the firing (rev. 5 L176, I1): c6 waits, and c4 stays Flawed after
+    // Second Firing and finishes, both sellable in p3's next free-action window.
+    expect(final.ceramics["c6"]).toMatchObject({ stage: "finished", quality: "flawed" });
     expect(final.ceramics["c4"]).toMatchObject({ stage: "finished", quality: "flawed" });
-    expect(eventsOfType(all, "CERAMIC_SOLD")).toEqual([{ type: "CERAMIC_SOLD", playerId: "p3", ceramicId: "c6", coins: 2, from: "finished" }]);
+    expect(eventsOfType(all, "CERAMIC_SOLD")).toEqual([]);
     expect(final.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "fine", crackle: true });
     expect(["c1", "c3", "c5"].map((id) => final.ceramics[id])).toEqual(
       ["c1", "c3", "c5"].map((id) => expect.objectContaining({ id, stage: "finished", quality: "masterpiece", crackle: false })),
     );
-    expect(final.players["p3"]?.resources.coins).toBe(5);
-    // Both Second Firing cards in reveal order, then the round's card at step 6 (rev. 4 L664).
+    expect(final.players["p3"]?.resources.coins).toBe(3);
+    // Both Second Firing cards in reveal order, then the round's card at step 6 (L683).
     expect(final.fireDiscard.slice(-3)).toEqual([-1, -2, 0]);
     // No projected event carries a secret.
     for (const event of all) {
@@ -326,7 +321,7 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
     expect(table.player("p1").kilnAbilityUsedThisRound).toBe(false);
     expect(table.player("p1").techs[0]?.usedThisRound).toBe(false);
     expect(table.player("p2").kilnAbilityUsedThisRound).toBe(false);
-    // p2's Kiln Master was used when c3 was loaded (rev. 4 L628), before the firing.
+    // p2's Kiln Master was used when c3 was loaded (L647), before the firing.
     expect(table.player("p2").techs[0]?.usedThisRound).toBe(true);
     expect(table.player("p3").techs[0]?.usedThisRound).toBe(false);
     expect(table.state.ceramics["c4"]).toMatchObject({ stage: "finished", quality: "flawed" });
@@ -390,9 +385,6 @@ function nextStep(table: LocalTable): Step {
       return { actor, action: { type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: options?.jun.ready === true ? { delta: 1 } : null } };
     }
     case "firing_after_quality": {
-      // R20: a Finished Flawed ceramic is sold first; the turn stays open for the abilities.
-      const sale = sellFlawedOptions(view)?.ceramicIds.find((id) => table.state.ceramics[id]?.stage === "finished");
-      if (sale !== undefined) return { actor, action: { type: "SELL_FLAWED", ceramicId: sale } };
       const [option] = afterQualityOptions(view);
       const ceramicId = option?.ceramicIds[0];
       if (option === undefined || ceramicId === undefined) return { actor, action: { type: "END_AFTER_QUALITY" } };

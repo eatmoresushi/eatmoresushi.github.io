@@ -1,21 +1,21 @@
 /**
- * Materials Yard (rev. 4 L172–177, change 34), incl. Senior Apprentice (T18, rev. 4 L606, R12)
- * and Prepared Clay (T17, rev. 4 L605).
+ * Materials Yard (rev. 5 L190–195, change 34), incl. Senior Apprentice (T18, rev. 5 L625, R12)
+ * and Prepared Clay (T17, rev. 5 L624).
  *
  * One atomic command resolved in this order (DESIGN §3.5), each step validated against the
  * running totals:
  * 1. gain the split: 4 (Apprentice effect) or 8 (Shifu effect, incl. Senior Apprentice) Clay/
- *    Wood in any mix (rev. 4 L176–177). V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood
+ *    Wood in any mix (rev. 5 L194–195). V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood
  *    option;
- * 2. `preparedClay` (optional, rev. 4 L605 "after gaining resources"): form 1 vessel paying its
+ * 2. `preparedClay` (optional, rev. 5 L624 "after gaining resources"): form 1 vessel paying its
  *    Shape's Clay +1 and 2 Coins, any Decoration (change 30), so it may spend Clay gained in
- *    step 1. A Tech effect, not a Form & Decorate action (L646): Ding, Large Throwing Wheel and
- *    the Shifu discount never apply. Decorator's Kit may reduce that vessel's Coins when its
- *    Decoration is Carved, Impressed or Painted (audit INT; unreachable under L211 because T16
- *    and T17 are both Workshop Techs, but the branch is implemented).
+ *    step 1. A Tech effect, not a Form & Decorate action (L652): Ding, Large Throwing Wheel and
+ *    the Shifu discount never apply. Decorator's Kit ("a vessel you form", rev. 5 L622, change
+ *    37: any Decoration) may reduce that vessel's Coins (audit INT; unreachable under L240
+ *    because T16 and T17 are both Workshop Techs, but the branch is implemented).
  *
  * The main action (gain resources) is always possible, so placement legality is only the
- * shared placement check (L142).
+ * shared placement check (L164).
  *
  * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
  */
@@ -71,8 +71,8 @@ function shortfall(resource: ResourceKind, needed: number, have: number): GameRu
   });
 }
 
-/** Prepared Clay's cost (rev. 4 L605): the Shape's Clay +1 and the vessel's 2 Coins, less
- * Decorator's Kit. */
+/** Prepared Clay's cost (rev. 5 L624): the Shape's Clay +1 and the vessel's 2 Coins, less
+ * Decorator's Kit (rev. 5 L622). */
 function preparedClayCost(spec: PreparedClaySpec): { clay: number; coins: number; lines: CostLine[] } {
   const shapeCost = shapeClay(spec.shape);
   const surcharge = TECHS.T17.params.claySurcharge;
@@ -104,7 +104,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
   const gained = zero();
   const lines: CostLine[] = [];
 
-  // 1. The split (rev. 4 L176–177).
+  // 1. The split (rev. 5 L194–195).
   const total = LOCATIONS.materials_yard.effects[effect].resources;
   const validCount = (n: number) => Number.isSafeInteger(n) && n >= 0;
   if (!validCount(action.clay) || !validCount(action.wood) || action.clay + action.wood !== total) {
@@ -124,7 +124,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
   gained.clay += action.clay;
   gained.wood += action.wood;
 
-  // 2. Prepared Clay (rev. 4 L605), after gaining resources.
+  // 2. Prepared Clay (rev. 5 L624), after gaining resources.
   const prepared = action.preparedClay;
   if (prepared !== undefined) {
     const tech = techError(p, PREPARED_CLAY, "preparedClay");
@@ -135,17 +135,6 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
       const kit = techError(p, DECORATORS_KIT, "preparedClay.useDecoratorsKit");
       if (kit !== null) {
         return failed(kit, pay, gained, lines);
-      }
-      if (!TECHS.T16.params.decorations.includes(prepared.decoration)) {
-        return failed(
-          ruleError("INVALID_VESSEL_CHOICE", "Decorator's Kit reduces only a vessel with a Carved, Impressed or Painted Decoration.", {
-            decoration: prepared.decoration,
-            field: "preparedClay.useDecoratorsKit",
-          }),
-          pay,
-          gained,
-          lines,
-        );
       }
     }
     const cost = preparedClayCost(prepared);

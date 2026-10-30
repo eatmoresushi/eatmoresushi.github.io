@@ -30,7 +30,7 @@ export function openFiringTable(spec: StateSpec, options: FiringTableOptions = {
   return table;
 }
 
-/** Every pending contributor submits Tend (always legal, L261). Returns the events. */
+/** Every pending contributor submits Tend (always legal, L289). Returns the events. */
 export function tendAll(table: LocalTable): GameEvent[] {
   const events: GameEvent[] = [];
   for (const playerId of [...table.prompt().actorIds]) {

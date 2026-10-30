@@ -64,9 +64,9 @@ Selectors are not stored: the UI computes them from `playerView` (DESIGN §5.4).
 | `t-glaze-load-imperial-furniture` | p1 (acts) | Glaze & Load with an Imperial Kiln (−1/0/+1) and Kiln Furniture (−1/0/+1) to choose |
 | `t-colour-samples-select-face-up` | p1 (acts) | Colour Samples' Select 3 took a face-up Order: its position stays empty until the turn ends; the after-action window is open |
 | `t-fuel-ledger-reveal` | p2 (waiting) | A Contribution reveal with Fuel Ledger Stoke (+2 for 1 Wood); the firing waits at Jun (step 3) |
-| `t-after-quality-sale` | p1 (acts) | The after-Quality turn with a Flawed ceramic of this firing to sell (R20) |
+| `t-after-quality-sale` | p1 (acts) | The after-Quality turn with a Flawed ceramic of this firing to sell (R20). **Withdrawn by owner revision 5** (I1: no free actions during the firing): once `tableScenarios.ts` is fixed it shows the same table with no sale, only Second Firing (ENGINE_V1.6.2_DELTA.md §16.18) |
 | `t-work-turn-sale` | p1 (acts) | A work turn with a Flawed Finished ceramic to sell before the worker action (R20) |
-| `t-cleanup-sale` | p1 (acts) | The hand trim with a Flawed Finished ceramic to sell (R20) |
+| `t-cleanup-sale` | p1 (acts) | The hand trim with a Flawed Finished ceramic to sell (R20). **Withdrawn by owner revision 5** (I1: Cleanup is not a free-action window): once `tableScenarios.ts` is fixed it shows the trim with no sale (ENGINE_V1.6.2_DELTA.md §16.18) |
 
 Together the scenarios and moments reach every engine phase, every Work step (`before_action`, the Commission look of either effect, Guild inspection, Colour Samples and its swap, `after_action`), both Test Pieces steps, a waiting viewer, and 2-, 3- and 4-player finals; `fixtures_current.test.ts` checks this.
 
@@ -103,7 +103,7 @@ Seeded games played by the strategic computer policy (`rules-v1.6.2-strategic-00
 | `m23_order_phase_s07` | 3 · 4P | p3 | Order Phase: S07 "Carved, Impressed or Painted" completable, with Canal Barge's 2 Coins on the first completion (**steered** T23 purchase) |
 | `m24_glaze_load_fuel_kiln_master` | scripted · 2P | p1 | Glaze & Load: 2 vessels into the Shared Kiln for 1 Wood of kiln fuel, Kiln Master's +1 on the first (changes 34–35, R22) |
 | `m25_magistrates_hall_crown_order` | scripted · 2P | p1 | The Magistrate's Hall Shifu: 4 Coins, then a face-up Crown Order reserved (change 33, R21) |
-| `m26_ge_crackle_fine` | 1 · 3P | p1 | Firing step 5: Ge's Crackle on a Fine ceramic (rev. 4) (**steered** Kiln choice GE) |
+| `m26_ge_crackle_fine` | 1 · 3P | p1 | Firing step 5: Ge's Crackle on a Fine ceramic (changes 29, 39; since revision 5 Ge may take any ceramic of the firing) (**steered** Kiln choice GE) |
 | `m27_crackle_vp_completion` | 1 · 3P | p1 | Order Phase: a completion delivering a Crackle ceramic, +1 VP (change 29) (**steered** GE and its Crackle) |
 
 Every steered command is recorded in `source.steered` and went through `validateAction` like any other. Searches try a hinted seed first (the one a previous run found), so a regeneration is quick; the result is the same either way.

@@ -1,22 +1,22 @@
 /**
- * Canal Wharf (L216–221) and Magistrate's Hall (L223–233).
+ * Canal Wharf (L245–250) and Magistrate's Hall (L252–262).
  *
  * - **Canal Wharf:** gain 2 Coins (Apprentice), or 4 Coins and then the top Main Order card
- *   into the hand without looking at it (Shifu, v1.6.2 L219–220), in that order (INT: Canal
- *   Wharf Shifu draw). An empty deck is first replaced by the shuffled discard (L511); with
+ *   into the hand without looking at it (Shifu, v1.6.2 L249–250), in that order (INT: Canal
+ *   Wharf Shifu draw). An empty deck is first replaced by the shuffled discard (L525); with
  *   both piles empty no card is taken and the Shifu still gains the Coins (B1). The card is
  *   secret like every held Order (B3). Uncapped and costless, so it is always a legal
- *   placement for an available worker (L143, the Work Phase's progress guarantee, DESIGN
+ *   placement for an available worker (L165, the Work Phase's progress guarantee, DESIGN
  *   §3.6).
- * - **Magistrate's Hall (rev. 4 L234–245, change 33):** 1 space at 2–3 players, 2 at 4
+ * - **Magistrate's Hall (L252–263, change 33):** 1 space at 2–3 players, 2 at 4
  *   (capacity is the shared placement check). Both workers pay 4 Coins to advance Imperial
- *   Recognition by 1 step, only from Recognition 0, 1 or 2, so never to 4 (rev. 4 L243–244). No
+ *   Recognition by 1 step, only from Recognition 0, 1 or 2, so never to 4 (L261–262). No
  *   Crown requirement; the milestone reached resolves normally
  *   (`recognition.advanceRecognitionStep`, P6). The Shifu then may reserve 1 face-up Crown
- *   Order from the display (rev. 4 L241, R21: optional, the player names it in the placement
+ *   Order from the display (L259, R21: optional, the player names it in the placement
  *   command, `crownOrder`, from what shows then; nothing if none shows). Its position stays
  *   empty until the end of the turn, then the display is refilled as at the Commission Market
- *   (rev. 4 L245; `work/turn.endTurn`, with any other face-up reservation of the turn). The
+ *   (L263; `work/turn.endTurn`, with any other face-up reservation of the turn). The
  *   reservation is public, like any face-up one. Everything the choice depends on — the
  *   display, the Recognition step and its public milestone — is known when the command is
  *   made (DESIGN §1 principle 4). Senior Apprentice never applies here (R12; enforced by
@@ -79,12 +79,12 @@ function resolveCanalWharf(draft: GameState, playerId: PlayerId, action: CanalWh
 // ── Magistrate's Hall ────────────────────────────────────────────────────────────────
 
 /** The top of the Imperial track (Recognition 4, Imperial Audience), which the Magistrate's
- * Hall can never reach (L227, L233). */
+ * Hall can never reach (L256, L262). */
 function topRecognition(): number {
   return Math.max(...IMPERIAL_TRACK.track.map((space) => space.space));
 }
 
-/** Recognition 0–2 only (`magistratesHallOpen`, L225), and the step never reaches 4 (L233). */
+/** Recognition 0–2 only (`magistratesHallOpen`, L254), and the step never reaches 4 (L262). */
 function recognitionGateError(p: PlayerState, effect: WorkerEffect): GameRuleError | null {
   const from = p.imperial.recognition;
   const steps = LOCATIONS.magistrates_hall.effects[effect].recognitionSteps;
@@ -98,14 +98,14 @@ function recognitionGateError(p: PlayerState, effect: WorkerEffect): GameRuleErr
   return null;
 }
 
-/** How many face-up Crown Orders the effect may reserve (rev. 4 L241): 1 for the Shifu, none for
+/** How many face-up Crown Orders the effect may reserve (L259): 1 for the Shifu, none for
  * the Apprentice. */
 function crownOrdersOf(effect: WorkerEffect): number {
   return effect === "shifu" ? LOCATIONS.magistrates_hall.effects.shifu.crownOrders : 0;
 }
 
 /**
- * The Shifu's optional Crown Order (rev. 4 L241, R21): the Shifu effect only, a face-up Order
+ * The Shifu's optional Crown Order (L259, R21): the Shifu effect only, a face-up Order
  * still at the named position, showing at least 1 Crown.
  */
 function crownOrderError(view: ActorView, action: MagistratesHallAction, effect: WorkerEffect): GameRuleError | null {
@@ -163,7 +163,7 @@ function validateMagistratesHall(view: ActorView, action: MagistratesHallAction)
 
 /**
  * Pay 4 Coins, advance 1 step (the milestone resolves), then the Shifu's optional Crown Order
- * (rev. 4 L241, R21): the face-up Order goes into the hand and its position stays empty until
+ * (L259, R21): the face-up Order goes into the hand and its position stays empty until
  * the turn ends (`takeFaceUpOrder` sets `refillPendingFor`; `work/turn.endTurn` refills). Public:
  * `ORDER_RESERVED` via `magistrates_hall`, `face_up`.
  */

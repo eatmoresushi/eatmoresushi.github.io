@@ -1,13 +1,13 @@
 /**
- * The Colour Samples swap (T10; v1.6.2 L622, L646; rulebook changes 22 and 25; R4, R16, R17,
+ * The Colour Samples swap (T10; v1.6.2 L632, L656; rulebook changes 22 and 25; R4, R16, R17,
  * R25, B1, B3; ENGINE_V1.6.2_DELTA.md §4.4, §15.9.7): once per round, before or after one of your
  * worker actions, you may discard 1 held Order (a Main Order face down to the Main discard, a
  * Starting Order to the box) to Select 3: privately look at the top 3 Main Orders (as many as
  * remain), reserve 1 of them or 1 face-up Main Order from the display, and discard the looked
  * cards not reserved face down to the Main discard (owner ruling R25). A face-up Order
  * taken leaves its position empty until the end of the turn, then the display refills as usual.
- * A Tech effect, not a worker or Commission Market action. Line citations are revision-3 lines
- * (Colour Samples is L622, its clarification L646).
+ * A Tech effect, not a worker or Commission Market action. Line citations are revision-5 lines
+ * (Colour Samples is L632, its clarification L656).
  */
 
 import { describe, expect, it } from "vitest";
@@ -62,7 +62,7 @@ function supply(hand: OrderId[], deck: OrderId[], discard: OrderId[], display: A
   };
 }
 
-describe("before the worker action (L622): Select 3", () => {
+describe("before the worker action (L632): Select 3", () => {
   it("discards a held Main Order face down, looks at the top 3 privately, reserves 1 and discards the other 2 (R25)", () => {
     const t = table(OWNER);
     const [a, b, c] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId];
@@ -93,7 +93,7 @@ describe("before the worker action (L622): Select 3", () => {
       step: { kind: "colour_samples_swap", returnTo: "before_action", select: { ...SELECT_3, lookedCount: 3 } },
     });
     expect(t.state.hidden.pendingLook).toEqual({ kind: "colour_samples_swap", playerId: "p1", orderIds: [a, b, c] });
-    // The discarded Main Order is face down on the discard (L646); the hand holds 1 now.
+    // The discarded Main Order is face down on the discard (L656); the hand holds 1 now.
     expect(t.state.hidden.mainDiscard).toEqual(["O40"]);
     expect(t.state.hidden.orderHands["p1"]).toEqual(["S01"]);
     expect(t.player("p1").techs[0]).toMatchObject({ id: "T10", usedThisRound: true });
@@ -123,7 +123,7 @@ describe("before the worker action (L622): Select 3", () => {
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } });
     expect(t.state.hidden.orderHands["p1"]).toEqual(["S01", b]);
     expect(t.state.hidden.pendingLook).toBeNull();
-    // A Tech effect (L646): no worker, no resource; a looked reservation leaves the display untouched.
+    // A Tech effect (L656): no worker, no resource; a looked reservation leaves the display untouched.
     expect(t.player("p1").resources).toEqual(resources);
     expect(t.state.market).toEqual({ display, refillPendingFor: null });
     expect(Object.values(t.player("p1").workers).every((worker) => worker.placement === null)).toBe(true);
@@ -149,7 +149,7 @@ describe("before the worker action (L622): Select 3", () => {
     expect(only(chosen, "LOOKED_ORDERS_DISCARDED")).toEqual({ type: "LOOKED_ORDERS_DISCARDED", playerId: "p1", count: 3, secret: { visibleTo: "p1", orderIds: [a, b, c] } });
     expect(t.state.hidden.mainDiscard).toEqual([c, b, a, "O40"]);
     expect(t.state.hidden.orderHands["p1"]).toEqual(["S01", "O03"]);
-    // The position stays empty through the worker action (v1.6.2 L646, L197) ...
+    // The position stays empty through the worker action (v1.6.2 L656, L221) ...
     expect(t.state.market).toEqual({ display: ["O01", "O02", null, "O04", "O05", "O06"], refillPendingFor: "p1" });
     expect(t.state.phase).toMatchObject({ step: { kind: "before_action" } });
     // ... and the display slides and refills once when the turn ends.
@@ -158,7 +158,7 @@ describe("before the worker action (L622): Select 3", () => {
     expect(t.state.market.refillPendingFor).toBeNull();
   });
 
-  it("a Starting Order goes to the box, not the Main discard (L646, L309)", () => {
+  it("a Starting Order goes to the box, not the Main discard (L656, L325)", () => {
     const t = table(OWNER);
     const box = [...t.state.hidden.startingBox];
     const events = t.act("p1", swap("S01"));
@@ -169,7 +169,7 @@ describe("before the worker action (L622): Select 3", () => {
   });
 });
 
-describe("after the worker action (L622)", () => {
+describe("after the worker action (L632)", () => {
   it("is used in the after-action window; the turn then ends by itself when nothing is left", () => {
     const t = table(OWNER);
     t.act("p1", WHARF);
@@ -322,7 +322,7 @@ describe("the look's supply (B1, R16, R17)", () => {
 });
 
 describe("refusals", () => {
-  it("TECH_NOT_OWNED, ORDER_NOT_HELD, NOT_YOUR_DECISION and WRONG_PHASE, each with documented details", () => {
+  it("TECH_NOT_OWNED, ORDER_NOT_HELD, NOT_YOUR_DECISION, WRONG_PHASE and WORKER_ACTION_IN_PROGRESS, each with documented details", () => {
     expectDocumentedDetails(table({ players: [{ hand: ["O40"] }, {}] }).expectRuleError("p1", swap("O40"), "TECH_NOT_OWNED"));
     const t = table(OWNER);
     const notHeld = t.expectRuleError("p1", swap("O41"), "ORDER_NOT_HELD");
@@ -332,9 +332,11 @@ describe("refusals", () => {
     expectDocumentedDetails(t.expectRuleError("p1", swap("O01"), "ORDER_NOT_HELD"));
     expectDocumentedDetails(t.expectRuleError("p2", swap("O40"), "NOT_YOUR_DECISION"));
     expectDocumentedDetails(t.expectRuleError("p1", choose("O07"), "WRONG_PHASE"));
-    // Not inside another worker action's sub-step.
+    // Not inside another worker action's sub-step (rev. 5 L170: before or after it, not during it).
     t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
-    expectDocumentedDetails(t.expectRuleError("p1", swap("O40"), "WRONG_PHASE"));
+    const during = t.expectRuleError("p1", swap("O40"), "WORKER_ACTION_IN_PROGRESS");
+    expect(during.details).toEqual({ phase: "work_turn", actionType: "USE_COLOUR_SAMPLES_SWAP", step: "commission_market" });
+    expectDocumentedDetails(during);
   });
 
   it("a looked pick must be one of the looked cards, a face-up pick an Order showing at that position; exactly 1", () => {
@@ -354,7 +356,7 @@ describe("refusals", () => {
     );
     expect(limit.details).toEqual({ limit: 1, requested: 2 });
     expectDocumentedDetails(limit);
-    // The swap's Select is a Tech effect, not an action (L646): the text names the Select.
+    // The swap's Select is a Tech effect, not an action (L656): the text names the Select.
     expect(formatRuleError(limit, "en")).toBe("This Select reserves at most 1; you chose 2 Orders.");
     expect(formatRuleError(limit, "zh")).toBe("这次精选至多承接1张，你选了2张");
     expectDocumentedDetails(t.expectRuleError("p2", choose(outside), "NOT_YOUR_DECISION"));

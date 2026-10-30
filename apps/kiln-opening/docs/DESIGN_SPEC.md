@@ -49,6 +49,8 @@ Crown route:
 - Imperial Audience grants 6 VP at Recognition 4;
 - each Crown after Recognition 4 grants 1 VP immediately.
 
+> **V1.6.2 revision 5 note.** Since rulebook change 36 (owner revision 5, 2026-10-28), spending Imperial Priority, completing held Orders and selling a Flawed ceramic are free actions, taken on your own turn before or after your worker action and in your Order Phase turn after the firing. A Crown gained by a completion before a placement counts for it. See `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` (Free Actions) and `docs/RULEBOOK_AUDIT_V1.6.2.md`.
+
 End-game Exhibition is universal: every player may exhibit any number of qualifying ceramics, independent of Imperial Recognition.
 
 Imperial Recognition should be attractive but not mandatory.

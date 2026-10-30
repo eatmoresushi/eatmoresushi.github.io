@@ -5,7 +5,7 @@
  *
  * 1. `legalCommands(view, {mode: "canonical"})`: built from the same validators the server
  *    runs. In `firing_contributions` it is `legalContributions(view)` with TEND first, which
- *    is always affordable (L261).
+ *    is always affordable (L289).
  * 2. `safeExitCommands(view)`: the progress-guarantee exit of every decision (DESIGN §3.6),
  *    built from the view alone without the enumerator, so the seat still has a way forward
  *    even if enumeration itself fails. Each one is validated by the service like any other
@@ -17,7 +17,7 @@
  * data), never `GameState`.
  */
 
-import { KILN_IDS, guildInspectionOptions, handLimitStatus, legalCommands, lookedOrderOptions } from "../game/index.ts";
+import { GAME_CONFIG, KILN_IDS, guildInspectionOptions, handLimitStatus, legalCommands, lookedOrderOptions } from "../game/index.ts";
 import type { AuthoritativeCommand, LegalActionOptions, PlayerView } from "../game/index.ts";
 
 export const FALLBACK_LEGAL_ACTION_OPTIONS: LegalActionOptions = { mode: "canonical", perFamilyLimit: 8 };
@@ -34,7 +34,7 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
   const phase = game.phase;
   switch (phase.type) {
     case "setup_kiln_selection": {
-      // Setup step 9 (rev. 4 L122, R23): an available Kiln with the first face-up Main Order.
+      // Setup step 9 (L130, R23): an available Kiln with the first face-up Main Order.
       // The display is refilled after every take, so it is full at every choice.
       const taken = new Set(game.playerOrder.map((playerId) => game.players[playerId]?.kilnId ?? null));
       const slotIndex = game.market.display.findIndex((orderId) => orderId !== null);
@@ -52,7 +52,7 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
       const step = phase.step;
       switch (step.kind) {
         case "before_action":
-          // The Canal Wharf is uncapped and costs nothing (L143): always legal for an
+          // The Canal Wharf is uncapped and costs nothing (L165): always legal for an
           // available worker. Workers in ID order (never Record key order).
           return Object.keys(me.workers)
             .sort()
@@ -63,7 +63,7 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
         case "commission_market":
         case "colour_samples":
         case "colour_samples_swap": {
-          // Every Select (v1.6.2 L64, change 25): one reservation is always possible and always
+          // Every Select (v1.6.2 L80, change 25): one reservation is always possible and always
           // enough (B1: a Select opens only with a looked card or a face-up Main Order). Every
           // single pick, the face-up positions first, then the looked cards in look order.
           const options = lookedOrderOptions(view);
@@ -82,8 +82,8 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
         }
         case "guild_inspection": {
           // Placement legality guaranteed an affordable face-up Tech for the first take (v1.6.2
-          // L212); after a take, stopping is always legal, with the untaken inspected Techs in
-          // look order (v1.6.2 L207, B2).
+          // L242); after a take, stopping is always legal, with the untaken inspected Techs in
+          // look order (v1.6.2 L237, B2).
           const options = guildInspectionOptions(view);
           if (options === null) return [];
           if (options.canFinish) {
@@ -103,7 +103,7 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
     case "firing_heat_adjustment":
       return [{ type: "RESOLVE_JUN", adjustment: null }];
     case "firing_second_firing_choice":
-      // A card must be chosen (v1.6.2 L631); the first one without Jun is always legal.
+      // A card must be chosen (v1.6.2 L646); the first one without Jun is always legal.
       return [{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }];
     case "firing_after_quality":
       return [{ type: "END_AFTER_QUALITY" }];
@@ -122,7 +122,10 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
 /**
  * The fallback candidates: the canonical legal commands, then the safe exits, without
  * duplicates. If the enumerator fails, the safe exits alone are returned (the service still
- * validates every candidate before committing it).
+ * validates every candidate before committing it). Imperial Priority is left out in the Order
+ * Phase of the last round: legal there (I3), but its ceramic would wait for a firing that never
+ * comes, so a computer seat never spends the token there. In earlier rounds an Order Phase use
+ * stays a candidate (its ceramic is fired in the next round's firing).
  */
 export function fallbackComputerCommands(view: PlayerView): AuthoritativeCommand[] {
   let canonical: AuthoritativeCommand[] = [];
@@ -130,6 +133,9 @@ export function fallbackComputerCommands(view: PlayerView): AuthoritativeCommand
     canonical = legalCommands(view, FALLBACK_LEGAL_ACTION_OPTIONS);
   } catch {
     canonical = [];
+  }
+  if (view.game.phase.type === "orders" && view.game.round >= GAME_CONFIG.rounds) {
+    canonical = canonical.filter((command) => command.type !== "USE_IMPERIAL_PRIORITY");
   }
   const seen = new Set<string>();
   const candidates: AuthoritativeCommand[] = [];

@@ -2,7 +2,7 @@
 
 Short text printed on Kiln Player Boards, Advanced Tech tiles and the 2 Fuel Ledger Contribution cards, in the repository's format: one section per component, keyed by its stable data ID, with an `- EN:` and a `- ZH:` line. The owner's master copy is [KILN_OPENING_v1.6.2_COMPONENT_TEXT.md](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md) (byte-identical to the owner's original; the audit records its checksum). This file carries the same 25 lines word for word, with the owner's bold markup removed, as the data stores them (`data/techniques.json`, `data/kilns.json`, and `data/firing.json` for the 2 cards). It replaces the [V1.6.1 component text](./KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md), which stays as history.
 
-The owner's file also defines the keyword **Select N** in its introduction (look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Main Order from the display; the rest are discarded; 精选N). It names no component, so it has no section here; the data carries the rulebook's definition (rev. 4 L72, owner ruling R25) as a clarification of Colour Samples and the Commission Market.
+The owner's file also defines the keyword **Select N** in its introduction (look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Main Order from the display; the rest are discarded; 精选N). It names no component, so it has no section here; the data carries the rulebook's definition (L80, owner ruling R25) as a clarification of Colour Samples and the Commission Market.
 
 This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md) and its [rulings](./RULEBOOK_AUDIT_V1.6.2.md) give the full effects, and the UI keeps the full text in each card's details. Every ability is optional unless it says otherwise (R4).
 
@@ -12,7 +12,7 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 - The owner's file also bolds these later clauses, and the UI bolds them too (`SHORT_TEXT_SECONDARY_LABELS` in `src/game/content.ts`): "Ongoing:" / 持续：, "Orders:" / 完成委托时：, "Once per round, before or after one of your worker actions:" / 每轮一次，你的一次工人行动之前或之后：, "Once per round, after Quality is assigned:" / 每轮一次，定品后：, and "When acquired:" / 习得时： (Fuel Ledger's second clause).
 - "→" separates a cost or condition from its effect.
 - Chinese follows the [glossary](./GLOSSARY_ZH_V1.6.1.md) register and punctuation. A Chinese line is at most 96 characters (owner ruling R18).
-- The data files store this text as `shortText` / `shortTextZh`; the plain Bank, Tend and Stoke cards have none (their effects are the rulebook table, v1.6.2 L262–264).
+- The data files store this text as `shortText` / `shortTextZh`; the plain Bank, Tend and Stoke cards have none (their effects are the rulebook table, v1.6.2 L285–287).
 
 ## Form & Decorate Techs (坯作)
 
@@ -21,8 +21,8 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 - ZH: 每轮一次，制坯饰纹行动中制有至少1件瓶或香炉时：该行动的泥总费−2，最低为0。
 
 ### Decorator's Kit / 饰坯匣 (T16)
-- EN: Once per round: a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less. Stacks with the Shifu discount.
-- ZH: 每轮一次：你制的1件刻花、印花或画花的坯少付1铜钱。可与师傅的减免叠加。
+- EN: Once per round: a vessel you form costs 1 Coin less. Stacks with the Shifu discount.
+- ZH: 每轮一次：你制的1件坯少付1铜钱。可与师傅的减免叠加。
 
 ### Reworking Table / 改坯案 (T05)
 - EN: Once per round, when you glaze and load a Shaped vessel: first change its Shape to any other Shape. Pay no Clay; its Decoration stays.
@@ -113,12 +113,12 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 - ZH: 每轮一次，完成御令委托时：得2铜钱和1分。
 
 ### Ge Kiln / 哥窑 — Crackle Mastery / 金丝铁线 (GE)
-- EN: Once per round, after Quality is assigned: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine. Orders: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
-- ZH: 每轮一次，定品后：可令己方本窑1件上品或良品开片→品质为上品。完成委托时：每件开片器可作任意1种纹饰，交付时得1分。
+- EN: Once per round, after Quality is assigned: choose 1 of your ceramics from this firing → it develops Crackle; if it is Standard, it becomes Fine. Orders: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
+- ZH: 每轮一次，定品后：选择己方本窑1件器物→它开片；若它是良品，则升为上品。完成委托时：每件开片器可作任意1种纹饰，交付时得1分。
 
 ### Ding Kiln / 定窑 — Moulded Production / 范制成器 (DI)
-- EN: Once per round, during a Form & Decorate action: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 1 Coin → form 1 extra vessel of the same Shape with any Decoration (no discounts). It counts as formed by that action.
-- ZH: 每轮一次，制坯饰纹行动中制成碗、盘或笔洗后：可付1泥1铜钱→多制1件同器型的坯，纹饰任选，不享减免。算作该行动所制。
+- EN: Once per round, during a Form & Decorate action: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 2 Coins → form 1 extra vessel of the same Shape with any Decoration. It does not count against the action's vessel limit. It counts as formed by that action.
+- ZH: 每轮一次，制坯饰纹行动中制成碗、盘或笔洗后：可付1泥2铜钱→多制1件同器型的坯，纹饰任选，不计入该行动的制坯件数上限。算作该行动所制。
 
 ### Jun Kiln / 钧窑 — Kiln Transformation / 窑变天成 (JU)
 - EN: Once per round, after Actual Heat is calculated, before Quality: pay 1 Wood → adjust 1 of your ceramics' Actual Heat by +1 or −1.
@@ -128,6 +128,8 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 
 V1.6.2 (2026-10-17, with owner revision 2 of the same day). The owner rewrote 5 of the 23 components with their V1.6.2 mechanics: Colour Samples (the rest go to the bottom of the deck; the once-per-round swap), Canal Barge (2 Coins when you complete an Order), Protective Saggars (never Flawed; Standard → Fine), Fuel Ledger (free Bank and Stoke) and Second Firing (2 extra Fire cards, choose 1). The other 18 lines are unchanged from V1.6.1. The owner's file drops the IDs and the "- EN:" / "- ZH:" prefixes and bolds every timing clause; this file restores the repository format and leaves the bold to the UI. The Chinese Colour Samples line is 82 characters, over the earlier cap of 72; the owner keeps it in full and the cap is 96 (R18).
 
-Owner revision 3 (2026-10-18, changes 25–27). The owner rewrote Colour Samples (the keyword Select N: Select 3 when acquired and for the swap), Fuel Ledger (its 2 Contribution cards, "When acquired:" now bold as its second clause) and Second Firing (shorter wording, the same effect), and added the 2 Fuel Ledger Contribution cards, so this file now has 25 components. The English Fuel Ledger line is kept verbatim, including "cards(-1 Wood → -2/+2)" with no space before the parenthesis and hyphen-minus signs; the Chinese line keeps its "—1柴". The rules text (v1.6.2 L266, L634) prints the cards as 1 Wood, −2 and 1 Wood, +2; the audit notes the difference for the owner.
+Owner revision 3 (2026-10-18, changes 25–27). The owner rewrote Colour Samples (the keyword Select N: Select 3 when acquired and for the swap), Fuel Ledger (its 2 Contribution cards, "When acquired:" now bold as its second clause) and Second Firing (shorter wording, the same effect), and added the 2 Fuel Ledger Contribution cards, so this file now has 25 components. The English Fuel Ledger line is kept verbatim, including "cards(-1 Wood → -2/+2)" with no space before the parenthesis and hyphen-minus signs; the Chinese line keeps its "—1柴". The rules text (v1.6.2 L289, L644) prints the cards as 1 Wood, −2 and 1 Wood, +2; the audit notes the difference for the owner.
 
 Owner revision 4 (2026-10-22/23, changes 28–35) and owner ruling R25 (2026-10-23). The owner rewrote 5 components: Decorator's Kit (a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less, change 30), Prepared Clay (its Clay cost + 1 Clay and 2 Coins, any Decoration, change 30), Test Pieces (after Base Heat, before the Fire card, changes 28 and 31), Kiln Master (a +1 or −1 marker when you load a ceramic, change 31) and Ge (a Fine or Standard ceramic; each delivered Crackle ceramic scores 1 VP, change 29). R25 changed the keyword line of the introduction (lines 3 and 5): the rest of a Select are discarded / 其余弃置. The other 20 lines are unchanged, Fuel Ledger's included (its cost of 4 is printed on the tile, not in its text). The secondary bold labels the UI emphasises (`SHORT_TEXT_SECONDARY_LABELS`) are unchanged.
+
+Owner revision 5 (2026-10-28, changes 36–42). The owner rewrote 3 components: Decorator's Kit (any vessel you form costs 1 Coin less, change 37), Ge (any 1 of your ceramics from this firing develops Crackle; a Standard one becomes Fine, change 39) and Ding (1 Clay + 2 Coins; it does not count against the action's vessel limit, change 40). The owner's file keeps its numbering (lines 15/17, 128/130, 133/135 changed). The other 22 lines are unchanged; the four new prices (Canal Barge 3, Prepared Clay 4, Colour Samples 3, Protective Saggars 2, change 38) are printed on the tiles, not in their text. The secondary bold labels the UI emphasises (`SHORT_TEXT_SECONDARY_LABELS`) are unchanged.

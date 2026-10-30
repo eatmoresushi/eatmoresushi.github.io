@@ -1,10 +1,10 @@
 /**
- * Personal-location placement legality (L142):
- * - Form & Decorate (rev. 4 L186, R4): the full cost of 1 vessel — its Shape's Clay and 2 Coins
+ * Personal-location placement legality (L164):
+ * - Form & Decorate (L204, R4): the full cost of 1 vessel — its Shape's Clay and 2 Coins
  *   (change 30) — payable after every reduction a ready Workshop Tech gives: Large Throwing
  *   Wheel (a Vase with 0 Clay), Decorator's Kit (a Carved vessel with 1 Coin). Ding and the
  *   Shifu discount never make it legal.
- * - Glaze & Load (rev. 4 L195–198, R5 a/b/c, R24): at least 1 Shaped vessel with a legal
+ * - Glaze & Load (L214–216, R5 a/b/c, R24): at least 1 Shaped vessel with a legal
  *   destination you can pay for — a Shared Kiln destination needs the action's 1 Wood, the
  *   Imperial Kiln is free; current Shapes only (DESIGN §11 Q3).
  */
@@ -26,7 +26,7 @@ function withResources(resources: Partial<ResourceState>, techs: TechSpec[] = []
   return buildState({ players: [{ resources, techs, ...more }, {}] });
 }
 
-describe("Form & Decorate: the full cost of at least 1 vessel, after any reductions (rev. 4 L186)", () => {
+describe("Form & Decorate: the full cost of at least 1 vessel, after any reductions (L204)", () => {
   it("is legal with 1 Clay and 2 Coins; illegal with less", () => {
     expect(canFormAny(withResources({ clay: 1, coins: 2 }), "p1")).toBe(true);
     expect(canFormAny(withResources({ clay: 0, coins: 9 }), "p1")).toBe(false);
@@ -46,11 +46,13 @@ describe("Form & Decorate: the full cost of at least 1 vessel, after any reducti
     expect(canFormAny(withResources({ clay: 0, coins: 2 }, [{ id: "T01", usedThisRound: true }]), "p1")).toBe(false);
   });
 
-  it("counts a ready Decorator's Kit: a Carved, Impressed or Painted vessel with 1 Coin (R4)", () => {
+  it("counts a ready Decorator's Kit: any vessel, Plain included, with 1 Coin (change 37, L204, L622; R4)", () => {
     const state = withResources({ clay: 1, coins: 1 }, ["T16"]);
     expect(canFormAny(state, "p1")).toBe(true);
     const carved = fd("p1:apprentice:1", { vessels: [{ shape: "plate", decoration: "carved" }], decoratorsKitVesselIndex: 0 });
     expect(verdict(state, "p1", carved)).toBeNull();
+    const plain = fd("p1:apprentice:1", { vessels: [{ shape: "plate", decoration: "plain" }], decoratorsKitVesselIndex: 0 });
+    expect(verdict(state, "p1", plain)).toBeNull();
     expect(verdict(state, "p1", fd("p1:apprentice:1"))).toBe("INSUFFICIENT_RESOURCES");
     expect(canFormAny(withResources({ clay: 1, coins: 1 }, [{ id: "T16", usedThisRound: true }]), "p1")).toBe(false);
   });
@@ -64,7 +66,7 @@ describe("Form & Decorate: the full cost of at least 1 vessel, after any reducti
   });
 });
 
-describe("Glaze & Load: a Shaped vessel with a legal destination you can pay for (rev. 4 L195–198, R5, R24)", () => {
+describe("Glaze & Load: a Shaped vessel with a legal destination you can pay for (L214–216, R5, R24)", () => {
   const gl = (loads: Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>["loads"]): GameAction => ({
     type: "PLACE_GLAZE_LOAD",
     workerId: "p1:apprentice:1",
@@ -116,7 +118,7 @@ describe("Glaze & Load: a Shaped vessel with a legal destination you can pay for
     expect(verdict(buildState({ ceramics }), "p1", load)).toBe("NO_MAIN_ACTION_POSSIBLE");
   });
 
-  it("a Shared Kiln destination needs the action's 1 Wood; the Imperial Kiln is free (rev. 4 L197–198)", () => {
+  it("a Shared Kiln destination needs the action's 1 Wood; the Imperial Kiln is free (L215–216)", () => {
     const shared = gl([{ ceramicId: "c1", glaze: "white", destination: { kiln: "shared", spaceId: "high_1" } }]);
     const imperial = gl([{ ceramicId: "c1", glaze: "white", destination: { kiln: "imperial", imperialModifier: 0 } }]);
     const vessel: CeramicSpec = { owner: "p1", shape: "bowl", stage: "shaped" };

@@ -1,5 +1,5 @@
 /**
- * Heat adjustment, Appendix D step 8 (L246, L478, L679–680): Jun Kiln, once per round, after
+ * Heat adjustment, Appendix D step 8 (L274, L492, L683): Jun Kiln, once per round, after
  * Actual Heat (markers included) and before Quality, pays 1 Wood to adjust one of its own
  * ceramics' Actual Heat by ±1. Optional (R4). The Second Firing case (R7) is in
  * `after_quality.test.ts`.
@@ -27,7 +27,7 @@ function junSpec(extra: Partial<StateSpec> = {}): StateSpec {
   };
 }
 
-describe("the Jun window (L478, L679)", () => {
+describe("the Jun window (L492, L683)", () => {
   it("opens after Actual Heat and before any Quality is assigned", () => {
     const table = openFiringTable(junSpec());
     const events = tendAll(table);
@@ -58,7 +58,7 @@ describe("the Jun window (L478, L679)", () => {
     expect(table.player("p1").resources.wood).toBe(2);
   });
 
-  it("applies on top of the Kiln Master marker (rev. 4 L478, L635) and works on an Imperial ceramic", () => {
+  it("applies on top of the Kiln Master marker (L497, L654) and works on an Imperial ceramic", () => {
     const table = openFiringTable(
       junSpec({
         players: [{ kilnId: "JU", recognition: 2, techs: [{ id: "T24", usedThisRound: true }] }, {}],
@@ -68,7 +68,7 @@ describe("the Jun window (L478, L679)", () => {
         ],
       }),
     );
-    // p1 has only an Imperial ceramic: not a participant, but in this firing (L290).
+    // p1 has only an Imperial ceramic: not a participant, but in this firing (L311).
     tendAll(table);
     const events = table.act("p1", { type: "RESOLVE_JUN", adjustment: { ceramicId: "c1", delta: 1 } });
     // Imperial: die 2 + Fire 0 + 0 + marker 1 = 3, Jun +1 = 4 = Moon White's Preferred Heat.
@@ -88,7 +88,7 @@ describe("the Jun window (L478, L679)", () => {
   });
 });
 
-describe("eligibility (L478, DESIGN §3.3 step 8)", () => {
+describe("eligibility (L492, DESIGN §3.3 step 8)", () => {
   it.each([
     ["without Wood", junSpec({ players: [{ kilnId: "JU", recognition: 2, resources: { wood: 0 } }, {}] })],
     ["after Jun was used this round", junSpec({ players: [{ kilnId: "JU", recognition: 2, kilnAbilityUsedThisRound: true }, {}] })],
@@ -148,7 +148,7 @@ describe("RESOLVE_JUN validation", () => {
       }),
     );
     tendAll(table);
-    // Test Pieces comes before the Fire card, and so before Jun (rev. 4 L626, L661).
+    // Test Pieces comes before the Fire card, and so before Jun (L645, L680).
     expect(table.state.phase.type).toBe("firing_test_pieces");
     table.expectRuleError("p1", { type: "RESOLVE_JUN", adjustment: { ceramicId: "c1", delta: 1 } }, "WRONG_PHASE");
     expect(junOptions(table.view("p1"))).toBeNull();

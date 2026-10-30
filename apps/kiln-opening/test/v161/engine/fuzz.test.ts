@@ -121,9 +121,23 @@ const LOAD_FEATURES = ["inverted_firing", "kiln_furniture", "rework", "kiln_mast
 
 /** Owner revision 4 and ruling R25 moments (`FuzzResult.deckEvents`): the public Setup take, a
  * Select's discarded looked cards, the Main discard reshuffled into a new deck as a look starts
- * (R16) and for a display refill or the Canal Wharf Shifu's draw (rev. 4 L506), a Flawed sale
- * (R20) and Crackle VP (change 29). */
+ * (R16) and for a display refill or the Canal Wharf Shifu's draw (L525), a Flawed sale
+ * (a free action, L172) and Crackle VP (change 29). */
 const DECK_EVENTS = ["setup_take", "looked_discarded", "reshuffle_look", "reshuffle_draw", "flawed_sale", "crackle_vp"];
+
+/** Owner revision 5 (change 36): every free action in every free-action window (rev. 5 L168–176),
+ * and an Order Phase Imperial Priority load fired in the next round's firing (I3). */
+const FREE_ACTIONS = [
+  ...["CERAMIC_SOLD", "ORDER_COMPLETED", "IMPERIAL_PRIORITY_USED"].flatMap((type) =>
+    ["before_action", "after_action", "order_phase"].map((window) => `free:${type}:${window}`),
+  ),
+  "carried_imperial_fired",
+];
+
+/** Owner revision 5, changes 37–40: Ge on a Masterpiece and on a Flawed ceramic (rev. 5 L482),
+ * Ding's vessel at 1 Clay + 2 Coins (rev. 5 L488) and Decorator's Kit on a Plain vessel (rev. 5
+ * L622). */
+const REVISION_5 = ["ge_masterpiece", "ge_flawed", "ding_two_coins", "kit_plain"];
 
 function merge(into: Map<string, number>, from: ReadonlyMap<string, number>): void {
   for (const [key, value] of from) {
@@ -191,6 +205,8 @@ describe("fuzz coverage", () => {
         `phases: ${PHASES.map((phase) => `${phase}=${totals.phases.get(phase) ?? 0}`).join(" ")}`,
         `load choices: ${LOAD_FEATURES.map((feature) => `${feature}=${totals.loadFeatures.get(feature) ?? 0}`).join(" ")}`,
         `deck and revision-4 moments: ${DECK_EVENTS.map((moment) => `${moment}=${totals.deckEvents.get(moment) ?? 0}`).join(" ")}`,
+        `free actions (revision 5): ${FREE_ACTIONS.map((moment) => `${moment}=${totals.deckEvents.get(moment) ?? 0}`).join(" ")}`,
+        `changes 37–40: ${REVISION_5.map((moment) => `${moment}=${totals.deckEvents.get(moment) ?? 0}`).join(" ")}`,
         `techs: ${techs.join(" ")}`,
         `kilns: ${kilns.join(" ")}`,
       ].join("\n"),
@@ -208,6 +224,8 @@ describe("fuzz coverage", () => {
     expect(missing(PHASES, totals.phases), "phases never reached").toEqual([]);
     expect(missing(LOAD_FEATURES, totals.loadFeatures), "Glaze & Load choices never made").toEqual([]);
     expect(missing(DECK_EVENTS, totals.deckEvents), "revision-4 and R25 moments never reached").toEqual([]);
+    expect(missing(FREE_ACTIONS, totals.deckEvents), "revision-5 free-action windows never reached").toEqual([]);
+    expect(missing(REVISION_5, totals.deckEvents), "revision-5 Kit, Ding and Ge moments never reached").toEqual([]);
     expect(missing(TECH_IDS, totals.techs), "Techs never used").toEqual([]);
     expect(missing(KILN_IDS, totals.kilns), "Kiln abilities never used").toEqual([]);
   });

@@ -1,5 +1,5 @@
 /**
- * P6 `scoring.ts` (L442–452, v1.6.2 L494–503, L515, L616, R13; DESIGN §8.2 "Automatic
+ * P6 `scoring.ts` (L452–462, v1.6.2 L504–513, L524, L626, R13; DESIGN §8.2 "Automatic
  * Exhibition 2/3/5, +3/+3, Connoisseur's Cabinet", "Coin VP; all tie-breakers"). Advanced Techs
  * score no VP (v1.6.2 change 27, which superseded owner amendment A1; `tech_no_vp.test.ts`), so
  * the breakdown has no Tech line.
@@ -53,7 +53,7 @@ describe("scoring values are the printed ones", () => {
   });
 });
 
-describe("End-game Exhibition (L444–452, INT: automatic)", () => {
+describe("End-game Exhibition (L458–466, INT: automatic)", () => {
   it("exhibits every Finished, undelivered Standard+ ceramic: 2 / 3 / 5", () => {
     const state = game([{}, {}]);
     const std = fin(state, "p1", "bowl white plain std");
@@ -86,21 +86,31 @@ describe("End-game Exhibition (L444–452, INT: automatic)", () => {
     expect(breakdown(state, "p1").exhibition).toMatchObject({ qualityVp: 4, shapesBonus: 0, glazesBonus: 0 });
   });
 
-  it("a Crackle ceramic is exhibited at Fine with its actual Glaze", () => {
+  it("a crackled Fine ceramic is exhibited at Fine with its actual Glaze", () => {
     const state = game([{}, {}]);
     const crackle = fin(state, "p1", "bowl moon_white plain fine crackle");
     expect(breakdown(state, "p1").exhibition).toEqual({ ceramicIds: [crackle], qualityVp: 3, shapesBonus: 0, glazesBonus: 0, total: 3 });
+  });
+
+  it("a crackled Masterpiece is exhibited at 5 and counted by Connoisseur's Cabinet (rev. 5 L482, change 39)", () => {
+    const state = game([{ kilnId: "GE", techs: ["T19"] }, {}]);
+    const crackled = fin(state, "p1", "bowl white plain mp crackle");
+    expect(breakdown(state, "p1").exhibition).toEqual({ ceramicIds: [crackled], qualityVp: 5, shapesBonus: 0, glazesBonus: 0, total: 5 });
+    expect(breakdown(state, "p1").connoisseur).toBe(1);
+    // A crackled Flawed ceramic is never exhibited.
+    fin(state, "p1", "plate white plain flawed crackle");
+    expect(breakdown(state, "p1").exhibition.ceramicIds).toEqual([crackled]);
   });
 
   it("delivered ceramics are not exhibited", () => {
     const state = game([{ hand: ["S08"] }, {}]);
     const vase = fin(state, "p1", "vase white plain mp");
     const kept = fin(state, "p1", "bowl white plain std");
-    resolveOrderCompletion(state, "p1", { orderId: "S08", ceramicIds: [vase] }, testContext());
+    resolveOrderCompletion(state, "p1", { orderId: "S08", ceramicIds: [vase] }, "order_phase", testContext());
     expect(breakdown(state, "p1").exhibition.ceramicIds).toEqual([kept]);
   });
 
-  it("Connoisseur's Cabinet: +1 per exhibited Fine or Masterpiece, up to +5 (L620)", () => {
+  it("Connoisseur's Cabinet: +1 per exhibited Fine or Masterpiece, up to +5 (L626)", () => {
     const state = game([{ techs: ["T19"] }, {}]);
     fin(state, "p1", "bowl white plain std");
     fin(state, "p1", "bowl white plain fine crackle");
@@ -112,7 +122,7 @@ describe("End-game Exhibition (L444–452, INT: automatic)", () => {
   });
 });
 
-describe("the total (L490–494)", () => {
+describe("the total (L504–508)", () => {
   it("adds recorded VP, the Exhibition, the Cabinet and capped Coin VP; owned Techs add nothing (change 27)", () => {
     const state = game([
       {
@@ -139,12 +149,12 @@ describe("the total (L490–494)", () => {
     });
   });
 
-  it("Ge's Crackle VP is recorded Kiln Tradition VP in the final result, never a Crown or a Masterpiece (rev. 4 L465, L487)", () => {
+  it("Ge's Crackle VP is recorded Kiln Tradition VP in the final result, never a Crown (rev. 5 L484, L506)", () => {
     const state = game([{ kilnId: "GE", hand: ["O26"] }, { score: { orders: 13 } }]);
     // p1 delivers 2 Crackle ceramics (both Fine) with O26 (11 VP): 2 Crackle VP.
     const bowl = fin(state, "p1", "bowl white plain fine crackle");
     const plate = fin(state, "p1", "plate white carved fine crackle");
-    const record = resolveOrderCompletion(state, "p1", { orderId: "O26", ceramicIds: [bowl, plate] }, testContext());
+    const record = resolveOrderCompletion(state, "p1", { orderId: "O26", ceramicIds: [bowl, plate] }, "order_phase", testContext());
     expect(record.crackleVp).toBe(2);
     player(state, "p1").resources.coins = 0;
     expect(player(state, "p1").score).toEqual({ orders: 11, kilnAbilities: 2, recognitionOverflow: 0, imperialAudience: 0 });
@@ -160,6 +170,30 @@ describe("the total (L490–494)", () => {
     expect(result.resolvedBy).toBe("shared_victory");
   });
 
+  it("a crackled Masterpiece scores its Crackle VP when delivered and counts for tie-breaker 3 (rev. 5 L482, L484)", () => {
+    const state = game([{ kilnId: "GE", hand: ["O13"] }, { score: { orders: 10 } }]);
+    // O13 (9 VP, Painted, Masterpiece): the printed-Plain crackled Masterpiece declares Painted.
+    const plate = fin(state, "p1", "plate celadon plain mp crackle");
+    const record = resolveOrderCompletion(
+      state,
+      "p1",
+      { orderId: "O13", ceramicIds: [plate], crackleDeclarations: [{ ceramicId: plate, decoration: "painted" }] },
+      "order_phase",
+      testContext(),
+    );
+    expect(record.crackleVp).toBe(1);
+    expect(state.ceramics[plate]).toMatchObject({ stage: "delivered", quality: "masterpiece", crackle: true });
+    player(state, "p1").resources.coins = 0;
+    const result = computeFinalResult(state);
+    expect(result.scores["p1"]).toMatchObject({ orders: 9, kilnAbilities: 1, total: 10 });
+    // Level at 10: the delivered crackled Masterpiece wins tie-breaker 3.
+    expect(result.standings.map((s) => [s.playerId, s.tieBreak.masterpieces])).toEqual([
+      ["p1", 1],
+      ["p2", 0],
+    ]);
+    expect(result.resolvedBy).toBe("masterpieces");
+  });
+
   it.each([
     [0, 0],
     [2, 0],
@@ -173,7 +207,7 @@ describe("the total (L490–494)", () => {
     expect(breakdown(state, "p1").coins).toBe(vp);
   });
 
-  it("uncompleted Orders and unused ceramics cost nothing (L510)", () => {
+  it("uncompleted Orders and unused ceramics cost nothing (L524)", () => {
     const empty = game([{}, {}]);
     const loaded = game([{ hand: ["O47", "O48", "O46"] }, {}]);
     stageCeramic(loaded, { owner: "p1", stage: "shaped", shape: "bowl" });
@@ -193,7 +227,7 @@ describe("the total (L490–494)", () => {
   });
 });
 
-describe("winner and tie-breakers (L496, L498, R13)", () => {
+describe("winner and tie-breakers (L510, L512, R13)", () => {
   it("most VP wins", () => {
     const state = game([{ score: { orders: 10 } }, { score: { orders: 12 } }, { score: { orders: 3 } }]);
     const result = computeFinalResult(state);
@@ -221,11 +255,11 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
     ]);
     // p1: O18 (6 VP, 2 Coins, 1 printed Crown) + Tribute Ware's bonus Crown → Recognition 2.
     const vase = fin(state, "p1", "vase celadon carved fine");
-    resolveOrderCompletion(state, "p1", { orderId: "O18", ceramicIds: [vase] }, testContext());
+    resolveOrderCompletion(state, "p1", { orderId: "O18", ceramicIds: [vase] }, "order_phase", testContext());
     // p2: O39 (13 VP after v1.6.2 change 24, 1 Coin, 2 printed Crowns) → Recognition 2.
     const p2Vase = fin(state, "p2", "vase celadon plain fine");
     const censer = fin(state, "p2", "censer moon_white painted fine");
-    resolveOrderCompletion(state, "p2", { orderId: "O39", ceramicIds: [p2Vase, censer] }, testContext());
+    resolveOrderCompletion(state, "p2", { orderId: "O39", ceramicIds: [p2Vase, censer] }, "order_phase", testContext());
     // p1: 6 VP + 2 Coin VP (6 Coins; Tribute Ware scores no Tech VP, change 27); the
     // Exhibition (3 + 2) levels the totals at 13.
     player(state, "p1").resources.coins = 6;
@@ -249,7 +283,7 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
     const state = game([{ hand: ["S08"] }, {}]);
     // p1: 1 delivered Masterpiece (S08: 2 VP, Coins spent); p2: 1 exhibited Standard (2 VP).
     const delivered = fin(state, "p1", "vase white plain mp");
-    resolveOrderCompletion(state, "p1", { orderId: "S08", ceramicIds: [delivered] }, testContext());
+    resolveOrderCompletion(state, "p1", { orderId: "S08", ceramicIds: [delivered] }, "order_phase", testContext());
     player(state, "p1").resources.coins = 0;
     fin(state, "p2", "bowl white plain std");
     player(state, "p2").score.orders = 0;
@@ -291,7 +325,7 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
   });
 });
 
-describe("finishGame (L490)", () => {
+describe("finishGame (L504)", () => {
   it("records the result, finishes the game and emits a public FINAL_SCORE_CALCULATED", () => {
     const state = game([{ score: { orders: 4 }, resources: { coins: 9 } }, { score: { orders: 6 } }]);
     fin(state, "p1", "bowl white plain fine");

@@ -1,5 +1,5 @@
 /**
- * Guild Hall privacy (v1.6.2 L207, B2, DESIGN §4.2): the Shifu's inspection and the bottom
+ * Guild Hall privacy (v1.6.2 L237, B2, DESIGN §4.2): the Shifu's inspection and the bottom
  * order of the untaken Techs are private to the acting player, also while they wait behind a
  * Colour Samples look, and the step never closes itself on private facts. The public projection and the public
  * event log carry the discipline and counts only; the actor's own view and the `secret` of
@@ -41,7 +41,7 @@ function expectNoHiddenTechs(json: string, state: GameState, hidden: readonly Te
 
 const INSPECT: GameAction = { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "firing" } };
 
-describe("the Shifu inspection is private (L208, B2)", () => {
+describe("the Shifu inspection is private (L237, B2)", () => {
   it("public state shows only who looks, at which discipline, and how many cards", () => {
     const t = table();
     const events = t.act("p1", INSPECT);
@@ -96,7 +96,7 @@ describe("the Shifu inspection is private (L208, B2)", () => {
     expect(JSON.stringify(finish)).not.toContain("T13");
   });
 
-  it("the Techs that wait behind a Colour Samples look stay the Shifu's alone (v1.6.2 L207, L214)", () => {
+  it("the Techs that wait behind a Colour Samples look stay the Shifu's alone (v1.6.2 L237, L243)", () => {
     const t = table();
     t.act("p1", INSPECT);
     const events = t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T10" } });

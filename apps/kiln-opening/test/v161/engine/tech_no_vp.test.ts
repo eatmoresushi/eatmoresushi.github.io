@@ -1,8 +1,8 @@
 /**
- * V1.6.2 rulebook change 27 (owner revision 3, 2026-10-18; v1.6.2 L37, L496, L605): Advanced
+ * V1.6.2 rulebook change 27 (owner revision 3, 2026-10-18; v1.6.2 L37, L506, L615): Advanced
  * Techs no longer score 1 VP when gained, and nothing is added for them at game end. It
  * supersedes owner amendment A1 (Tech VP recorded on gain). Connoisseur's Cabinet keeps its
- * end-game VP (L616); printed costs are unchanged.
+ * end-game VP (L626); printed costs are unchanged.
  *
  * Covered here: the score ledger, `TECH_ACQUIRED`, `playerSummary.recordedVp` and `scorePreview`
  * right after every acquisition path (Apprentice buy, Shifu inspected take, Shifu face-up take,
@@ -58,8 +58,9 @@ describe("change 27: gaining an Advanced Tech scores no VP", () => {
   it("the config has no Tech VP and the score table has no Tech row", () => {
     expect(GAME_CONFIG.techs).toEqual({ perDiscipline: 6, faceUpPerDiscipline: 2, maxOwned: 3, maxPerDiscipline: 1 });
     expect(SCORE_BREAKDOWN_ROWS).not.toContain("techs");
-    // Printed costs are unchanged by change 27 (Fuel Ledger's 4 is change 30, rev. 4 L625).
-    expect([TECHS.T10.cost, TECHS.T12.cost, TECHS.T19.cost, TECHS.T25.cost]).toEqual([2, 4, 3, 4]);
+    // Printed costs are unchanged by change 27 (Fuel Ledger's 4 is change 30, L644;
+    // Colour Samples' 3 is change 38, rev. 5 L632).
+    expect([TECHS.T10.cost, TECHS.T12.cost, TECHS.T19.cost, TECHS.T25.cost]).toEqual([3, 4, 3, 4]);
   });
 
   it("Apprentice buy: no VP in the ledger, the event, the summary or the preview", () => {
@@ -79,7 +80,7 @@ describe("change 27: gaining an Advanced Tech scores no VP", () => {
     expectNoTechVp(t.state, "p1");
   });
 
-  it("Shifu face-up take and a second take (v1.6.2 L207)", () => {
+  it("Shifu face-up take and a second take (v1.6.2 L237)", () => {
     const t = table({ players: [{ resources: { coins: 5 } }, {}] });
     t.act("p1", inspect("firing"));
     expect(acquired(t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T20" } }))).toEqual([
@@ -103,7 +104,7 @@ describe("change 27: gaining an Advanced Tech scores no VP", () => {
   });
 
   it("Fuel Ledger brings its 2 Contribution cards, and still no VP", () => {
-    // Fuel Ledger costs 4 (rev. 4 L625).
+    // Fuel Ledger costs 4 (L644).
     const t = table({ players: [{ resources: { coins: 4 } }, {}], techDisplay: { firing: ["T12", "T13"] } });
     const events = t.act("p1", buy("T12"));
     expect(events.find((event) => event.type === "CONTRIBUTION_CARDS_GAINED")).toEqual({
@@ -116,7 +117,7 @@ describe("change 27: gaining an Advanced Tech scores no VP", () => {
   });
 });
 
-describe("final scoring without Tech VP (v1.6.2 L494–498)", () => {
+describe("final scoring without Tech VP (v1.6.2 L504–508)", () => {
   it("three owned Techs add nothing; Connoisseur's Cabinet keeps its end-game VP", () => {
     const state = buildState({ round: 5, players: [{ kilnId: null, techs: ["T19", "T23", "T25"], resources: { clay: 0, wood: 0, coins: 0 }, score: { orders: 7 } }, { kilnId: null, resources: { clay: 0, wood: 0, coins: 0 } }] });
     stageCeramic(state, { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", decoration: "plain", quality: "fine" });

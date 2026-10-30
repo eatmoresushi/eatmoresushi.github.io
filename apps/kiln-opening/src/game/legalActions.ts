@@ -17,10 +17,10 @@
  *
  * | Family | canonical | exhaustive |
  * | --- | --- | --- |
- * | `SELECT_KILN` | every available Kiln × every face-up slot (rev. 4 L122, R23) | same |
+ * | `SELECT_KILN` | every available Kiln × every face-up slot (L130, R23) | same |
  * | `PLACE_SETTERS_MARK` | one open space per zone, then `null` | every open space, then `null` |
  * | `PLACE_MATERIALS_YARD` | per worker choice: Prepared Clay {none, each Shape × Decoration if ready} × every split (0..4 or 0..8) | same |
- * | `PLACE_FORM_DECORATE` | 20 singles, then (Shifu effect) 210 unordered pairs; × {no discount, Large Throwing Wheel, Decorator's Kit on the first eligible vessel}; × Ding {none, each Decoration on the first Bowl/Plate/Brush Washer} | singles and 400 ordered pairs; the Kit on every eligible vessel; Ding on every eligible vessel |
+ * | `PLACE_FORM_DECORATE` | 20 singles, then (Shifu effect) 210 unordered pairs; × {no discount, Large Throwing Wheel, Decorator's Kit on the first vessel (any Decoration, change 37)}; × Ding {none, each Decoration on the first Bowl/Plate/Brush Washer} | singles and 400 ordered pairs; the Kit on every vessel; Ding on every eligible vessel |
  * | `PLACE_GLAZE_LOAD` | singles, then (Shifu effect) pairs, each built from `loadDestinationOptions` after the earlier load (R8; a Shared destination only with the action's 1 Wood, R24): vessel class × Glaze × destination (one plain space per zone, the own Setter's Mark space, every Inverted Firing target, Kiln Furniture × 3 on one space per zone, Imperial × 3); Reworking Table: each class × other Shape × destination with the first Glaze; Kiln Master {none, +1, −1} on the first load when T24 is ready (R22). Each worker's candidates are disjoint streams interleaved round-robin (`glazeLoadStreams`), each ability variant and the first pair before the Glaze cross-product, so the default `perFamilyLimit` still offers every optional ability used and declined | every vessel, destination and rework (Glaze × destination product); Kiln Master on any one load |
  * | `PLACE_COMMISSION_MARKET` | one per worker choice (Shifu, Apprentice, Apprentice via Senior Apprentice) | same |
  * | `PLACE_GUILD_HALL` | Apprentice: each face-up Tech; Shifu: each discipline with a non-empty deck (the first discipline if every deck is empty, so the Shifu's face-up take stays reachable) | Shifu: every discipline |
@@ -29,10 +29,10 @@
  * | `SELECT_CHOOSE` (every Select: the Commission Market, Colour Samples when acquired and its swap) | every single pick (face-up slots ascending, then looked cards in look order), then, for the Commission Market Shifu effect, every unordered pair in that order (≤ 9 + 36) | same |
  * | Guild Hall sub-steps | all: each next `GUILD_TAKE` (inspected Techs, then face-up), then `GUILD_FINISH` × every bottom order (≤ 2) | same |
  * | `USE_COLOUR_SAMPLES_SWAP` | one swap per held Order, in hand order | same |
- * | `COMPLETE_ORDER` | per held Order: the first match, plus the first Ru-triggering match; each triggered Ru/Guan and Tribute Ware used and declined | every match × decline flags |
- * | `USE_IMPERIAL_PRIORITY` | vessel class × Glaze × modifier; with Reworking Table ready, one variant per class and other Shape; with Kiln Master ready, one variant per class and face (R22) | every vessel × Glaze × modifier × rework × Kiln Master |
- * | firing windows, `END_*` | all, incl. the `null` / decline choice; `SECOND_FIRING_CHOOSE` both cards × Jun {none, +1, −1 when ready}; `USE_GE_CRACKLE` each Fine or Standard target (rev. 4 L463) | same |
- * | `SELL_FLAWED` (R20) | each `sellFlawedOptions` ceramic, in the before- and after-action windows of a Work turn, the Order Phase turn, the after-Quality turn and the pending Cleanup trim; before that decision's exit (`END_*`, the trim) | same |
+ * | `COMPLETE_ORDER` (a free action, rev. 5 L173: before and after the worker action and in the Order Phase turn) | per held Order: the first match, plus the first Ru-triggering match; each triggered Ru/Guan and Tribute Ware used and declined | every match × decline flags |
+ * | `USE_IMPERIAL_PRIORITY` (a free action, rev. 5 L174: before and after the worker action and in the Order Phase turn) | vessel class × Glaze × modifier; with Reworking Table ready, one variant per class and other Shape; with Kiln Master ready, one variant per class and face (R22) | every vessel × Glaze × modifier × rework × Kiln Master |
+ * | firing windows, `END_*` | all, incl. the `null` / decline choice; `SECOND_FIRING_CHOOSE` both cards × Jun {none, +1, −1 when ready}; `USE_GE_CRACKLE` each own ceramic of the firing, any Quality (rev. 5 L482, change 39) | same |
+ * | `SELL_FLAWED` (a free action, rev. 5 L172) | each `sellFlawedOptions` ceramic, in the before- and after-action windows of a Work turn and the Order Phase turn; never in the after-Quality step or the Cleanup trim (I1) | same |
  * | `DISCARD_TO_HAND_LIMIT` | every C(hand, excess) | same |
  *
  * **Bounds.** `perFamilyLimit` (default 64 in canonical, unlimited in exhaustive) stops each
@@ -42,7 +42,7 @@
  * `PLACEMENT_GATE_CODES` (that error then applies to every command of the group), and Form &
  * Decorate skips candidates whose cost lower bound exceeds the player's resources, so an
  * unaffordable or blocked location costs a single validation. Combinations that the
- * 1-per-discipline Tech limit (L211) makes unreachable are never generated together (Prepared
+ * 1-per-discipline Tech limit (L240) makes unreachable are never generated together (Prepared
  * Clay with Senior Apprentice or Decorator's Kit; Kiln Furniture with Inverted Firing comes
  * from P3's option list, which never offers it); validators still handle them.
  *
@@ -350,7 +350,7 @@ function* singleLoads(ctx: EnumContext, earlier: readonly LoadSpec[], filter: Si
 function* materialsYardCandidates(ctx: EnumContext, choice: WorkerChoice): Generator<GameAction> {
   const total = LOCATIONS.materials_yard.effects[choice.effect].resources;
   const prepared: Array<{ shape: Shape; decoration: Decoration } | null> = [null];
-  // Senior Apprentice and Prepared Clay are both Workshop Techs (L211): never together.
+  // Senior Apprentice and Prepared Clay are both Workshop Techs (L240): never together.
   if (!choice.seniorApprentice && techReady(ctx.me, PREPARED_CLAY)) {
     for (const shape of SHAPES) {
       for (const decoration of DECORATIONS) {
@@ -403,17 +403,15 @@ function mightAfford(ctx: EnumContext, effect: WorkerEffect, action: FormDecorat
   return bound.clay <= ctx.me.resources.clay && bound.coins <= ctx.me.resources.coins;
 }
 
-/** Exhaustive discount variants: none, the Wheel, the Kit on each eligible vessel, both. */
+/** Exhaustive discount variants: none, the Wheel, the Kit on each vessel (any Decoration,
+ * rev. 5 L622, change 37), both. */
 function allDiscountVariants(ctx: EnumContext, vessels: readonly FormVesselSpec[]): DiscountVariant[] {
   const wheelShapes: readonly Shape[] = TECHS.T01.params.triggerShapes;
-  const kitDecorations: readonly Decoration[] = TECHS.T16.params.decorations;
   const wheels = techReady(ctx.me, LARGE_THROWING_WHEEL) && vessels.some((v) => wheelShapes.includes(v.shape)) ? [false, true] : [false];
   const kits: Array<number | null> = [null];
   if (techReady(ctx.me, DECORATORS_KIT)) {
-    vessels.forEach((v, index) => {
-      if (kitDecorations.includes(v.decoration)) {
-        kits.push(index);
-      }
+    vessels.forEach((_, index) => {
+      kits.push(index);
     });
   }
   const variants: DiscountVariant[] = [];
@@ -630,7 +628,7 @@ function glazeLoadStreams(ctx: EnumContext, choice: WorkerChoice): Array<Iterabl
 }
 
 /** Every single pick the viewer's open Select allows: the face-up slots ascending, then the
- * looked cards in look order (v1.6.2 L64). */
+ * looked cards in look order (v1.6.2 L80). */
 function selectPicks(ctx: EnumContext): SelectPick[] {
   const options = lookedOrderOptions(ctx.view);
   if (options === null) {
@@ -655,7 +653,7 @@ function* commissionCandidates(_ctx: EnumContext, choice: WorkerChoice): Generat
 }
 
 /**
- * The Magistrate's Hall (rev. 4 L240–245, change 33): the step alone, then for the Shifu effect
+ * The Magistrate's Hall (L258–263, change 33): the step alone, then for the Shifu effect
  * each face-up Crown Order it may reserve after the step (R21: optional; the display positions
  * of `magistratesHallQuote`).
  */
@@ -708,7 +706,7 @@ const PLACEMENT_FAMILIES: readonly Family[] = [
   placementFamily("PLACE_MAGISTRATES_HALL", "magistrates_hall", magistratesHallCandidates),
 ];
 
-// ── Order completion (Order Phase) ───────────────────────────────────────────────────
+// ── Order completion (a free action, any free-action window) ─────────────────────────
 
 function finishedOf(ctx: EnumContext, match: OrderMatch): FinishedCeramic[] {
   return match.ceramicIds
@@ -765,7 +763,7 @@ function family(type: GameActionType, generate: (ctx: EnumContext) => Iterable<G
   return { type, gated: false, groups: (ctx) => [generate(ctx)] };
 }
 
-/** Setup step 9 (rev. 4 L122, R23): every Kiln × every face-up Main Order, in one command. */
+/** Setup step 9 (L130, R23): every Kiln × every face-up Main Order, in one command. */
 const SELECT_KILN = family("SELECT_KILN", function* (ctx) {
   const display = ctx.game.market.display;
   for (const kilnId of KILN_IDS) {
@@ -935,7 +933,7 @@ const USE_GE_CRACKLE = afterQualityFamily("USE_GE_CRACKLE", "ge_crackle");
 
 const END_AFTER_QUALITY = family("END_AFTER_QUALITY", () => [{ type: "END_AFTER_QUALITY" }]);
 
-/** R20: one sale per Flawed ceramic the viewer may sell now (rev. 4 L284). */
+/** One sale per Finished Flawed ceramic the viewer may sell now (a free action, rev. 5 L172). */
 const SELL_FLAWED = family("SELL_FLAWED", function* (ctx) {
   for (const ceramicId of sellFlawedOptions(ctx.view)?.ceramicIds ?? []) {
     yield { type: "SELL_FLAWED", ceramicId };
@@ -967,7 +965,8 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
     case "work_turn":
       switch (phase.step.kind) {
         case "before_action":
-          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, SELL_FLAWED, ...PLACEMENT_FAMILIES];
+          // The free actions (rev. 5 L168–176) and the Colour Samples swap, then the placements.
+          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, SELL_FLAWED, COMPLETE_ORDER, ...PLACEMENT_FAMILIES];
         case "commission_market":
         case "colour_samples":
         case "colour_samples_swap":
@@ -975,7 +974,7 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
         case "guild_inspection":
           return [GUILD_TAKE, GUILD_FINISH];
         case "after_action":
-          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, SELL_FLAWED, END_TURN];
+          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, SELL_FLAWED, COMPLETE_ORDER, END_TURN];
       }
       return [];
     case "firing_contributions":
@@ -988,11 +987,13 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
     case "firing_second_firing_choice":
       return [SECOND_FIRING_CHOOSE];
     case "firing_after_quality":
-      return [USE_PROTECTIVE_SAGGARS, USE_SECOND_FIRING, USE_GE_CRACKLE, SELL_FLAWED, END_AFTER_QUALITY];
+      // No free actions during the firing (rev. 5 L176, I1).
+      return [USE_PROTECTIVE_SAGGARS, USE_SECOND_FIRING, USE_GE_CRACKLE, END_AFTER_QUALITY];
     case "orders":
-      return [COMPLETE_ORDER, SELL_FLAWED, END_ORDER_TURN];
+      return [COMPLETE_ORDER, SELL_FLAWED, USE_IMPERIAL_PRIORITY, END_ORDER_TURN];
     case "cleanup_hand_limit":
-      return [SELL_FLAWED, DISCARD_TO_HAND_LIMIT];
+      // Cleanup is not a free-action window (I1): no sale while trimming.
+      return [DISCARD_TO_HAND_LIMIT];
     case "finished":
       return [];
   }
@@ -1298,7 +1299,7 @@ function randomCompletion(ctx: EnumContext, rng: RandomSource): GameAction | nul
   const spec: OrderCompletionSpec = {
     orderId: match.orderId,
     ceramicIds: [...match.ceramicIds],
-    // Declared mode half the time (L470): the declarations the search would record.
+    // Declared mode half the time (L484): the declarations the search would record.
     ...(match.crackleDeclarations.length > 0 && coin(rng) ? { crackleDeclarations: match.crackleDeclarations.map((d) => ({ ...d })) } : {}),
     ...((match.triggers.ru || match.triggers.guan) && coin(rng) ? { declineKilnAbility: true } : {}),
     ...(match.triggers.tributeWare && coin(rng) ? { declineTributeWare: true } : {}),
@@ -1364,7 +1365,7 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
       return { type };
     case "SELECT_CHOOSE": {
       // 1 pick, a face-up Order or a looked card, or (Commission Market Shifu effect) 2 distinct
-      // picks half the time (v1.6.2 L64, L202).
+      // picks half the time (v1.6.2 L80, L226).
       const options = lookedOrderOptions(view);
       const picks = shuffled(selectPicks(ctx), rng);
       if (options === null || picks.length === 0) {

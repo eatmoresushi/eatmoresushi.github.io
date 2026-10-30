@@ -1,5 +1,5 @@
 /**
- * Heat and Quality (L245–279, L289, L674–680, v1.6.2 L636–637): Base Heat clamp, Contribution
+ * Heat and Quality (L274–301, L310, L680–683, v1.6.2 L643–644): Base Heat clamp, Contribution
  * values (Fuel Ledger's free Bank and Stoke and its 2 cards, change 26), Actual Heat for the Shared Kiln (zone or Kiln
  * Furniture + marker) and the Imperial Kiln, the Quality table with Protective Saggars' floor,
  * Quality assignment, and the public heat previews.
@@ -26,7 +26,7 @@ import { viewOf } from "../../../src/game/view.ts";
 import { buildState } from "./support/fixtures.ts";
 import { eventsOfType, openFiringTable, tendAll, typesOf } from "./support/firing.ts";
 
-describe("baseHeat (L249, L263, L674)", () => {
+describe("baseHeat (L277, L291, L680)", () => {
   it.each([
     [1, 0, 1],
     [2, 0, 2],
@@ -47,7 +47,7 @@ describe("baseHeat (L249, L263, L674)", () => {
   });
 });
 
-describe("Contribution values (v1.6.2 L262–266, L634, change 26)", () => {
+describe("Contribution values (v1.6.2 L285–289, L644, change 26)", () => {
   it("Bank −1 / 1 Wood, Tend 0 / 0, Stoke +1 / 1 Wood", () => {
     expect([contributionHeat({ card: "BANK" }), contributionWood({ card: "BANK" }, false)]).toEqual([-1, 1]);
     expect([contributionHeat({ card: "TEND" }), contributionWood({ card: "TEND" }, false)]).toEqual([0, 0]);
@@ -68,7 +68,7 @@ describe("Contribution values (v1.6.2 L262–266, L634, change 26)", () => {
   });
 });
 
-describe("Protective Saggars' floor (v1.6.2 L636)", () => {
+describe("Protective Saggars' floor (v1.6.2 L643)", () => {
   it.each([
     [0, "masterpiece", "masterpiece", false],
     [1, "fine", "fine", false],
@@ -86,8 +86,8 @@ describe("Protective Saggars' floor (v1.6.2 L636)", () => {
   });
 });
 
-describe("heatCalculation and the Quality table (L64, L245, L274–279)", () => {
-  it("sums source, position and the Kiln Master marker, then Jun, and takes the absolute Heat Difference (rev. 4 L255, L635)", () => {
+describe("heatCalculation and the Quality table (L87, L274, L295–300)", () => {
+  it("sums source, position and the Kiln Master marker, then Jun, and takes the absolute Heat Difference (L273, L654)", () => {
     expect(heatCalculation({ fireModifier: 1, heatSource: 4, positionModifier: -1, kilnMasterMarker: 1, junAdjustment: -1, preferredHeat: 2 })).toEqual({
       fireModifier: 1,
       heatSource: 4,
@@ -113,13 +113,13 @@ describe("heatCalculation and the Quality table (L64, L245, L274–279)", () => 
     expect(qualityForDifference(difference)).toBe(quality);
   });
 
-  it("withJunAdjustment keeps the Kiln Master marker and replaces only Jun's ±1 (rev. 4 L627, L635)", () => {
+  it("withJunAdjustment keeps the Kiln Master marker and replaces only Jun's ±1 (L646, L654)", () => {
     const first = heatCalculation({ fireModifier: 0, heatSource: 2, positionModifier: 0, kilnMasterMarker: -1, junAdjustment: 0, preferredHeat: 2 });
     expect(withJunAdjustment(first, 1, 2)).toEqual({ ...first, junAdjustment: 1, finalActualHeat: 2, heatDifference: 0 });
   });
 });
 
-describe("positionFor (L72, L245, L289, L628, R8, R11)", () => {
+describe("positionFor (L95, L274, L310, L634, R8, R11)", () => {
   it("uses the printed zone modifier: High +1, Middle 0, Low −1", () => {
     const state = buildState({
       players: 4,
@@ -154,8 +154,8 @@ function results(events: Parameters<typeof eventsOfType>[0]): CeramicHeatResult[
   return eventsOfType(events, "ACTUAL_HEAT_CALCULATED")[0]?.results ?? [];
 }
 
-describe("Actual Heat in the firing (L245, L677–678)", () => {
-  it("Shared: Global Heat + zone + Kiln Master marker; Global Heat is Base + Fire and unclamped (L249, rev. 4 L255)", () => {
+describe("Actual Heat in the firing (L274, L683)", () => {
+  it("Shared: Global Heat + zone + Kiln Master marker; Global Heat is Base + Fire and unclamped (L277, L273)", () => {
     const table = openFiringTable({
       players: [{ techs: ["T12"], resources: { wood: 3 } }, { techs: [{ id: "T24", usedThisRound: true }] }],
       kilnDie: 3,
@@ -179,7 +179,7 @@ describe("Actual Heat in the firing (L245, L677–678)", () => {
     expect(table.state.lastFiring?.globalHeat ?? table.state.firing?.globalHeat).toBe(7);
   });
 
-  it("Imperial: Kiln Die + Fire + Imperial modifier + Kiln Master marker, whatever the Contributions were (L289, R10, rev. 4 L292)", () => {
+  it("Imperial: Kiln Die + Fire + Imperial modifier + Kiln Master marker, whatever the Contributions were (L310, R10, L310)", () => {
     const table = openFiringTable({
       players: [{ recognition: 2, techs: [{ id: "T24", usedThisRound: true }], resources: { wood: 4 } }, {}],
       kilnDie: 1,
@@ -210,7 +210,7 @@ describe("Actual Heat in the firing (L245, L677–678)", () => {
     ]);
   });
 
-  it("Kiln Furniture's modifier replaces the zone and stacks with the Kiln Master marker (L628, rev. 4 L635)", () => {
+  it("Kiln Furniture's modifier replaces the zone and stacks with the Kiln Master marker (L634, L654)", () => {
     const table = openFiringTable({
       players: [{ techs: ["T15", { id: "T24", usedThisRound: true }] }, {}],
       fireDeck: [0],
@@ -225,7 +225,7 @@ describe("Actual Heat in the firing (L245, L677–678)", () => {
   });
 });
 
-describe("Quality assignment (L274–279, L680)", () => {
+describe("Quality assignment (L295–300, L683)", () => {
   it("assigns every ceramic's Quality from its Heat Difference, in ceramic order", () => {
     // Base 2, Fire 0, Global 2. Middle spaces (0): White 1 → Fine, Celadon 2 → Masterpiece,
     // Grey-Green 3 → Fine; Low (−1): Moon White 4 → 1, Flawed; High (+1): White 1 → 3, Standard.
@@ -257,9 +257,9 @@ describe("Quality assignment (L274–279, L680)", () => {
     const qualities: Array<Quality | null> = firingRecordsInOrder(firing).map((record) => record.quality);
     expect(qualities).toEqual(["fine", "masterpiece", "fine", "flawed", "standard"]);
     expect(firing.ceramics["c4"]?.history).toEqual([{ cause: "fired", from: null, to: "flawed" }]);
-    // Quality is recorded on the firing; the ceramics stay loaded until step 6 (rev. 4 L664).
+    // Quality is recorded on the firing; the ceramics stay loaded until step 6 (L683).
     expect(table.state.ceramics["c4"]?.stage).toBe("loaded");
-    // p3 (the default Ge Kiln) may crackle its Fine c3 (rev. 4 L463); p4 may Second-Fire c4.
+    // p3 (the default Ge Kiln) may crackle its Fine c3 (L482); p4 may Second-Fire c4.
     expect(table.state.phase).toEqual({ type: "firing_after_quality", queue: { actorIds: ["p3", "p4"], index: 0 } });
   });
 
@@ -303,7 +303,7 @@ describe("heatPreviews (public information only)", () => {
     ]);
   });
 
-  it("after Base Heat: known for every ceramic, the Kiln Master marker included (public since loading, rev. 4 L635)", () => {
+  it("after Base Heat: known for every ceramic, the Kiln Master marker included (public since loading, L654)", () => {
     const table = openFiringTable({
       players: [{ techs: [{ id: "T24", usedThisRound: true }] }, { techs: ["T13"] }],
       fireDeck: [0],
@@ -313,7 +313,7 @@ describe("heatPreviews (public information only)", () => {
       ],
     });
     tendAll(table);
-    // Test Pieces pauses the firing after Base Heat and before the Fire card (rev. 4 L626).
+    // Test Pieces pauses the firing after Base Heat and before the Fire card (L645).
     expect(table.state.phase.type).toBe("firing_test_pieces");
     const previews = heatPreviews(table.view("p2"));
     expect(previews[0]).toMatchObject({ ceramicId: "c1", preferredHeat: 2, heatBeforeFire: 4 });
@@ -324,7 +324,7 @@ describe("heatPreviews (public information only)", () => {
     expect(heatPreviews(table.view(null))).toEqual(previews);
   });
 
-  it("applies Protective Saggars' floor to its owner's ceramics only (v1.6.2 L636)", () => {
+  it("applies Protective Saggars' floor to its owner's ceramics only (v1.6.2 L643)", () => {
     const state = buildState({
       players: [{ recognition: 2, techs: ["T11"] }, { recognition: 2 }],
       kilnDie: 1,

@@ -1,9 +1,11 @@
 /**
- * Work Phase turns (L134–144, L191, L391, L293, v1.6.2 L625; DESIGN §3.2, §3.6, §3.7, §4.5,
+ * Work Phase turns (L156–166, L221, L405, rev. 5 L168–176, L632; DESIGN §3.2, §3.6, §3.7, §4.5,
  * §7): First Player clockwise, 1 worker per turn, no passing, until every worker is placed; the
- * after-action window (the Colour Samples swap ready with a held Order, or Imperial Priority
- * usable — public facts only, whatever the hand holds); END_TURN; the deferred Main display
- * refill at the end of the reserving player's turn; and storage-order independence.
+ * after-action window (I2: the Colour Samples swap ready with a held Order, Imperial Priority
+ * usable, a Finished Flawed ceramic to sell, or a held Order with a Finished ceramic that is not
+ * Flawed — public facts only, whatever the hand holds), rechecked after each free action;
+ * END_TURN; the deferred Main display refill at the end of the reserving player's turn; and
+ * storage-order independence.
  */
 
 import { describe, expect, it } from "vitest";
@@ -32,8 +34,8 @@ function types(events: readonly GameEvent[]): string[] {
   return events.map((event) => event.type);
 }
 
-/** The Canal Wharf, always legal (L143), with an available Apprentice (2 Coins and nothing else,
- * v1.6.2 L219), else the Shifu. */
+/** The Canal Wharf, always legal (L165), with an available Apprentice (2 Coins and nothing else,
+ * v1.6.2 L249), else the Shifu. */
 function wharf(state: GameState, playerId: PlayerId): GameAction {
   const available = availableWorkers(state, playerId);
   const worker = available.find((candidate) => candidate.kind === "apprentice") ?? available[0];
@@ -41,7 +43,7 @@ function wharf(state: GameState, playerId: PlayerId): GameAction {
   return { type: "PLACE_CANAL_WHARF", workerId: worker.id };
 }
 
-describe("opening the Work Phase (L132, L136)", () => {
+describe("opening the Work Phase (L154, L158)", () => {
   it("the First Player takes the first turn", () => {
     const state = buildState({ players: 3, firstPlayerId: "p2", phase: { type: "round_start_setters_mark", queue: { actorIds: [], index: 0 } } });
     const ctx = testContext();
@@ -76,7 +78,7 @@ describe("opening the Work Phase (L132, L136)", () => {
   });
 });
 
-describe("turn order and placements (L136, L138)", () => {
+describe("turn order and placements (L158, L160)", () => {
   it("First Player clockwise, 1 worker per turn, until every player has placed all 4 workers", () => {
     const t = table({ players: 3, firstPlayerId: "p2" });
     const actors: PlayerId[] = [];
@@ -93,7 +95,7 @@ describe("turn order and placements (L136, L138)", () => {
     expect(t.events.at(-1)).toEqual({ type: "WORK_PHASE_ENDED", round: 1 });
     for (const playerId of ["p1", "p2", "p3"]) {
       expect(availableWorkers(t.state, playerId)).toEqual([]);
-      // 20 placements over the game: 4 per round, the Shifu among them (L138).
+      // 20 placements over the game: 4 per round, the Shifu among them (L160).
       expect(Object.values(t.player(playerId).workers).map((w) => w.placement?.locationId)).toEqual(Array(4).fill("canal_wharf"));
       expect(t.player(playerId).resources.coins).toBe(3 + 4 + 2 + 2 + 2);
     }
@@ -116,7 +118,7 @@ describe("turn order and placements (L136, L138)", () => {
     expect(actors).toEqual(["p1", "p2", "p1", "p1", "p1"]);
   });
 
-  it("you may not pass (L143): END_TURN before the worker action is WORKER_ACTION_REQUIRED", () => {
+  it("you may not pass (L165): END_TURN before the worker action is WORKER_ACTION_REQUIRED", () => {
     const t = table();
     const error = t.expectRuleError("p1", { type: "END_TURN" }, "WORKER_ACTION_REQUIRED");
     expectDocumentedDetails(error);
@@ -135,7 +137,7 @@ describe("turn order and placements (L136, L138)", () => {
   });
 });
 
-describe("the after-action window (DESIGN §3.2 step 3, §4.5)", () => {
+describe("the after-action window (DESIGN §3.2 step 3, §4.5; I2)", () => {
   it("opens when the Colour Samples swap is ready with a held Order, and END_TURN closes it (not automatic)", () => {
     const t = table({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] });
     const events = t.act("p1", wharf(t.state, "p1"));
@@ -154,9 +156,65 @@ describe("the after-action window (DESIGN §3.2 step 3, §4.5)", () => {
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
     const empty = table({ players: [{ techs: ["T10"] }, {}] });
     expect(afterActionWindowOpen(projectPublicState(empty.state), "p1")).toBe(false);
-    // Canal Barge no longer opens it (v1.6.2 L630).
+    // Canal Barge does not open it by itself (rev. 5 L637): a held Order needs a Finished ceramic.
     const barge = table({ players: [{ techs: ["T23"], hand: ["O40"] }, {}] });
     expect(afterActionWindowOpen(projectPublicState(barge.state), "p1")).toBe(false);
+  });
+
+  it("opens for a Finished Flawed ceramic to sell, or a held Order with a Finished ceramic that is not Flawed (I2)", () => {
+    const flawed: StateSpec = { players: [{}, {}], ceramics: [{ owner: "p1", shape: "bowl", stage: "finished", glaze: "white", quality: "flawed" }] };
+    expect(afterActionWindowOpen(projectPublicState(buildState(flawed)), "p1")).toBe(true);
+    // A completion that public facts cannot rule out: 1 held Order, 1 Finished Standard ceramic.
+    const possible: StateSpec = { players: [{ hand: ["O30"] }, {}], ceramics: [{ owner: "p1", shape: "plate", stage: "finished", glaze: "white", quality: "standard" }] };
+    expect(afterActionWindowOpen(projectPublicState(buildState(possible)), "p1")).toBe(true);
+    // Closed: no held Order; or held Orders with only a Flawed Finished ceramic (which then opens it
+    // for the sale), so also closed with only a loaded or Shaped ceramic.
+    const noHand: StateSpec = { players: [{}, {}], ceramics: [{ owner: "p1", shape: "plate", stage: "finished", glaze: "white", quality: "fine" }] };
+    expect(afterActionWindowOpen(projectPublicState(buildState(noHand)), "p1")).toBe(false);
+    const notFinished: StateSpec = {
+      players: [{ hand: ["S08"] }, {}],
+      ceramics: [
+        { owner: "p1", shape: "plate", stage: "shaped" },
+        { owner: "p1", shape: "bowl", stage: "loaded", glaze: "white", at: "high_1" },
+        { owner: "p2", shape: "vase", stage: "finished", glaze: "white", quality: "fine" },
+      ],
+    };
+    expect(afterActionWindowOpen(projectPublicState(buildState(notFinished)), "p1")).toBe(false);
+    // Through the production flow: open after the action, then END_TURN.
+    const t = table(possible);
+    t.act("p1", wharf(t.state, "p1"));
+    expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
+    expect(t.act("p1", { type: "END_TURN" })[0]).toEqual({ type: "WORK_TURN_ENDED", playerId: "p1", automatic: false });
+  });
+
+  it("gives the same answer for two hands of the same size, completable or not (DESIGN §4.5)", () => {
+    // O01 (a Bowl) is completable with the Finished Bowl; O30 (Bowl + Brush Washer) is not. The
+    // public projections agree, and so do the window and p2's view after the action.
+    const bowl = { owner: "p1", shape: "bowl", stage: "finished", glaze: "white", quality: "standard" } as const;
+    const completable = table({ players: [{ hand: ["O01"] }, {}, { hand: ["O30"] }], ceramics: [bowl] });
+    const hopeless = table({ players: [{ hand: ["O30"] }, {}, { hand: ["O01"] }], ceramics: [bowl] });
+    expect(projectPublicState(completable.state)).toEqual(projectPublicState(hopeless.state));
+    completable.act("p1", wharf(completable.state, "p1"));
+    hopeless.act("p1", wharf(hopeless.state, "p1"));
+    expect(completable.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
+    expect(projectPublicState(completable.state)).toEqual(projectPublicState(hopeless.state));
+    expect(completable.view("p2")).toEqual(hopeless.view("p2"));
+  });
+
+  it("is rechecked after each free action, and the turn ends automatically after the last thing it offered", () => {
+    const t = table({
+      players: [{ hand: ["O01"] }, {}],
+      ceramics: [
+        { owner: "p1", shape: "bowl", stage: "finished", glaze: "white", quality: "standard" },
+        { owner: "p1", shape: "plate", stage: "finished", glaze: "white", quality: "flawed" },
+      ],
+    });
+    t.act("p1", wharf(t.state, "p1"));
+    expect(types(t.act("p1", { type: "SELL_FLAWED", ceramicId: "c2" }))).toEqual(["CERAMIC_SOLD", "RESOURCES_CHANGED"]);
+    expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
+    const last = t.act("p1", { type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"] });
+    expect(types(last)).toEqual(["ORDER_COMPLETED", "RESOURCES_CHANGED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(last[2]).toEqual({ type: "WORK_TURN_ENDED", playerId: "p1", automatic: true });
   });
 
   it("opens on public facts only: whatever the held Order is, and even with no card to look at (DESIGN §4.5)", () => {
@@ -227,7 +285,7 @@ describe("the after-action window (DESIGN §3.2 step 3, §4.5)", () => {
   });
 });
 
-describe("the deferred Main display refill (L191, L391; INT)", () => {
+describe("the deferred Main display refill (L221, L405; INT)", () => {
   it("runs at the end of the reserving player's turn, before WORK_TURN_ENDED, and only for them", () => {
     const state = buildState({
       display: [null, "O02", "O03", null, "O05", "O06"],
@@ -276,14 +334,17 @@ describe("determinism and storage key order (DESIGN §7)", () => {
     const script: Array<[PlayerId, GameAction]> = [
       ["p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" }],
       ["p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O08" }, { kind: "face_up", slotIndex: 1, orderId: "O02" }] }],
+      // p1 holds Orders and a Finished Standard Bowl, so the after-action window opens (I2).
+      ["p1", { type: "END_TURN" }],
       ["p2", { type: "PLACE_GUILD_HALL", workerId: "p2:shifu", choice: { kind: "inspect", discipline: "glazing_loading" } }],
       ["p2", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T10" } }],
       ["p2", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O11" }] }],
       ["p2", { type: "GUILD_FINISH", bottomOrder: ["T21", "T15"] }],
-      // Colour Samples' swap is usable the round it is acquired (v1.6.2 L625, L213).
+      // Colour Samples' swap is usable the round it is acquired (v1.6.2 L632, L243).
       ["p2", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O11" }],
       ["p2", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O15" }] }],
       ["p1", { type: "PLACE_GUILD_HALL", workerId: "p1:apprentice:1", choice: { kind: "buy_face_up", techId: "T01" } }],
+      ["p1", { type: "END_TURN" }],
       ["p2", { type: "PLACE_CANAL_WHARF", workerId: "p2:apprentice:1" }],
     ];
     const run = (resort: boolean) => {
@@ -313,7 +374,7 @@ describe("determinism and storage key order (DESIGN §7)", () => {
     expect(plain.state.hidden.orderHands["p2"]).toEqual(["O15"]);
     // Every looked card not reserved was discarded face down (owner ruling R25), look by look in
     // look order, the last on top: the Commission look's O07 and O09, Colour Samples' O12 and
-    // O13; then the swap's discarded O11 (L646), then its Select 3's (change 25) O14 and O16.
+    // O13; then the swap's discarded O11 (L656), then its Select 3's (change 25) O14 and O16.
     expect(plain.state.hidden.mainDiscard).toEqual(["O16", "O14", "O11", "O13", "O12", "O09", "O07"]);
     for (const id of ["O07", "O09", "O11", "O12", "O13", "O14", "O16"]) expect(plain.state.hidden.mainDeck).not.toContain(id);
   });

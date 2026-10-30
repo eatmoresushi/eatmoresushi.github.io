@@ -10,7 +10,7 @@ V1.6.1 replaces the V1.4 engine wholesale. Nothing here changes a rule or a bala
 
 **Revision 2 (2026-10-14)** addresses the rules review and the consumer review of revision 1. §12 records the disposition of every finding.
 
-**V1.6.2 note.** The engine now follows the V1.6.2 rulebook. [ENGINE_V1.6.2_DELTA.md](./ENGINE_V1.6.2_DELTA.md) lists every change to this design and wins where the two disagree; its §15 covers owner revision 4 (changes 28–35) and rulings R20–R25. Passages here on the player Heat marker and the Heat-marker step (`firing_heat_markers`, `RESOLVE_HEAT_MARKERS`, Kiln Master in that step), the salvage step (`firing_salvage`, `SALVAGE_FLAWED`), Decoration costs, the dealt starting Main Order and looked cards under the Main deck describe removed rules. Only the tables the content contract reads are amended in place: `flawedSaleCoins` in §6.2, the GE row of §6.4 and the T24 row of §6.5, each with a note.
+**V1.6.2 note.** The engine now follows the V1.6.2 rulebook. [ENGINE_V1.6.2_DELTA.md](./ENGINE_V1.6.2_DELTA.md) lists every change to this design and wins where the two disagree; its §15 covers owner revision 4 (changes 28–35) and rulings R20–R25, and its §16 owner revision 5 (changes 36–42). Passages here on the player Heat marker and the Heat-marker step (`firing_heat_markers`, `RESOLVE_HEAT_MARKERS`, Kiln Master in that step), the salvage step (`firing_salvage`, `SALVAGE_FLAWED`), Decoration costs, the dealt starting Main Order and looked cards under the Main deck describe removed rules. So do the passages that complete Orders only in the Order Phase and spend Imperial Priority only before or after a worker action: since revision 5, selling a Flawed ceramic, completing held Orders and spending Imperial Priority are free actions (rev. 5 L168–176), legal in the actor's own Work turn before or after the worker action and in their Order Phase turn. Their handlers live in `freeActions.ts` (layer 5; `COMPLETE_ORDER` moved from `orders/phase.ts`, `USE_IMPERIAL_PRIORITY` from `work/windowAbilities.ts`, `SELL_FLAWED` from the deleted `flawedSaleHandler.ts`), the shared window checks in `freeActionWindow.ts` (layer 3), and `flawedSale.ts` moved to layer 4 (delta §16.10). Only the tables the content contract reads are amended in place: `flawedSaleCoins` in §6.2, the GE and DI rows of §6.4 and the T16 and T24 rows of §6.5, each with a note.
 
 ---
 
@@ -879,11 +879,11 @@ There is no `enabled` flag: all five are selectable (R1).
 | --- | --- |
 | RU | `{vp:4, glaze:"celadon", decoration:"plain", quality:"masterpiece"}` |
 | GU | `{coins:2, vp:1, minPrintedCrowns:1}` |
-| GE | `{fromQualities:["fine","standard"], toQuality:"fine", vpPerDeliveredCrackle:1}` |
-| DI | `{shapes:["bowl","plate","washer"], clay:1, coins:1}` |
+| GE | `{upgradeFrom:"standard", upgradeTo:"fine", vpPerDeliveredCrackle:1}` |
+| DI | `{shapes:["bowl","plate","washer"], clay:1, coins:2}` |
 | JU | `{wood:1, deltas:[1,-1]}` |
 
-GE follows V1.6.2 owner revision 4 (change 29; ENGINE_V1.6.2_DELTA.md §15.8): it was `{fromQuality:"standard", toQuality:"fine"}`.
+GE follows V1.6.2 owner revision 4 (change 29; ENGINE_V1.6.2_DELTA.md §15.8): it was `{fromQuality:"standard", toQuality:"fine"}`. GE and DI follow V1.6.2 owner revision 5 (changes 39 and 40; ENGINE_V1.6.2_DELTA.md §16.9): Ge crackles any of its owner's ceramics of the firing and raises only a Standard one to Fine (revision 4: `{fromQualities:["fine","standard"], toQuality:"fine", vpPerDeliveredCrackle:1}`), and Ding's vessel costs 1 Clay + 2 Coins (revision 4: `coins:1`).
 
 ### 6.5 `techniques.json` → `{rulesVersion, advanced: TechDefinition[18]}`
 
@@ -892,7 +892,7 @@ There is no `starting` key. Each entry has `id, discipline, cost, oncePerRound, 
 | ID | oncePerRound | timing | params |
 | --- | --- | --- | --- |
 | T01 | yes | form_decorate_action | `{clayReduction:2, triggerShapes:["vase","censer"]}` |
-| T16 | yes | form_decorate_action | `{coinReduction:1, decorations:["carved","impressed","painted"]}` |
+| T16 | yes | form_decorate_action | `{coinReduction:1}` |
 | T05 | yes | glaze_and_load | `{}` |
 | T17 | yes | materials_yard_action | `{claySurcharge:1}` |
 | T18 | yes | worker_placement | `{locations:["materials_yard","commission_market"]}` |
@@ -910,11 +910,11 @@ There is no `starting` key. Each entry has `id, discipline, cost, oncePerRound, 
 | T24 | yes | when_loading | `{values:[1,-1]}` |
 | T25 | yes | order_completion | `{bonusCrowns:1}` |
 
-T24 follows V1.6.2 owner revision 4 (changes 28 and 31, R22; ENGINE_V1.6.2_DELTA.md §15.8): Kiln Master's marker is placed when a ceramic is loaded, and the timing was `heat_marker_step`, the retired Heat-marker step.
+T24 follows V1.6.2 owner revision 4 (changes 28 and 31, R22; ENGINE_V1.6.2_DELTA.md §15.8): Kiln Master's marker is placed when a ceramic is loaded, and the timing was `heat_marker_step`, the retired Heat-marker step. T16 follows V1.6.2 owner revision 5 (change 37; ENGINE_V1.6.2_DELTA.md §16.9): Decorator's Kit reduces any vessel, and the params were `{coinReduction:1, decorations:["carved","impressed","painted"]}`.
 
 `unlocks` is `form_decorate` for Workshop, `glaze_load` for Glazing & Loading and `null` for Firing.
 
-`timing` is informational: it names the tile's usual window for UI grouping and reminders, and no rule reads it. A Tech applies wherever its ability text applies. In particular, T16 Decorator's Kit (`form_decorate_action`) also reduces a Decoration paid through Prepared Clay (T17) during a Materials Yard action (audit interpretation, L616).
+`timing` is informational: it names the tile's usual window for UI grouping and reminders, and no rule reads it. A Tech applies wherever its ability text applies. In particular, T16 Decorator's Kit (`form_decorate_action`) also reduces the Coins of a vessel formed through Prepared Clay (T17) during a Materials Yard action (audit interpretation, L616).
 
 ### 6.6 `orders.json` → `{rulesVersion, starting: OrderDefinition[16], main: OrderDefinition[48]}`
 

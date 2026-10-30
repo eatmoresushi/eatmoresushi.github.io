@@ -1,5 +1,5 @@
 /**
- * Test Pieces (T13, rev. 4 L626, L636, Appendix D "end of 1"; INT "Test Pieces"; owner ruling
+ * Test Pieces (T13, L645, L655, Appendix D "end of 1"; INT "Test Pieces"; owner ruling
  * R15): once per round, after Base Heat is determined and before the Fire card is revealed
  * (there is no Heat-marker step since changes 28 and 31); needs a ceramic in this firing
  * (Imperial counts) and 1 Wood; a private peek, then a public, optional bury to the bottom of
@@ -28,7 +28,7 @@ function spec(extra: Partial<StateSpec> = {}): StateSpec {
   };
 }
 
-describe("eligibility (L639, INT)", () => {
+describe("eligibility (L645, INT)", () => {
   it("opens after Base Heat for a ready owner with a ceramic in this firing and 1 Wood", () => {
     const table = openFiringTable(spec());
     const events = tendAll(table);
@@ -68,7 +68,7 @@ describe("eligibility (L639, INT)", () => {
   });
 });
 
-describe("the private peek and the public bury (v1.6.2 L638, L648, R15)", () => {
+describe("the private peek and the public bury (v1.6.2 L645, L655, R15)", () => {
   it("pays 1 Wood, uses the Tech and shows the top card to its owner only", () => {
     const table = openFiringTable(spec());
     tendAll(table);
@@ -106,7 +106,7 @@ describe("the private peek and the public bury (v1.6.2 L638, L648, R15)", () => 
     const events = table.act("p1", { type: "TEST_PIECES_BURY", bury: true });
     expect(events[0]).toEqual({ type: "TEST_PIECES_USED", playerId: "p1", buried: true });
     expect(projectEvent(events[0] as GameEvent)).toEqual(events[0]);
-    // No Heat-marker actor: the Fire card is revealed in the same command (L677).
+    // No Heat-marker actor: the Fire card is revealed in the same command (L683).
     expect(eventsOfType(events, "FIRE_REVEALED")[0]?.modifier).toBe(-1);
     expect(table.state.hidden.fireDeck.at(-1)).toBe(2);
     // The bury is public, so is the number of buried cards (R15).
@@ -170,7 +170,7 @@ describe("the private peek and the public bury (v1.6.2 L638, L648, R15)", () => 
     expect(table.state.lastFiring?.testPieces ?? table.state.firing?.testPieces).toEqual([{ playerId: "p1", peeked: false, buried: false }]);
   });
 
-  it("peeking at an empty deck reshuffles the open discard first (L511), and the reveal draws that card", () => {
+  it("peeking at an empty deck reshuffles the open discard first (L526), and the reveal draws that card", () => {
     const table = openFiringTable(spec({ fireDeck: [] }), { seed: 11 });
     tendAll(table);
     const discard = [...table.state.fireDiscard];
@@ -197,8 +197,8 @@ describe("the private peek and the public bury (v1.6.2 L638, L648, R15)", () => 
   });
 });
 
-describe("timing and step errors (rev. 4 L626, L668–670)", () => {
-  it("resolves after Base Heat is determined and before the Fire card is revealed (rev. 4 L626, L670)", () => {
+describe("timing and step errors (L645, L687–689)", () => {
+  it("resolves after Base Heat is determined and before the Fire card is revealed (L645, L689)", () => {
     const table = openFiringTable(
       spec({
         ceramics: [

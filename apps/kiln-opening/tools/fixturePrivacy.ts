@@ -20,11 +20,13 @@
  * secret names it, which means it moved where only that seat saw it go. That splits them in two:
  * - `unseen`: never shown to the viewer, so they may appear nowhere in its payloads;
  * - `rehidden`: shown once and moved unseen since, such as a face-up Order reserved in public
- *   and then given up face down for a Colour Samples swap (B3, v1.6.2 L641), or a card the
+ *   and then given up face down for a Colour Samples swap (B3, v1.6.2 L656), or a card the
  *   viewer looked at and discarded (`LOOKED_ORDERS_DISCARDED`, owner ruling R25) that came back
  *   through a Main deck reshuffle and another seat then drew or looked at unseen. They
  *   may appear only in event records (`HISTORY_KEYS`), which are exact copies of authoritative
- *   events and show what the viewer saw when the event happened.
+ *   events and show what the viewer saw when the event happened, and in the viewer's own steered
+ *   commands (`source.steered` entries whose `playerId` is the viewer), which likewise record
+ *   what the viewer named when it made them; never in another seat's steered command.
  *
  * Node-only tool code: never imported by `src/app`.
  */
@@ -57,6 +59,24 @@ export interface PrivacyCheckedEntry {
  * checked to be an exact copy, so it shows only what the viewer saw when the event happened.
  */
 const HISTORY_KEYS: ReadonlySet<PathKey> = new Set(["recentPublicEvents", "ownSecrets", "events"]);
+
+/**
+ * Whether `path` is inside a historical record the viewer may see: the event records above, or
+ * one of the viewer's **own** steered commands, `source.steered[i]` with `playerId === viewerId`
+ * (the engine-validated commands the generator steered a seat to make at an earlier revision,
+ * `tools/uiFixtures.ts`). The viewer's own command shows what the viewer named when it made it,
+ * like its own secret event, so it may name a `rehidden` ID (such as the viewer's own Setup Main
+ * Order, later trimmed and reshuffled away unseen). Another seat's steered command is a raw
+ * command, private choices included (the Order a `DISCARD_TO_HAND_LIMIT` or a
+ * `USE_COLOUR_SAMPLES_SWAP` put face down), so it is checked like a current payload: it may name
+ * no `rehidden` ID. An `unseen` ID is a leak everywhere.
+ */
+function isHistoryPath(path: readonly PathKey[], entry: PrivacyCheckedEntry): boolean {
+  if (HISTORY_KEYS.has(path[0] ?? "")) return true;
+  if (path[0] !== "source" || path[1] !== "steered" || typeof path[2] !== "number") return false;
+  const steered = (entry as { source?: { steered?: ReadonlyArray<{ playerId?: unknown } | undefined> } }).source?.steered;
+  return steered?.[path[2]]?.playerId === entry.viewerId;
+}
 
 export type PathKey = string | number;
 
@@ -122,7 +142,7 @@ function hiddenPlaces(state: GameState, viewerId: PlayerId): Map<string, string>
   }
   const look = hidden.pendingLook;
   if (look !== null) {
-    // A Guild inspection that waits behind Colour Samples stays private too (v1.6.2 L207).
+    // A Guild inspection that waits behind Colour Samples stays private too (v1.6.2 L237).
     const ids = look.kind === "guild_inspection" ? look.techIds : [...look.orderIds, ...(look.kind === "colour_samples" ? (look.inspection?.techIds ?? []) : [])];
     for (const id of ids) {
       if (look.playerId === viewerId) places.delete(id);
@@ -265,7 +285,7 @@ export function entryPrivacyProblems(
   walk(entry, (path, value) => {
     if (typeof value !== "string") return;
     if (unseen.has(value)) problems.push(`${value} from ${unseen.get(value)} at ${path.join(".")}`);
-    else if (rehidden.has(value) && !HISTORY_KEYS.has(path[0] ?? "")) problems.push(`${value} from ${rehidden.get(value)} at ${path.join(".")}`);
+    else if (rehidden.has(value) && !isHistoryPath(path, entry)) problems.push(`${value} from ${rehidden.get(value)} at ${path.join(".")}`);
   });
   if (state.phase.type === "firing_contributions") {
     let sealed = 0;

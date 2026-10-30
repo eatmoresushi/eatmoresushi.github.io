@@ -1,8 +1,8 @@
 /**
- * Commission Market placement legality (L140, L142, v1.6.2 L189–198, B1): a worker may be
+ * Commission Market placement legality (L160, L164, v1.6.2 L219–228, B1): a worker may be
  * placed only if at least 1 reservation can be made: a display position holds an Order, or the
  * Main deck plus discard holds a card (then the look shows at least 1). Legality reads public
- * counts only. Also Senior Apprentice (v1.6.2 L618, R12) and the shared placement checks as
+ * counts only. Also Senior Apprentice (v1.6.2 L625, R12) and the shared placement checks as
  * they surface through this location: absolute capacity, worker availability, one worker
  * action per turn.
  */
@@ -45,7 +45,7 @@ const WORKERS: ReadonlyArray<[string, string, boolean | undefined]> = [
   ["Senior Apprentice", "p1:apprentice:1", true],
 ];
 
-describe("at least 1 reservation is possible (L142, B1)", () => {
+describe("at least 1 reservation is possible (L164, B1)", () => {
   it.each(WORKERS)("%s: legal with face-up Orders only (deck and discard empty)", (_, workerId, senior) => {
     const spec = supplySpec(["O01", null, null, null, null, null], [], [], [{ techs: ["T18"] }]);
     expect(legality(spec, workerId, senior)).toBeNull();
@@ -55,7 +55,7 @@ describe("at least 1 reservation is possible (L142, B1)", () => {
     expect(legality(supplySpec(EMPTY_DISPLAY, ["O07"], [], [{ techs: ["T18"] }]), workerId, senior)).toBeNull();
   });
 
-  it.each(WORKERS)("%s: legal with only a discard, which the look reshuffles (L511)", (_, workerId, senior) => {
+  it.each(WORKERS)("%s: legal with only a discard, which the look reshuffles (L526)", (_, workerId, senior) => {
     expect(legality(supplySpec(EMPTY_DISPLAY, [], ["O07"], [{ techs: ["T18"] }]), workerId, senior)).toBeNull();
   });
 
@@ -108,7 +108,7 @@ describe("at least 1 reservation is possible (L142, B1)", () => {
   });
 });
 
-describe("Senior Apprentice (v1.6.2 L618, R12)", () => {
+describe("Senior Apprentice (v1.6.2 L625, R12)", () => {
   it("applies to an Apprentice with T18 ready, never to the Shifu, and must be owned and unused", () => {
     expect(legality({ players: [{ techs: ["T18"] }, {}] }, "p1:apprentice:2", true)).toBeNull();
     const shifu = legality({ players: [{ techs: ["T18"] }, {}] }, "p1:shifu", true);
@@ -134,7 +134,7 @@ describe("Senior Apprentice (v1.6.2 L618, R12)", () => {
   });
 });
 
-describe("shared placement checks at the Commission Market (L140, L136)", () => {
+describe("shared placement checks at the Commission Market (L162, L158)", () => {
   it("capacity is absolute: 2 / 3 / 4 spaces, the Shifu included", () => {
     for (const players of [2, 3, 4] as const) {
       const placements = Array.from({ length: players }, (_, index) => ({

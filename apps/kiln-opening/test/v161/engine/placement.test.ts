@@ -47,7 +47,7 @@ describe("availableWorkers / workersAt", () => {
   });
 });
 
-describe("capacity (L140, L148–156)", () => {
+describe("capacity (L162, L180–188)", () => {
   it.each([2, 3, 4] as const)("%i players: Materials Yard, Commission Market and Guild Hall hold n; Canal Wharf is uncapped", (n: PlayerCount) => {
     const state = buildState({ players: n });
     expect(centralCapacity(state, "materials_yard")).toBe(n);
@@ -57,7 +57,7 @@ describe("capacity (L140, L148–156)", () => {
     expect(centralCapacity(state, "magistrates_hall")).toBe(n === 4 ? 2 : 1);
   });
 
-  it("capacity is absolute: neither an Apprentice nor the Shifu may overfill (L140)", () => {
+  it("capacity is absolute: neither an Apprentice nor the Shifu may overfill (L162)", () => {
     const state = buildState({
       placements: [
         { player: "p2", worker: 1, locationId: "materials_yard" },
@@ -69,14 +69,14 @@ describe("capacity (L140, L148–156)", () => {
     expect(check(state, "p1", "p1:shifu", "guild_hall")).toBeNull();
   });
 
-  it("the Magistrate's Hall has 1 space at 2 players and 2 at 4 (L225), usable twice by one player", () => {
+  it("the Magistrate's Hall has 1 space at 2 players and 2 at 4 (L254), usable twice by one player", () => {
     const two = buildState({ placements: [{ player: "p2", worker: "shifu", locationId: "magistrates_hall" }] });
     expect(check(two, "p1", "p1:apprentice:1", "magistrates_hall")).toBe("LOCATION_FULL");
     const four = buildState({ players: 4, placements: [{ player: "p1", worker: 1, locationId: "magistrates_hall" }] });
     expect(check(four, "p1", "p1:apprentice:2", "magistrates_hall")).toBeNull();
   });
 
-  it("the Canal Wharf always takes another worker (L143)", () => {
+  it("the Canal Wharf always takes another worker (L165)", () => {
     const spec: StateSpec = {
       players: 4,
       placements: ["p2", "p3", "p4"].flatMap((player) =>
@@ -87,7 +87,7 @@ describe("capacity (L140, L148–156)", () => {
   });
 });
 
-describe("personal spaces (L144, L212)", () => {
+describe("personal spaces (L166, L241)", () => {
   it("uses space 0, then needs the unlocked space 1; each once per round", () => {
     const locked = buildState({ placements: [{ player: "p1", worker: 1, locationId: "form_decorate" }] });
     expect(nextPersonalSpace(locked, "p1", "form_decorate")).toBeNull();
@@ -135,7 +135,7 @@ describe("validatePlacement: turn and worker checks", () => {
   });
 });
 
-describe("Senior Apprentice (L619, L653, R12)", () => {
+describe("Senior Apprentice (L625, L659, R12)", () => {
   const owner = { techs: ["T18" as const] };
 
   it("lets 1 Apprentice resolve the Shifu effect at the Materials Yard or Commission Market", () => {

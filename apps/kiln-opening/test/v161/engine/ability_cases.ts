@@ -135,7 +135,7 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
   },
   {
     ability: "T19",
-    notOptional: "Connoisseur's Cabinet scores automatically at game end (L620)",
+    notOptional: "Connoisseur's Cabinet scores automatically at game end (L626)",
     actor: P1,
     table: () =>
       new LocalTable(
@@ -153,7 +153,7 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
   },
   // ── Glazing & Loading ────────────────────────────────────────────────────────────
   {
-    // The once-per-round swap (v1.6.2 L625) is optional; the when-acquired reservation is
+    // The once-per-round swap (v1.6.2 L632) is optional; the when-acquired reservation is
     // mandatory whenever a card can be looked at (R4, `guild_hall.test.ts`).
     ability: "T10",
     actor: P1,
@@ -208,7 +208,7 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
   },
   {
     ability: "T23",
-    notOptional: "Canal Barge's 2 Coins come automatically with the first Order completed each round (v1.6.2 L630, INT: Canal Barge)",
+    notOptional: "Canal Barge's 2 Coins come automatically with the first Order completed each round (v1.6.2 L637, INT: Canal Barge)",
     actor: P1,
     table: () =>
       ordersTable({
@@ -224,7 +224,7 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
   },
   // ── Firing ───────────────────────────────────────────────────────────────────────
   {
-    // The once-per-round Standard → Fine step (v1.6.2 L636) is optional; the floor is
+    // The once-per-round Standard → Fine step (v1.6.2 L643) is optional; the floor is
     // automatic (`after_quality.test.ts`).
     ability: "T11",
     actor: P1,
@@ -283,7 +283,7 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
     ready: techIsReady("T14"),
   },
   {
-    // Kiln Master's marker is chosen when a ceramic is loaded (rev. 4 L628, R22).
+    // Kiln Master's marker is chosen when a ceramic is loaded (L647, R22).
     ability: "T24",
     actor: P1,
     table: () => workTable({ players: [{ techs: ["T24"] }, {}], ceramics: [{ owner: P1, stage: "shaped", shape: "bowl" }] }),

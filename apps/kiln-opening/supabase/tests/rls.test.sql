@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_temp;
-select plan(30);
+select plan(33);
 
 insert into public.rooms (
   id, code, status, host_seat_id, rules_version, content_version, latest_revision
@@ -16,7 +16,7 @@ insert into public.rooms (
   id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest
 ) values
   ('10000000-0000-4000-8000-000000000003', 'ROOM03', 'playing',
-   '20000000-0000-4000-8000-000000000003', '1.6.2', '1.6.2', 0, 'r32-0123456789abcdef');
+   '20000000-0000-4000-8000-000000000003', '1.6.2', '1.6.2', 0, 'r33-0123456789abcdef');
 
 insert into public.room_players (
   seat_id, room_id, player_id, seat_index, display_name, colour, is_host
@@ -116,7 +116,7 @@ select throws_ok(
              '20000000-0000-4000-8000-000000000009', '1.6.2', '1.6.2', 0, 'r29-0123456789abcdef') $$,
   '23514',
   null,
-  'a V1.6.2 room requires an r32 fingerprint (a V1.6.1 r29 one is refused)'
+  'a V1.6.2 room requires an r32 or r33 fingerprint (a V1.6.1 r29 one is refused)'
 );
 select throws_ok(
   $$ insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
@@ -133,6 +133,26 @@ select throws_ok(
   '23514',
   null,
   'an r31 fingerprint from before owner revision 4 is refused'
+);
+select lives_ok(
+  $$ insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
+     values ('10000000-0000-4000-8000-000000000005', 'ROOM05', 'lobby',
+             '20000000-0000-4000-8000-000000000005', '1.6.2', '1.6.2', 0, 'r32-0123456789abcdef') $$,
+  'an r32 row from before owner revision 5 stays valid as history (202610300001)'
+);
+select is(
+  public.server_create_room(
+    '10000000-0000-4000-8000-000000000010', 'ROOM10', '20000000-0000-4000-8000-000000000010', 'P1',
+    'Host', 'cinnabar', null, 'hash-room-10', 'r32-0123456789abcdef')->>'code',
+  'session_not_active',
+  'a new room needs the r33 fingerprint: an r32 one is refused by server_create_room'
+);
+select is(
+  public.server_create_room(
+    '10000000-0000-4000-8000-000000000011', 'ROOM11', '20000000-0000-4000-8000-000000000011', 'P1',
+    'Host', 'cinnabar', null, 'hash-room-11', 'r33-0123456789abcdef')->>'status',
+  'ok',
+  'server_create_room accepts an r33 fingerprint'
 );
 select lives_ok(
   $$ insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)

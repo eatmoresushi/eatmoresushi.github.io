@@ -95,7 +95,7 @@ const COMPONENT_TEXT = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_COMPONE
 const COMPONENT_TEXT_SOURCE = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT_SOURCE.md"), "utf8");
 /** The Techs whose ability text V1.6.2 rewrote with their mechanics (changes 22, v1.6.2 L32). */
 const V162_TECHS: ReadonlySet<TechId> = new Set<TechId>(["T10", "T11", "T12", "T14", "T23"]);
-/** The Tech abilities owner revision 4 rewrote (changes 28–31; rev. 4 L603, L605, L626–628): Decorator's Kit
+/** The Tech abilities owner revision 4 rewrote (changes 28–31; L622, L624, L645–647): Decorator's Kit
  * and Prepared Clay (a vessel's cost), Test Pieces (before the Fire card), Second Firing (the Kiln
  * Master marker and Jun, already in V162_TECHS) and Kiln Master (at loading). */
 const REV4_TECHS: ReadonlySet<TechId> = new Set<TechId>(["T13", "T14", "T16", "T17", "T24"]);
@@ -278,7 +278,7 @@ describe("Appendix A: all 8 Starting and 48 Main Orders", () => {
     // "Carved, Impressed or Painted": a Decoration alternative, like S05's Shape alternative.
     expect(ORDERS.S07.ceramics).toEqual([{ decorations: ["carved", "impressed", "painted"] }]);
     expect(ORDERS.S05.ceramics).toEqual([{ shapes: ["bowl", "plate", "washer"] }]);
-    // 2 per player: a 4-player game deals the whole deck (L520).
+    // 2 per player: a 4-player game deals the whole deck (L535).
     expect(GAME_CONFIG.setupDeal.startingOrders * GAME_CONFIG.players.max).toBe(STARTING_ORDER_IDS.length);
   });
 
@@ -324,7 +324,7 @@ describe("Appendix A: all 8 Starting and 48 Main Orders", () => {
     expect(JSON.stringify(Object.values(ORDERS))).not.toContain("crackle");
   });
 
-  it("keeps the Starting deck crownless and Standard+ (L521)", () => {
+  it("keeps the Starting deck crownless and Standard+ (L535)", () => {
     for (const id of STARTING_ORDER_IDS) {
       expect(ORDERS[id]).toMatchObject({ deck: "starting", crowns: 0, minQuality: "standard" });
     }
@@ -388,7 +388,7 @@ function techByPrintedName(printed: string): { id: TechId; nameZh: string | null
   return { id, nameZh: zh?.[1] ?? null };
 }
 
-/** `| T01 | workshop | Large Throwing Wheel | 2 | L615 | kept |` rows of the TechId JSDoc. */
+/** `| T01 | workshop | Large Throwing Wheel | 2 | L621 | kept |` rows of the TechId JSDoc. */
 const techIdTable = TYPES.split("\n")
   .map((line) => line.replace(/^\s*\*\s?/, ""))
   .filter((line) => /^\|\s*T\d{2}\s*\|/.test(line))
@@ -415,7 +415,7 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     expect(tech.cost).toBe(Number(entry.cells[1]));
     expect(tech.ability).toBe(entry.cells[2]);
     // A once-per-round allowance wherever the text prints one: Colour Samples' swap and
-    // Protective Saggars' Standard → Fine step sit after an ongoing clause (v1.6.2 L625, L636).
+    // Protective Saggars' Standard → Fine step sit after an ongoing clause (v1.6.2 L632, L643).
     expect(tech.oncePerRound).toBe(/once per round/i.test(tech.ability));
     expect(tech.unlocks).toBe(entry.discipline === "workshop" ? "form_decorate" : entry.discipline === "glazing_loading" ? "glaze_load" : null);
     if (nameZh !== null) expect(tech.nameZh).toBe(nameZh);
@@ -441,7 +441,7 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     for (const [id = "", once, timing = "", params = ""] of designTechRows) {
       expected.set(id, { oncePerRound: once === "yes", timing, params: designLiteral(params.replaceAll("`", "")) });
     }
-    // DELTA §3.1: `| T11 Protective Saggars | `cost`, `params` | 3; `{…}` (L636) |`.
+    // DELTA §3.1: `| T11 Protective Saggars | `cost`, `params` | 3; `{…}` (L643) |`.
     const amended = tableRows(section("### 3.1 `techniques.json`", DELTA)).filter((cells) => /^T\d{2} /.test(cells[0] ?? ""));
     expect(amended.map((cells) => cells[0]?.slice(0, 3))).toEqual(["T18", "T20", "T11", "T12", "T10", "T14", "T23"]);
     for (const [label = "", fields = "", values = ""] of amended) {
@@ -463,13 +463,26 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     }
   });
 
-  it("charges the V1.6.2 costs (changes 22 and 30, v1.6.2 L32, rev. 4 L40, L625; L618, L626, L636)", () => {
+  it("charges the V1.6.2 costs (changes 22, 30 and 38, v1.6.2 L32, L40, rev. 5 L48, L624, L632, L637, L643)", () => {
     // Fuel Ledger: 2 since change 22, 4 since change 30 (owner revision 4).
-    expect([TECHS.T18.cost, TECHS.T20.cost, TECHS.T11.cost, TECHS.T12.cost]).toEqual([3, 3, 3, 4]);
+    expect([TECHS.T18.cost, TECHS.T20.cost, TECHS.T12.cost]).toEqual([3, 3, 4]);
     expect(SOURCE.split("\n")[39]).toContain("Fuel Ledger costs 4.");
-    // Test Pieces stays 3 (v1.6.2 L32).
+    // Owner revision 5 (change 38): Canal Barge 3, Prepared Clay 4, Colour Samples 3, Protective
+    // Saggars 2 (it was 3 since change 22); Test Pieces stays 3; every other price unchanged.
+    expect([TECHS.T23.cost, TECHS.T17.cost, TECHS.T10.cost, TECHS.T11.cost]).toEqual([3, 4, 3, 2]);
+    const change38 = SOURCE.split("\n")[47] ?? "";
+    expect(change38).toMatch(/^38\. \*\*Tech re-pass under the free-action economy\.\*\*/);
+    expect(change38).toContain("Four prices move to the ability's value: Canal Barge 3");
+    expect(change38).toContain("Prepared Clay 4");
+    expect(change38).toContain("Colour Samples 3");
+    expect(change38).toContain("Protective Saggars 2");
+    expect(change38).toContain("Test Pieces stays at 3");
+    // Test Pieces stays 3 (v1.6.2 L32, rev. 5 L48).
     expect(TECHS.T13.cost).toBe(3);
     expect(SOURCE.split("\n")[31]).toContain("Senior Apprentice and Kiln Tending cost 3; Test Pieces stays at 3");
+    // Every other price is the one revision 4 charged.
+    expect([TECHS.T01, TECHS.T16, TECHS.T05, TECHS.T19, TECHS.T15, TECHS.T21, TECHS.T22, TECHS.T14, TECHS.T24, TECHS.T25].map((tech) => tech.cost))
+      .toEqual([2, 2, 2, 3, 2, 2, 2, 2, 2, 4]);
   });
 
   it("V1.6.2 rewrote exactly the Tech abilities whose mechanics changed (changes 22 and 28–31, DELTA §3.1, §15.8)", () => {
@@ -479,15 +492,16 @@ describe("Appendix B: all 18 Advanced Techs", () => {
       return now !== then;
     });
     expect(new Set(changed)).toEqual(CHANGED_TECHS);
-    // The mechanics follow the V1.6.2 text (v1.6.2 L625, L630, L636–637, L639).
+    // The mechanics follow the V1.6.2 text (v1.6.2 L632, L637, L643–644, L646).
     expect(TECHS.T10.ability).toContain("once per round, before or after one of your worker actions, you may discard 1 held Order");
     expect(TECHS.T23.ability).toBe("Once per round, when you complete an Order, gain 2 Coins.");
     expect(TECHS.T11.ability).toContain("a Heat Difference of 3 or more counts as Standard");
     expect(TECHS.T12.ability).toContain("Your Bank the Fire and Stoke the Fire cost no Wood");
     expect(TECHS.T14.ability).toContain("Reveal 2 extra Fire cards, choose 1 of them");
     expect(TECHS.T23.timing).toBe("order_completion");
-    // Owner revision 4 (rev. 4 L603, L605, L626–628).
-    expect(TECHS.T16.ability).toContain("a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less");
+    // Owner revision 4 (L622, L624, L645–647) and revision 5 (change 37, rev. 5 L622).
+    expect(TECHS.T16.ability).toBe("Once per round, a vessel you form costs 1 Coin less. It may be the same vessel the Shifu's discount reduces.");
+    expect(TECHS.T16.ability).not.toMatch(/Carved|Impressed|Painted/);
     expect(TECHS.T17.ability).toContain("pay its Clay cost +1 Clay and 2 Coins, choosing any Decoration");
     expect(TECHS.T13.ability).toContain("after Base Heat is determined and before the Fire card is revealed");
     expect(TECHS.T14.ability).toContain("an unused Jun adjustment may be applied to the recalculated heat");
@@ -498,8 +512,9 @@ describe("Appendix B: all 18 Advanced Techs", () => {
   it("names exactly the printed Shapes, Decorations, locations and Qualities in Tech parameters", () => {
     expect(TECHS.T01.ability).toContain("Vase or Censer");
     expect(TECHS.T01.params.triggerShapes).toEqual(["vase", "censer"]);
-    expect(TECHS.T16.ability).toContain("Carved, Impressed or Painted");
-    expect(TECHS.T16.params.decorations).toEqual(["carved", "impressed", "painted"]);
+    // Decorator's Kit names no Decoration since change 37 (rev. 5 L622).
+    expect(TECHS.T16.ability).not.toMatch(/Plain|Carved|Impressed|Painted/);
+    expect(TECHS.T16.params).toEqual({ coinReduction: 1 });
     expect(TECHS.T21.ability).toContain("Bowl, Plate or Brush Washer");
     expect(TECHS.T21.params.shapes).toEqual(["bowl", "plate", "washer"]);
     expect(TECHS.T18.ability).toContain("Materials Yard or Commission Market");
@@ -522,20 +537,20 @@ const mh = LOCATIONS.magistrates_hall.effects;
 const cw = LOCATIONS.canal_wharf.effects;
 const ledgerBank = contributionCard("FUEL_LEDGER_BANK");
 const ledgerStoke = contributionCard("FUEL_LEDGER_STOKE");
-/** The smallest Heat Difference the Quality table calls Flawed (L274–279). */
+/** The smallest Heat Difference the Quality table calls Flawed (L295–300). */
 const flawedFrom = (FIRING.qualityByHeatDifference.find((row) => row.quality === "standard")?.maxDifference ?? -1) + 1;
 
 /** [label, printed English text, the exact number sequence the data implies]. */
 const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["T01", TECHS.T01.ability, [1, TECHS.T01.params.clayReduction, 0]],
-  // rev. 4 L603: "a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less".
+  // rev. 5 L622 (change 37): "a vessel you form costs 1 Coin less".
   ["T16", TECHS.T16.ability, [TECHS.T16.params.coinReduction]],
   ["T05", TECHS.T05.ability, []],
-  // rev. 4 L605: "form 1 vessel: pay its Clay cost +1 Clay and 2 Coins".
+  // L624: "form 1 vessel: pay its Clay cost +1 Clay and 2 Coins".
   ["T17", TECHS.T17.ability, [1, TECHS.T17.params.claySurcharge, vesselCoins()]],
   ["T18", TECHS.T18.ability, [1]],
   ["T19", TECHS.T19.ability, [TECHS.T19.params.vpPerCeramic, TECHS.T19.params.maxVp]],
-  // v1.6.2 L622 (change 25): "When acquired: Select 3 … hand limit is 5 … discard 1 held Order to Select 3".
+  // v1.6.2 L632 (change 25): "When acquired: Select 3 … hand limit is 5 … discard 1 held Order to Select 3".
   ["T10", TECHS.T10.ability, [TECHS.T10.params.select, TECHS.T10.params.handLimit, TECHS.T10.params.swapDiscard, TECHS.T10.params.swapSelect]],
   ["T20", TECHS.T20.ability, [1, TECHS.T20.params.clay, TECHS.T20.params.wood]],
   ["T15", TECHS.T15.ability, [1, ...abs(TECHS.T15.params.modifiers)]],
@@ -544,42 +559,43 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["T23", TECHS.T23.ability, [TECHS.T23.params.coins]],
   // "a Heat Difference of 3 or more" is the first difference the Quality table calls Flawed.
   ["T11", TECHS.T11.ability, [flawedFrom, 1]],
-  // v1.6.2 L634 (change 26): "Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2) …
+  // v1.6.2 L644 (change 26): "Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2) …
   // choose among all 5 of your cards as usual, playing exactly 1".
   ["T12", TECHS.T12.ability, [ledgerBank.woodCost, -ledgerBank.heat, ledgerStoke.woodCost, ledgerStoke.heat, CONTRIBUTION_CARD_IDS.length, 1]],
   ["T13", TECHS.T13.ability, [1, TECHS.T13.params.wood]],
   ["T14", TECHS.T14.ability, [1, TECHS.T14.params.extraCards, TECHS.T14.params.chosenCards]],
-  // rev. 4 L628: "place a +1 or −1 marker on it".
+  // L647: "place a +1 or −1 marker on it".
   ["T24", TECHS.T24.ability, [...abs(TECHS.T24.params.values)]],
   ["T25", TECHS.T25.ability, [KILNS.GU.params.minPrintedCrowns, TECHS.T25.params.bonusCrowns]],
   ["RU", KILNS.RU.ability, [KILNS.RU.params.vp]],
   ["GU", KILNS.GU.ability, [KILNS.GU.params.minPrintedCrowns, KILNS.GU.params.coins, KILNS.GU.params.vp]],
-  // rev. 4 L463, L465: "choose 1 of your Fine or Standard ceramics …"; "… scores 1 VP".
+  // rev. 5 L482, L484 (change 39): "choose 1 of your ceramics from this firing …"; "… scores 1 VP".
   ["GE", KILNS.GE.ability, [1, KILNS.GE.params.vpPerDeliveredCrackle]],
-  // rev. 4 L469: "pay 1 Clay and 1 Coin … not one of the 2 vessels for the Shifu's discount".
-  ["DI", KILNS.DI.ability, [KILNS.DI.params.clay, KILNS.DI.params.coins, fd.shifu.maxVessels]],
+  // rev. 5 L488 (change 40): "pay 1 Clay and 2 Coins … It does not count against the action's
+  // vessel limit" (the revision-4 "not one of the 2 vessels for the Shifu's discount" is gone).
+  ["DI", KILNS.DI.ability, [KILNS.DI.params.clay, KILNS.DI.params.coins]],
   ["JU", KILNS.JU.ability, [KILNS.JU.params.wood, ...abs(KILNS.JU.params.deltas)]],
   ["materials_yard.apprentice", LOCATIONS.materials_yard.apprenticeText, [my.apprentice.resources]],
   ["materials_yard.shifu", LOCATIONS.materials_yard.shifuText, [my.shifu.resources]],
-  // rev. 4 L183: "Form 1 vessel: pay its Clay cost plus 2 Coins …".
+  // L201: "Form 1 vessel: pay its Clay cost plus 2 Coins …".
   ["form_decorate.apprentice", LOCATIONS.form_decorate.apprenticeText, [fd.apprentice.maxVessels, vesselCoins()]],
   ["form_decorate.shifu", LOCATIONS.form_decorate.shifuText, [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDiscount]],
   ["glaze_load.apprentice", LOCATIONS.glaze_load.apprenticeText, [gl.apprentice.maxLoads]],
-  // rev. 4 L194: the Shifu "simply loads up to 2" (no Heat marker, changes 28, 31).
+  // L212: the Shifu "simply loads up to 2" (no Heat marker, changes 28, 31).
   ["glaze_load.shifu", LOCATIONS.glaze_load.shifuText, [gl.shifu.maxLoads]],
-  // v1.6.2 L201–202 (change 25): "Select 2."; "Select 3, reserving up to 2 Orders instead of 1,
+  // v1.6.2 L225–226 (change 25): "Select 2."; "Select 3, reserving up to 2 Orders instead of 1,
   // in any mix of the 3 cards and the display".
   ["commission_market.apprentice", LOCATIONS.commission_market.apprenticeText, [cm.apprentice.select]],
   ["commission_market.shifu", LOCATIONS.commission_market.shifuText,
     [cm.shifu.select, cm.shifu.maxReservations, cm.apprentice.maxReservations, cm.shifu.select]],
   ["guild_hall.apprentice", LOCATIONS.guild_hall.apprenticeText, [gh.apprentice.maxTechs]],
-  // v1.6.2 L207 (owner revision 2026-10-17): "Choose 1 discipline … top 2 … take up to 2".
+  // v1.6.2 L237 (owner revision 2026-10-17): "Choose 1 discipline … top 2 … take up to 2".
   ["guild_hall.shifu", LOCATIONS.guild_hall.shifuText, [1, gh.shifu.inspectCount, gh.shifu.maxTechs]],
   ["canal_wharf.apprentice", LOCATIONS.canal_wharf.apprenticeText, [cw.apprentice.coins]],
   // "the top card of the Main Order deck" is `topMainOrders: 1`, which prints no numeral.
   ["canal_wharf.shifu", LOCATIONS.canal_wharf.shifuText, [cw.shifu.coins]],
   ["magistrates_hall.apprentice", LOCATIONS.magistrates_hall.apprenticeText, [mh.apprentice.coins, mh.apprentice.recognitionSteps]],
-  // rev. 4 L241 (change 33): "Pay 4 Coins … by 1 step, then reserve 1 face-up Crown Order".
+  // L259 (change 33): "Pay 4 Coins … by 1 step, then reserve 1 face-up Crown Order".
   ["magistrates_hall.shifu", LOCATIONS.magistrates_hall.shifuText, [mh.shifu.coins, mh.shifu.recognitionSteps, mh.shifu.crownOrders]],
 ];
 
@@ -643,7 +659,7 @@ describe("printed numbers equal the data parameters", () => {
 
 // ── Kilns, locations, capacity ───────────────────────────────────────────────────────────
 
-describe("Kiln Traditions (L454–478)", () => {
+describe("Kiln Traditions (L468–492)", () => {
   it("defines all five selectable Kilns (R1) with their full printed abilities", () => {
     expect(KILN_IDS).toEqual(["RU", "GU", "GE", "DI", "JU"]);
     expect(SOURCE).toContain("| Kiln Player Boards | 5 | Ru, Guan, Ge, Ding and Jun.");
@@ -666,10 +682,16 @@ describe("Kiln Traditions (L454–478)", () => {
     }
     expect(KILNS.RU.ability).toContain("Masterpiece with Celadon Glaze and Plain Decoration");
     expect(KILNS.DI.ability).toContain("Bowl, Plate or Brush Washer");
-    // Owner revision 4 (change 29; rev. 4 L463, L465).
-    expect(KILNS.GE.ability).toContain("choose 1 of your Fine or Standard ceramics from this firing: it develops Crackle and is Fine");
+    // Owner revision 4 (change 29) and revision 5 (change 39; rev. 5 L482, L484): any ceramic.
+    expect(KILNS.GE.ability).toContain("choose 1 of your ceramics from this firing: it develops Crackle, and if it is Standard it becomes Fine.");
+    expect(KILNS.GE.ability).not.toMatch(/Fine or Standard/);
     expect(KILNS.GE.ability).toContain("Each Crackle ceramic you deliver to complete an Order scores 1 VP.");
     expect(KILNS.GE.ability).not.toContain("never a Masterpiece");
+    // Revision 5 (change 40; rev. 5 L488): Ding's vessel costs 1 Clay and 2 Coins and names no
+    // Shifu's-discount clause.
+    expect(KILNS.DI.ability).toContain("you may pay 1 Clay and 2 Coins to form one additional vessel of the same Shape");
+    expect(KILNS.DI.ability).toContain("It does not count against the action's vessel limit.");
+    expect(KILNS.DI.ability).not.toMatch(/Shifu's discount|no discount/);
   });
 });
 
@@ -693,7 +715,7 @@ const LOCATION_HEADINGS_ZH: Readonly<Record<LocationId, string>> = {
   magistrates_hall: "### 州衙",
 };
 
-describe("locations and capacity (L146–233)", () => {
+describe("locations and capacity (L178–262)", () => {
   it("defines the five central and two personal locations", () => {
     expect([...CENTRAL_LOCATION_IDS, ...PERSONAL_LOCATION_IDS].sort()).toEqual([...LOCATION_IDS].sort());
     expect(SOURCE).toContain("Materials Yard, Commission Market, Guild Hall, Canal Wharf, Magistrate's Hall.");
@@ -758,10 +780,10 @@ describe("locations and capacity (L146–233)", () => {
         if (literal !== undefined) entry[effect] = designLiteral(literal);
       }
     }
-    // DELTA §15.8 (owner revision 4): Materials Yard 4 / 8 (rev. 4 L176–177, change 34); the
-    // Shifu's −1 Coin when forming 2 is a vessel's, not a Decoration's (rev. 4 L184, change 30);
-    // the Glaze & Load fuel and no Heat marker (rev. 4 L194, L197, changes 31, 34, 35, R24); the
-    // Magistrate's Hall Shifu pays 4 and reserves a Crown Order (rev. 4 L241, change 33, R21).
+    // DELTA §15.8 (owner revision 4): Materials Yard 4 / 8 (L194–195, change 34); the
+    // Shifu's −1 Coin when forming 2 is a vessel's, not a Decoration's (L202, change 30);
+    // the Glaze & Load fuel and no Heat marker (L212, L215, changes 31, 34, 35, R24); the
+    // Magistrate's Hall Shifu pays 4 and reserves a Crown Order (L259, change 33, R21).
     const revision4: Partial<Record<LocationId, { apprentice: unknown; shifu: unknown }>> = {
       materials_yard: { apprentice: { resources: 4 }, shifu: { resources: 8 } },
       form_decorate: { apprentice: { maxVessels: 1 }, shifu: { maxVessels: 2, twoVesselDiscount: 1 } },
@@ -789,9 +811,9 @@ describe("locations and capacity (L146–233)", () => {
     const summary = section("### Action Summary");
     const expectations: Record<LocationId, [number[], number[]]> = {
       materials_yard: [[my.apprentice.resources], [my.shifu.resources]],
-      // rev. 4 L691: "Form 1: Clay + 2 Coins, any Decoration"; "Form up to 2; if 2, one costs 1 Coin less".
+      // L710: "Form 1: Clay + 2 Coins, any Decoration"; "Form up to 2; if 2, one costs 1 Coin less".
       form_decorate: [[fd.apprentice.maxVessels, vesselCoins()], [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDiscount]],
-      // rev. 4 L692: "Glaze and load 1 (1 Wood)"; "Glaze and load up to 2 (still 1 Wood)".
+      // L711: "Glaze and load 1 (1 Wood)"; "Glaze and load up to 2 (still 1 Wood)".
       glaze_load: [[gl.apprentice.maxLoads, gl.apprentice.sharedKilnWood], [gl.shifu.maxLoads, gl.shifu.sharedKilnWood]],
       commission_market: [[cm.apprentice.select], [cm.shifu.select, cm.shifu.maxReservations]],
       guild_hall: [[gh.apprentice.maxTechs], [gh.shifu.inspectCount, 1, gh.shifu.maxTechs]],
@@ -799,7 +821,7 @@ describe("locations and capacity (L146–233)", () => {
       magistrates_hall: [
         [mh.apprentice.coins, mh.apprentice.recognitionSteps,
           ...(LOCATIONS.magistrates_hall.usableAtRecognition ?? []).flatMap((r) => [r, r + mh.apprentice.recognitionSteps])],
-        // rev. 4 L696: "Pay 4 Coins → same, and reserve 1 face-up Crown Order".
+        // L715: "Pay 4 Coins → same, and reserve 1 face-up Crown Order".
         [mh.shifu.coins, mh.shifu.crownOrders],
       ],
     };
@@ -828,21 +850,21 @@ describe("locations and capacity (L146–233)", () => {
 // ── Components, setup, firing and scoring values ─────────────────────────────────────────
 
 describe("setup, production, firing and scoring values", () => {
-  it("sets up as L98–112 prints", () => {
+  it("sets up as L120–134 prints", () => {
     expect(SOURCE).toContain(`**2–4 players`);
     expect(GAME_CONFIG.players).toEqual({ min: 2, max: 4 });
     expect(SOURCE).toContain(`The game lasts exactly **${GAME_CONFIG.rounds} rounds**.`);
     const { clay, wood, coins } = GAME_CONFIG.startingResources;
     expect(SOURCE).toContain(`Each player receives **${clay} Clay, ${wood} Wood and ${coins} Coins**.`);
-    // rev. 4 L125 (changes 34, 35): 3 Wood, and no seat Coin.
+    // L133 (changes 34, 35): 3 Wood, and no seat Coin.
     expect([clay, wood, coins]).toEqual([2, 3, 3]);
     expect(SOURCE).not.toMatch(/starts with 1 extra Coin\.\s*$/m);
     expect(SOURCE).toContain(`takes ${GAME_CONFIG.workers.shifu} Shifu, ${GAME_CONFIG.workers.apprentices} Apprentices`);
-    // rev. 4 L115, L122 (change 32, R23): 2 Starting Orders dealt; 1 face-up Main Order taken with the Kiln.
+    // L123, L130 (change 32, R23): 2 Starting Orders dealt; 1 face-up Main Order taken with the Kiln.
     expect(SOURCE).toContain(`Deal each player **${GAME_CONFIG.setupDeal.startingOrders} Starting Orders**, kept secret.`);
     expect(GAME_CONFIG.setupFaceUpMainOrders).toBe(1);
     expect(SOURCE).toContain("and takes **1 face-up Main Order** from the display into their hand; refill the display to 6 after each take.");
-    // rev. 4 L116: the 6 are revealed straight off the deck (nothing Main is dealt first).
+    // L124: the 6 are revealed straight off the deck (nothing Main is dealt first).
     expect(SOURCE).toContain(`Reveal **${GAME_CONFIG.mainMarket.displaySize} face-up Main Orders** from the Main Order deck, left to right.`);
     expect(SOURCE).toContain(`reveal **${GAME_CONFIG.techs.faceUpPerDiscipline} face-up tiles from each**`);
     expect(SOURCE).toContain(`Discard the **${GAME_CONFIG.mainMarket.roundStartDiscard} leftmost face-up Main Orders**`);
@@ -851,7 +873,7 @@ describe("setup, production, firing and scoring values", () => {
     expect(SOURCE).toContain(`Exactly ${GAME_CONFIG.techs.perDiscipline} Form & Decorate, ${GAME_CONFIG.techs.perDiscipline} Glazing & Loading and ${GAME_CONFIG.techs.perDiscipline} Firing`);
   });
 
-  it("scores no VP for Advanced Techs, per rulebook change 27 (v1.6.2 L37; rev. 4 L487, L596, L737), which superseded owner amendment A1", () => {
+  it("scores no VP for Advanced Techs, per rulebook change 27 (v1.6.2 L37; rev. 5 L506, L615, L756), which superseded owner amendment A1", () => {
     expect(GAME_CONFIG.techs).not.toHaveProperty("vpEach");
     const lines = SOURCE.split("\n");
     expect(lines[36]).toContain("27. **Tech VP removed.** Advanced Techs no longer score 1 VP when gained.");
@@ -860,11 +882,11 @@ describe("setup, production, firing and scoring values", () => {
     expect(lines[29]).toContain("20. **Tech VP scored on purchase.**");
     expect(SOURCE).not.toMatch(/Each Advanced Tech scores/);
     expect(SOURCE).not.toMatch(/Advanced Techs: \*\*1 VP each\*\*/);
-    // Final scoring (rev. 4 L485–489): recorded VP without Techs, the Exhibition, Coins.
-    expect(lines[486]).toBe("1. all VP recorded during play: Orders, Kiln Tradition abilities, **Imperial Audience** and VP from Crowns gained beyond Recognition 4;");
-    expect(lines[487]).toBe("2. the end-game Exhibition;");
-    expect(lines[488]).toBe(`3. **1 VP per 3 Coins remaining**, maximum **5 VP**.`);
-    expect(lines[595]).toBe("Tech tiles use abbreviated reminder text; this appendix gives the full effects. A player owns at most 3 and at most 1 per discipline. **Form & Decorate** tiles remove the Cover token from your second Form & Decorate space, **Glazing & Loading** tiles the one from your second Glaze & Load space; **Firing** tiles remove nothing.");
+    // Final scoring (rev. 5 L504–508): recorded VP without Techs, the Exhibition, Coins.
+    expect(lines[505]).toBe("1. all VP recorded during play: Orders, Kiln Tradition abilities, **Imperial Audience** and VP from Crowns gained beyond Recognition 4;");
+    expect(lines[506]).toBe("2. the end-game Exhibition;");
+    expect(lines[507]).toBe(`3. **1 VP per 3 Coins remaining**, maximum **5 VP**.`);
+    expect(lines[614]).toBe("Tech tiles use abbreviated reminder text; this appendix gives the full effects. A player owns at most 3 and at most 1 per discipline. **Form & Decorate** tiles remove the Cover token from your second Form & Decorate space, **Glazing & Loading** tiles the one from your second Glaze & Load space; **Firing** tiles remove nothing.");
     // Connoisseur's Cabinet keeps its end-game VP (Appendix B).
     expect(TECHS.T19.params).toEqual({ vpPerCeramic: 1, qualities: ["fine", "masterpiece"], maxVp: 5 });
     // The audit records A1 as superseded by change 27.
@@ -878,14 +900,14 @@ describe("setup, production, firing and scoring values", () => {
     expect(overrides).toContain("none");
   });
 
-  it("prices Shapes, Decorations and Glazes as L319–353 print", () => {
+  it("prices Shapes, Decorations and Glazes as L340–367 print", () => {
     const shapes = section("### Shapes and Forming Costs");
     for (const shape of SHAPES) {
       const [, clay, cards] = row(shapes, Object.keys(SHAPE_NAMES).find((name) => SHAPE_NAMES[name] === shape) ?? "");
       expect(shapeClay(shape), shape).toBe(Number(clay));
       expect(GAME_CONFIG.shapeSupplyEach).toBe(Number(cards));
     }
-    // rev. 4 L336 (change 30): one forming price, any Decoration; the cost table is gone.
+    // L354 (change 30): one forming price, any Decoration; the cost table is gone.
     const decorations = section("### Decorations");
     expect(decorations).toContain(`Forming costs the Shape's Clay plus **${vesselCoins()} Coins**; choose any Decoration — Plain, Carved, Impressed or Painted — when the vessel is formed.`);
     expect(decorations).not.toContain("| Decoration | Cost |");
@@ -898,7 +920,7 @@ describe("setup, production, firing and scoring values", () => {
     }
   });
 
-  it("builds the Shared Kiln of L72 and covers spaces as L100 prints", () => {
+  it("builds the Shared Kiln of L95 and covers spaces as L122 prints", () => {
     expect(SOURCE).toContain("Eight spaces: 3 High (+1), 3 Middle (0), 2 Low (−1).");
     const counts: Record<KilnZone, number> = { high: 0, middle: 0, low: 0 };
     for (const id of KILN_SPACE_IDS) counts[zoneOf(id)] += 1;
@@ -914,7 +936,7 @@ describe("setup, production, firing and scoring values", () => {
     expect([activeKilnSpaces(2).length, activeKilnSpaces(3).length, activeKilnSpaces(4).length]).toEqual([4, 6, 8]);
   });
 
-  it("rolls the Kiln Die of L93 and clamps Base Heat to 0–5 (L249)", () => {
+  it("rolls the Kiln Die of L115 and clamps Base Heat to 0–5 (L277)", () => {
     expect(SOURCE).toContain(`Six-sided, faces ${FIRING.kilnDie.faces.join(", ")}.`);
     expect(FIRING.kilnDie.faces).toEqual([1, 1, 2, 2, 3, 3]);
     expect(SOURCE).toContain(`Clamp Base Heat to ${FIRING.baseHeat.minimum}–${FIRING.baseHeat.maximum}.`);
@@ -930,7 +952,7 @@ describe("setup, production, firing and scoring values", () => {
     expect(FIRING.fireDeck).toHaveLength(12);
   });
 
-  it("matches the Contribution card table and Fuel Ledger's 2 cards (v1.6.2 L262–266, L634, change 26)", () => {
+  it("matches the Contribution card table and Fuel Ledger's 2 cards (v1.6.2 L285–289, L644, change 26)", () => {
     const block = section("### Contribution Cards");
     expect(CONTRIBUTION_CARD_IDS).toEqual(["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
     expect(BASE_CONTRIBUTION_CARD_IDS).toEqual(["BANK", "TEND", "STOKE"]);
@@ -942,7 +964,7 @@ describe("setup, production, firing and scoring values", () => {
       expect(card.techId, id).toBeNull();
     }
     // "The owner of **Fuel Ledger** holds 2 more cards, **Fuel Ledger Bank** (1 Wood, −2) and
-    // **Fuel Ledger Stoke** (1 Wood, +2)" (L266), as Appendix B and the Quick Reference print them.
+    // **Fuel Ledger Stoke** (1 Wood, +2)" (L289), as Appendix B and the Quick Reference print them.
     for (const id of ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const) {
       const card = contributionCard(id);
       const sign = card.heat < 0 ? "−" : "+";
@@ -955,7 +977,7 @@ describe("setup, production, firing and scoring values", () => {
     expect(block).toContain("they still play exactly 1 card");
   });
 
-  it("assigns Quality by the Quality table (L274–279)", () => {
+  it("assigns Quality by the Quality table (L295–300)", () => {
     const block = section("### Quality Table");
     expect(row(block, "0")[1]).toBe("Masterpiece");
     expect(row(block, "1")[1]).toBe("Fine");
@@ -965,15 +987,18 @@ describe("setup, production, firing and scoring values", () => {
       .toEqual(["masterpiece", "fine", "standard", "flawed", "flawed", "flawed", "fine", "standard", "flawed"]);
     expect(QUALITY_RANK.masterpiece > QUALITY_RANK.fine && QUALITY_RANK.fine > QUALITY_RANK.standard
       && QUALITY_RANK.standard > QUALITY_RANK.flawed).toBe(true);
-    // Rev. 4 L282, L284 (change 30): a Flawed ceramic is sold for 2 Coins (during its owner's
-    // turn, R20); the firing-step salvage is gone.
-    expect(row(block, "3+")[2]).toBe(`Cannot complete Orders or enter the Exhibition; may be sold at any time for ${FIRING.flawedSaleCoins} Coins.`);
-    expect(SOURCE).toContain(`A Flawed ceramic may be **sold at any time for ${FIRING.flawedSaleCoins} Coins**: return its Vessel card to the matching Shape supply.`);
+    // Rev. 5 L300, L302 (changes 30, 36): a Flawed ceramic is sold for 2 Coins as a free action
+    // (rev. 5 L172); the firing-step salvage and the "at any time" wording are gone.
+    expect(row(block, "3+")[2]).toBe(`Cannot complete Orders or enter the Exhibition; may be sold as a free action for ${FIRING.flawedSaleCoins} Coins.`);
+    expect(SOURCE).toContain(`A Flawed ceramic may be **sold for ${FIRING.flawedSaleCoins} Coins** as a free action: return its Vessel card to the matching Shape supply.`);
+    expect(SOURCE).toContain(`- **Sell a Flawed ceramic** for **${FIRING.flawedSaleCoins} Coins**. Its Vessel card returns to the Shape supply.`);
+    // Only the change log (history) still says "sold at any time".
+    expect(SOURCE.split("\n").slice(52).join("\n")).not.toMatch(/sold at any time/);
     expect(SOURCE).toContain("choose a modifier of −1, 0 or +1");
     expect(FIRING.imperialModifiers).toEqual([-1, 0, 1]);
   });
 
-  it("scores the Exhibition, Recognition and Coins as L429–494 print", () => {
+  it("scores the Exhibition, Recognition and Coins as L443–508 print", () => {
     const exhibition = section("### End-game Exhibition");
     const vp = IMPERIAL_TRACK.exhibition.qualityVp;
     expect(row(exhibition, "Standard")[1]).toBe(String(vp.standard));
@@ -1025,12 +1050,12 @@ describe("components, round phases and Imperial milestones are the rulebook tabl
   const componentsEn = tableRows(section("## Components")).slice(1);
   const componentsZh = tableRows(section("## 配件", SOURCE_ZH)).slice(1);
 
-  it("lists every component of the Components table, in order, with its printed quantity (L71–96)", () => {
+  it("lists every component of the Components table, in order, with its printed quantity (L94–118)", () => {
     expect(components.map((component) => [component.name, String(component.qty)])).toEqual(componentsEn.map((cells) => [cells[0], cells[1]]));
     // The one quantity that is not a number, "4 or 1" (VP Markers / Score Pad), prints as 4或1.
     expect(components.map((component) => [component.nameZh, String(component.qty).replace(" or ", "或")]))
       .toEqual(componentsZh.map((cells) => [cells[0], cells[1]]));
-    // Change 23 (L33, L84): the Starting Order deck has 8 cards.
+    // Change 23 (L33, L104): the Starting Order deck has 8 cards.
     expect(components.find((component) => component.id === "starting_order_cards")?.qty).toBe(STARTING_ORDER_IDS.length);
     expect(components.find((component) => component.id === "main_order_cards")?.qty).toBe(MAIN_ORDER_IDS.length);
   });
@@ -1045,7 +1070,7 @@ describe("components, round phases and Imperial milestones are the rulebook tabl
     for (const id of Object.keys(COMPONENT_NOTE_ADAPTATIONS)) expect(components.map((component) => component.id)).toContain(id);
   });
 
-  it("names and summarises the five round phases as the Round Structure tables print them (L116–124)", () => {
+  it("names and summarises the five round phases as the Round Structure tables print them (L136–144)", () => {
     const phases = readData<{ phases: Array<{ order: number; name: string; nameZh: string; summary: string; summaryZh: string }> }>("round_structure.json").phases;
     const en = tableRows(section("## Round Structure")).slice(1);
     const zh = tableRows(section("## 每轮流程", SOURCE_ZH)).slice(1);
@@ -1053,7 +1078,7 @@ describe("components, round phases and Imperial milestones are the rulebook tabl
     expect(phases.map((phase) => [String(phase.order), phase.nameZh, phase.summaryZh])).toEqual(zh);
   });
 
-  it("prints the Imperial milestones as both track tables do (L428–437)", () => {
+  it("prints the Imperial milestones as both track tables do (L443–452)", () => {
     const en = tableRows(section("### Imperial Recognition Track")).slice(1);
     const zh = tableRows(section("### 御府声望轨", SOURCE_ZH)).slice(1);
     for (const space of IMPERIAL_TRACK.track) {
@@ -1063,7 +1088,7 @@ describe("components, round phases and Imperial milestones are the rulebook tabl
       if (space.rewardText === null) {
         expect([reward, rewardZh, space.rewardTextZh], space.id).toEqual(["—", "—", null]);
       } else if (space.id === "imperial_audience") {
-        // The milestone text adds the next row, "Each further Crown | +1 VP" (L435, L437).
+        // The milestone text adds the next row, "Each further Crown | +1 VP" (L450, L452).
         expect(space.rewardText).toBe(`${reward} After this, each further Crown scores ${IMPERIAL_TRACK.overflowVpPerCrown} VP immediately.`);
         expect(space.rewardTextZh).toBe(`${rewardZh}此后每获得1个御令，立即得${IMPERIAL_TRACK.overflowVpPerCrown}分。`);
       } else {
@@ -1415,13 +1440,14 @@ describe("short component text (the owner's V1.6.2 component text)", () => {
     for (const label of SHORT_TEXT_SECONDARY_LABELS) expect(COMPONENT_TEXT_SOURCE, label).toContain(label);
   });
 
-  it("changed from V1.6.1 only on the Techs and the Kiln V1.6.2 rewrote and the 2 new Fuel Ledger cards (changes 22–26, 28–31)", () => {
+  it("changed from V1.6.1 only on the Techs and the Kilns V1.6.2 rewrote and the 2 new Fuel Ledger cards (changes 22–26, 28–31, 37, 39–40)", () => {
     const previous = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md"), "utf8");
     const changed = [...source.entries()].filter(([id, entry]) =>
       !previous.includes(`(${id})\n- EN: ${entry.en ?? ""}\n- ZH: ${entry.zh ?? ""}\n`)).map(([id]) => id);
     // Owner revision 4 rewrote Decorator's Kit, Prepared Clay, Test Pieces, Kiln Master and Ge
     // (component text lines 15/17, 25/27, 84/86, 94/96, 128/130); Second Firing's line is unchanged.
-    expect(new Set(changed)).toEqual(new Set([...V162_TECHS, "T13", "T16", "T17", "T24", "GE", ...LEDGER_CARD_IDS]));
+    // Owner revision 5 rewrote Decorator's Kit, Ge and Ding (lines 15/17, 128/130, 133/135).
+    expect(new Set(changed)).toEqual(new Set([...V162_TECHS, "T13", "T16", "T17", "T24", "GE", "DI", ...LEDGER_CARD_IDS]));
   });
 
   it.each(SHORT_TEXT_IDS)("%s: shortText and shortTextZh equal the owner's lines, bold removed", (id) => {
@@ -1561,11 +1587,11 @@ function resolveTag(tag: string): string | null {
  * line exactly.
  */
 const QUOTE_ADAPTATIONS: ReadonlyArray<readonly [string, string, string]> = [
-  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L266 abridged"],
-  ["JU", "Jun's adjustment applies on top of Kiln Master's marker", "rev. 4 L635's \"it\" named"],
-  ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L144 \"that location's\" made specific"],
-  ["orders.starting", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
-  ["orders.main", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
+  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L289 abridged"],
+  ["JU", "Jun's adjustment applies on top of Kiln Master's marker", "L654's \"it\" named"],
+  ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L164 \"that location's\" made specific"],
+  ["orders.starting", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L229 and L325 combined"],
+  ["orders.main", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L229 and L325 combined"],
 ];
 
 /**
@@ -1595,6 +1621,13 @@ const RETIRED_CLARIFICATION_WORDING: ReadonlyArray<readonly [RegExp, string]> = 
   [/cannot both apply|不能作用于同一件器物/, "Saggars' step and Crackle never on one ceramic (change 29)"],
   [/6 resources|6份资源/, "the Materials Yard Shifu's 6 resources (change 34)"],
   [/bottom of the (?:Main Order )?deck, in random order|go(?:es)? face down to the bottom of the Main Order deck|put the rest of the N on the bottom|放到主委托牌堆底|其余的放到牌堆底|哪几张放到牌堆底/, "looked cards to the deck bottom (change 24, R19; reversed by R25)"],
+  // Owner revision 5 (changes 36–42) and interpretation I1.
+  [/only in the Order Phase|the only time Orders are completed|only place Orders are completed|while completing an Order in the Order Phase|只在交货阶段|只有交货阶段才能完成|在交货阶段完成委托时/, "Order completion only in the Order Phase (change 36)"],
+  [/(?:sold?|sell)[^.。]{0,40}at any time|随时[^。]{0,12}卖出|after-Quality turn included|定品后回合|(?:sold?|sell)[^.]{0,40}(?:during|in) (?:the |your |its owner's )?(?:after-Quality|Cleanup|hand trim)|(?:定品后|收工时)[^。]{0,12}卖出/i, "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+  [/with a Carved, Impressed or Painted Decoration costs|刻花、印花或画花的坯少付/, "Decorator's Kit's Decoration condition (change 37)"],
+  [/1 Clay (?:and|\+) 1 Coin|1泥和1铜钱|1泥1铜钱|1-Coin (?:extra )?vessel|1铜钱额外坯|no (?:further )?discounts?\b|不享减免|takes neither|两项都不适用|not one of the 2 vessels|不算师傅减免/, "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
+  [/Fine or Standard|上品或良品/, "Ge limited to a Fine or Standard ceramic (change 39)"],
+  [/sell a Standard|Standard (?:ceramic )?for 3\b|卖出良品|良品3铜钱|buy 1 (?:Clay|Wood)|买1泥|买1柴|must be in hand when|必须在烧窑开始时已在手中/i, "the withdrawn draft's Standard sale, resource buy and Wood-in-hand note (changes 36, 38, 41–42)"],
 ];
 
 const CLARIFICATIONS_DOC_V161 = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md"), "utf8");
@@ -1611,8 +1644,8 @@ describe("clarifications (owner decision D10, K15)", () => {
     // Pruned to the component-specific items (owner review, 2026-10-17): no general rules, no
     // interactions the component's owner can never meet. A component may have none. V1.6.2
     // (stage 4) carried 120 items over, rewrote 29 and added 21; 7 were retired. Owner revision 4
-    // removed 12 items and added 9 (the doc's revision notes).
-    expect(all).toHaveLength(167);
+    // removed 12 items and added 9; owner revision 5 added 9 (the doc's revision notes).
+    expect(all).toHaveLength(176);
     expect(IMPERIAL_TRACK.track.filter((space) => space.clarifications.length === 0).map((space) => space.id)).toEqual(["local_workshop", "imperial_grant"]);
   });
 
@@ -1628,7 +1661,7 @@ describe("clarifications (owner decision D10, K15)", () => {
         expect(() => clarificationSourceKind(tag)).not.toThrow();
         if (resolveTag(tag) === null) unresolved.push(`${key}: ${tag}`);
       }
-      // Inline line references such as "(L212)" must exist too.
+      // Inline line references such as "(L241)" must exist too.
       for (const match of item.en.matchAll(/\(L(\d+)\)/g)) {
         if (resolveTag(`L${match[1]}`) === null) unresolved.push(`${key}: inline L${match[1]}`);
       }
@@ -1645,7 +1678,10 @@ describe("clarifications (owner decision D10, K15)", () => {
     expect(clarificationSourceKind("R19")).toBe("ruling");
     // Owner rulings R20–R25 (2026-10-23).
     expect(clarificationSourceKind("R25")).toBe("ruling");
-    for (const bad of ["L0", "R26", "B4", "P4", "P5", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
+    // Revision 5's provisional defaults P6 and P7 (audit); P4 and P5 are cited by no item.
+    expect(clarificationSourceKind("P6")).toBe("provisional");
+    expect(clarificationSourceKind("P7")).toBe("provisional");
+    for (const bad of ["L0", "R26", "B4", "P4", "P5", "P8", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
     expect(resolveTag("L9999")).toBeNull();
     expect(resolveTag("INT Imaginary ruling")).toBeNull();
     expect(resolveTag("ED L16")).toContain("It is superseded by change 21 (L31, L202), change 22 (L32, L622) and change 25 (L35).");
@@ -1658,13 +1694,45 @@ describe("clarifications (owner decision D10, K15)", () => {
     expect(cited).toEqual([]);
   });
 
-  it("names none of the mechanics V1.6.2 removed (changes 21–35, owner ruling R25)", () => {
+  it("names none of the mechanics V1.6.2 removed (changes 21–42, owner ruling R25, interpretation I1)", () => {
     const offences = all.flatMap(({ key, item }) => RETIRED_CLARIFICATION_WORDING
       .filter(([pattern]) => pattern.test(item.en) || pattern.test(item.zh)).map(([, label]) => `${key}: ${label}`));
     expect(offences).toEqual([]);
   });
 
-  /** The owner's plain-register edits of 2026-10-18 (Chinese line 304: 于 → 到), which the clarification quoting that line follows. */
+  it("would catch the revision-4 wording that revision 5 retired (positive controls for the sweep above)", () => {
+    // Each sample is revision-4 clarification or ability text (git history), or the withdrawn
+    // draft of changes 36 and 38; each must trip the revision-5 pattern named beside it.
+    const samples: ReadonlyArray<readonly [string, string]> = [
+      ["You gain its 2 Coins in the Order Phase, the only time Orders are completed.", "Order completion only in the Order Phase (change 36)"],
+      ["它的2铜钱在交货阶段获得，只有交货阶段才能完成委托。", "Order completion only in the Order Phase (change 36)"],
+      ["Ru triggers while completing an Order in the Order Phase.", "Order completion only in the Order Phase (change 36)"],
+      ["汝窑在交货阶段完成委托时触发。", "Order completion only in the Order Phase (change 36)"],
+      ["You may sell a Flawed ceramic for 2 Coins during your own turn, your after-Quality turn included.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+      ["你可以在自己的回合中以2铜钱卖出瑕品，包括你的定品后回合。", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+      ["A Flawed ceramic may be sold at any time for 2 Coins.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+      ["You may also sell it during the Cleanup trim.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+      ["收工时也可以卖出瑕品。", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+      ["Once per round, a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less.", "Decorator's Kit's Decoration condition (change 37)"],
+      ["每轮一次，你制的1件刻花、印花或画花的坯少付1铜钱。", "Decorator's Kit's Decoration condition (change 37)"],
+      ["you may pay 1 Clay and 1 Coin to form one additional vessel", "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
+      ["可以支付1泥和1铜钱，再制1件同器型的坯", "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
+      ["The Shifu's discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. Ding's vessel takes neither.", "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
+      ["定窑的额外坯两项都不适用。", "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
+      ["Ding: 1 Clay + 1 Coin (no discounts).", "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
+      ["Ge targets 1 of your ceramics from this firing that is Fine or Standard at that moment.", "Ge limited to a Fine or Standard ceramic (change 39)"],
+      ["哥窑选择你本次烧成中1件此时为上品或良品的器物。", "Ge limited to a Fine or Standard ceramic (change 39)"],
+      ["Sell a Flawed ceramic for 2 Coins or a Standard for 3.", "the withdrawn draft's Standard sale, resource buy and Wood-in-hand note (changes 36, 38, 41–42)"],
+      ["以2铜钱买1泥或1柴。", "the withdrawn draft's Standard sale, resource buy and Wood-in-hand note (changes 36, 38, 41–42)"],
+      ["Wood for the firing must be in hand when it begins.", "the withdrawn draft's Standard sale, resource buy and Wood-in-hand note (changes 36, 38, 41–42)"],
+    ];
+    for (const [sample, label] of samples) {
+      const hits = RETIRED_CLARIFICATION_WORDING.filter(([pattern]) => pattern.test(sample)).map(([, hit]) => hit);
+      expect(hits, sample).toContain(label);
+    }
+  });
+
+  /** The owner's plain-register edits of 2026-10-18 (Chinese line 320, line 304 at the time: 于 → 到), which the clarification quoting that line follows. */
   const OWNER_ZH_EDITS: ReadonlyArray<readonly [string, string]> = [["它们要在派工阶段于瓷牙行承接", "它们要在派工阶段到瓷牙行承接"]];
   const followsOwnerZhEdit = (before: string, now: string): boolean =>
     OWNER_ZH_EDITS.some(([from, to]) => before.includes(from) && before.replace(from, to) === now);

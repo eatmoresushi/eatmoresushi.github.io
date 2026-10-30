@@ -1,6 +1,6 @@
 /**
- * Opening the Firing Phase and the Contribution window (L237, v1.6.2 L246, L258–268, L508, L634,
- * L668–670, changes 16 and 26; INT "No Contribution participants"). Each participant secretly
+ * Opening the Firing Phase and the Contribution window (L267, v1.6.2 L271, L281–291, L518, L644,
+ * L678–680, changes 16 and 26; INT "No Contribution participants"). Each participant secretly
  * plays exactly 1 of their own Contribution cards: Bank, Tend or Stoke, and for Fuel Ledger's
  * owner also Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2); Wood is paid
  * only on reveal.
@@ -63,7 +63,7 @@ function expectError(error: GameRuleError | null, code: GameRuleError["code"]): 
   expectDocumentedDetails(error);
 }
 
-describe("skip check (L237, L670)", () => {
+describe("skip check (L267, L676)", () => {
   it("skips the Firing Phase when nothing is loaded: no Fire card, no firing, straight to firing_done", () => {
     const state = buildState({
       ceramics: [
@@ -85,7 +85,7 @@ describe("skip check (L237, L670)", () => {
   });
 });
 
-describe("participants (L261, change 16, L290)", () => {
+describe("participants (L289, change 16, L311)", () => {
   it("only Shared Kiln ceramics make a participant; an Imperial ceramic is in the firing but gives no say", () => {
     const table = openFiringTable({
       players: [{ recognition: 2 }, {}, { recognition: 2 }],
@@ -157,7 +157,7 @@ describe("participants (L261, change 16, L290)", () => {
   });
 });
 
-describe("secret simultaneous submission (L672–673)", () => {
+describe("secret simultaneous submission (L678–679)", () => {
   it("records only who submitted; the card stays in the private state; any order", () => {
     const table = openFiringTable(threeParticipants());
     const events = table.contribute("p3", "STOKE");
@@ -165,8 +165,8 @@ describe("secret simultaneous submission (L672–673)", () => {
     expect(table.state.phase).toMatchObject({ type: "firing_contributions", submittedPlayerIds: ["p3"] });
     expect(table.state.firing?.contributions).toBeNull();
     expect(table.privateState.submissions).toEqual({ p3: { card: "STOKE" } });
-    // Wood is paid only on reveal, so nothing is set aside (v1.6.2 L508). Every seat starts
-    // with 3 Wood (rev. 4 L125).
+    // Wood is paid only on reveal, so nothing is set aside (v1.6.2 L518). Every seat starts
+    // with 3 Wood (L133).
     expect(table.player("p3").resources.wood).toBe(3);
     expect(table.prompt().actorIds).toEqual(["p1", "p2"]);
     table.contribute("p1", "BANK");
@@ -186,7 +186,7 @@ describe("secret simultaneous submission (L672–673)", () => {
     expect(table.privateState.submissions["p1"]).toEqual({ card: "TEND" });
   });
 
-  it("the last submission reveals every card together, then pays (L673)", () => {
+  it("the last submission reveals every card together, then pays (L679)", () => {
     const table = openFiringTable(threeWithFlawed());
     table.contribute("p2", "STOKE");
     table.contribute("p1", "TEND");
@@ -209,7 +209,7 @@ describe("secret simultaneous submission (L672–673)", () => {
         },
       },
     ]);
-    // Both Stoke and Bank pay their Wood, in First Player order; Tend pays nothing (L263).
+    // Both Stoke and Bank pay their Wood, in First Player order; Tend pays nothing (L291).
     expect(eventsOfType(events, "RESOURCES_CHANGED")).toEqual([
       { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: -1, coins: 0, reason: "contribution" },
       { type: "RESOURCES_CHANGED", playerId: "p3", clay: 0, wood: -1, coins: 0, reason: "contribution" },
@@ -248,7 +248,7 @@ describe("secret simultaneous submission (L672–673)", () => {
   });
 });
 
-describe("Base Heat (L263, L674)", () => {
+describe("Base Heat (L291, L680)", () => {
   it.each([
     { die: 2 as const, cards: ["TEND", "TEND", "TEND"] as const, expected: 2 },
     { die: 2 as const, cards: ["STOKE", "TEND", "TEND"] as const, expected: 3 },
@@ -265,7 +265,7 @@ describe("Base Heat (L263, L674)", () => {
     expect(table.state.lastFiring?.baseHeat ?? table.state.firing?.baseHeat).toBe(expected);
   });
 
-  it("clamps to 5 above and 0 below, keeping the unclamped value (L249)", () => {
+  it("clamps to 5 above and 0 below, keeping the unclamped value (L277)", () => {
     const high = openFiringTable(
       threeParticipants({ kilnDie: 3, fireDeck: [0], players: [{ techs: ["T12"] }, {}, {}] }),
     );
@@ -287,7 +287,7 @@ describe("Base Heat (L263, L674)", () => {
   });
 });
 
-describe("Fuel Ledger as Contribution cards (T12, v1.6.2 L266, L634, change 26)", () => {
+describe("Fuel Ledger as Contribution cards (T12, v1.6.2 L289, L644, change 26)", () => {
   function ledgerTable(wood: number): ReturnType<typeof openFiringTable> {
     return openFiringTable({
       players: [{ techs: ["T12"], resources: { wood } }, {}],
@@ -325,7 +325,7 @@ describe("Fuel Ledger as Contribution cards (T12, v1.6.2 L266, L634, change 26)"
     const stoke = ledgerTable(1);
     expect(stoke.contribute("p1", "FUEL_LEDGER_STOKE")).toEqual([{ type: "CONTRIBUTION_SUBMITTED", playerId: "p1", windowId: WINDOW }]);
     expect(stoke.privateState.submissions["p1"]).toEqual({ card: "FUEL_LEDGER_STOKE" });
-    // Nothing is set aside before the reveal (v1.6.2 L508): the Wood is still p1's.
+    // Nothing is set aside before the reveal (v1.6.2 L518): the Wood is still p1's.
     expect(stoke.player("p1").resources.wood).toBe(1);
     const events = stoke.contribute("p2", "TEND");
     expect(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toEqual({ card: "FUEL_LEDGER_STOKE", heat: 2, woodPaid: 1 });
@@ -340,7 +340,7 @@ describe("Fuel Ledger as Contribution cards (T12, v1.6.2 L266, L634, change 26)"
     expect(eventsOfType(bankEvents, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(0);
   });
 
-  it("a non-owner still pays 1 Wood for Bank or Stoke (v1.6.2 L262–264)", () => {
+  it("a non-owner still pays 1 Wood for Bank or Stoke (v1.6.2 L285–287)", () => {
     const table = ledgerTable(0);
     table.contribute("p1", "TEND");
     const events = table.contribute("p2", "STOKE");
@@ -372,8 +372,8 @@ describe("Fuel Ledger as Contribution cards (T12, v1.6.2 L266, L634, change 26)"
   });
 });
 
-describe("affordability (L672) and legalContributions", () => {
-  it("Bank and Stoke need 1 Wood; Tend is always affordable (L261)", () => {
+describe("affordability (L678) and legalContributions", () => {
+  it("Bank and Stoke need 1 Wood; Tend is always affordable (L289)", () => {
     const table = openFiringTable(threeParticipants({ players: [{ resources: { wood: 0 } }, {}, {}] }));
     const view = table.actorView("p1");
     expectError(validateContribution(view, table.privateState, submitCommand("BANK")), "INVALID_CONTRIBUTION");

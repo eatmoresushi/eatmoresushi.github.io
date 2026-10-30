@@ -292,7 +292,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -673,7 +673,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -1579,7 +1579,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -1992,7 +1992,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -2492,7 +2492,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -2888,7 +2888,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -3296,7 +3296,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -3741,7 +3741,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -4187,7 +4187,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -4516,7 +4516,7 @@
               },
               "resources": {
                 "clay": 9,
-                "coins": 7,
+                "coins": 6,
                 "wood": 9
               },
               "score": {
@@ -4638,7 +4638,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -4805,7 +4805,7 @@
           "actorId": "p1",
           "event": {
             "clay": 0,
-            "coins": -2,
+            "coins": -3,
             "playerId": "p1",
             "reason": "guild_hall",
             "type": "RESOURCES_CHANGED",
@@ -4817,7 +4817,7 @@
         {
           "actorId": "p1",
           "event": {
-            "cost": 2,
+            "cost": 3,
             "playerId": "p1",
             "source": "face_up",
             "techId": "T10",
@@ -5133,7 +5133,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -5584,7 +5584,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -5857,7 +5857,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "middle_1"
               },
               "c2": {
@@ -5874,7 +5873,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "high_1"
               }
             },
@@ -6088,7 +6086,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -6361,7 +6359,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "middle_1"
               },
               "c2": {
@@ -6378,7 +6375,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "low_1"
               }
             },
@@ -6602,7 +6598,7 @@
           "revision": 2,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -6923,7 +6919,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "middle_1"
               }
             },
@@ -7146,7 +7141,7 @@
           "revision": 2,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -7500,7 +7495,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "middle_1"
               },
               "c2": {
@@ -7526,7 +7520,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "high_1"
               }
             },
@@ -7736,7 +7729,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -8126,7 +8119,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "middle_1"
               },
               "c2": {
@@ -8158,7 +8150,6 @@
                 "saggarsFloor": true,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "low_1"
               },
               "c3": {
@@ -8190,7 +8181,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "high_1"
               }
             },
@@ -8406,7 +8396,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -8811,7 +8801,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "low_1"
               }
             },
@@ -9030,7 +9019,7 @@
           "revision": 3,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -9313,6 +9302,821 @@
           "p1"
         ],
         "mode": "single",
+        "phaseType": "work_turn"
+      },
+      "description": "Decision window: After the worker action: complete an Order and sell (free actions) (work_turn), seen by the acting player.",
+      "id": "w-after-the-worker-action-complete-an-order-and-sell-free-actions",
+      "kind": "window",
+      "name": "After the worker action: complete an Order and sell (free actions)",
+      "notes": [],
+      "ownSecrets": [],
+      "playerView": {
+        "game": {
+          "ceramics": {
+            "c1": {
+              "crackle": false,
+              "decoration": "plain",
+              "firedInRound": 1,
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "white",
+              "id": "c1",
+              "ownerId": "p1",
+              "quality": "standard",
+              "shape": "plate",
+              "stage": "finished",
+              "vesselInstanceId": "plate-01"
+            },
+            "c2": {
+              "crackle": false,
+              "decoration": "plain",
+              "firedInRound": 1,
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "white",
+              "id": "c2",
+              "ownerId": "p1",
+              "quality": "flawed",
+              "shape": "bowl",
+              "stage": "finished",
+              "vesselInstanceId": "bowl-01"
+            }
+          },
+          "counts": {
+            "fireBuried": 0,
+            "fireDeck": 12,
+            "mainDeck": 42,
+            "mainDiscard": 0,
+            "orderHands": {
+              "p1": 1,
+              "p2": 0
+            },
+            "pendingLook": null,
+            "techDecks": {
+              "firing": 4,
+              "glazing_loading": 4,
+              "workshop": 4
+            }
+          },
+          "eventSequence": 2,
+          "finalResult": null,
+          "fireDiscard": [],
+          "firing": null,
+          "firstPlayerId": "p1",
+          "gameId": "test-game",
+          "kilnDie": {
+            "round": 1,
+            "value": 2
+          },
+          "lastFiring": null,
+          "market": {
+            "display": [
+              "O01",
+              "O02",
+              "O03",
+              "O04",
+              "O05",
+              "O06"
+            ],
+            "refillPendingFor": null
+          },
+          "nextCeramicSequence": 3,
+          "nextProxySequence": 1,
+          "phase": {
+            "activePlayerId": "p1",
+            "step": {
+              "kind": "after_action"
+            },
+            "type": "work_turn"
+          },
+          "placementSequence": 1,
+          "playerCount": 2,
+          "playerOrder": [
+            "p1",
+            "p2"
+          ],
+          "players": {
+            "p1": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Player 1",
+              "id": "p1",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "RU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 5,
+                "wood": 3
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 0,
+              "techs": [],
+              "workers": {
+                "p1:apprentice:1": {
+                  "id": "p1:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": {
+                    "effect": "apprentice",
+                    "locationId": "canal_wharf",
+                    "sequence": 0,
+                    "spaceIndex": 0,
+                    "viaSeniorApprentice": false
+                  }
+                },
+                "p1:apprentice:2": {
+                  "id": "p1:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:apprentice:3": {
+                  "id": "p1:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:shifu": {
+                  "id": "p1:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            },
+            "p2": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Player 2",
+              "id": "p2",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "GU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 3
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 1,
+              "techs": [],
+              "workers": {
+                "p2:apprentice:1": {
+                  "id": "p2:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:2": {
+                  "id": "p2:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:3": {
+                  "id": "p2:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:shifu": {
+                  "id": "p2:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            }
+          },
+          "revision": 1,
+          "round": 1,
+          "rulesVersion": "1.6.2",
+          "schemaVersion": 10,
+          "sharedKiln": {
+            "spaces": {
+              "high_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_2": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_2": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_2": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              }
+            }
+          },
+          "techDisplay": {
+            "firing": [
+              "T11",
+              "T12"
+            ],
+            "glazing_loading": [
+              "T10",
+              "T20"
+            ],
+            "workshop": [
+              "T01",
+              "T16"
+            ]
+          },
+          "vesselSupply": {
+            "bowl": [
+              "bowl-02",
+              "bowl-03",
+              "bowl-04",
+              "bowl-05",
+              "bowl-06",
+              "bowl-07",
+              "bowl-08",
+              "bowl-09",
+              "bowl-10"
+            ],
+            "censer": [
+              "censer-01",
+              "censer-02",
+              "censer-03",
+              "censer-04",
+              "censer-05",
+              "censer-06",
+              "censer-07",
+              "censer-08",
+              "censer-09",
+              "censer-10"
+            ],
+            "plate": [
+              "plate-02",
+              "plate-03",
+              "plate-04",
+              "plate-05",
+              "plate-06",
+              "plate-07",
+              "plate-08",
+              "plate-09",
+              "plate-10"
+            ],
+            "vase": [
+              "vase-01",
+              "vase-02",
+              "vase-03",
+              "vase-04",
+              "vase-05",
+              "vase-06",
+              "vase-07",
+              "vase-08",
+              "vase-09",
+              "vase-10"
+            ],
+            "washer": [
+              "washer-01",
+              "washer-02",
+              "washer-03",
+              "washer-04",
+              "washer-05",
+              "washer-06",
+              "washer-07",
+              "washer-08",
+              "washer-09",
+              "washer-10"
+            ]
+          }
+        },
+        "own": {
+          "firePeek": null,
+          "orderHand": [
+            "S08"
+          ],
+          "pendingContribution": null,
+          "pendingLook": null,
+          "playerId": "p1"
+        },
+        "viewerId": "p1"
+      },
+      "recentPublicEvents": [
+        {
+          "actorId": "p1",
+          "event": {
+            "effect": "apprentice",
+            "kind": "apprentice",
+            "locationId": "canal_wharf",
+            "playerId": "p1",
+            "spaceIndex": 0,
+            "type": "WORKER_PLACED",
+            "viaSeniorApprentice": false,
+            "workerId": "p1:apprentice:1"
+          },
+          "revision": 1,
+          "sequence": 1
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "clay": 0,
+            "coins": 2,
+            "playerId": "p1",
+            "reason": "canal_wharf",
+            "type": "RESOURCES_CHANGED",
+            "wood": 0
+          },
+          "revision": 1,
+          "sequence": 2
+        }
+      ],
+      "source": {
+        "from": "phaseScenarios",
+        "kind": "scripted",
+        "phase": "work_turn",
+        "revision": 1,
+        "round": 1,
+        "scenario": "After the worker action: complete an Order and sell (free actions)"
+      },
+      "viewerActs": true,
+      "viewerId": "p1"
+    },
+    {
+      "decisionPrompt": {
+        "actorIds": [
+          "p1"
+        ],
+        "mode": "single",
+        "phaseType": "orders"
+      },
+      "description": "Decision window: Order Phase: Imperial Priority (orders), seen by the acting player.",
+      "id": "w-order-phase-imperial-priority",
+      "kind": "window",
+      "name": "Order Phase: Imperial Priority",
+      "notes": [],
+      "ownSecrets": [],
+      "playerView": {
+        "game": {
+          "ceramics": {
+            "c1": {
+              "decoration": "plain",
+              "formedBy": "form_decorate",
+              "formedInRound": 2,
+              "id": "c1",
+              "ownerId": "p1",
+              "shape": "vase",
+              "stage": "shaped",
+              "vesselInstanceId": "vase-01"
+            }
+          },
+          "counts": {
+            "fireBuried": 0,
+            "fireDeck": 12,
+            "mainDeck": 42,
+            "mainDiscard": 0,
+            "orderHands": {
+              "p1": 0,
+              "p2": 0
+            },
+            "pendingLook": null,
+            "techDecks": {
+              "firing": 4,
+              "glazing_loading": 4,
+              "workshop": 4
+            }
+          },
+          "eventSequence": 0,
+          "finalResult": null,
+          "fireDiscard": [],
+          "firing": null,
+          "firstPlayerId": "p1",
+          "gameId": "test-game",
+          "kilnDie": {
+            "round": 2,
+            "value": 2
+          },
+          "lastFiring": null,
+          "market": {
+            "display": [
+              "O01",
+              "O02",
+              "O03",
+              "O04",
+              "O05",
+              "O06"
+            ],
+            "refillPendingFor": null
+          },
+          "nextCeramicSequence": 2,
+          "nextProxySequence": 1,
+          "phase": {
+            "index": 0,
+            "turnOrder": [
+              "p1",
+              "p2"
+            ],
+            "type": "orders"
+          },
+          "placementSequence": 0,
+          "playerCount": 2,
+          "playerOrder": [
+            "p1",
+            "p2"
+          ],
+          "players": {
+            "p1": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Player 1",
+              "id": "p1",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": true,
+                "kilnGained": true,
+                "priority": "held",
+                "recognition": 3
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "RU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 3
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 0,
+              "techs": [],
+              "workers": {
+                "p1:apprentice:1": {
+                  "id": "p1:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:apprentice:2": {
+                  "id": "p1:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:apprentice:3": {
+                  "id": "p1:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:shifu": {
+                  "id": "p1:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            },
+            "p2": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Player 2",
+              "id": "p2",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "GU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 3
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 1,
+              "techs": [],
+              "workers": {
+                "p2:apprentice:1": {
+                  "id": "p2:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:2": {
+                  "id": "p2:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:3": {
+                  "id": "p2:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:shifu": {
+                  "id": "p2:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            }
+          },
+          "revision": 0,
+          "round": 2,
+          "rulesVersion": "1.6.2",
+          "schemaVersion": 10,
+          "sharedKiln": {
+            "spaces": {
+              "high_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_2": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_2": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_2": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              }
+            }
+          },
+          "techDisplay": {
+            "firing": [
+              "T11",
+              "T12"
+            ],
+            "glazing_loading": [
+              "T10",
+              "T20"
+            ],
+            "workshop": [
+              "T01",
+              "T16"
+            ]
+          },
+          "vesselSupply": {
+            "bowl": [
+              "bowl-01",
+              "bowl-02",
+              "bowl-03",
+              "bowl-04",
+              "bowl-05",
+              "bowl-06",
+              "bowl-07",
+              "bowl-08",
+              "bowl-09",
+              "bowl-10"
+            ],
+            "censer": [
+              "censer-01",
+              "censer-02",
+              "censer-03",
+              "censer-04",
+              "censer-05",
+              "censer-06",
+              "censer-07",
+              "censer-08",
+              "censer-09",
+              "censer-10"
+            ],
+            "plate": [
+              "plate-01",
+              "plate-02",
+              "plate-03",
+              "plate-04",
+              "plate-05",
+              "plate-06",
+              "plate-07",
+              "plate-08",
+              "plate-09",
+              "plate-10"
+            ],
+            "vase": [
+              "vase-02",
+              "vase-03",
+              "vase-04",
+              "vase-05",
+              "vase-06",
+              "vase-07",
+              "vase-08",
+              "vase-09",
+              "vase-10"
+            ],
+            "washer": [
+              "washer-01",
+              "washer-02",
+              "washer-03",
+              "washer-04",
+              "washer-05",
+              "washer-06",
+              "washer-07",
+              "washer-08",
+              "washer-09",
+              "washer-10"
+            ]
+          }
+        },
+        "own": {
+          "firePeek": null,
+          "orderHand": [],
+          "pendingContribution": null,
+          "pendingLook": null,
+          "playerId": "p1"
+        },
+        "viewerId": "p1"
+      },
+      "recentPublicEvents": [],
+      "source": {
+        "from": "phaseScenarios",
+        "kind": "scripted",
+        "phase": "orders",
+        "revision": 0,
+        "round": 2,
+        "scenario": "Order Phase: Imperial Priority"
+      },
+      "viewerActs": true,
+      "viewerId": "p1"
+    },
+    {
+      "decisionPrompt": {
+        "actorIds": [
+          "p1"
+        ],
+        "mode": "single",
         "phaseType": "orders"
       },
       "description": "Decision window: Order Phase: sell a Flawed ceramic (orders), seen by the acting player.",
@@ -9542,7 +10346,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -9702,10 +10506,10 @@
         "mode": "single",
         "phaseType": "orders"
       },
-      "description": "Decision window: Order Phase with Ru, Tribute Ware and a Crackle wildcard (orders), seen by the acting player.",
-      "id": "w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard",
+      "description": "Decision window: Order Phase with Ru and Tribute Ware (orders), seen by the acting player.",
+      "id": "w-order-phase-with-ru-and-tribute-ware",
       "kind": "window",
-      "name": "Order Phase with Ru, Tribute Ware and a Crackle wildcard",
+      "name": "Order Phase with Ru and Tribute Ware",
       "notes": [],
       "ownSecrets": [],
       "playerView": {
@@ -9740,7 +10544,7 @@
               "vesselInstanceId": "plate-01"
             },
             "c3": {
-              "crackle": true,
+              "crackle": false,
               "decoration": "plain",
               "firedInRound": 1,
               "formedBy": "form_decorate",
@@ -9774,7 +10578,7 @@
             "mainDeck": 40,
             "mainDiscard": 0,
             "orderHands": {
-              "p1": 4,
+              "p1": 3,
               "p2": 0
             },
             "pendingLook": null,
@@ -9977,7 +10781,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -10108,8 +10912,7 @@
           "orderHand": [
             "O22",
             "O18",
-            "S01",
-            "S07"
+            "S01"
           ],
           "pendingContribution": null,
           "pendingLook": null,
@@ -10124,7 +10927,422 @@
         "phase": "orders",
         "revision": 0,
         "round": 1,
-        "scenario": "Order Phase with Ru, Tribute Ware and a Crackle wildcard"
+        "scenario": "Order Phase with Ru and Tribute Ware"
+      },
+      "viewerActs": true,
+      "viewerId": "p1"
+    },
+    {
+      "decisionPrompt": {
+        "actorIds": [
+          "p1"
+        ],
+        "mode": "single",
+        "phaseType": "orders"
+      },
+      "description": "Decision window: Order Phase with a Crackle wildcard (orders), seen by the acting player.",
+      "id": "w-order-phase-with-a-crackle-wildcard",
+      "kind": "window",
+      "name": "Order Phase with a Crackle wildcard",
+      "notes": [],
+      "ownSecrets": [],
+      "playerView": {
+        "game": {
+          "ceramics": {
+            "c1": {
+              "crackle": true,
+              "decoration": "plain",
+              "firedInRound": 1,
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "celadon",
+              "id": "c1",
+              "ownerId": "p1",
+              "quality": "masterpiece",
+              "shape": "plate",
+              "stage": "finished",
+              "vesselInstanceId": "plate-01"
+            },
+            "c2": {
+              "crackle": true,
+              "decoration": "plain",
+              "firedInRound": 1,
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "celadon",
+              "id": "c2",
+              "ownerId": "p1",
+              "quality": "fine",
+              "shape": "vase",
+              "stage": "finished",
+              "vesselInstanceId": "vase-01"
+            },
+            "c3": {
+              "crackle": false,
+              "decoration": "plain",
+              "firedInRound": 1,
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "white",
+              "id": "c3",
+              "ownerId": "p1",
+              "quality": "standard",
+              "shape": "bowl",
+              "stage": "finished",
+              "vesselInstanceId": "bowl-01"
+            }
+          },
+          "counts": {
+            "fireBuried": 0,
+            "fireDeck": 12,
+            "mainDeck": 41,
+            "mainDiscard": 0,
+            "orderHands": {
+              "p1": 3,
+              "p2": 0
+            },
+            "pendingLook": null,
+            "techDecks": {
+              "firing": 4,
+              "glazing_loading": 4,
+              "workshop": 4
+            }
+          },
+          "eventSequence": 0,
+          "finalResult": null,
+          "fireDiscard": [],
+          "firing": null,
+          "firstPlayerId": "p1",
+          "gameId": "test-game",
+          "kilnDie": {
+            "round": 1,
+            "value": 2
+          },
+          "lastFiring": null,
+          "market": {
+            "display": [
+              "O01",
+              "O02",
+              "O03",
+              "O04",
+              "O05",
+              "O06"
+            ],
+            "refillPendingFor": null
+          },
+          "nextCeramicSequence": 4,
+          "nextProxySequence": 1,
+          "phase": {
+            "index": 0,
+            "turnOrder": [
+              "p1",
+              "p2"
+            ],
+            "type": "orders"
+          },
+          "placementSequence": 0,
+          "playerCount": 2,
+          "playerOrder": [
+            "p1",
+            "p2"
+          ],
+          "players": {
+            "p1": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Player 1",
+              "id": "p1",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "GE",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 3
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 0,
+              "techs": [],
+              "workers": {
+                "p1:apprentice:1": {
+                  "id": "p1:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:apprentice:2": {
+                  "id": "p1:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:apprentice:3": {
+                  "id": "p1:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:shifu": {
+                  "id": "p1:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            },
+            "p2": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Player 2",
+              "id": "p2",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "RU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 3
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 1,
+              "techs": [],
+              "workers": {
+                "p2:apprentice:1": {
+                  "id": "p2:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:2": {
+                  "id": "p2:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:3": {
+                  "id": "p2:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:shifu": {
+                  "id": "p2:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            }
+          },
+          "revision": 0,
+          "round": 1,
+          "rulesVersion": "1.6.2",
+          "schemaVersion": 10,
+          "sharedKiln": {
+            "spaces": {
+              "high_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_2": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_2": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_2": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              }
+            }
+          },
+          "techDisplay": {
+            "firing": [
+              "T11",
+              "T12"
+            ],
+            "glazing_loading": [
+              "T10",
+              "T20"
+            ],
+            "workshop": [
+              "T01",
+              "T16"
+            ]
+          },
+          "vesselSupply": {
+            "bowl": [
+              "bowl-02",
+              "bowl-03",
+              "bowl-04",
+              "bowl-05",
+              "bowl-06",
+              "bowl-07",
+              "bowl-08",
+              "bowl-09",
+              "bowl-10"
+            ],
+            "censer": [
+              "censer-01",
+              "censer-02",
+              "censer-03",
+              "censer-04",
+              "censer-05",
+              "censer-06",
+              "censer-07",
+              "censer-08",
+              "censer-09",
+              "censer-10"
+            ],
+            "plate": [
+              "plate-02",
+              "plate-03",
+              "plate-04",
+              "plate-05",
+              "plate-06",
+              "plate-07",
+              "plate-08",
+              "plate-09",
+              "plate-10"
+            ],
+            "vase": [
+              "vase-02",
+              "vase-03",
+              "vase-04",
+              "vase-05",
+              "vase-06",
+              "vase-07",
+              "vase-08",
+              "vase-09",
+              "vase-10"
+            ],
+            "washer": [
+              "washer-01",
+              "washer-02",
+              "washer-03",
+              "washer-04",
+              "washer-05",
+              "washer-06",
+              "washer-07",
+              "washer-08",
+              "washer-09",
+              "washer-10"
+            ]
+          }
+        },
+        "own": {
+          "firePeek": null,
+          "orderHand": [
+            "O13",
+            "S07",
+            "S01"
+          ],
+          "pendingContribution": null,
+          "pendingLook": null,
+          "playerId": "p1"
+        },
+        "viewerId": "p1"
+      },
+      "recentPublicEvents": [],
+      "source": {
+        "from": "phaseScenarios",
+        "kind": "scripted",
+        "phase": "orders",
+        "revision": 0,
+        "round": 1,
+        "scenario": "Order Phase with a Crackle wildcard"
       },
       "viewerActs": true,
       "viewerId": "p1"
@@ -10348,7 +11566,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -10610,7 +11828,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "middle_1"
               },
               "c2": {
@@ -10642,7 +11859,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "high_1"
               }
             },
@@ -10850,7 +12066,7 @@
           "revision": 1,
           "round": 3,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -11274,7 +12490,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": null
               }
             },
@@ -11476,7 +12691,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -11817,7 +13032,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "middle_1"
               },
               "c2": {
@@ -11843,7 +13057,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "high_1"
               },
               "c3": {
@@ -11869,7 +13082,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "low_1"
               }
             },
@@ -12166,7 +13378,7 @@
           "revision": 3,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -13956,7 +15168,7 @@
           "revision": 0,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -14315,7 +15527,7 @@
           "revision": 0,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -14758,7 +15970,7 @@
           "revision": 1,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -15285,7 +16497,7 @@
           "revision": 1,
           "round": 3,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -15442,7 +16654,8 @@
               "round": 3,
               "vp": 6
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 1,
           "sequence": 1
@@ -15942,7 +17155,7 @@
           "revision": 4,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -16095,7 +17308,8 @@
               "round": 5,
               "vp": 3
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 1,
           "sequence": 1
@@ -16136,7 +17350,8 @@
               "round": 5,
               "vp": 9
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 2,
           "sequence": 3
@@ -16240,7 +17455,8 @@
               "round": 5,
               "vp": 3
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 3,
           "sequence": 11
@@ -16263,9 +17479,9 @@
           "event": {
             "ceramicId": "c7",
             "coins": 2,
-            "from": "finished",
             "playerId": "p2",
-            "type": "CERAMIC_SOLD"
+            "type": "CERAMIC_SOLD",
+            "window": "order_phase"
           },
           "revision": 4,
           "sequence": 13
@@ -17092,7 +18308,7 @@
           "revision": 5,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -17244,7 +18460,8 @@
               "round": 5,
               "vp": 3
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 1,
           "sequence": 1
@@ -17300,7 +18517,8 @@
               "round": 5,
               "vp": 6
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 2,
           "sequence": 5
@@ -17356,7 +18574,8 @@
               "round": 5,
               "vp": 3
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 3,
           "sequence": 9
@@ -17397,7 +18616,8 @@
               "round": 5,
               "vp": 6
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 4,
           "sequence": 11
@@ -17498,7 +18718,8 @@
               "round": 5,
               "vp": 3
             },
-            "type": "ORDER_COMPLETED"
+            "type": "ORDER_COMPLETED",
+            "window": "order_phase"
           },
           "revision": 5,
           "sequence": 19
@@ -18036,7 +19257,7 @@
           "revision": 0,
           "round": 3,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -18338,7 +19559,7 @@
               },
               "resources": {
                 "clay": 2,
-                "coins": 2,
+                "coins": 1,
                 "wood": 3
               },
               "score": {
@@ -18532,7 +19753,7 @@
           "revision": 2,
           "round": 2,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -18694,7 +19915,7 @@
           "actorId": "p1",
           "event": {
             "clay": 0,
-            "coins": -2,
+            "coins": -3,
             "playerId": "p1",
             "reason": "guild_hall",
             "type": "RESOURCES_CHANGED",
@@ -18706,7 +19927,7 @@
         {
           "actorId": "p1",
           "event": {
-            "cost": 2,
+            "cost": 3,
             "playerId": "p1",
             "source": "face_up",
             "techId": "T10",
@@ -18873,7 +20094,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "middle_1"
               },
               "c2": {
@@ -18899,7 +20119,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "high_1"
               }
             },
@@ -19124,7 +20343,7 @@
           "revision": 2,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -19429,10 +20648,10 @@
         "mode": "single",
         "phaseType": "firing_after_quality"
       },
-      "description": "Table state: After Quality: Lin may sell a Flawed ceramic of this firing, or fire it again.",
+      "description": "Table state: After Quality: Lin may fire a Flawed ceramic again; no sale during the firing.",
       "id": "t-after-quality-sale",
       "kind": "table",
-      "name": "After Quality: Lin may sell a Flawed ceramic of this firing, or fire it again",
+      "name": "After Quality: Lin may fire a Flawed ceramic again; no sale during the firing",
       "notes": [],
       "ownSecrets": [],
       "playerView": {
@@ -19528,7 +20747,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "low_1"
               },
               "c2": {
@@ -19560,7 +20778,6 @@
                 "saggarsFloor": false,
                 "second": null,
                 "secondFiringCards": null,
-                "sold": false,
                 "spaceId": "high_1"
               }
             },
@@ -19783,7 +21000,7 @@
           "revision": 2,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -20328,7 +21545,7 @@
           "revision": 0,
           "round": 2,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -20485,10 +21702,10 @@
         "mode": "parallel",
         "phaseType": "cleanup_hand_limit"
       },
-      "description": "Table state: Cleanup: Lin, still to trim, may first sell a Flawed ceramic.",
+      "description": "Table state: Cleanup: no sale while trimming.",
       "id": "t-cleanup-sale",
       "kind": "table",
-      "name": "Cleanup: Lin, still to trim, may first sell a Flawed ceramic",
+      "name": "Cleanup: no sale while trimming",
       "notes": [],
       "ownSecrets": [],
       "playerView": {
@@ -20711,7 +21928,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 9,
+          "schemaVersion": 10,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -20870,6 +22087,6 @@
   ],
   "generatedBy": "tools/uiFixtures.ts --target tests",
   "privacy": "Each entry holds only the viewer's PlayerView, projected public events and the viewer's own secret events; checked against the authoritative state when generated (tools/fixturePrivacy.ts).",
-  "rulesFingerprint": "r32-c57ac0c1f3556853",
+  "rulesFingerprint": "r33-11a2ba6bfbcb4e11",
   "rulesVersion": "1.6.2"
 }

@@ -23,7 +23,7 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  * the digest.
  *
  * This is drift detection, not security: FNV-1a is not a defence against a crafted collision.
- * Rooms store `r<revision>-<digest>`; the V1.6.2 Supabase gate requires `^r32-[0-9a-f]{16}$`.
+ * Rooms store `r<revision>-<digest>`; the V1.6.2 Supabase gate requires `^r33-[0-9a-f]{16}$`.
  */
 
 /**
@@ -83,8 +83,22 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        marker's removal), the firing, Order Phase and Select changes after; V1.6.2 is
  *        unreleased, so the revision stays 32 across the stages and the content digest moves
  *        with the data.
+ *  33 -- V1.6.2 owner revision 5 (changes 36–42, 2026-10-28), state schema 10: free actions
+ *        (selling a Flawed ceramic, completing held Orders and spending Imperial Priority
+ *        before or after the worker action of the actor's own Work turn and in the actor's
+ *        own Order Phase turn; `COMPLETE_ORDER` and `USE_IMPERIAL_PRIORITY` legal in
+ *        `work_turn` and `orders`, `SELL_FLAWED` no longer in the after-Quality step or the
+ *        Cleanup trim; the after-action window opens on public facts for a sale or a possible
+ *        completion; `window` on `ORDER_COMPLETED`, `CERAMIC_SOLD` and
+ *        `IMPERIAL_PRIORITY_USED`; `FiringCeramicRecord.sold` gone); an Imperial Priority load
+ *        made in the Order Phase fires in the next round's firing; Kiln Master's one marker;
+ *        Decorator's Kit on any vessel (T16 `decorations` gone); Canal Barge 3, Prepared Clay
+ *        4, Colour Samples 3, Protective Saggars 2; Ge crackles any of its owner's ceramics of
+ *        the firing (GE `upgradeFrom` / `upgradeTo`; a Crackle ceramic keeps its own Quality);
+ *        Ding's vessel 1 Clay + 2 Coins. Rules version stays 1.6.2; r32 rooms and schema-9
+ *        saves are rejected, never migrated.
  */
-export const RULES_BEHAVIOUR_REVISION = 32;
+export const RULES_BEHAVIOUR_REVISION = 33;
 
 /**
  * Display-only keys. A key is dropped only when its value is prose (a string, or `null` for an

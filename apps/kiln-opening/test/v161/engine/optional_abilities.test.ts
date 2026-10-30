@@ -23,7 +23,7 @@ describe("optional abilities (R4)", () => {
       expect(c?.declines !== undefined || (c?.notOptional ?? "").length > 0, id).toBe(true);
     }
     // The automatic ones are exactly Connoisseur's Cabinet, Kiln Tending and Canal Barge (v1.6.2
-    // L630). Colour Samples' swap, Protective Saggars' Standard → Fine step and Second Firing are
+    // L637). Colour Samples' swap, Protective Saggars' Standard → Fine step and Second Firing are
     // optional (R4); the Saggars floor and Fuel Ledger's free Bank and Stoke are not choices.
     expect(ABILITY_CASES.filter((c) => c.declines === undefined).map((c) => c.ability).sort()).toEqual(["T19", "T20", "T23"]);
   });

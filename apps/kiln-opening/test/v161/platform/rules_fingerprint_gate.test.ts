@@ -1,9 +1,10 @@
 /**
- * Version and fingerprint gate (DIG; DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9, §15.2): only V1.6.2
- * rooms with the server's own r32 fingerprint and schema-9 saves continue. Anything else — a
- * V1.6.1 or V1.4 room, an older fingerprint inside the same version string (r31 from before owner
- * revision 4, r30 from before revision 3, r29 included), a missing fingerprint, a schema-8,
- * schema-7, schema-6 or schema-5 save — is refused, never reinterpreted or relabelled.
+ * Version and fingerprint gate (DIG; DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9, §15.2, §16.18): only
+ * V1.6.2 rooms with the server's own r33 fingerprint and schema-10 saves continue. Anything else —
+ * a V1.6.1 or V1.4 room, an older fingerprint inside the same version string (r32 from before
+ * owner revision 5, r31 from before revision 4, r30 from before revision 3, r29 included), a
+ * missing fingerprint, a schema-9, schema-8, schema-7, schema-6 or schema-5 save — is refused,
+ * never reinterpreted or relabelled.
  */
 
 import { describe, expect, it } from "vitest";
@@ -20,21 +21,21 @@ function relabel(harness: Harness, change: (room: StoredRoom) => void): void {
   for (const room of storedRooms(harness).values()) change(room);
 }
 
-/** A well-formed Setup command (rev. 4 L122, R23); every refusal here comes before its rules. */
+/** A well-formed Setup command (L130, R23); every refusal here comes before its rules. */
 const KILN_COMMAND = { type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 0, orderId: "O01" } } as const;
 
 describe("rules fingerprint gate", () => {
-  it("stamps a new room with V1.6.2 and the r32 fingerprint the server runs", async () => {
+  it("stamps a new room with V1.6.2 and the r33 fingerprint the server runs", async () => {
     const harness = await lobby();
-    expect(RULES_BEHAVIOUR_REVISION).toBe(32);
+    expect(RULES_BEHAVIOUR_REVISION).toBe(33);
     const room = [...storedRooms(harness).values()][0]!;
     expect(room).toMatchObject({ rulesVersion: "1.6.2", contentVersion: "1.6.2", contentDigest: rulesFingerprint() });
     expect(room.contentDigest).toMatch(CURRENT_ROOM_FINGERPRINT_PATTERN);
-    expect(room.contentDigest).toMatch(/^r32-/);
+    expect(room.contentDigest).toMatch(/^r33-/);
     expect(harness.host.room.rulesVersion).toBe("1.6.2");
   });
 
-  it.each([23, 24, 25, 26, 27, 28, 29, 30, 31])("refuses an r%s fingerprint on reconnect, commands and computer turns", async (revision) => {
+  it.each([23, 24, 25, 26, 27, 28, 29, 30, 31, 32])("refuses an r%s fingerprint on reconnect, commands and computer turns", async (revision) => {
     const { harness } = await started();
     const previous = rulesFingerprint().replace(/^r\d+-/, `r${revision}-`);
     relabel(harness, (room) => {
@@ -60,7 +61,7 @@ describe("rules fingerprint gate", () => {
       room.contentDigest = null;
     }],
     ["foreign digest", (room) => {
-      room.contentDigest = "r32-0000000000000000";
+      room.contentDigest = "r33-0000000000000000";
     }],
   ];
 
@@ -112,6 +113,8 @@ describe("rules fingerprint gate", () => {
     [7, "1.6.2"],
     // A V1.6.2 save from before owner revision 4 (changes 28–35).
     [8, "1.6.2"],
+    // A V1.6.2 save from before owner revision 5 (changes 36–42).
+    [9, "1.6.2"],
   ] as const)("refuses a schema-%i %s save even inside a current room", async (schemaVersion, rulesVersion) => {
     const { harness } = await started();
     const heads = (harness.store as unknown as { heads: Map<string, { state: { schemaVersion: number; rulesVersion: string } }> }).heads;
@@ -149,12 +152,12 @@ describe("rules fingerprint gate", () => {
     expect(await harness.store.getSeats(harness.roomId)).toHaveLength(1);
   });
 
-  it("starts a game only with schema 9 and V1.6.2 and never relabels the room", async () => {
+  it("starts a game only with schema 10 and V1.6.2 and never relabels the room", async () => {
     const { harness } = await started();
     const state = await headState(harness);
-    expect(state).toMatchObject({ schemaVersion: 9, rulesVersion: "1.6.2" });
+    expect(state).toMatchObject({ schemaVersion: 10, rulesVersion: "1.6.2" });
     const reconnect = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: harness.host.seatToken }));
     expect(reconnect.room.rulesVersion).toBe("1.6.2");
-    expect(reconnect.game).toMatchObject({ schemaVersion: 9, rulesVersion: "1.6.2" });
+    expect(reconnect.game).toMatchObject({ schemaVersion: 10, rulesVersion: "1.6.2" });
   });
 });

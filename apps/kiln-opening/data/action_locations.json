@@ -29,7 +29,7 @@
         {
           "en": "Capacity is 2, 3 or 4 spaces in 2-, 3- or 4-player games.",
           "zh": "容量：2人2个、3人3个、4人4个工位。",
-          "source": "L164"
+          "source": "L182"
         },
         {
           "en": "Senior Apprentice lets 1 Apprentice resolve the whole Shifu effect here: 8 resources in any combination of Clay and Wood.",
@@ -39,7 +39,7 @@
         {
           "en": "Prepared Clay may form 1 vessel during a Materials Yard action, after gaining resources; it is a Tech effect, not a Form & Decorate action.",
           "zh": "练泥可以在泥柴场行动中获得资源后制1件坯；这是技艺效果，不算制坯饰纹行动。",
-          "source": "L605 · L633"
+          "source": "L624 · L652"
         }
       ]
     },
@@ -71,42 +71,42 @@
         {
           "en": "Personal locations are on your own board. Each personal space may be used once per round.",
           "zh": "坊内地点在你自己的窑口板上；每个坊内工位每轮只能使用一次。",
-          "source": "L158"
+          "source": "L166"
         },
         {
           "en": "You start with 1 space. Learning a Form & Decorate Tech adds the second space, which may be used later the same round.",
           "zh": "起初只有1个工位；习得坯作技艺即添设第二工位，新添设的工位本轮稍后就可以使用。",
-          "source": "L169 · L223 · D7"
+          "source": "L187 · L241 · D7"
         },
         {
           "en": "\"Up to 2\" means 1 or 2, never 0.",
           "zh": "“至多2”的意思是1或2，不能是0。",
-          "source": "L156"
+          "source": "L164"
         },
         {
           "en": "The Shifu's Form & Decorate action and Decorator's Kit each reduce one vessel's cost by 1 Coin. Decorations matter only for Order requirements.",
           "zh": "师傅的制坯饰纹行动与饰坯匣各能使1件坯少付1铜钱。纹饰只关系到委托的要求。",
-          "source": "L336"
+          "source": "L354"
         },
         {
           "en": "A placement here is legal only if you can pay the full cost of at least 1 vessel, after any reductions.",
           "zh": "只有当你在计入各项减免后至少付得起1件坯的全部费用时，才可以派工到这里。",
-          "source": "L186"
+          "source": "L204"
         },
         {
-          "en": "The Shifu's discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same vessel (its 2 Coins become 0). Ding's vessel takes neither.",
-          "zh": "师傅的减免、饰坯匣、定窑的1铜钱额外坯是三项各自独立的减免。前两项可以作用于同一件坯（其2铜钱可降到0）；定窑的额外坯两项都不适用。",
-          "source": "L639"
+          "en": "The Shifu's discount and Decorator's Kit are two separate reductions and may apply to the same vessel (its 2 Coins become 0).",
+          "zh": "师傅的减免与饰坯匣是两项各自独立的减免，可以作用于同一件坯（其2铜钱可降到0）。",
+          "source": "L658"
         },
         {
           "en": "Prepared Clay is a Tech effect and never counts as a Form & Decorate action.",
           "zh": "练泥是技艺效果，不算制坯饰纹行动。",
-          "source": "L633"
+          "source": "L652"
         },
         {
           "en": "Shaped ceramics remain between rounds and keep all recorded attributes.",
           "zh": "坯跨轮保留，并保持记录的全部属性。",
-          "source": "L504"
+          "source": "L523"
         }
       ]
     },
@@ -141,47 +141,47 @@
         {
           "en": "Personal locations are on your own board. Each personal space may be used once per round.",
           "zh": "坊内地点在你自己的窑口板上；每个坊内工位每轮只能使用一次。",
-          "source": "L158"
+          "source": "L166"
         },
         {
           "en": "You start with 1 space. Learning a Glazing & Loading Tech adds the second space, which may be used later the same round.",
           "zh": "起初只有1个工位；习得釉作技艺即添设第二工位，新添设的工位本轮稍后就可以使用。",
-          "source": "L170 · L223 · D7"
+          "source": "L188 · L241 · D7"
         },
         {
           "en": "\"Up to 2\" means 1 or 2, never 0.",
           "zh": "“至多2”的意思是1或2，不能是0。",
-          "source": "L156"
+          "source": "L164"
         },
         {
           "en": "A placement is legal if at least 1 of your Shaped vessels has a legal destination you can pay for: your own empty Imperial Kiln; or, with 1 Wood, an empty active Shared Kiln space not marked by another player's Setter's Mark, or, for a Bowl, Plate or Brush Washer with Inverted Firing unused this round, an active space holding exactly 1 of your ceramics.",
           "zh": "可派工条件：你至少有1件坯有付得起的合法去处——你自己空着的御窑；或者在有1柴时，共窑中空的启用窑位（上面没有其他玩家的窑位签），或（覆烧本轮还没有使用时，限碗、盘或笔洗）恰好已有1件你的器物的启用窑位。",
-          "source": "R5 · L198"
+          "source": "R5 · L216"
         },
         {
           "en": "The kiln burns fuel: a Glaze & Load action that loads into the Shared Kiln costs 1 Wood, whether it loads 1 vessel or 2. You pay no Wood if the action loads only into your Imperial Kiln.",
           "zh": "烧窑要烧柴：一次向共窑装窑的施釉装窑行动花费1柴，装1件或2件都一样。只装进御窑的行动不花柴。",
-          "source": "L197 · R24"
+          "source": "L215 · R24"
         },
         {
           "en": "Active Shared Kiln spaces by player count: 4 players 8 (3 High, 3 Middle, 2 Low); 3 players 6 (2-2-2); 2 players 4 (2-1-1).",
           "zh": "启用窑位按人数：4人8个（高3、中3、低2）；3人6个（2-2-2）；2人4个（2-1-1）。",
-          "source": "L114"
+          "source": "L122"
         },
         {
           "en": "A vessel loaded into the Imperial Kiln chooses the −1, 0 or +1 Imperial modifier. The modifier is public when chosen and is recorded on the ceramic.",
           "zh": "装进御窑时，选定御窑修正−1、0或+1；它在选定时就公开，并记录在该器物上。",
-          "source": "L292 · R11"
+          "source": "L310 · R11"
         },
         {
           "en": "Only a ceramic in the Shared Kiln makes you a Contribution participant; an Imperial Kiln ceramic does not.",
           "zh": "只有共窑中的器物才会让你成为控火者；御窑中的器物不算。",
-          "source": "L271"
+          "source": "L289"
         },
         {
           "en": "Imperial Priority is a token effect, not a Glaze & Load action.",
           "zh": "御烧优先是令牌效果，不是施釉装窑行动。",
-          "source": "L296 · L633"
+          "source": "L314 · L652"
         },
         {
           "en": "Provisional ruling: placement legality looks only at each vessel's current Shape, even if Reworking Table could change it.",
@@ -220,12 +220,12 @@
         {
           "en": "Capacity is 2, 3 or 4 spaces in 2-, 3- or 4-player games.",
           "zh": "容量：2人2个、3人3个、4人4个工位。",
-          "source": "L165"
+          "source": "L183"
         },
         {
           "en": "Select N: Look at the top N cards of the Main Order deck. Reserve 1 of them, or 1 face-up Main Order from the display; discard the rest of the N.",
           "zh": "精选N：查看主委托牌堆顶N张。承接其中1张，或承接委托榜上的1张主委托；这N张中其余的弃置。",
-          "source": "L72 · R25"
+          "source": "L80 · R25"
         },
         {
           "en": "The look always happens, before you choose. The Apprentice reserves exactly 1 Order; the Shifu reserves 1 or 2, from the display, the looked cards or both.",
@@ -245,7 +245,7 @@
         {
           "en": "If a single turn takes more than one face-up Order, refill after the turn, not between the takes.",
           "zh": "如果一个回合中从榜上拿走了不止一张委托，在该回合结束后再补榜，而不是在两次承接之间补。",
-          "source": "L386"
+          "source": "L405"
         },
         {
           "en": "The display refills when the reserving player's turn ends, after any after-action Imperial Priority or Colour Samples swap. A swap used after this action may discard an Order this action reserved.",
@@ -260,12 +260,12 @@
         {
           "en": "Senior Apprentice gives 1 Apprentice here the Shifu's effect: Select 3, reserving up to 2.",
           "zh": "高徒可以让1名学徒在这里按师傅效果结算：精选3，承接至多2张。",
-          "source": "R12 · L640"
+          "source": "R12 · L659"
         },
         {
           "en": "Face-up Main Orders cannot be completed; only Orders in your hand can be completed.",
           "zh": "榜上的委托不能完成，只能完成在手委托。",
-          "source": "L300"
+          "source": "L318"
         }
       ]
     },
@@ -298,17 +298,17 @@
         {
           "en": "Capacity is 2, 3 or 4 spaces in 2-, 3- or 4-player games.",
           "zh": "容量：2人2个、3人3个、4人4个工位。",
-          "source": "L166"
+          "source": "L184"
         },
         {
           "en": "A placement here is legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own. The same holds for the Shifu: a Tech it might find by inspecting never makes the placement legal.",
           "zh": "派工到这里的前提是：你付得起1张公开技艺，且你还没有该门类的技艺。师傅也一样：查看时可能找到的技艺，不能让派工变为合法。",
-          "source": "L224 · INT Guild Hall Shifu takes"
+          "source": "L242 · INT Guild Hall Shifu takes"
         },
         {
           "en": "\"Up to 2\" means 1 or 2: the Shifu's first Tech is the main action, and the second is optional.",
           "zh": "“至多2项”的意思是1或2项：师傅的第1项技艺是主行动，第2项可以不拿。",
-          "source": "L156 · L219"
+          "source": "L164 · L237"
         },
         {
           "en": "The Shifu's 2 Techs must come from different disciplines, so at most 1 of them can be an inspected Tech.",
@@ -318,12 +318,12 @@
         {
           "en": "Each Tech resolves fully before the Shifu takes another: any second space it adds, any Contribution cards it brings and any when-acquired effect.",
           "zh": "每项技艺先完整结算，师傅才拿下一项：它添设的第二工位（如有）、它附带的控火牌（如有），以及“习得时”效果。",
-          "source": "L225 · INT Guild Hall Shifu takes"
+          "source": "L243 · INT Guild Hall Shifu takes"
         },
         {
           "en": "A taken Tech's position stays empty until your turn ends, so the Shifu's second Tech never comes from a refill.",
           "zh": "被拿走的技艺的位置空着，直到你的回合结束，所以师傅的第2项技艺不会来自补牌。",
-          "source": "L221"
+          "source": "L239"
         },
         {
           "en": "The Shifu's inspection is private. The Shifu may inspect any discipline, including one already owned. You choose the order in which untaken inspected Techs go to the bottom, and that order stays private. They go to the bottom when the Shifu stops taking; the display refills when your turn ends.",
@@ -361,12 +361,12 @@
         {
           "en": "You may not pass during the Work Phase. The Canal Wharf has no capacity limit or resource cost, so it is always a legal placement for an available worker.",
           "zh": "派工阶段不能跳过。漕运码头没有容量限制，也不需要资源，所以可派工人总是可以派往那里。",
-          "source": "L157"
+          "source": "L165"
         },
         {
           "en": "When the Main Order deck is empty, the discard pile is shuffled into a new deck before the Shifu takes a card. If both are empty, the Shifu takes no card but still gains 4 Coins.",
           "zh": "主委托牌堆已空时，先把弃牌堆洗混组成新牌堆，师傅再拿牌；牌堆与弃牌堆都空时，师傅不拿牌，仍得4铜钱。",
-          "source": "L506 · B1"
+          "source": "L525 · B1"
         },
         {
           "en": "The Shifu's card goes into your hand and is secret like every held Order; only your hand count is public.",
@@ -410,17 +410,17 @@
         {
           "en": "It has 1 space in 2- and 3-player games and 2 spaces in 4-player games; in 2- and 3-player games the second space is covered.",
           "zh": "2人局与3人局中有1个工位，4人局中有2个工位；2人局与3人局盖住第二工位。",
-          "source": "L168 · L114"
+          "source": "L186 · L122"
         },
         {
           "en": "You may place a worker only if you can perform at least 1 instance of the main action: pay the Coin cost while at Recognition 0, 1 or 2.",
           "zh": "只有当你至少能执行1次主行动时，才可以派工到这里：声望为0、1或2，且付得起铜钱。",
-          "source": "L156"
+          "source": "L164"
         },
         {
           "en": "The Shifu's Crown Order is optional: after advancing, you may reserve 1 face-up Order that shows a Crown, or none; with none showing, nothing is reserved. The reserved Order's position stays empty until the end of your turn; then the display is refilled as at the Commission Market.",
           "zh": "师傅的御令委托可以不拿：推进声望后，可以从榜上承接1张印有御令的委托，也可以不承接；榜上没有印有御令的委托时，就不承接。被承接的委托的榜位空着，直到你的回合结束；然后按瓷牙行的方式补榜。",
-          "source": "L245 · R21"
+          "source": "L263 · R21"
         },
         {
           "en": "Senior Apprentice never applies at the Magistrate's Hall.",

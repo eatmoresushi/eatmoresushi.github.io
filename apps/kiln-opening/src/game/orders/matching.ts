@@ -1,23 +1,26 @@
 /**
- * Pure Order matcher incl. Crackle wildcards (L406–423; rev. 4 L465, L480; DESIGN §6.6). It runs only in
- * the Order Phase, the one place Orders are completed (v1.6.2 L296, L484; R6 is obsolete).
+ * Pure Order matcher incl. Crackle wildcards (L420–437; L484, L499; DESIGN §6.6). It runs
+ * wherever an Order is completed: a completion is a free action (rev. 5 L173, L422, change 36),
+ * legal before or after the completer's worker action and in their Order Phase turn
+ * (`freeActionWindow.ts`, `orders/completion.ts`), never anywhere else.
  *
- * - A selection must hold exactly one ceramic per Order slot (L423 "exactly one Bowl and one
+ * - A selection must hold exactly one ceramic per Order slot (L437 "exactly one Bowl and one
  *   Brush Washer"). Slots are filled by permutation; each slot's `shape`/`shapes`/`glaze`/
  *   `decoration`/`decorations` must match the ceramic assigned to it (`shapes` and
  *   `decorations` are "any one of", S05, S06, S07, O14, O15).
- * - Every ceramic must be Finished, never Flawed (L279), and at least `minQuality`.
+ * - Every ceramic must be Finished, never Flawed (L300), and at least `minQuality`.
  * - Relations are evaluated over the whole selection and are independent unless a pairing
- *   is printed (L423). `different_*` is pairwise (O45/O47 "3 different" = all different);
+ *   is printed (L437). `different_*` is pairwise (O45/O47 "3 different" = all different);
  *   `at_least_n_distinct_decorations` is "at least N different" (O48); `required_*` is
  *   multiset inclusion (O31 "at least one Plain"); `at_least_n_quality` counts ceramics of at
  *   least that Quality (≥N Masterpiece).
- * - **Crackle wildcard** (rev. 4 L465, INT: Ge Crackle). A Crackle ceramic may count as any one
+ * - **Crackle wildcard** (L484, INT: Ge Crackle). A Crackle ceramic may count as any one
  *   Decoration for this Order's Decoration requirements (slot `decoration`, slot
  *   `decorations` such as S07's "Carved, Impressed or Painted", and every Decoration
- *   relation). It never changes Glaze, Shape or Quality; a Crackle ceramic is Fine (rev. 4
- *   L463), so it fails a Masterpiece requirement like any Fine ceramic (change 29 dropped the
- *   separate "never a Masterpiece" clause). Its printed Decoration is unchanged (Ru, Exhibition).
+ *   relation). It never changes Glaze, Shape or Quality: a Crackle ceramic counts with its own
+ *   Quality (since change 39, L482, Ge crackles a ceramic of any Quality), so a crackled Fine
+ *   ceramic fails a Masterpiece requirement and a crackled Masterpiece fills one. Its printed
+ *   Decoration is unchanged (Ru, Exhibition).
  *   - `declared` absent: deterministic search. Crackle ceramics in ceramic-sequence order,
  *     Decorations in `DECORATIONS` order (the first Crackle ceramic varies slowest); the first
  *     combination that satisfies the Order is recorded, one declaration per selected Crackle
@@ -92,9 +95,9 @@ function bySequence(a: { id: CeramicId }, b: { id: CeramicId }): number {
 const MASTERPIECE_RANK = QUALITY_RANK.masterpiece;
 
 /**
- * Quality rank for Order purposes: the printed Quality. A Crackle ceramic is simply Fine (rev. 4
- * L39, L463; `FinishedQuality` types it so), so it never fills a Masterpiece requirement without
- * any separate rule (change 29 dropped "never a Masterpiece" as redundant).
+ * Quality rank for Order purposes: the ceramic's Quality, Crackle or not (rev. 5 L482, change
+ * 39: Ge keeps a Masterpiece's or Fine ceramic's Quality and makes a Standard one Fine). A
+ * crackled Masterpiece fills a Masterpiece requirement; a crackled Flawed ceramic never counts.
  */
 function orderRank(c: FinishedCeramic): number {
   return QUALITY_RANK[c.quality];
@@ -129,7 +132,7 @@ function relationDimension(relation: OrderRelationDefinition): Dimension {
   }
 }
 
-/** The Order has a Decoration requirement, so a Crackle declaration can matter (rev. 4 L465). */
+/** The Order has a Decoration requirement, so a Crackle declaration can matter (L484). */
 function hasDecorationRequirement(order: OrderDefinition): boolean {
   return (
     order.ceramics.some((slot) => slot.decoration !== undefined || slot.decorations !== undefined) ||
@@ -301,7 +304,7 @@ function declarationsWellFormed(ceramics: readonly FinishedCeramic[], declared: 
   return true;
 }
 
-/** One distinct ceramic per slot (L423); shared by `matchOrder` and `explainOrderMismatch`. */
+/** One distinct ceramic per slot (L437); shared by `matchOrder` and `explainOrderMismatch`. */
 function selectionSizeOk(order: OrderDefinition, ceramics: readonly FinishedCeramic[]): boolean {
   return ceramics.length === order.ceramics.length && new Set(ceramics.map((c) => c.id)).size === ceramics.length;
 }
@@ -393,13 +396,13 @@ export function findOrderMatches(order: OrderDefinition, pool: readonly Finished
 }
 
 /**
- * Ru (L460): the delivered ceramics include an actual Masterpiece with Celadon Glaze and
- * Plain printed Decoration. A Crackle wildcard never counts (printed Decoration; and a
- * Crackle ceramic is Fine, rev. 4 L463).
+ * Ru (rev. 5 L474): the delivered ceramics include an actual Masterpiece with Celadon Glaze and
+ * Plain printed Decoration. It reads the actual Quality, Glaze and printed Decoration, never a
+ * Crackle wildcard declaration (only Ge makes Crackle, so a Ru owner never holds one).
  */
 export function ruTriggers(ceramics: readonly FinishedCeramic[]): boolean {
   const ru = KILNS.RU.params;
-  return ceramics.some((c) => !c.crackle && c.quality === ru.quality && c.glaze === ru.glaze && c.decoration === ru.decoration);
+  return ceramics.some((c) => c.quality === ru.quality && c.glaze === ru.glaze && c.decoration === ru.decoration);
 }
 
 /**

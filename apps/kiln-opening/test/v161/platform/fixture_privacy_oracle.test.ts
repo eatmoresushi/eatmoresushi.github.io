@@ -2,10 +2,10 @@
  * The fixture privacy oracle (`tools/fixturePrivacy.ts`) on Orders a seat saw and that then moved
  * where only another seat saw them go (ENGINE_V1.6.2_DELTA.md §9, B3):
  * - a face-up Order reserved in public and then given up face down for a Colour Samples swap
- *   (v1.6.2 L617, L641): which held Order went is private, so the face-down discard may not show
+ *   (v1.6.2 L632, L656): which held Order went is private, so the face-down discard may not show
  *   it to another seat;
  * - a card a seat looked at and discarded (owner ruling R25), which a Main deck reshuffle brought
- *   back (rev. 4 L506) and another seat then draws unseen at the Canal Wharf (L220): the looker
+ *   back (L525) and another seat then draws unseen at the Canal Wharf (L250): the looker
  *   may not learn where it went.
  * Such an ID is `rehidden`: an old event record may still name it, a current payload may not.
  * The full-game sweep (`privacy_full_games.test.ts`) applies the same oracle to service games.
@@ -73,6 +73,26 @@ describe("fixture privacy oracle: IDs seen once and moved unseen since", () => {
     // a page may show the old reservation.
     expect(secretIdsFor(t.state, "p2", t.events)).not.toContain(faceUp);
     expect(secretIdsFor(t.state, "p2", t.events)).toContain("O40");
+
+    // The viewer's own steered commands are historical records too (`source.steered`,
+    // tools/uiFixtures.ts): one may name what the viewer named when it made it, never an ID the
+    // viewer was never shown.
+    const steeredBy = (playerId: PlayerId, command: Record<string, unknown>) =>
+      ({ ...entryFor(t, "p2"), source: { steered: [{ revision: 1, playerId, command }] } }) as PrivacyCheckedEntry;
+    const faceUpPick = (orderId: OrderId) => ({ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId }] });
+    expect(entryPrivacyProblems(t.state, null, steeredBy("p2", faceUpPick(faceUp)), t.events)).toEqual([]);
+    expect(entryPrivacyProblems(t.state, null, steeredBy("p2", faceUpPick("O40")), t.events)).toEqual([
+      "O40 from p1's hand at source.steered.0.command.reservations.0.orderId",
+    ]);
+    // Another seat's steered command is a raw command, private choices included: p1's swap names
+    // which held Order went face down, which p2 must not learn, so it is checked like a current
+    // payload and may name no rehidden ID (conservatively, not even in p1's public face-up pick).
+    expect(entryPrivacyProblems(t.state, null, steeredBy("p1", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: faceUp }), t.events)).toEqual([
+      `${faceUp} from Main discard, moved there unseen by p2 at source.steered.0.command.discardOrderId`,
+    ]);
+    expect(entryPrivacyProblems(t.state, null, steeredBy("p1", faceUpPick(faceUp)), t.events)).toEqual([
+      `${faceUp} from Main discard, moved there unseen by p2 at source.steered.0.command.reservations.0.orderId`,
+    ]);
   });
 
   it("a card the looker discarded, reshuffled back and another seat then drew unseen is secret to the looker again (R25)", () => {
@@ -81,7 +101,7 @@ describe("fixture privacy oracle: IDs seen once and moved unseen since", () => {
     t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
     t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01" }] });
     // Both looked cards were discarded; the turn-end refill found the deck empty, reshuffled the
-    // discard (rev. 4 L506) and revealed one of them.
+    // discard (L525) and revealed one of them.
     expect(t.events.some((event) => event.type === "MAIN_DECK_RESHUFFLED")).toBe(true);
     const revealed = t.state.market.display[5] as OrderId;
     expect(["O07", "O08"]).toContain(revealed);
@@ -95,6 +115,26 @@ describe("fixture privacy oracle: IDs seen once and moved unseen since", () => {
     expect(entryPrivacyProblems(t.state, null, entryFor(t, "p1"), t.events)).toEqual([]);
     const leak = entryPrivacyProblems(t.state, null, entryFor(t, "p1", { leakedHand: [...(t.state.hidden.orderHands["p2"] ?? [])] }), t.events);
     expect(leak.filter((problem) => problem.startsWith(`${under} `))).toEqual([`${under} from p2's hand, moved there unseen by p1 at playerView.game.leakedHand.${rest.length}`]);
+  });
+
+  it("a held Order completed in a Work turn is public from then on, like one completed in the Order Phase (rev. 5 L173, L424)", () => {
+    const t = new LocalTable(
+      buildState({
+        round: 2,
+        players: [{ hand: ["O02", "O40"] }, {}],
+        ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
+      }),
+      { seed: 7 },
+    );
+    expect(secretIdsFor(t.state, "p2", t.events)).toEqual(expect.arrayContaining(["O02", "O40"]));
+    t.act("p1", { type: "COMPLETE_ORDER", orderId: "O02", ceramicIds: ["c1"] });
+    expect(t.events.find((event) => event.type === "ORDER_COMPLETED")).toMatchObject({ window: "before_action" });
+    // The completed Order is no secret of anyone's now; the other held Order still is.
+    expect(foreignSecrets(t.state, "p2", t.events).unseen.has("O02")).toBe(false);
+    expect(foreignSecrets(t.state, "p2", t.events).rehidden.has("O02")).toBe(false);
+    expect(secretIdsFor(t.state, "p2", t.events)).not.toContain("O02");
+    expect(secretIdsFor(t.state, "p2", t.events)).toContain("O40");
+    expect(entryPrivacyProblems(t.state, null, entryFor(t, "p2"), t.events)).toEqual([]);
   });
 
   it("checks a response's public events against the authoritative log", () => {

@@ -5,39 +5,49 @@
       {
         "en": "Starting Orders never enter the Main Order deck and have no Crowns; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order.",
         "zh": "起始委托永远不进入主委托牌堆，也没有御令；若在收工时从手中弃置，放回盒中。对所有规则与窑口传承能力而言，起始委托都算作委托。玩家没有义务完成任何起始委托。",
-        "source": "L516"
+        "source": "L535"
+      },
+      {
+        "en": "A held Order can be completed as a free action as soon as you hold it: on any turn of yours, before or after your worker action (including the turn you reserved it), and in any Order Phase from then on. Ceramics fired this round first become available after the firing.",
+        "zh": "委托一收入手中，就可以作为自由行动完成：在你的任何回合中工人行动之前或之后（包括承接它的那个回合），以及此后的任何交货阶段。本轮烧成的器物要到烧窑之后才可使用。",
+        "source": "L417 · L176 · INT Same-turn delivery"
       },
       {
         "en": "When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged.",
         "zh": "完成委托时，你的每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。",
-        "source": "L465"
+        "source": "L484"
       },
       {
         "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup.",
         "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查。",
-        "source": "L211 · L307"
+        "source": "L229 · L325"
       }
     ],
     "main": [
       {
         "en": "Face-up Main Orders cannot be completed; they are reserved at the Commission Market during the Work Phase.",
         "zh": "委托榜上的主委托不能完成；它们要在派工阶段到瓷牙行承接。",
-        "source": "L300"
+        "source": "L318"
+      },
+      {
+        "en": "A held Order can be completed as a free action as soon as you hold it: on any turn of yours, before or after your worker action (including the turn you reserved it), and in any Order Phase from then on. Ceramics fired this round first become available after the firing.",
+        "zh": "委托一收入手中，就可以作为自由行动完成：在你的任何回合中工人行动之前或之后（包括承接它的那个回合），以及此后的任何交货阶段。本轮烧成的器物要到烧窑之后才可使用。",
+        "source": "L417 · L176 · INT Same-turn delivery"
       },
       {
         "en": "Requirements are independent unless a specific pairing is explicitly printed.",
         "zh": "各项要求彼此独立，除非卡面直接写明配对。",
-        "source": "L418"
+        "source": "L437"
       },
       {
         "en": "Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged. Each Crackle ceramic you deliver to complete an Order scores 1 VP.",
         "zh": "每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。你每交付1件开片器完成委托，得1分。",
-        "source": "L465 · INT Ge Crackle revision 4"
+        "source": "L484 · INT Ge Crackle revision 5"
       },
       {
         "en": "Resolve 1 Crown at a time. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4; after that, each further Crown scores 1 VP immediately. Resolve every milestone crossed.",
         "zh": "逐个结算御令。每个御令使御府声望推进1格，直到声望4。到达声望4之后，每再获得1个御令，立即得1分。途经的每一格奖励都要结算。",
-        "source": "L411"
+        "source": "L430"
       },
       {
         "en": "Tribute Ware's bonus Crown is not a printed Crown: it does not trigger Guan and does not count for tie-breaker 2.",
@@ -47,17 +57,17 @@
       {
         "en": "Tie-breaker 2 counts Crown icons printed across completed Orders.",
         "zh": "平局判定②统计已完成委托上印的御令总数。",
-        "source": "L493"
+        "source": "L512"
       },
       {
         "en": "At Setup, in reverse turn order, each player chooses a Kiln and takes 1 face-up Main Order in one turn; the display is refilled to 6 after each take, and everyone sees which Order each player took.",
         "zh": "游戏准备时，按回合顺序的逆序，每位玩家在同一个回合里选定窑口板，并从委托榜上拿取1张主委托；每拿1张就把委托榜补回6张，大家都看到各人拿的是哪张。",
-        "source": "L122 · R23"
+        "source": "L130 · R23"
       },
       {
         "en": "At the start of Rounds 2–5, discard the 2 leftmost face-up Main Orders, slide the remaining 4 left and reveal 2 new Orders to restore the display to 6.",
         "zh": "第2–5轮开工时轮换委托榜：弃置最左边的2张主委托，余下4张向左推，再翻开2张新委托，使委托榜恢复为6张。",
-        "source": "L142 · L144"
+        "source": "L150 · L152"
       },
       {
         "en": "If the deck and discard are both empty, only available cards can be reserved and display positions stay empty. The round-start rotation discards up to 2 and slides the rest.",
@@ -67,12 +77,12 @@
       {
         "en": "Orders looked at and not reserved, at the Commission Market or with Colour Samples, are discarded face down to the Main Order discard pile. Only the player who looked knows which they are; the discard count is public.",
         "zh": "在瓷牙行或用色样簿翻看而没有承接的委托，面朝下弃置到主委托弃牌堆；是哪几张只有翻看者知道，弃牌堆张数公开。",
-        "source": "L203 · B3 · R25"
+        "source": "L221 · B3 · R25"
       },
       {
         "en": "The Magistrate's Hall Shifu may also reserve 1 face-up Crown Order after advancing Recognition.",
         "zh": "州衙的师傅推进声望后，还可以从榜上承接1张御令委托。",
-        "source": "L392 · R21"
+        "source": "L411 · R21"
       },
       {
         "en": "The Main Order discard pile is face down; only its count is public. Display Orders discarded at round start were already public.",
@@ -82,7 +92,7 @@
       {
         "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup. Discarded Main Orders go to the Main Order discard pile.",
         "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查；弃置的主委托进入主委托弃牌堆。",
-        "source": "L211 · L307"
+        "source": "L229 · L325"
       }
     ]
   },

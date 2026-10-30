@@ -13,7 +13,7 @@
  *   (T21 shapes) on 1 ceramic of the same owner, who owns Inverted Firing (T21); ≤ 1
  *   Imperial ceramic per player and only once `kilnGained`;
  * - Kiln Furniture: its owner owns T15; ≤ 1 tile in the Shared Kiln;
- * - Kiln Master's marker (rev. 4 L628, R22): ≤ 1 in the game, on a loaded ceramic of the T24
+ * - Kiln Master's marker (L647, R22): ≤ 1 in the game, on a loaded ceramic of the T24
  *   owner (there is no player Heat marker since revision 4);
  * - Setter's Mark: on an empty active space; the owner owns T22; ≤ 1 per owner; none during
  *   `setup_kiln_selection`, `cleanup_hand_limit` or `finished`;
@@ -109,7 +109,7 @@ export interface PlayerSpec {
   displayName?: string;
   /** Default: `KILN_IDS[seat]` (RU, GU, GE, DI), or null during `setup_kiln_selection`. */
   kilnId?: KilnId | null;
-  /** Merged over the starting resources (2 Clay, 3 Wood, 3 Coins; rev. 4 L125). */
+  /** Merged over the starting resources (2 Clay, 3 Wood, 3 Coins; L133). */
   resources?: Partial<ResourceState>;
   techs?: TechSpec[];
   kilnAbilityUsedThisRound?: boolean;
@@ -157,7 +157,7 @@ export type CeramicSpec = CeramicSpecCore &
         imperialModifier?: ImperialModifier;
         /** Shared only: Kiln Furniture beneath this ceramic. */
         kilnFurniture?: KilnFurnitureModifier;
-        /** Kiln Master's marker placed at loading (T24, rev. 4 L628); its owner must own T24. */
+        /** Kiln Master's marker placed at loading (T24, L647); its owner must own T24. */
         kilnMaster?: HeatDelta | null;
         /**
          * @deprecated Revision 4 has no player Heat marker (changes 28, 31). Accepted by the type
@@ -440,7 +440,7 @@ export function buildState(spec: StateSpec = {}): GameState {
   }
 
   const state: GameState = {
-    schemaVersion: 9,
+    schemaVersion: 10,
     rulesVersion: "1.6.2",
     gameId: spec.gameId ?? "test-game",
     revision: 0,
@@ -523,7 +523,7 @@ const SENIOR_APPRENTICE: TechId = "T18";
 const INVERTED_FIRING: TechId = "T21";
 const SETTERS_MARK: TechId = "T22";
 const KILN_MASTER: TechId = "T24";
-/** Phases with every Setter's Mark returned or not yet placeable (§8.3, L303). */
+/** Phases with every Setter's Mark returned or not yet placeable (§8.3, L324). */
 const MARKLESS_PHASES: readonly GamePhase["type"][] = ["setup_kiln_selection", "cleanup_hand_limit", "finished"];
 
 function scratchContext(): ResolveContext {
@@ -533,7 +533,7 @@ function scratchContext(): ResolveContext {
 /**
  * Gives a Tech the way `grantTech` does (unlocking its personal space) and removes it from
  * the display, deck or pending inspection; a display gap is refilled from the deck top.
- * Throws on a Tech set the 3-total / 1-per-discipline limit (L211) excludes.
+ * Throws on a Tech set the 3-total / 1-per-discipline limit (L240) excludes.
  */
 export function giveTech(
   state: GameState,
@@ -655,14 +655,8 @@ export function stageCeramic(state: GameState, spec: CeramicSpec): CeramicState 
     }
     case "finished": {
       const fired = { ...core, stage: "finished" as const, glaze: spec.glaze, firedInRound: spec.firedInRound ?? state.round };
-      if (spec.crackle === true) {
-        if (spec.quality !== "fine") {
-          throw fixtureError("a Crackle ceramic is exactly Fine");
-        }
-        staged = { ...fired, crackle: true, quality: "fine" };
-      } else {
-        staged = { ...fired, crackle: false, quality: spec.quality };
-      }
+      // Since change 39 a Crackle ceramic keeps any Quality (rev. 5 L482).
+      staged = { ...fired, crackle: spec.crackle === true, quality: spec.quality };
       break;
     }
   }
@@ -865,7 +859,7 @@ export interface NewGameOptions {
   /** Kiln per seat; default: the first available Kiln at each pick. */
   kilns?: Partial<Record<PlayerId, KilnId>>;
   /** The display position of the face-up Main Order each seat takes with its Kiln (Setup step 9,
-   * rev. 4 L122, R23); default 0, the leftmost. */
+   * L130, R23); default 0, the leftmost. */
   mainOrderSlots?: Partial<Record<PlayerId, number>>;
   /** Flow for the Kiln-selection commands (the last one hands over `setup_done`). */
   flow?: FlowController;

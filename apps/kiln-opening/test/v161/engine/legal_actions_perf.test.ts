@@ -65,7 +65,7 @@ describe("legal-action budget", () => {
   it(`canonical legalCommands with default limits: median of ${RUNS} runs under ${BUDGET_MS} ms`, () => {
     const commands = legalCommands(view, { mode: "canonical" });
     // Every family of the before-action window is represented, each within the 64 limit
-    // (not the Guild Hall: p1 already owns 3 Techs, L211; not the Magistrate's Hall: Recognition 3).
+    // (not the Guild Hall: p1 already owns 3 Techs, L240; not the Magistrate's Hall: Recognition 3).
     const types = new Set(commands.map((c) => c.type));
     for (const type of ["USE_IMPERIAL_PRIORITY", "PLACE_MATERIALS_YARD", "PLACE_FORM_DECORATE", "PLACE_GLAZE_LOAD", "PLACE_COMMISSION_MARKET", "PLACE_CANAL_WHARF"]) {
       expect(types.has(type as never), type).toBe(true);

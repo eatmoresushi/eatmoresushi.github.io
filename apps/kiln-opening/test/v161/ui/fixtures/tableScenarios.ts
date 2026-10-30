@@ -416,9 +416,9 @@ export function tableScenarios(): TableScenario[] {
     add("t-fuel-ledger-reveal", "Contributions revealed with a Fuel Ledger card: Fuel Ledger Stoke +2 for 1 Wood", table, "p2");
   }
 
-  // 12–14. Selling a Flawed ceramic (change 30, owner ruling R20) in the other sale windows: the
-  //     own after-Quality turn (a ceramic of this firing, which leaves the kiln), the before-action
-  //     step of a Work turn, and a pending Cleanup hand trim (the player stays pending).
+  // 12–14. Selling a Flawed ceramic (change 30; a free action since owner revision 5, change 36):
+  //     no sale in the own after-Quality turn (the firing is not a free-action window, I1), a sale
+  //     in the before-action step of a Work turn, and no sale in a pending Cleanup hand trim (I1).
   {
     const table = openFiringTable({
       kilnDie: 1,
@@ -429,8 +429,8 @@ export function tableScenarios(): TableScenario[] {
       ],
     });
     tendAll(table);
-    if (table.state.phase.type !== "firing_after_quality" || sellFlawedOptions(table.view("p1")) === null) throw new Error("tableScenarios: no sale in Lin's after-Quality turn");
-    add("t-after-quality-sale", "After Quality: Lin may sell a Flawed ceramic of this firing, or fire it again", table, "p1");
+    if (table.state.phase.type !== "firing_after_quality" || sellFlawedOptions(table.view("p1")) !== null) throw new Error("tableScenarios: a sale offered in Lin's after-Quality turn");
+    add("t-after-quality-sale", "After Quality: Lin may fire a Flawed ceramic again; no sale during the firing", table, "p1");
   }
   {
     const table = new LocalTable(
@@ -457,8 +457,8 @@ export function tableScenarios(): TableScenario[] {
       }),
       { flow: "halt" },
     );
-    if (sellFlawedOptions(table.view("p1")) === null) throw new Error("tableScenarios: no sale in Lin's hand trim");
-    add("t-cleanup-sale", "Cleanup: Lin, still to trim, may first sell a Flawed ceramic", table, "p1");
+    if (sellFlawedOptions(table.view("p1")) !== null) throw new Error("tableScenarios: a sale offered in Lin's hand trim");
+    add("t-cleanup-sale", "Cleanup: no sale while trimming", table, "p1");
   }
 
   return scenarios;

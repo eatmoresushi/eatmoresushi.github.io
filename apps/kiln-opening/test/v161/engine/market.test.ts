@@ -1,6 +1,6 @@
 /**
- * Main Order market and Tech displays (P2 `market.ts`): L128–130, L187–214, L387–391,
- * L511–513, B1–B3, DESIGN §2.4 and §11 Q2 (audit P2).
+ * Main Order market and Tech displays (P2 `market.ts`): L150–152, L219–243, L401–405,
+ * L525–527, B1–B3, DESIGN §2.4 and §11 Q2 (audit P2).
  */
 
 import { describe, expect, it } from "vitest";
@@ -44,7 +44,7 @@ function expectConserved(state: GameState): void {
   expect(new Set(orders).size).toBe(56);
 }
 
-describe("drawMainOrder (L511)", () => {
+describe("drawMainOrder (L525)", () => {
   it("draws the top card and leaves the discard alone while the deck has cards", () => {
     const state = buildState({ display: SIX, mainDeck: ["O10", "O11"] });
     const discardBefore = [...state.hidden.mainDiscard];
@@ -128,8 +128,8 @@ describe("takeTopMainOrders (B1 looks)", () => {
 describe("discardMainOrders (face down, B3)", () => {
   it("puts Orders on the face-down discard, last one on top; only the count is public", () => {
     const state = exactSupply(SIX, ["O40"], ["O41"]);
-    // Two held Main Orders, as a Cleanup trim or a Colour Samples swap gives them up (L303,
-    // L641). A Select's looked cards not reserved come here too (owner ruling R25).
+    // Two held Main Orders, as a Cleanup trim or a Colour Samples swap gives them up (L325,
+    // L656). A Select's looked cards not reserved come here too (owner ruling R25).
     const givenUp: MainOrderId[] = ["O42", "O43"];
     for (const id of givenUp) removeFromHand(state, "p2", id);
     discardMainOrders(state, givenUp);
@@ -150,7 +150,7 @@ describe("discardMainOrders (face down, B3)", () => {
   });
 });
 
-describe("a Select's looked cards not reserved are discarded (owner ruling R25, rev. 4 L72, L203, L506; B1, R16, B3)", () => {
+describe("a Select's looked cards not reserved are discarded (owner ruling R25, L80, L221, L525; B1, R16, B3)", () => {
   it("discards them face down, the last on top; the deck is not refilled from below; no random draw; only counts are public", () => {
     const state = exactSupply(SIX, ["O40", "O41", "O42", "O43"], ["O44"]);
     const ctx = testContext(11);
@@ -193,7 +193,7 @@ describe("a Select's looked cards not reserved are discarded (owner ruling R25, 
   });
 });
 
-describe("takeFaceUpOrder and the deferred refill (L191, L199, L391)", () => {
+describe("takeFaceUpOrder and the deferred refill (L221, L228, L405)", () => {
   it("leaves the position empty until the turn ends and records who owes the refill", () => {
     const state = buildState({ display: SIX, mainDeck: ["O20", "O21"] });
     expect(takeFaceUpOrder(state, "p1", 2)).toBe("O03");
@@ -206,7 +206,7 @@ describe("takeFaceUpOrder and the deferred refill (L191, L199, L391)", () => {
   it("refills once after two takes in one turn: slide left, reveal into the rightmost positions", () => {
     const state = buildState({ display: SIX, mainDeck: ["O20", "O21", "O22"] });
     addToHand(state, "p1", takeFaceUpOrder(state, "p1", 1));
-    // The Shifu's second reservation sees only the Orders still showing (L199).
+    // The Shifu's second reservation sees only the Orders still showing (L228).
     expect(reservable(viewOf(state, "p1").game).faceUpSlots).toEqual([0, 2, 3, 4, 5]);
     addToHand(state, "p1", takeFaceUpOrder(state, "p1", 3));
     expect(state.market.display).toEqual(["O01", null, "O03", null, "O05", "O06"]);
@@ -255,7 +255,7 @@ describe("refillMainDisplay", () => {
     expect(state.hidden.mainDeck).toEqual(["O35"]);
   });
 
-  it("reshuffles the discard when the deck runs out mid-refill (L511)", () => {
+  it("reshuffles the discard when the deck runs out mid-refill (L525)", () => {
     const state = exactSupply(["O01", "O02", "O03", "O04", null, null], ["O30"], ["O40", "O41", "O42"]);
     const ctx = testContext(11);
     const reshuffled = shuffle(["O40", "O41", "O42"], new SeededRandom(11));
@@ -284,7 +284,7 @@ describe("refillMainDisplay", () => {
   });
 });
 
-describe("rotateMainDisplay (L128–130, B1)", () => {
+describe("rotateMainDisplay (L150–152, B1)", () => {
   it("discards the 2 leftmost face down, slides the other 4 left and reveals 2", () => {
     const state = buildState({ round: 2, display: SIX, mainDeck: ["O20", "O21", "O22"] });
     const ctx = testContext(1);
@@ -299,7 +299,7 @@ describe("rotateMainDisplay (L128–130, B1)", () => {
     expectConserved(state);
   });
 
-  it("with a 1-card deck, reveals it and then reshuffles the discard, which now holds the rotated-out Orders (L511)", () => {
+  it("with a 1-card deck, reveals it and then reshuffles the discard, which now holds the rotated-out Orders (L525)", () => {
     const state = exactSupply(SIX, ["O20"], []);
     const ctx = testContext(5);
     rotateMainDisplay(state, ctx);
@@ -314,7 +314,7 @@ describe("rotateMainDisplay (L128–130, B1)", () => {
     const state = exactSupply(["O01", null, null, null, null, null], [], []);
     const ctx = testContext(1);
     rotateMainDisplay(state, ctx);
-    // The only Order goes to the discard; the empty deck then reshuffles it back (L511).
+    // The only Order goes to the discard; the empty deck then reshuffles it back (L525).
     expect(ctx.events[0]).toEqual({ type: "MAIN_DISPLAY_ROTATED", round: 1, discardedOrderIds: ["O01"], display: [null, null, null, null, null, null] });
     expect(state.market.display).toEqual(["O01", null, null, null, null, null]);
     expectConserved(state);
@@ -339,7 +339,7 @@ describe("reservable (B1, public information only)", () => {
     expect(reservable(viewOf(state, null).game)).toEqual({ faceUpSlots: [0, 2, 3, 4, 5], supply: true });
   });
 
-  it("counts the discard: a look or a draw reshuffles it first (L511)", () => {
+  it("counts the discard: a look or a draw reshuffles it first (L526)", () => {
     const state = exactSupply(SIX, [], ["O20"]);
     expect(reservable(viewOf(state, "p1").game)).toEqual({ faceUpSlots: [0, 1, 2, 3, 4, 5], supply: true });
   });
@@ -389,7 +389,7 @@ describe("lookCount (B1: mirrors takeTopMainOrders, public counts only)", () => 
   });
 });
 
-describe("Order hands (secret, L201)", () => {
+describe("Order hands (secret, L230)", () => {
   it("adds and removes Orders in the hidden hand; only counts are public", () => {
     const state = buildState({ display: SIX, mainDeck: ["O20", "O21"] });
     const drawn = drawMainOrder(state, testContext(1)) as OrderId;
@@ -410,7 +410,7 @@ describe("Order hands (secret, L201)", () => {
   });
 });
 
-describe("Tech decks and displays (L208, L210, L513, B2)", () => {
+describe("Tech decks and displays (L237, L239, L527, B2)", () => {
   function techState(): GameState {
     return buildState({
       players: [{ techs: ["T18"] }, { techs: ["T19"] }],
@@ -445,7 +445,7 @@ describe("Tech decks and displays (L208, L210, L513, B2)", () => {
     expect(ctx.events).toEqual([{ type: "TECH_DISPLAY_REFILLED", discipline: "workshop", revealedTechIds: ["T17"], display: ["T16", "T17"] }]);
   });
 
-  it("leaves a partial display when the deck runs out (L513) and is silent when nothing is revealed", () => {
+  it("leaves a partial display when the deck runs out (L527) and is silent when nothing is revealed", () => {
     // Four players each own a Workshop Tech, so the Workshop deck is empty.
     const state = buildState({
       players: [{ techs: ["T18"] }, { techs: ["T19"] }, { techs: ["T05"] }, { techs: ["T17"] }],

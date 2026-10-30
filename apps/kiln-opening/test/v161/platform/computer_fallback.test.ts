@@ -24,6 +24,8 @@ import {
 } from "../../../src/multiplayer/index.ts";
 import type { ComputerPolicy, ComputerSeatContext } from "../../../src/multiplayer/index.ts";
 import { phaseScenarios } from "../engine/phase_scenarios.ts";
+import { buildState } from "../engine/support/fixtures.ts";
+import { LocalTable } from "../engine/support/localTable.ts";
 import { advance, command, connectionFor, headState, lobby, nextCommandId, valueOf, type Harness } from "./support.ts";
 
 const SECRET_TEXT = "policy failure naming the hand";
@@ -107,7 +109,7 @@ describe("computer fallback in every phase type", () => {
       expect(selection, scenario.name).not.toBeNull();
       expect(selection?.usedFallback, scenario.name).toBe(true);
       if (scenario.phase === "firing_contributions") {
-        // Tend first: always affordable (L261).
+        // Tend first: always affordable (L289).
         expect(selection?.command).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card: "TEND" });
       }
     }
@@ -124,6 +126,27 @@ describe("computer fallback in every phase type", () => {
       // The fallback list ends with the same exits.
       const fallback = fallbackComputerCommands(view).map((candidate) => JSON.stringify(candidate));
       for (const exit of exits) expect(fallback, scenario.name).toContain(JSON.stringify(exit));
+    }
+  });
+
+  it("offers Imperial Priority in the Order Phase before Round 5 only, where its ceramic would never be fired (rev. 5 L174, L314, I3)", () => {
+    for (const round of [2, 4, 5] as const) {
+      const table = new LocalTable(
+        buildState({
+          round,
+          players: [{ kilnId: "GE", recognition: 3, hand: ["S01"] }, { kilnId: "DI" }],
+          phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+          ceramics: [{ owner: "p1", stage: "shaped", shape: "vase" }],
+        }),
+        { flow: "halt", pass: ["worker_action_done"] },
+      );
+      const view = createComputerObservation(table.state, "p1", table.privateState);
+      const candidates = fallbackComputerCommands(view);
+      expect(candidates.some((candidate) => candidate.type === "USE_IMPERIAL_PRIORITY"), `Round ${round}`).toBe(round < 5);
+      expect(candidates.at(-1)).toEqual({ type: "END_ORDER_TURN" });
+      for (const candidate of candidates) {
+        expect(accepts(table.state, table.privateState, "p1", candidate), JSON.stringify(candidate)).toBe(true);
+      }
     }
   });
 

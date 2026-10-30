@@ -70,7 +70,7 @@ describe("selector agreement on scripted states", () => {
 });
 
 // The Colour Samples swap options agree with the validator in and out of the owner's windows
-// (v1.6.2 L625); Canal Barge has no window any more (v1.6.2 L630).
+// (v1.6.2 L632); Canal Barge has no window any more (v1.6.2 L637).
 describe("Colour Samples swap options only in the owner's before- and after-action windows", () => {
   const base = { players: [{ techs: ["T10" as const], hand: ["O40" as const, "S01" as const] }, {}] };
   it.each([
@@ -137,7 +137,7 @@ describe("view models", () => {
     ],
     ceramics: [
       { owner: "p1", stage: "shaped", shape: "bowl", decoration: "carved" },
-      // Kiln Master's marker, placed when c2 was loaded (rev. 4 L628, R22).
+      // Kiln Master's marker, placed when c2 was loaded (L647, R22).
       { owner: "p1", stage: "loaded", shape: "plate", glaze: "white", at: "middle_1", kilnMaster: -1 },
       { owner: "p1", stage: "loaded", shape: "vase", glaze: "celadon", at: "imperial", imperialModifier: 1 },
       { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" },
@@ -198,7 +198,7 @@ describe("view models", () => {
     });
     expect(summary.imperial.kilnCeramic?.id).toBe("c3");
     expect(summary.techs.map((t) => [t.techId, t.oncePerRound, t.ready])).toEqual([
-      // Colour Samples has a once-per-round swap (v1.6.2 L625).
+      // Colour Samples has a once-per-round swap (v1.6.2 L632).
       ["T10", true, true],
       ["T24", true, false],
     ]);
@@ -235,12 +235,12 @@ describe("view models", () => {
 
   it("quotes and option lists carry the values the UI shows", () => {
     const view = viewOf(state, "p1");
-    // Both workers pay 4; only the Shifu may then reserve a face-up Crown Order (rev. 4 L240–241, R21).
+    // Both workers pay 4; only the Shifu may then reserve a face-up Crown Order (L258–259, R21).
     const crownSlots = state.market.display.flatMap((orderId, slotIndex) => (orderId !== null && ORDERS[orderId].crowns >= 1 ? [slotIndex] : []));
     expect(magistratesHallQuote(view, "apprentice")).toMatchObject({ ok: true, pay: { clay: 0, wood: 0, coins: 4 }, reachable: 3, crownOrderSlots: [] });
     expect(magistratesHallQuote(view, "shifu")).toMatchObject({ ok: true, pay: { coins: 4 }, reachable: 3, crownOrderSlots: crownSlots });
     const shifuGuild = guildOptions(view, "shifu");
-    // Every Guild Hall take pays the printed cost; V1.6.2 has no Shifu discount (v1.6.2 L207).
+    // Every Guild Hall take pays the printed cost; V1.6.2 has no Shifu discount (v1.6.2 L237).
     for (const option of shifuGuild.faceUp) {
       expect(option.cost).toBe(TECHS[option.techId].cost);
     }
@@ -268,7 +268,7 @@ describe("view models", () => {
     ]);
   });
 
-  it("kilnMasterOption agrees with the validator at loading (rev. 4 L628, R22)", () => {
+  it("kilnMasterOption agrees with the validator at loading (L647, R22)", () => {
     const fresh = buildState({
       players: [{ techs: ["T24"] }, {}],
       ceramics: [{ owner: "p1", stage: "shaped", shape: "bowl" }],
@@ -303,7 +303,7 @@ describe("view models", () => {
     expect(orderSelectionCheck(view, "S01", [])).toMatchObject({ ok: false, extendable: true });
   });
 
-  it("contributionOptions shows 1 option per held card, with Wood, Heat and affordability (v1.6.2 L266, L634, change 26)", () => {
+  it("contributionOptions shows 1 option per held card, with Wood, Heat and affordability (v1.6.2 L289, L644, change 26)", () => {
     const table = new FuzzTable(
       buildState({
         players: [{ techs: ["T12"], resources: { wood: 0 } }, {}],
@@ -339,7 +339,7 @@ describe("view models", () => {
     expect(contributionOptions(viewOf(table.state, null))).toEqual([]);
   });
 
-  it("a scripted turn keeps the UI's own pickers in step (Commission step, v1.6.2 L195–198)", () => {
+  it("a scripted turn keeps the UI's own pickers in step (Commission step, v1.6.2 L225–228)", () => {
     const table = new LocalTable(buildState({ players: [{ resources: { coins: 9 } }, {}] }));
     expect(commissionOptions(table.view("p1"), "shifu")).toMatchObject({ n: 3, lookCount: 3, maxReservations: 2, reservable: true });
     table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
