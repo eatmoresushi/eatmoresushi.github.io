@@ -12,9 +12,9 @@ Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel
 **每轮一次，制坯饰纹行动中制有至少1件瓶或香炉时：**该行动的泥总费−2，最低为0。
 
 ### Decorator's Kit / 饰坯匣
-**Once per round:** a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less. Stacks with the Shifu discount.
+**Once per round:** a vessel you form costs 1 Coin less. Stacks with the Shifu discount.
 
-**每轮一次：**你制的1件刻花、印花或画花的坯少付1铜钱。可与师傅的减免叠加。
+**每轮一次：**你制的1件坯少付1铜钱。可与师傅的减免叠加。
 
 ### Reworking Table / 改坯案
 **Once per round, when you glaze and load a Shaped vessel:** first change its Shape to any other Shape. Pay no Clay; its Decoration stays.
@@ -125,14 +125,14 @@ Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel
 **每轮一次，完成御令委托时：**得2铜钱和1分。
 
 ### Ge Kiln / 哥窑 — Crackle Mastery / 金丝铁线
-**Once per round, after Quality is assigned:** 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine. **Orders:** each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
+**Once per round, after Quality is assigned:** choose 1 of your ceramics from this firing → it develops Crackle; if it is Standard, it becomes Fine. **Orders:** each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
 
-**每轮一次，定品后：**可令己方本窑1件上品或良品开片→品质为上品。**完成委托时：**每件开片器可作任意1种纹饰，交付时得1分。
+**每轮一次，定品后：**选择己方本窑1件器物→它开片；若它是良品，则升为上品。**完成委托时：**每件开片器可作任意1种纹饰，交付时得1分。
 
 ### Ding Kiln / 定窑 — Moulded Production / 范制成器
-**Once per round, during a Form & Decorate action:** after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 1 Coin → form 1 extra vessel of the same Shape with any Decoration (no discounts). It counts as formed by that action.
+**Once per round, during a Form & Decorate action:** after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 2 Coins → form 1 extra vessel of the same Shape with any Decoration. It does not count against the action's vessel limit. It counts as formed by that action.
 
-**每轮一次，制坯饰纹行动中制成碗、盘或笔洗后：**可付1泥1铜钱→多制1件同器型的坯，纹饰任选，不享减免。算作该行动所制。
+**每轮一次，制坯饰纹行动中制成碗、盘或笔洗后：**可付1泥2铜钱→多制1件同器型的坯，纹饰任选，不计入该行动的制坯件数上限。算作该行动所制。
 
 ### Jun Kiln / 钧窑 — Kiln Transformation / 窑变天成
 **Once per round, after Actual Heat is calculated, before Quality:** pay 1 Wood → adjust 1 of your ceramics' Actual Heat by +1 or −1.

@@ -43,6 +43,13 @@ Version v1.6.2 (the working name v1.3 was already used by an earlier draft). Thi
 33. **Magistrate's Hall Shifu.** The 3-Coin discount was worth about 0.5 VP over the Apprentice, a quarter of what a Shifu placement should buy, and was the only one-space price exception. Now the Shifu pays the same 4 Coins, advances 1 step and reserves 1 face-up Crown Order from the display (nothing if none is showing): the magistrate commissions court wares. About 1.5 VP over the Apprentice; it feeds Guan and Tribute Ware and is self-limiting because the Hall closes at Recognition 3.
 34. **The kiln burns fuel.** A Glaze & Load action into the Shared Kiln costs 1 Wood whether it loads 1 vessel or 2, so the Shifu's second load is the mirror of Form & Decorate's discount (2.05 VP over the Apprentice against 2.30). Loading into the Imperial Kiln costs no Wood. Wood had no sink for three of the five boards — 1–2 a game, inside the starting 2 — so the Yard's Clay/Wood split was no decision; fuel is about 5 Wood a game on every production line, Kiln Tending and the Grant's Wood gain a point, and Jun's and Test Pieces' Wood become real trade-offs. Materials Yard 4 / 8 and 3 starting Wood keep the pot count where it was. A player who leads a round with the Yard can never be shut out of fuel, since the Yard has as many spaces as players; a player stuck without Wood spent their first worker elsewhere.
 35. **Seat Coin removed; fuel charged per action.** The reverse-order Main Order pick at setup pays the last seats 0.4–0.8 VP, which at 4 players is the whole lead deficit; with the extra Coin on top, seat 1 became the worst seat at 3 and 4 players (4p seat spread 0.46 VP with the Coin, 0.36 without; at 3p the deficit belongs to seat 1, last in round 5). At 2 players it is a coin-flip (0.19 with, 0.36 without) and goes to the playtest list. Fuel is charged per Glaze & Load action rather than per ceramic: identical Wood on every line, one bullet instead of two annotated rows.
+36. **Free actions.** On your turn, before or after your worker action, and after the firing in turn order (the Order Phase is that window), any number of: sell a Flawed ceramic for 2 Coins or a Standard for 3; buy 1 Clay or 1 Wood for 2 Coins; complete held Orders; spend Imperial Priority. The first and last existed; the block gathers them. Completing Orders mid-turn is worth about 1 VP a game of tempo (reserve and deliver in one turn, Coins or a Crown usable this round); the Order Phase stays as the first window for this round's pots, and because it is a free-action window a round-5 Standard can be sold like a Flawed one (3 Coins = 1 VP against 2 for exhibiting it, so the Exhibition still wins). 3 Coins for a Standard (1.65 VP) sits under the Exhibition's 2 and the Order's 5, so it is a liquidity price; small buffs to Saggars and Ding to watch. 2 Coins a resource is four times the Yard's price per placement, so it is a valve, not a route: it closes the no-Wood-at-loading case and turns the 2-player Yard block from a lost slot into a tax. Stress-tested for loops: a pot built from Coins alone costs 5–6 Coins and two personal slots and comes back as 2–3, so none closes.
+37. **Decorator's Kit for any vessel; Ding's vessel takes no discount.** The Kit's Carved/Impressed/Painted condition dated from when Plain cost 1 Coin and the others 2; with every vessel at Clay + 2 Coins it only punished choosing Plain — Ru's Masterpiece and the five Plain Orders. It now reduces any vessel you form; its value is unchanged (about 1 Coin per forming round) and Ru gains at most 1 Coin a round. Ding's own text now says what the Tech clarification already did: no further discount applies to its extra vessel.
+38. **Tech re-pass under the free-action economy.** The 2-Coin resource buy is worth about 0.17 VP a game on the production model (35% of lines buy at least 1 unit, mean 0.4), so a resource stays at about 0.4 VP and no tile sits at the 1.1 ceiling; no Coin loop closes. Four prices move to the ability's value: Canal Barge 3 (4 triggers × 2 Coins ≈ 4.4 VP was 2.2 VP per Coin), Prepared Clay 4 (an F&D placement saved per Yard visit, ≈ 5.5 VP), Colour Samples 3 (Select 3 on acquisition plus 2–3 swaps, 3–5 VP), Protective Saggars 2 (aimed pots are never Flawed anyway; the Standard→Fine is 1/6 a pot). Test Pieces stays at 3 + 1 Wood until playtest question 10 says whether a table with it should run at 58% Masterpieces on aimed pots; its owner's edge is aiming one off and keeping the card that fits. Free Actions now say that Wood for the firing must be in hand when it begins.
+39. **Ge crackles any ceramic.** The two pots a player fires in a round share the Fire card, so aimed pots come out Masterpiece together one round in three, and the "Fine or Standard" trigger then had nothing to crackle: the board switched off exactly when Ge fired well, about 5.5 VP a game (the change-29 estimate assumed independent pots). Crackle now goes on any 1 ceramic from the firing, and that ceramic still becomes Fine if it was Standard: Crackle every round, about 7.8 VP, the lowest-variance board in the set. A Flawed ceramic gains nothing from it, since it can complete no Order and cannot be exhibited, so no exclusion is printed; that a marked ceramic keeps its marker stays in the Components table.
+40. **Ding's extra vessel pays full price.** 1 Clay + 2 Coins, the same as any vessel; the 1-Coin discount goes. On the re-pass Ding sat with Jun at the top, about 9 VP a game — an extra pot, three freed Apprentice placements and the saved Coins, needing no Tech — and that value was structural volume rather than anything a table plays around. The discount was worth about 0.55 VP a use, 2.5 VP a game, so Ding lands near 6.5; the extra vessel still costs no placement. The no-discount clause goes with the price: every discount is 1 Coin off one vessel a round, and the vessel that triggers Ding can always carry it, so the clause did nothing.
+41. **Resource buy removed.** The 2-Coin buy (1 Clay or 1 Wood) goes. With Clay and Wood tracked separately, a planned line buys in 22% of games, 0.24 units, worth 0.11 VP a game (change 38's 0.17 pooled the two); no planned line is locked out of Wood without it, because your first worker always gets into the Materials Yard, and the 2-player Yard block costs the same with or without it. Its one real job was forgiving a Wood mistake late in the game (a vessel 1 Wood short costs about a pot in round 4 and is lost in round 5), and that mistake is the decision the fuel rule (34) exists to create. No Tech price moves. The note that Wood for the firing must be in hand goes with it, since nothing can bring Wood during the firing.
+42. **Standard sale removed.** Only a Flawed ceramic sells (2 Coins). A Standard always has a better home: every Starting Order takes one (about 5.2 VP), the Standard+ Main Orders pay 5.7–5.9 a pot, and the Exhibition pays 2 (up to 4 with a diversity bonus), while 3 Coins is about 1.65 VP mid-game and exactly 1 VP after the last firing. Planned play gained at most 0.14 VP a game from the option, nearly all of it a Coin-starved Ding line (about 0.6 VP); a new player who sold a Standard that fits a Starting Order lost about 3.5 VP. The Flawed sale stays as salvage, since a Flawed ceramic can be neither delivered nor exhibited.
 
 **Yours, from the doc comments:** 1–4, the first two sentences of 6, the first sentence of 7, the marker turn order in 3, 12, and 15. **The review's recommendations, applied at your request so the draft plays as one piece:** 5, the Shifu selection and Colour Samples in 6, the court-fired Imperial Kiln in 7, 8, 9, 11, 13 and 14. Each is a sentence to revert.
 
@@ -69,6 +76,7 @@ The game lasts exactly **5 rounds**.
 | Commission Market | The central location used to reserve Main Orders. |
 | Crown Order | Any Order showing at least 1 Crown icon. Each Crown advances Imperial Recognition until Recognition 4; Crowns gained after reaching 4 score 1 VP each. |
 | Held (Reserved) Order | An Order in your hand, protected from other players. |
+| Free action | Something you may do any number of times on your own turn, before or after your worker action, and after the firing in turn order: sell a Flawed ceramic (2 Coins), complete held Orders, spend Imperial Priority. |
 | Select N | Look at the top N cards of the Main Order deck. Reserve 1 of them, or 1 face-up Main Order from the display; discard the rest of the N. |
 | Imperial Kiln | A private one-ceramic firing tile gained at Imperial Recognition 2. Its ceramic ignores Contributions: Actual Heat = Kiln Die result + Fire modifier + a modifier of −1, 0 or +1 chosen when it is loaded, plus the Kiln Master marker if it carries it. |
 | Imperial Priority | A once-per-game token gained at Imperial Recognition 3. Before or after your worker action, spend it to give 1 of your Shaped vessels a Glaze and load it into your empty Imperial Kiln. |
@@ -132,7 +140,7 @@ The game lasts exactly **5 rounds**.
 | 1 | Start of Round | Roll the Kiln Die for this round's starting Base Heat; rotate Orders; refill displays; ready abilities. |
 | 2 | Work Phase | Alternate worker placements at central and personal locations. |
 | 3 | Firing Phase | Contributions → Base Heat → Fire → Actual Heat → Quality. |
-| 4 | Order Phase | Complete held Orders, one at a time, in turn order. |
+| 4 | Order Phase | In turn order, each player may take any number of free actions; the first chance to deliver ceramics fired this round. |
 | 5 | Cleanup | Return workers and markers; trim Order hands; pass First Player. |
 
 ## Phase 1 — Start of Round
@@ -156,6 +164,16 @@ Each player has **1 Shifu and 3 Apprentices** available each round. Each worker 
 - You may place a worker only if you can perform at least **1 instance of that location's main action**. "Up to 2" means **1 or 2, never 0**. Optional bonuses may still be declined.
 - **You may not pass during the Work Phase.** The Canal Wharf has no capacity limit or resource cost, so it is always a legal placement for an available worker.
 - **Personal locations** are on your own board. Each personal space may be used **once per round**. A space under a Cover token cannot be used.
+
+### Free Actions
+
+You may take any number of free actions **on your turn, before or after your worker action** (not during it), and **after the firing, in turn order** (the Order Phase):
+
+- **Sell a Flawed ceramic** for **2 Coins**. Its Vessel card returns to the Shape supply.
+- **Complete Orders:** complete any number of your held Orders (see Completing Orders).
+- **Imperial Priority:** spend your token to glaze and load 1 Shaped vessel into your empty Imperial Kiln.
+
+Rewards gained before you place a worker count for that placement (complete an Order, then spend its Coins). Ceramics fired this round first become available after the firing. Once-per-round effects that trigger on completing an Order trigger once per round, whichever window the completion is in. There are no free actions on other players' turns or during the firing itself.
 
 ### Capacity by Player Count
 
@@ -279,9 +297,9 @@ A player participates in Contributions **only if they have at least 1 ceramic in
 | 0 | **Masterpiece** | Meets any minimum Quality. |
 | 1 | **Fine** | Meets Fine+ and Standard+. |
 | 2 | **Standard** | Meets Standard+ only. |
-| 3+ | **Flawed** | Cannot complete Orders or enter the Exhibition; may be sold at any time for 2 Coins. |
+| 3+ | **Flawed** | Cannot complete Orders or enter the Exhibition; may be sold as a free action for 2 Coins. |
 
-A Flawed ceramic may be **sold at any time for 2 Coins**: return its Vessel card to the matching Shape supply.
+A Flawed ceramic may be **sold for 2 Coins** as a free action: return its Vessel card to the matching Shape supply.
 
 ### Imperial Kiln
 
@@ -293,11 +311,11 @@ When you first reach **Imperial Recognition 2**, take an Imperial Kiln tile and 
 - It counts as a ceramic in this firing for your Techs and abilities, but it does not make you a Contribution participant: only a ceramic in the Shared Kiln does. It does not occupy a Shared Kiln space.
 - After firing, its ceramic resolves Quality and moves to the owner's Finished Ceramics area normally.
 
-At **Imperial Recognition 3**, take your coloured Imperial Priority token from the track. **Once per game, before or after your worker action, spend this token to give 1 of your Shaped vessels a Glaze and load it into your empty Imperial Kiln.** It is a token effect, not a Glaze & Load action.
+At **Imperial Recognition 3**, take your coloured Imperial Priority token from the track. **Once per game, as a free action, spend this token to give 1 of your Shaped vessels a Glaze and load it into your empty Imperial Kiln.** It is a token effect, not a Glaze & Load action.
 
 ## Phase 4 — Order Phase
 
-Beginning with the **First Player** and proceeding clockwise, each player may complete **any number of held Orders, one at a time**. Only Orders in your hand can be completed. **Face-up Main Orders cannot be completed**; they are reserved at the Commission Market during the Work Phase. The display does not change during the Order Phase.
+Beginning with the **First Player** and proceeding clockwise, each player may take **any number of free actions**: complete held Orders one at a time, sell Flawed ceramics, spend Imperial Priority. This is the first chance to deliver ceramics fired this round. Only Orders in your hand can be completed. **Face-up Main Orders cannot be completed**; they are reserved at the Commission Market during the Work Phase. The display does not change during the Order Phase.
 
 See **Completing Orders** below for the procedure.
 
@@ -354,6 +372,7 @@ Choosing a Glaze commits the ceramic to a preferred firing outcome before the sh
 - **Loaded:** also records Glaze. It sits in the Shared Kiln or your Imperial Kiln until fired.
 - **Fired:** also records Quality and moves to your Finished Ceramics area.
 - **Delivered:** committed to a completed Order and cannot be reused.
+- **Sold:** a Flawed ceramic sold for 2 Coins as a free action; its Vessel card returns to the supply.
 
 ## Workshop Development
 
@@ -395,12 +414,12 @@ A held Order:
 
 - is in your **secret hand** and is protected from other players;
 - counts toward your hand limit during Cleanup;
-- can be completed during any later Order Phase;
+- can be completed as a free action on any later turn of yours or after any later firing;
 - scores exactly as printed.
 
 ### Completing Orders
 
-On your turn in the Order Phase, for each Order you complete:
+Whenever you complete an Order (a free action), for each Order:
 
 1. Choose 1 held Order and **reveal it**.
 2. Choose the required finished, undelivered ceramics.
@@ -460,13 +479,13 @@ Once per round, when you complete an Order showing **at least 1 Crown**, gain **
 
 ### Ge Kiln / 哥窑 — Crackle Mastery
 
-**Once per round**, after Quality is assigned, choose 1 of your **Fine or Standard** ceramics from this firing: it develops Crackle and is **Fine** (a Standard one becomes Fine). Place a **Crackle marker** on it; the ceramic keeps the marker.
+**Once per round**, after Quality is assigned, choose 1 of your ceramics from this firing: it develops Crackle, and if it is Standard it becomes **Fine**. Place a **Crackle marker** on it.
 
 When completing an Order, each of your **Crackle ceramics may count as having any one Decoration** for that Order's Decoration requirements; its printed Decoration is unchanged. Each Crackle ceramic you deliver to complete an Order scores **1 VP**.
 
 ### Ding Kiln / 定窑 — Moulded Production
 
-Once per round, when resolving a Form & Decorate action, after you form a **Bowl, Plate or Brush Washer**, you may pay **1 Clay and 1 Coin** to form **one additional vessel of the same Shape**, with any Decoration. It does not count against the action's vessel limit and is not one of the 2 vessels for the Shifu's discount. For effects that refer to vessels formed by that action, it counts as formed by that action.
+Once per round, when resolving a Form & Decorate action, after you form a **Bowl, Plate or Brush Washer**, you may pay **1 Clay and 2 Coins** to form **one additional vessel of the same Shape**, with any Decoration. It does not count against the action's vessel limit. For effects that refer to vessels formed by that action, it counts as formed by that action.
 
 ### Jun Kiln / 钧窑 — Kiln Transformation
 
@@ -477,7 +496,7 @@ Once per round, after Actual Heat is calculated but before Quality is assigned, 
 - If several players resolve abilities in the same window, resolve them beginning with the First Player and proceeding clockwise.
 - Jun acts after Actual Heat is calculated (Kiln Master marker included) and before Quality is assigned. If a Second Firing recalculates a ceramic, an unused Jun adjustment may be applied to the recalculated heat.
 - Ge's Crackle is an after-Quality effect; Ge chooses its order among their own after-Quality effects.
-- Ru, Guan and Crackle VP trigger while completing an Order in the Order Phase; a Crackle ceramic's wildcard Decoration is declared then.
+- Ru, Guan and Crackle VP trigger while completing an Order; a Crackle ceramic's wildcard Decoration is declared then.
 - Ding triggers during its Form & Decorate action.
 
 ## End of the Game and Scoring
@@ -600,9 +619,9 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
 | **Large Throwing Wheel** | 2 | Once per round, during a Form & Decorate action in which you form at least **1 Vase or Censer**, reduce that action's **total Clay cost by 2**, to a minimum of 0. |
-| **Decorator's Kit** | 2 | Once per round, a vessel you form with a **Carved, Impressed or Painted** Decoration costs **1 Coin less**. It may be the same vessel the Shifu's discount reduces. |
+| **Decorator's Kit** | 2 | Once per round, a vessel you form costs **1 Coin less**. It may be the same vessel the Shifu's discount reduces. |
 | **Reworking Table** | 2 | Once per round, when you glaze and load a Shaped vessel, you may first **change its Shape** to any other Shape: return its Vessel card and take the new one. No Clay is paid; its Decoration stays. |
-| **Prepared Clay** | 3 | Once per round, during a Materials Yard action, after gaining resources, you may **form 1 vessel**: pay its Clay cost **+1 Clay** and 2 Coins, choosing any Decoration. This is a Tech effect, not a Form & Decorate action. |
+| **Prepared Clay** | 4 | Once per round, during a Materials Yard action, after gaining resources, you may **form 1 vessel**: pay its Clay cost **+1 Clay** and 2 Coins, choosing any Decoration. This is a Tech effect, not a Form & Decorate action. |
 | **Senior Apprentice** | 3 | Once per round, **1 Apprentice** you place at the **Materials Yard or Commission Market** resolves the **Shifu effect** there instead of the Apprentice effect. |
 | **Connoisseur's Cabinet** | 3 | At game end, each **Fine or Masterpiece** ceramic in your Exhibition scores **+1 VP**, up to **+5 VP**. |
 
@@ -610,18 +629,18 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
-| **Colour Samples** | 2 | **When acquired: Select 3.** This is not a Commission Market action. **Ongoing:** your Order hand limit is **5**, and once per round, before or after one of your worker actions, you may **discard 1 held Order to Select 3**. |
+| **Colour Samples** | 3 | **When acquired: Select 3.** This is not a Commission Market action. **Ongoing:** your Order hand limit is **5**, and once per round, before or after one of your worker actions, you may **discard 1 held Order to Select 3**. |
 | **Kiln Tending** | 3 | Once per round, after a Glaze & Load action in which you loaded at least 1 ceramic, gain **1 Clay and 1 Wood**. |
 | **Kiln Furniture** | 2 | Once per round, when you load 1 ceramic into the Shared Kiln, you may place this tile beneath it and **choose its zone modifier** for this firing: **−1, 0 or +1**. Return the tile after firing. |
 | **Inverted Firing 覆烧** | 2 | Once per round, when you load a **Bowl, Plate or Brush Washer** into the Shared Kiln, you may place it in an active space that **already holds exactly 1 of your ceramics**. Both use that space's modifier (or its Kiln Furniture modifier). |
 | **Setter's Mark** | 2 | Once per round, at the start of the Work Phase (in First Player order), place this tile on an **empty active Shared Kiln space**. Only you may load there this round. Return it when you load there, or at Cleanup. |
-| **Canal Barge 漕船** | 2 | Once per round, when you complete an Order, gain **2 Coins**. |
+| **Canal Barge 漕船** | 3 | Once per round, when you complete an Order, gain **2 Coins**. |
 
 ### B3. Firing — 6
 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
-| **Protective Saggars** | 3 | Your ceramics are never Flawed: for them, a Heat Difference of **3 or more counts as Standard**. Once per round, after Quality is assigned, **1 of your Standard ceramics** from this firing becomes **Fine**. This cannot create a Masterpiece. |
+| **Protective Saggars** | 2 | Your ceramics are never Flawed: for them, a Heat Difference of **3 or more counts as Standard**. Once per round, after Quality is assigned, **1 of your Standard ceramics** from this firing becomes **Fine**. This cannot create a Masterpiece. |
 | **Fuel Ledger** | 4 | Your Bank the Fire and Stoke the Fire cost **no Wood**. When you acquire this tile, take the **Fuel Ledger Bank** (1 Wood, **−2**) and **Fuel Ledger Stoke** (1 Wood, **+2**) Contribution cards; choose among all 5 of your cards as usual, playing exactly 1. |
 | **Test Pieces 火照** | 3 | Once per round, **after Base Heat is determined and before the Fire card is revealed**, if you have at least 1 ceramic in this firing, pay **1 Wood** to privately look at the top Fire card. You may then put it on the **bottom** of the deck. You may not show it. |
 | **Second Firing** | 2 | Once per round, after Quality is assigned, choose **1 of your Flawed or Standard ceramics** from this firing. Reveal **2 extra Fire cards**, choose 1 of them and recalculate that ceramic's Actual Heat and Quality with the **same Base Heat, zone or Kiln Furniture modifier and Kiln Master marker** and the chosen card's modifier. Jun's adjustment from the first calculation does not carry over; an unused Jun adjustment may be applied to the recalculated heat before the new Quality is assigned. The new Quality replaces the old, even if worse. Discard both extra Fire cards after resolving. |
@@ -636,7 +655,7 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 - **Test Pieces** resolves after Base Heat is determined and before the Fire card is revealed. A buried card stays on the bottom; if the Fire deck runs out, the discard pile is shuffled and placed above it, so the buried card is drawn last. You may discuss what you saw but may not show the card.
 - **Colour Samples:** each Select 3 it grants is a Tech effect, not a Commission Market action; a face-up Order taken by one is replaced at the end of your turn as usual. Your hand limit of 5 applies at every Cleanup while you own the tile. The Order you discard for the swap goes to the Main Order discard pile (a Starting Order goes to the box).
 - **Protective Saggars** and **Second Firing** affect only your own eligible ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds. Second Firing's extra Fire cards change nothing for any other ceramic.
-- **Discounts: the Shifu's discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same vessel (its 2 Coins become 0). Ding's vessel takes neither. Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer**.
+- **Discounts: the Shifu's discount and Decorator's Kit are two separate reductions and may apply to the same vessel (its 2 Coins become 0). Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer**.
 - **Senior Apprentice** at the Commission Market gives that Apprentice the Shifu's effect: Select 3, reserving up to 2.
 - **Ge's Crackle** is an after-Quality effect. With Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' Standard → Fine step and Crackle may both apply to the same ceramic, since Crackle does not change a Fine ceramic's Quality.
 
@@ -676,9 +695,9 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 ### Round Sequence
 
 1. **Start:** roll the Kiln Die and set the starting Base Heat (1, 2 or 3); Rounds 2–5 discard the 2 leftmost Main Orders, slide the remaining 4 left and reveal 2 new Orders to restore the **6-card display**; ready abilities.
-2. **Work:** First Player clockwise; each player must place 1 worker per turn. No passing; end when every player has placed all their workers.
+2. **Work:** First Player clockwise; each player must place 1 worker per turn. No passing; end when every player has placed all their workers. Free actions before or after your placement: sell a Flawed ceramic for 2 Coins, complete held Orders, spend Imperial Priority.
 3. **Fire:** Contributions → Base Heat → Fire → Actual Heat → abilities → Quality.
-4. **Orders:** First Player clockwise; each player completes any number of held Orders, one at a time. Face-up Orders cannot be completed.
+4. **Orders:** First Player clockwise; each player may take any number of free actions, including completing held Orders one at a time. Face-up Orders cannot be completed.
 5. **Cleanup:** return workers and markers; trim Orders to your hand limit (4; 5 with Colour Samples); if the game continues, pass First Player and advance the round.
 
 ### Action Summary
@@ -725,8 +744,8 @@ Base Heat = Kiln Die + Contributions, clamped 0–5. Global Heat = Base Heat + F
 | 2 | Standard |
 | 3+ | Flawed |
 
-- **Ge:** once per round after Quality, 1 Fine or Standard ceramic develops Crackle and is Fine; Crackle ceramics count as any one Decoration for Orders and score 1 VP each when delivered.
-- A Flawed ceramic may be sold at any time for **2 Coins**.
+- **Ge:** once per round after Quality, 1 ceramic develops Crackle (if it is Standard, it becomes Fine); Crackle ceramics count as any one Decoration for Orders and score 1 VP each when delivered.
+- Free actions, on your turn and after the firing: sell a Flawed ceramic for **2 Coins**; complete held Orders; spend Imperial Priority.
 
 ### Scoring
 
