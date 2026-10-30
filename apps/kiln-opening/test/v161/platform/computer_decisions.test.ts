@@ -342,14 +342,14 @@ describe("strategic computer choices", () => {
     expect(before.coins - after.coins).toBe(vesselCoins + 2);
   });
 
-  it("sells a Finished Flawed ceramic first in every free-action window, never during the firing or at Cleanup (rev. 5 L172, L176, I1)", () => {
+  it("sells a Finished Flawed ceramic first in every free-action window, never during the firing or at Cleanup (rev. 5 L172, L176, R26)", () => {
     const flawed = { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" } as const;
     // Before the worker action.
     expect(decide(work({ players: [{ kilnId: "GE", resources: RICH, hand: ["S08"] }, { kilnId: "DI" }], ceramics: [flawed] }))).toEqual({
       type: "SELL_FLAWED",
       ceramicId: "c1",
     });
-    // After the worker action: the Flawed ceramic opens the window (I2), and the seat sells it.
+    // After the worker action: the Flawed ceramic opens the window (R27), and the seat sells it.
     const after = work({ players: [{ kilnId: "GE" }, { kilnId: "DI" }], ceramics: [flawed] });
     after.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
     expect(after.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
@@ -706,7 +706,7 @@ describe("strategic computer choices", () => {
   });
 
   it("has no Canal Barge decision of its own: it completes the Order after its worker action or in the Order Phase, for its 2 Coins (rev. 5 L172–176, L637)", () => {
-    // A held Order and a Finished ceramic open the after-action window on public facts (I2); the
+    // A held Order and a Finished ceramic open the after-action window on public facts (R27); the
     // seat completes there (a free action), gains the Order's Coins and Canal Barge's 2, and the
     // window closes by itself once nothing is left in it.
     const table = work({
@@ -779,7 +779,7 @@ describe("strategic computer choices", () => {
     expect(decide(planned).type).toMatch(/^PLACE_/);
   });
 
-  it("spends Imperial Priority in the Order Phase only when the next roll could not change its load, and never in Round 5 (rev. 5 L174, L314, I3)", () => {
+  it("spends Imperial Priority in the Order Phase only when the next roll could not change its load, and never in Round 5 (rev. 5 L174, L314, R28)", () => {
     const orderTurn = (round: 2 | 4 | 5, hand: OrderId[], techs: TechId[] = []) =>
       new LocalTable(
         buildState({

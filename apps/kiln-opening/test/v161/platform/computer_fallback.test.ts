@@ -129,7 +129,7 @@ describe("computer fallback in every phase type", () => {
     }
   });
 
-  it("offers Imperial Priority in the Order Phase before Round 5 only, where its ceramic would never be fired (rev. 5 L174, L314, I3)", () => {
+  it("offers Imperial Priority in the Order Phase before Round 5 only, where its ceramic would never be fired (rev. 5 L174, L314, R28)", () => {
     for (const round of [2, 4, 5] as const) {
       const table = new LocalTable(
         buildState({

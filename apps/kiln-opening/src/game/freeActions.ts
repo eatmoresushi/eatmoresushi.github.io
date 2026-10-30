@@ -3,11 +3,12 @@
  * `COMPLETE_ORDER` and `USE_IMPERIAL_PRIORITY`, any number, in any order, in a free-action window:
  * before or after the worker action of the actor's own Work turn (not during it), and the
  * actor's own Order Phase turn. Never on another player's turn, during the firing, at Setup, in
- * the Setter's Mark window or at Cleanup (L176, I1).
+ * the Setter's Mark window or at Cleanup (L176, R26).
  *
  * Validation order: the dispatcher (game over, seat, `phases`, the decision prompt's actor),
- * then `freeActionWindowError` (`WORKER_ACTION_IN_PROGRESS` in a Work sub-step), then the
- * action's own checks.
+ * then `freeActionWindowError` (`WORKER_ACTION_IN_PROGRESS` in a Work sub-step), then
+ * `endTurnRequestError` (`endTurn: true` before the worker action is `WORKER_ACTION_REQUIRED`,
+ * owner UI decision D21), then the action's own checks.
  *
  * - **Rewards count at once** (L176): a completion's Coins, Crowns and milestones resolve inside
  *   the command, so a completion before the worker action pays for the placement that follows
@@ -16,16 +17,17 @@
  * - **Once-per-round completion effects** (Ru, Guan, Tribute Ware, Canal Barge) share one use per
  *   round across every window of the round (L176; `orders/completion.ts`).
  * - **Continuation** (`continueAfterFreeAction`): in a Work turn, `work/turn.afterWindowAbilityUsed`
- *   (before the action nothing changes; after it the window is rechecked on public facts, I2);
+ *   (before the action nothing changes; after it the window is rechecked on public facts, R27);
  *   in the Order Phase, `orders/phase.continueOrderTurn` (the turn ends when `orderTurnOpen` no
- *   longer holds, I3).
+ *   longer holds, R28). With `endTurn: true` (D21, DELTA §16.24) a turn still open after that
+ *   recheck ends as `END_TURN` / `END_ORDER_TURN` would, in the same command.
  *
  * Layer 5: imports layers 0–4 (`freeActionWindow` 3, `orders/completion` 3, `flawedSale`,
  * `orders/phase`, `work/turn`, `work/windowAbilities` 4); `engine.ts` adds its handlers.
  */
 
 import { invariant, ruleError } from "./errors.ts";
-import { freeActionWindowError, freeActionWindowOf, sellableFlawed } from "./freeActionWindow.ts";
+import { endTurnRequestError, freeActionWindowError, freeActionWindowOf, sellableFlawed } from "./freeActionWindow.ts";
 import { sellFlawedCeramic } from "./flawedSale.ts";
 import { resolveOrderCompletion, validateOrderCompletion } from "./orders/completion.ts";
 import { continueOrderTurn } from "./orders/phase.ts";
@@ -43,16 +45,17 @@ function windowOf(draft: GameState, actorId: PlayerId): FreeActionWindow {
 
 /**
  * After each free action: a Work turn's after-action window is rechecked (and the turn ends
- * automatically when it has nothing left, I2; before the action nothing changes); an Order Phase
- * turn ends automatically when nothing is left in it (I3).
+ * automatically when it has nothing left, R27; before the action nothing changes); an Order Phase
+ * turn ends automatically when nothing is left in it (R28). `endTurnRequested` (D21) then ends a
+ * turn that is still open.
  */
-export function continueAfterFreeAction(draft: GameState, actorId: PlayerId, ctx: ResolveContext): void {
+export function continueAfterFreeAction(draft: GameState, actorId: PlayerId, endTurnRequested: boolean, ctx: ResolveContext): void {
   switch (draft.phase.type) {
     case "work_turn":
-      afterWindowAbilityUsed(draft, actorId, ctx);
+      afterWindowAbilityUsed(draft, actorId, ctx, endTurnRequested);
       return;
     case "orders":
-      continueOrderTurn(draft, actorId, ctx);
+      continueOrderTurn(draft, actorId, ctx, endTurnRequested);
       return;
     default:
       invariant(false, `A free action resolved in ${draft.phase.type}`);
@@ -63,7 +66,7 @@ export const handlers: Pick<ActionHandlerTable, "SELL_FLAWED" | "COMPLETE_ORDER"
   SELL_FLAWED: {
     phases: ["work_turn", "orders"],
     validate(view, action) {
-      const windowError = freeActionWindowError(view.game, view.viewerId, action.type);
+      const windowError = freeActionWindowError(view.game, view.viewerId, action.type) ?? endTurnRequestError(view.game, view.viewerId, action);
       if (windowError !== null) {
         return windowError;
       }
@@ -81,27 +84,35 @@ export const handlers: Pick<ActionHandlerTable, "SELL_FLAWED" | "COMPLETE_ORDER"
     },
     resolve(draft, actorId, action, ctx) {
       sellFlawedCeramic(draft, actorId, action.ceramicId, windowOf(draft, actorId), ctx);
-      continueAfterFreeAction(draft, actorId, ctx);
+      continueAfterFreeAction(draft, actorId, action.endTurn === true, ctx);
     },
   },
   COMPLETE_ORDER: {
     phases: ["work_turn", "orders"],
     validate(view, action) {
-      return freeActionWindowError(view.game, view.viewerId, action.type) ?? validateOrderCompletion(view, action);
+      return (
+        freeActionWindowError(view.game, view.viewerId, action.type) ??
+        endTurnRequestError(view.game, view.viewerId, action) ??
+        validateOrderCompletion(view, action)
+      );
     },
     resolve(draft, actorId, action, ctx) {
       resolveOrderCompletion(draft, actorId, action, windowOf(draft, actorId), ctx);
-      continueAfterFreeAction(draft, actorId, ctx);
+      continueAfterFreeAction(draft, actorId, action.endTurn === true, ctx);
     },
   },
   USE_IMPERIAL_PRIORITY: {
     phases: ["work_turn", "orders"],
     validate(view, action) {
-      return freeActionWindowError(view.game, view.viewerId, action.type) ?? imperialPriorityError(view, action);
+      return (
+        freeActionWindowError(view.game, view.viewerId, action.type) ??
+        endTurnRequestError(view.game, view.viewerId, action) ??
+        imperialPriorityError(view, action)
+      );
     },
     resolve(draft, actorId, action, ctx) {
       useImperialPriority(draft, actorId, action, windowOf(draft, actorId), ctx);
-      continueAfterFreeAction(draft, actorId, ctx);
+      continueAfterFreeAction(draft, actorId, action.endTurn === true, ctx);
     },
   },
 };

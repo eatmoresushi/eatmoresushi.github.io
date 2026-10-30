@@ -236,7 +236,7 @@ function privateViewOf(state: GameState, playerId: PlayerId, privateFiring: Priv
  * (DESIGN §4.6). Strict equality, except in the `parallel` window (`cleanup_hand_limit`, the
  * only one since revision 4 removed the salvage step): its only choice, the trim, touches only
  * the actor's own hand (Cleanup is not a free-action window, so nothing is sold there, rev. 5
- * L176, I1), so a command based on any revision since the window opened is validated against
+ * L176, R26), so a command based on any revision since the window opened is validated against
  * the newer head while the actor is still pending.
  */
 function revisionAcceptance(

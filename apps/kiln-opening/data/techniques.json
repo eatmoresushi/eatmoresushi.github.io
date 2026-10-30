@@ -298,7 +298,7 @@
         {
           "en": "The swap is not a free action, so it cannot be used in the Order Phase.",
           "zh": "换单不是自由行动，所以交货阶段不能换单。",
-          "source": "INT Colour Samples swap"
+          "source": "R28"
         },
         {
           "en": "A swap used after a Commission Market action may discard an Order that action reserved. The display refills only when your turn ends, after the swap.",
@@ -485,7 +485,7 @@
         {
           "en": "Canal Barge resolves automatically on the first Order you complete each round, in any free-action window, a Starting Order included. The 2 Coins may pay for the worker placement that follows.",
           "zh": "数字版在你每轮第一次完成委托时自动结算漕船，任何自由行动时机都算，起始委托也算。这2铜钱可以用于随后的派工。",
-          "source": "INT Canal Barge · INT Completion effects across windows"
+          "source": "R30 · INT Canal Barge · INT Completion effects across windows"
         }
       ]
     },
@@ -661,7 +661,7 @@
         {
           "en": "No free action happens during the firing, so a ceramic of this firing that is Flawed after Quality cannot be sold before you decide on Second Firing. Once it is Finished, it may be sold as a free action.",
           "zh": "烧窑过程中没有自由行动，所以本窑定品后为瑕品的器物，不能在你决定是否复烧之前卖出。它移入成器区后，才可以作为自由行动卖出。",
-          "source": "L176 · INT Free-action windows revision 5"
+          "source": "L176 · R26"
         }
       ]
     },

@@ -13,14 +13,15 @@
  * into the Imperial Kiln pays nothing. The Wood is paid once the worker is placed, before the
  * loads; Kiln Tending's +1 Wood comes after them and never pays this action's fuel.
  *
- * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
+ * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2), after recording the
+ * command's `endTurn` (owner UI decision D21, `state.noteEndTurnRequest`; DELTA §16.24).
  */
 
 import { LOCATIONS, TECHS } from "../content.ts";
 import { ruleError } from "../errors.ts";
 import { actionFuel, hasAnyLegalLoad, loadCeramic, validateLoads } from "../kilnLoading.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
-import { gain, lookup, player, spend } from "../state.ts";
+import { gain, lookup, noteEndTurnRequest, player, spend } from "../state.ts";
 import { markTechUsed, techReady } from "../techs.ts";
 import type {
   ActionHandlerTable,
@@ -96,6 +97,7 @@ function resolveKilnTending(draft: GameState, playerId: PlayerId, loadCount: num
 }
 
 function resolve(draft: GameState, playerId: PlayerId, action: GlazeLoadAction, ctx: ResolveContext): void {
+  noteEndTurnRequest(draft, playerId, action.endTurn);
   placeWorker(draft, playerId, action.workerId, "glaze_load", false, ctx);
   // Kiln fuel (L215, R24): 1 Wood for the whole action when it loads into the Shared Kiln.
   spend(draft, playerId, { wood: actionFuel(action.loads, "glaze_load") }, "kiln_fuel", ctx);

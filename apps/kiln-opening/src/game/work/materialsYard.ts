@@ -17,13 +17,14 @@
  * The main action (gain resources) is always possible, so placement legality is only the
  * shared placement check (L164).
  *
- * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
+ * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2), after recording the
+ * command's `endTurn` (owner UI decision D21, `state.noteEndTurnRequest`; DELTA §16.24).
  */
 
 import { LOCATIONS, TECHS, shapeClay, vesselCoins } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
-import { formCeramic, gain, lookup, player, spend } from "../state.ts";
+import { formCeramic, gain, lookup, noteEndTurnRequest, player, spend } from "../state.ts";
 import { markTechUsed, ownsTech, techReady } from "../techs.ts";
 import type {
   ActionHandlerTable,
@@ -174,6 +175,7 @@ function validate(view: ActorView, action: MaterialsYardAction): GameRuleError |
 }
 
 function resolve(draft: GameState, playerId: PlayerId, action: MaterialsYardAction, ctx: ResolveContext): void {
+  noteEndTurnRequest(draft, playerId, action.endTurn);
   const placement = placeWorker(draft, playerId, action.workerId, "materials_yard", action.seniorApprentice === true, ctx);
   invariant(quoteFor(draft, playerId, action, placement.effect).ok, "Materials Yard command must be validated first");
 

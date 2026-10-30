@@ -4,12 +4,12 @@
  * action (L168–176), so only in a free-action window: before or after the worker action of the
  * owner's own Work turn, and the owner's own Order Phase turn. Never on another player's turn,
  * never during the firing (the after-Quality step included, also for a ceramic of this firing that
- * is Flawed now), never at Setup, in the Setter's Mark window or at Cleanup (I1: owner ruling R20's
+ * is Flawed now), never at Setup, in the Setter's Mark window or at Cleanup (R26: owner ruling R20's
  * after-Quality and Cleanup trim windows are withdrawn), and never in the middle of a worker
  * action (`WORKER_ACTION_IN_PROGRESS`). The sale is not a worker action: before the action the
  * player still owes it; after it, or in the Order Phase, the window closes when nothing is left.
  * A Finished Flawed ceramic opens the after-action window and the Order Phase turn by itself
- * (public facts, I2, I3). Revision 3's salvage step is gone.
+ * (public facts, R27, R28). Revision 3's salvage step is gone.
  */
 
 import { describe, expect, it } from "vitest";
@@ -85,7 +85,7 @@ describe("the Work turn's free-action windows (rev. 5 L170)", () => {
     expect(sellFlawedOptions(table.view("p2"))).toBeNull();
   });
 
-  it("after the worker action: a Finished Flawed ceramic opens the window by itself (I2), which closes after the sale", () => {
+  it("after the worker action: a Finished Flawed ceramic opens the window by itself (R27), which closes after the sale", () => {
     // p1 holds no Order, so only the Flawed ceramic keeps the window open.
     const table = new LocalTable(buildState(workSpec({ players: [{}, {}] })));
     table.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
@@ -116,7 +116,7 @@ describe("the Work turn's free-action windows (rev. 5 L170)", () => {
   });
 });
 
-describe("never outside a free-action window (rev. 5 L176, I1): WRONG_PHASE", () => {
+describe("never outside a free-action window (rev. 5 L176, R26): WRONG_PHASE", () => {
   /** p1 (Test Pieces, the Jun Kiln) fires c1 and p2 (Second Firing) fires c2, Moon White Bowls
    * in Low (Flawed at Fire 0); p1 also holds c3, a Finished Flawed Bowl from an earlier round. */
   function firingSpec(): StateSpec {
@@ -148,7 +148,7 @@ describe("never outside a free-action window (rev. 5 L176, I1): WRONG_PHASE", ()
     expect(table.state.phase.type).toBe("firing_heat_adjustment");
     refused("p1", "c3");
     table.act("p1", { type: "RESOLVE_JUN", adjustment: null });
-    // p2's own after-Quality turn is no sale window either (I1), not even for c2 of this firing,
+    // p2's own after-Quality turn is no sale window either (R26), not even for c2 of this firing,
     // which is Flawed now.
     expect(table.prompt()).toEqual({ phaseType: "firing_after_quality", actorIds: ["p2"], mode: "single" });
     refused("p2", "c2");
@@ -178,7 +178,7 @@ describe("never outside a free-action window (rev. 5 L176, I1): WRONG_PHASE", ()
   });
 });
 
-describe("the Order Phase turn, not the Cleanup trim (rev. 5 L170, I1)", () => {
+describe("the Order Phase turn, not the Cleanup trim (rev. 5 L170, R26)", () => {
   it("Round 5: the Order Phase turn is the last sale window before scoring (the trim is skipped)", () => {
     const table = new LocalTable(
       buildState({

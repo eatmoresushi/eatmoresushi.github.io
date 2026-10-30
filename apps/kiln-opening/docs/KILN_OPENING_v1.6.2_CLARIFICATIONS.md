@@ -27,11 +27,11 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 | --- | --- | --- |
 | `L124` | Line of the V1.6.2 rulebook (EN source, as it stands after owner revision 5; re-cited from revision-4 lines with ENGINE_V1.6.2_DELTA.md §16.2) | Rulebook |
 | `A1`–`A2` | Owner amendments; A1 (Tech VP on gain) is superseded by rulebook change 27, so no item cites it | Owner amendment |
-| `R1`–`R25` | Owner rulings; R3, R6, R9 and R19 are obsolete and R14 superseded under V1.6.2, so no item cites them | Owner ruling |
+| `R1`–`R30` | Owner rulings; R3, R6, R9 and R19 are obsolete and R14 superseded under V1.6.2, so no item cites them | Owner ruling |
 | `B1`–`B3` | Owner rulings (supply, Guild Hall, hidden Orders) | Owner ruling |
 | `ED Lnnn` | Audit editorial correction to that line | Editorial correction |
 | `INT <name>` | Audit "Interpretations of V1.6.2 text" | Recorded interpretation |
-| `P1`–`P3`, `P6`–`P7` | Audit provisional defaults (P4 and P5 are cited by no item) | Provisional ruling (owner may change) |
+| `P1`–`P3`, `P7` | Audit provisional defaults (P4 and P5 are cited by no item; P6 became owner ruling R29) | Provisional ruling (owner may change) |
 | `D7` | Owner UI decision D7 (wording only) | Wording |
 
 ---
@@ -88,7 +88,7 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 - [B1 · R16] Each look sees as many cards as remain, up to 3, when acquired and for a swap. The discard is reshuffled only when the deck is empty as the look starts, never to complete a look. A look that shows no card still lets you reserve from the display; a swap cannot be used if it could reserve no Order at all. / 每次查看时牌堆不足就看余下的，至多3张，习得时与换单都一样。弃牌堆只在查看开始时牌堆已空才洗混，不会为了凑足张数而洗混。即使查看时一张牌也没有，仍可以从委托榜上承接；如果换单根本无委托可承接，就不能换单。
 - [B3 · R25] Your looks are private: only you see the cards and which of them you discard. The Main Order discard pile is face down; only the counts of the deck and the discard are public. / 查看是私下进行的：看过的牌，以及弃置了哪几张，只有你知道。主委托弃牌堆面朝下；牌堆与弃牌堆只公开张数。
 - [INT Before/after-action window] The swap and Imperial Priority may share a before- or after-action window, in an order you choose. / 换单与御烧优先同在“工人行动之前或之后”时，二者的先后由你决定。
-- [INT Colour Samples swap] The swap is not a free action, so it cannot be used in the Order Phase. / 换单不是自由行动，所以交货阶段不能换单。
+- [R28] The swap is not a free action, so it cannot be used in the Order Phase. / 换单不是自由行动，所以交货阶段不能换单。
 - [INT Deferred refill] A swap used after a Commission Market action may discard an Order that action reserved. The display refills only when your turn ends, after the swap. / 在瓷牙行行动之后换单，可以弃置该行动刚承接的委托；委托榜要等你的回合结束、换单之后才补牌。
 
 ### T20 — Kiln Tending / 看火
@@ -120,7 +120,7 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 ### T23 — Canal Barge / 漕船
 
 - [L170 · L176] Canal Barge does not complete Orders itself. You gain its 2 Coins when you complete an Order as a free action, before or after your worker action or in the Order Phase, once per round whichever window the completion is in. / 漕船本身不能完成委托。你作为自由行动完成委托时获得它的2铜钱，工人行动之前或之后或在交货阶段都可以；无论在哪个时机完成，每轮只得一次。
-- [INT Canal Barge · INT Completion effects across windows] Canal Barge resolves automatically on the first Order you complete each round, in any free-action window, a Starting Order included. The 2 Coins may pay for the worker placement that follows. / 数字版在你每轮第一次完成委托时自动结算漕船，任何自由行动时机都算，起始委托也算。这2铜钱可以用于随后的派工。
+- [R30 · INT Canal Barge · INT Completion effects across windows] Canal Barge resolves automatically on the first Order you complete each round, in any free-action window, a Starting Order included. The 2 Coins may pay for the worker placement that follows. / 数字版在你每轮第一次完成委托时自动结算漕船，任何自由行动时机都算，起始委托也算。这2铜钱可以用于随后的派工。
 
 ### T11 — Protective Saggars / 匣钵护烧
 
@@ -150,7 +150,7 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 - [INT Second Firing choice · R15] The 2 extra Fire cards are revealed face up for everyone to see. If the Fire deck runs out before either card, it is reshuffled first, and any buried card stays at the bottom. / 2张额外窑火牌正面朝上翻开，所有人都看得到。翻其中任何一张之前若窑火牌堆已用尽，先洗混再翻，置底的牌仍留在牌堆底。
 - [INT Imperial Second Firing] On an Imperial Kiln ceramic, Second Firing keeps the same Kiln Die result, the same Imperial modifier and the same Kiln Master marker, with the chosen card's Fire modifier. / 复烧御窑中的器物时，用相同的窑骰点数、御窑修正与窑工标，配合所选那张牌的窑火修正重新计算。
 - [L682 · L393] After-Quality abilities resolve in First Player order. If you control several in this window, you choose their order. / 定品后能力按起始玩家顺序结算；若你在此时机有多项能力，由你决定先后。
-- [L176 · INT Free-action windows revision 5] No free action happens during the firing, so a ceramic of this firing that is Flawed after Quality cannot be sold before you decide on Second Firing. Once it is Finished, it may be sold as a free action. / 烧窑过程中没有自由行动，所以本窑定品后为瑕品的器物，不能在你决定是否复烧之前卖出。它移入成器区后，才可以作为自由行动卖出。
+- [L176 · R26] No free action happens during the firing, so a ceramic of this firing that is Flawed after Quality cannot be sold before you decide on Second Firing. Once it is Finished, it may be sold as a free action. / 烧窑过程中没有自由行动，所以本窑定品后为瑕品的器物，不能在你决定是否复烧之前卖出。它移入成器区后，才可以作为自由行动卖出。
 
 ### T24 — Kiln Master / 窑工
 
@@ -180,8 +180,8 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 
 ### GE — Ge Kiln, Crackle Mastery / 哥窑 · 金丝铁线
 
-- [INT Ge Crackle revision 5] Ge may target any of your ceramics from this firing, whatever its Quality. A Standard one becomes Fine; a Masterpiece, Fine or Flawed one keeps its Quality, and a Flawed one gains nothing. The ceramic carries a Crackle marker. / 哥窑可以选择你本次烧成中的任意1件器物，品质不限。良品升为上品；臻品、上品与瑕品保持原品质，瑕品开片没有收益。该器物带上开片标。
-- [INT Ge Crackle revision 5] Second Firing may still recalculate a crackled Flawed ceramic: the new Quality stands and the ceramic keeps its Crackle marker. Crackle does not raise the new Quality. / 复烧仍可以重算已开片的瑕品：新品质照常生效，该器物保留开片标。开片不会再提升新品质。
+- [R30] Ge may target any of your ceramics from this firing, whatever its Quality. A Standard one becomes Fine; a Masterpiece, Fine or Flawed one keeps its Quality, and a Flawed one gains nothing. The ceramic carries a Crackle marker. / 哥窑可以选择你本次烧成中的任意1件器物，品质不限。良品升为上品；臻品、上品与瑕品保持原品质，瑕品开片没有收益。该器物带上开片标。
+- [R30] Second Firing may still recalculate a crackled Flawed ceramic: the new Quality stands and the ceramic keeps its Crackle marker. Crackle does not raise the new Quality. / 复烧仍可以重算已开片的瑕品：新品质照常生效，该器物保留开片标。开片不会再提升新品质。
 - [L498 · L660] Ge's Crackle is an after-Quality effect; Ge chooses its order among their own after-Quality effects. With Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' Standard → Fine step and Crackle may both apply to the same ceramic. / 哥窑开片是定品后效果；哥窑玩家自行决定它在己方各项定品后效果中的先后。有匣钵护烧时，本应为瑕品的器物算作良品，可以再开片；匣钵护烧的“良品变上品”与开片可以作用于同一件器物。
 - [L311] An Imperial Kiln ceramic counts as a ceramic in this firing for your abilities. / 对你的能力而言，御窑中的器物算作本次烧成中的器物。
 - [L116] A marked ceramic keeps its Crackle marker until delivered or exhibited. / 带有开片标的器物一直保留此标，直到交付或陈列。
@@ -193,8 +193,8 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 - [L500] Ding triggers during its Form & Decorate action. / 定窑在其制坯饰纹行动中触发。
 - [L652] Prepared Clay is a Tech effect and never counts as a Form & Decorate action, so a vessel formed through Prepared Clay does not trigger Ding. / 练泥是技艺效果，不算制坯饰纹行动，所以通过练泥制成的坯不会触发定窑。
 - [L658] Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer. / 大陶车只减泥；定窑的额外坯不是瓶或香炉。
-- [P6] Provisional ruling: Ding's extra vessel does not count toward the Shifu's "If you form 2, one of them costs 1 Coin less". A Shifu who forms 1 vessel and Ding's gets no Shifu discount; a Shifu who forms 2 and Ding's gets one. / 暂定裁定：定窑的额外坯不计入师傅“若制2件，其中1件少付1铜钱”所说的2件。师傅只制1件再加定窑的坯，没有师傅的减免；制2件再加定窑的坯，有1次减免。
-- [INT Ding and the discounts revision 5] The Shifu's discount and Decorator's Kit could also reduce Ding's vessel, but each is once per action or round and the vessel that triggers Ding can always carry it. The online game applies them to the action's other vessels; the total is the same. / 师傅的减免与饰坯匣也可以作用于定窑的额外坯，但每项每次行动或每轮只用一次，而触发定窑的那件坯总能承接它。数字版把减免算在该行动的其他坯上，总额相同。
+- [R29] Ding's extra vessel does not count toward the Shifu's "If you form 2, one of them costs 1 Coin less". A Shifu who forms 1 vessel and Ding's gets no Shifu discount; a Shifu who forms 2 and Ding's gets one. / 定窑的额外坯不计入师傅“若制2件，其中1件少付1铜钱”所说的2件。师傅只制1件再加定窑的坯，没有师傅的减免；制2件再加定窑的坯，有1次减免。
+- [R29] The Shifu's discount and Decorator's Kit could also reduce Ding's vessel, but each is once per action or round and the vessel that triggers Ding can always carry it. The online game applies them to the action's other vessels; the total is the same. / 师傅的减免与饰坯匣也可以作用于定窑的额外坯，但每项每次行动或每轮只用一次，而触发定窑的那件坯总能承接它。数字版把减免算在该行动的其他坯上，总额相同。
 
 ### JU — Jun Kiln, Kiln Transformation / 钧窑 · 窑变天成
 
@@ -286,7 +286,7 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 - [L308 · L311] The Imperial Kiln holds 1 ceramic per firing. It does not occupy a Shared Kiln space. / 御窑每次烧成只容纳1件，不占用共窑窑位。
 - [L309] During a Glaze & Load action, 1 vessel loaded by that action may be placed in your empty Imperial Kiln instead of the Shared Kiln. Imperial Priority also loads it. No Tech effect loads it. You pay no Wood when loading into it. / 施釉装窑行动中，该行动装窑的器物可以有1件改放进你空着的御窑，而不放进共窑。御烧优先也可以把器物装进御窑。技艺效果一律不能把器物装进御窑。装进御窑不花柴。
 - [L310 · R11] Loading it chooses the −1, 0 or +1 Imperial modifier. The modifier is public when chosen and is recorded on the ceramic. / 装窑时，选定御窑修正−1、0或+1；它在选定时就公开，并记录在该器物上。
-- [INT Imperial Priority in the Order Phase] A ceramic Imperial Priority loads in the Order Phase stays in your Imperial Kiln through Cleanup and is fired in the next round's firing. Until then your Imperial Kiln is not empty, so no Glaze & Load action can load into it. / 在交货阶段通过御烧优先装进御窑的器物，经过收工仍留在御窑中，到下一轮烧窑时才烧成。在此之前御窑不空，施釉装窑行动不能再装进去。
+- [R28 · INT Imperial Priority in the Order Phase] A ceramic Imperial Priority loads in the Order Phase stays in your Imperial Kiln through Cleanup and is fired in the next round's firing. Until then your Imperial Kiln is not empty, so no Glaze & Load action can load into it. / 在交货阶段通过御烧优先装进御窑的器物，经过收工仍留在御窑中，到下一轮烧窑时才烧成。在此之前御窑不空，施釉装窑行动不能再装进去。
 - [L310] Its Actual Heat is the Kiln Die result + the Fire modifier + that modifier (plus the Kiln Master marker if it carries it), whatever the Contributions were. It still fires during the shared Firing Phase. / 它的实际火候 = 窑骰点数 + 窑火修正 + 御窑修正（+ 窑工标，如有），与控火结果无关；它仍在共同的烧窑阶段烧成。
 - [L311] It counts as a ceramic in this firing for your Techs and abilities, but it does not make you a Contribution participant: only a ceramic in the Shared Kiln does. / 对你的技艺与能力而言，它算作本次烧成中的器物，但不会让你成为控火的参与者：只有共窑中的器物才算。
 - [INT No Contribution participants] If only Imperial Kiln ceramics are loaded, Contributions are skipped and Base Heat is the Kiln Die result; the Fire card is still revealed. / 如果只有御窑器物入窑，就跳过控火，基础火候就是窑骰点数；仍然翻开窑火牌。
@@ -296,7 +296,7 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 ### imperial_priority — Imperial Priority / 御烧优先
 
 - [R10 · R11 · L309] Imperial Priority is free: it pays no Wood. Loading through it chooses the −1, 0 or +1 Imperial modifier like any Imperial load, and the modifier is public. / 御烧优先免费，也不花柴；通过它装窑时，同样选定御窑修正−1、0或+1，它在选定时就公开。
-- [L174 · L314 · INT Imperial Priority in the Order Phase] Imperial Priority is a free action: you may spend it before or after your worker action or in your Order Phase turn. A ceramic it loads in the Order Phase stays in your Imperial Kiln and is fired in the next round's firing; in Round 5 it is never fired. / 御烧优先是自由行动：可以在工人行动之前或之后，或在你的交货阶段回合中使用。在交货阶段装进御窑的器物留在御窑中，到下一轮烧窑时才烧成；第5轮装进的则不会烧成。
+- [L174 · L314 · R28] Imperial Priority is a free action: you may spend it before or after your worker action or in your Order Phase turn. A ceramic it loads in the Order Phase stays in your Imperial Kiln and is fired in the next round's firing; in Round 5 it is never fired. / 御烧优先是自由行动：可以在工人行动之前或之后，或在你的交货阶段回合中使用。在交货阶段装进御窑的器物留在御窑中，到下一轮烧窑时才烧成；第5轮装进的则不会烧成。
 - [L652] Imperial Priority is a token effect, not a worker action. It never counts as a Glaze & Load action and does not trigger effects that require that action. / 御烧优先是令牌效果，不是工人行动。它不算施釉装窑行动，也不触发需要该行动的效果。
 - [R22] If you own Kiln Master, its once-per-round marker may go on the ceramic Imperial Priority loads. / 如果你有窑工，每轮一次的窑工标也可以放在通过御烧优先装进的器物上。
 - [INT Before/after-action window] Imperial Priority and the Colour Samples swap may share a before- or after-action window, in an order you choose. / 御烧优先与色样簿换单同在“工人行动之前或之后”时，二者的先后由你决定。
@@ -383,6 +383,13 @@ Carried over from the V1.6.1 file on 2026-10-18 (engine track, stage 4), under t
 ### Owner revision 5 (changes 36–42, 2026-10-28)
 
 - **Renumbered.** Every `L` tag and inline line reference now cites the English source after owner revision 5 (756 lines), by the map of ENGINE_V1.6.2_DELTA.md §16.2 (`L`n → n for n ≤ 45, n + 7 to 71, n + 8 to 159, n + 18 to 356, n + 19 after); every line revision 5 rewrote was re-read and the item checked against the new text.
-- **Rewritten:** the discounts items of Decorator's Kit and Form & Decorate (L658: the Shifu's discount and Decorator's Kit are two separate reductions, change 40); Ding's discounts item, which keeps only its Large Throwing Wheel clause (L658); Canal Barge's timing item and its INT item (any free-action window, once per round, L170, L176); Second Firing's sale item (R20's after-Quality sale is gone: no free action during the firing, I1); Ru's and Guan's timing items (while completing an Order, in any window, once per round, L499, L176); Ge's target item (any Quality, change 39) and its Crackle VP item (in any window, no limit, L499); the Main Orders' Crackle item (its tag now names INT Ge Crackle revision 5).
-- **Added:** Ding's P6 (its vessel does not count toward the Shifu's "If you form 2") and INT Ding and the discounts (revision 5); Ge's Second Firing item (a crackled Flawed ceramic keeps its marker, I5); Kiln Master's one marker (P7); Colour Samples' swap is not a free action (INT Colour Samples swap); Imperial Priority as a free action, in the Order Phase too, with its carried ceramic (L174, L314, INT Imperial Priority in the Order Phase) on Imperial Priority and the Imperial Gift; held Orders completed as a free action, this round's ceramics after the firing (L417, L176) on the Starting and Main Orders.
+- **Rewritten:** the discounts items of Decorator's Kit and Form & Decorate (L658: the Shifu's discount and Decorator's Kit are two separate reductions, change 40); Ding's discounts item, which keeps only its Large Throwing Wheel clause (L658); Canal Barge's timing item and its INT item (any free-action window, once per round, L170, L176); Second Firing's sale item (R20's after-Quality sale is gone: no free action during the firing, I1, now owner ruling R26); Ru's and Guan's timing items (while completing an Order, in any window, once per round, L499, L176); Ge's target item (any Quality, change 39) and its Crackle VP item (in any window, no limit, L499); the Main Orders' Crackle item (its tag now names INT Ge Crackle revision 5).
+- **Added:** Ding's P6 (its vessel does not count toward the Shifu's "If you form 2"; now owner ruling R29) and INT Ding and the discounts (revision 5); Ge's Second Firing item (a crackled Flawed ceramic keeps its marker, I5, now R30); Kiln Master's one marker (P7); Colour Samples' swap is not a free action (INT Colour Samples swap); Imperial Priority as a free action, in the Order Phase too, with its carried ceramic (L174, L314, INT Imperial Priority in the Order Phase) on Imperial Priority and the Imperial Gift; held Orders completed as a free action, this round's ceramics after the firing (L417, L176) on the Starting and Main Orders.
 - The count goes from 167 to 176 (9 added, none removed).
+
+### Owner rulings R26–R30 (2026-10-30)
+
+- The owner confirmed revision 5's interpretations I1–I5 and provisional default P6 as owner rulings R26–R30 (audit, rulings table). No item's wording changes except Ding's former P6 item, which drops "Provisional ruling:" / 暂定裁定：.
+- **Re-tagged:** Second Firing's sale item `L176 · INT Free-action windows revision 5` → `L176 · R26`; Colour Samples' "not a free action" item `INT Colour Samples swap` → `R28`; Canal Barge's automatic item gains `R30` (`R30 · INT Canal Barge · INT Completion effects across windows`); Ge's target item and its Second Firing item `INT Ge Crackle revision 5` → `R30`; Ding's `P6` → `R29` and its INT Ding and the discounts (revision 5) item → `R29`; the Imperial Gift's carried-ceramic item gains `R28` (`R28 · INT Imperial Priority in the Order Phase`); Imperial Priority's free-action item `L174 · L314 · INT Imperial Priority in the Order Phase` → `L174 · L314 · R28`.
+- Unchanged: the Starting and Main Orders' same-turn delivery items (`L417 · L176 · INT Same-turn delivery`; still an open question, audit question 2), Kiln Master's `P7` item (audit question 1) and the Main Orders' Crackle item (`L484 · INT Ge Crackle revision 5`).
+- The source tags accept `R26`–`R30`; `P6` is no longer a tag. The count stays 176.

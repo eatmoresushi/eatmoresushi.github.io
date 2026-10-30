@@ -5,7 +5,7 @@
  * placement count for it; ceramics fired this round are first available after the firing; the
  * once-per-round completion effects (Ru, Guan, Tribute Ware, Canal Barge) have one use per round
  * across every window; there are no free actions on other players' turns, during the firing, at
- * Setup, in the Setter's Mark window or at Cleanup (I1).
+ * Setup, in the Setter's Mark window or at Cleanup (R26).
  *
  * Window-specific detail lives in `flawed_sale.test.ts`, `order_phase.test.ts`,
  * `imperial_priority.test.ts`, `canal_barge.test.ts` and `work_turn.test.ts`.
@@ -88,7 +88,7 @@ describe("any number, in any order, in each free-action window (rev. 5 L170)", (
     expect(events.map(projectEvent)).toEqual(events);
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } });
     t.expectRuleError("p1", { type: "END_TURN" }, "WORKER_ACTION_REQUIRED");
-    // Nothing is left, so the after-action window does not open (I2).
+    // Nothing is left, so the after-action window does not open (R27).
     const placed = t.act("p1", wharf("p1"));
     expect(only(placed, "WORK_TURN_ENDED").automatic).toBe(true);
   });
@@ -111,7 +111,7 @@ describe("any number, in any order, in each free-action window (rev. 5 L170)", (
     expect(t.state.phase).toMatchObject({ activePlayerId: "p2", step: { kind: "before_action" } });
   });
 
-  it("in the Order Phase turn: the turn closes after the last one (I3)", () => {
+  it("in the Order Phase turn: the turn closes after the last one (R28)", () => {
     const t = new LocalTable(buildState(allThree({ round: 2, phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 } })), { flow: "halt" });
     expect(freeActionOptions(t.view("p1"))?.window).toBe("order_phase");
     const events = [...t.act("p1", complete("S08", ["c2"])), ...t.act("p1", priority("c3"))];
@@ -220,7 +220,7 @@ describe("only on your own turn (rev. 5 L176): NOT_YOUR_DECISION", () => {
   });
 });
 
-describe("never during the firing, at Setup, in the Setter's Mark window or at Cleanup (rev. 5 L176, I1): WRONG_PHASE", () => {
+describe("never during the firing, at Setup, in the Setter's Mark window or at Cleanup (rev. 5 L176, R26): WRONG_PHASE", () => {
   const actions: GameAction[] = [sell("c1"), complete("S08", ["c2"]), priority("c3")];
 
   function refused(t: LocalTable, actor: PlayerId, code: GameRuleErrorCode = "WRONG_PHASE"): void {

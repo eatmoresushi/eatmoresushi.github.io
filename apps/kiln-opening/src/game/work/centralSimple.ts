@@ -22,7 +22,8 @@
  *   made (DESIGN §1 principle 4). Senior Apprentice never applies here (R12; enforced by
  *   `validatePlacement`).
  *
- * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
+ * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2), after recording the
+ * command's `endTurn` (owner UI decision D21, `state.noteEndTurnRequest`; DELTA §16.24).
  */
 
 import { IMPERIAL_TRACK, LOCATIONS, ORDERS } from "../content.ts";
@@ -30,7 +31,7 @@ import { invariant, ruleError } from "../errors.ts";
 import { addToHand, drawMainOrder, takeFaceUpOrder } from "../market.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
 import { advanceRecognitionStep, magistratesHallOpen } from "../recognition.ts";
-import { emit, gain, player, spend } from "../state.ts";
+import { emit, gain, noteEndTurnRequest, player, spend } from "../state.ts";
 import type {
   ActionHandlerTable,
   ActorView,
@@ -53,6 +54,7 @@ function validateCanalWharf(view: ActorView, action: CanalWharfAction): GameRule
 }
 
 function resolveCanalWharf(draft: GameState, playerId: PlayerId, action: CanalWharfAction, ctx: ResolveContext): void {
+  noteEndTurnRequest(draft, playerId, action.endTurn);
   const placement = placeWorker(draft, playerId, action.workerId, "canal_wharf", false, ctx);
   gain(draft, playerId, { coins: LOCATIONS.canal_wharf.effects[placement.effect].coins }, "canal_wharf", ctx);
   if (placement.effect === "shifu") {
@@ -168,6 +170,7 @@ function validateMagistratesHall(view: ActorView, action: MagistratesHallAction)
  * `ORDER_RESERVED` via `magistrates_hall`, `face_up`.
  */
 function resolveMagistratesHall(draft: GameState, playerId: PlayerId, action: MagistratesHallAction, ctx: ResolveContext): void {
+  noteEndTurnRequest(draft, playerId, action.endTurn);
   const placement = placeWorker(draft, playerId, action.workerId, "magistrates_hall", false, ctx);
   const effects = LOCATIONS.magistrates_hall.effects[placement.effect];
   invariant(recognitionGateError(player(draft, playerId), placement.effect) === null, "Magistrate's Hall gate must be validated first");

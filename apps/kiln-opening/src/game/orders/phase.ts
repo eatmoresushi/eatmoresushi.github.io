@@ -3,13 +3,14 @@
  *
  * - Beginning with the First Player and going clockwise, each player may take any number of free
  *   actions (L170, L318): complete held Orders one at a time, sell Flawed ceramics, spend
- *   Imperial Priority (`freeActions.ts`); then they end their turn (`END_ORDER_TURN`). Each
- *   player gets exactly one turn; nobody acts twice.
+ *   Imperial Priority (`freeActions.ts`); then they end their turn (`END_ORDER_TURN`, or
+ *   `endTurn: true` on the last free action, owner UI decision D21). Each player gets exactly
+ *   one turn; nobody acts twice.
  * - It is the first chance to deliver ceramics fired this round (L176, L318). In Round 5, with
  *   the Cleanup trim skipped, it is the last free-action window before scoring.
  * - Only held Orders can be completed; face-up Main Orders never can, and the display does not
  *   change during the phase (L318): nothing here touches `market`.
- * - A turn opens only while `orderTurnOpen` holds (I3): a held Order its player can complete
+ * - A turn opens only while `orderTurnOpen` holds (R28): a held Order its player can complete
  *   (hidden; the accepted precedent, DESIGN §4.5), a Finished Flawed ceramic to sell or a usable
  *   Imperial Priority. Otherwise it is skipped, at its start and after each free action
  *   (`ORDER_TURN_ENDED{automatic: true}`, DESIGN §3.4, §3.7).
@@ -25,7 +26,7 @@ import type { ActionHandlerTable, GameState, PlayerId, ResolveContext } from "..
 import { completableOrderIds } from "./completion.ts";
 
 /**
- * Whether `playerId`'s Order Phase turn has anything in it (I3): a held Order they can complete
+ * Whether `playerId`'s Order Phase turn has anything in it (R28): a held Order they can complete
  * now, a Finished Flawed ceramic to sell, or Imperial Priority usable (Round 5 included, where its
  * ceramic is never fired). The Colour Samples swap is not a free action and does not count.
  */
@@ -69,13 +70,21 @@ export function openOrderPhase(draft: GameState, ctx: ResolveContext): void {
   startNextTurn(draft, ctx);
 }
 
-/** After each free action of the current player's Order Phase turn: the turn ends
- * automatically once nothing is left in it (`orderTurnOpen`). */
-export function continueOrderTurn(draft: GameState, playerId: PlayerId, ctx: ResolveContext): void {
+/**
+ * After each free action of the current player's Order Phase turn: the turn ends automatically
+ * once nothing is left in it (`orderTurnOpen`). Otherwise `endTurnRequested` (the command's
+ * `endTurn: true`, owner UI decision D21's "Deliver · done") ends it as `END_ORDER_TURN` would
+ * (`automatic: false`), so the events are exactly those of the two-command path.
+ */
+export function continueOrderTurn(draft: GameState, playerId: PlayerId, ctx: ResolveContext, endTurnRequested = false): void {
   const phase = phaseAs(draft, "orders");
   invariant(phase.turnOrder[phase.index] === playerId, `${playerId} is not the Order Phase player`);
   if (!orderTurnOpen(draft, playerId)) {
     endTurn(draft, playerId, true, ctx);
+    return;
+  }
+  if (endTurnRequested) {
+    endTurn(draft, playerId, false, ctx);
   }
 }
 

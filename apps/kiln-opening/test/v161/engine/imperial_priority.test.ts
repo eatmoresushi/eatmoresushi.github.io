@@ -1,5 +1,5 @@
 /**
- * Imperial Priority (rev. 5 L174, L314, L448, R10, R11; DESIGN §11 Q1 / audit P1; change 36, I3,
+ * Imperial Priority (rev. 5 L174, L314, L448, R10, R11; DESIGN §11 Q1 / audit P1; change 36, R28,
  * P7): once per game, as a free action, spend the token — free — to give 1 of your Shaped vessels
  * a Glaze and load it into your empty Imperial Kiln with a chosen public modifier. Any free-action
  * window: before or after your worker action, or your Order Phase turn, whose ceramic waits for
@@ -110,7 +110,7 @@ describe("using the token", () => {
     expect(ended.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ automatic: false });
   });
 
-  it("Canal Barge does not open the window by itself: with held Orders but no Finished ceramic the turn ends (I2)", () => {
+  it("Canal Barge does not open the window by itself: with held Orders but no Finished ceramic the turn ends (R27)", () => {
     const t = table({ players: [{ techs: ["T23"], hand: ["S01"] }, {}] });
     const placed = reserveFaceUp(t, "p1:apprentice:1");
     expect(placed.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ playerId: "p1", automatic: true });
@@ -226,7 +226,7 @@ describe("when the token cannot be used", () => {
   });
 });
 
-// ── The Order Phase (rev. 5 L174, L314, L318; I3) ────────────────────────────────────────
+// ── The Order Phase (rev. 5 L174, L314, L318; R28) ────────────────────────────────────────
 
 /** p1 holds the token (Recognition 3) and a Shaped Vase in round `round`'s Order Phase, First
  * Player p1; nothing else is loaded, nobody holds an Order or a Finished ceramic. */
@@ -256,7 +256,7 @@ function placeEveryWorker(t: LocalTable): void {
   }
 }
 
-describe("Imperial Priority in the Order Phase (rev. 5 L174, L314; I3)", () => {
+describe("Imperial Priority in the Order Phase (rev. 5 L174, L314; R28)", () => {
   it("opens the Order Phase turn by itself, is legal there with no Wood, and the turn ends once it is spent", () => {
     const t = orderPhaseHolder(2, { resources: { clay: 0, wood: 0, coins: 0 } });
     expect(t.prompt()).toEqual({ phaseType: "orders", actorIds: ["p1"], mode: "single" });

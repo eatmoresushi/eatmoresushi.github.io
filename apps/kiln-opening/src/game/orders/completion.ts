@@ -15,7 +15,7 @@
  *   Ware's Crown never counts, R13). Optional.
  * - Canal Barge (T23, rev. 5 L637): 2 Coins on the first Order its owner completes each round,
  *   Starting Orders included, in whichever window that completion is. Automatic (INT: Canal
- *   Barge, I5): declining could only move the same 2 Coins to a later completion of the round.
+ *   Barge, R30): declining could only move the same 2 Coins to a later completion of the round.
  * - Crackle VP (Ge, L484, L499, change 29): 1 VP for each Crackle ceramic delivered,
  *   recorded with the Order (`CompletedOrderRecord.crackleVp`) as Kiln Tradition VP (rev. 4
  *   L506). Automatic, no once-per-round limit, never declined (INT Ge Crackle, revision 4).

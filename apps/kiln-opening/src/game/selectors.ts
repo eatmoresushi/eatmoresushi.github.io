@@ -45,7 +45,16 @@ import { validateAction } from "./engine.ts";
 import { ruleError } from "./errors.ts";
 import { legalContributions } from "./firing/contributions.ts";
 import { contributionHeat, contributionWood } from "./firing/heat.ts";
-import { colourSamplesSwapUsable, freeActionWindowOf, imperialPriorityUsable, sellableFlawed } from "./freeActionWindow.ts";
+import {
+  END_TURN_COMMAND_TYPES,
+  FREE_ACTION_END_TURN_TYPES,
+  afterActionWindowOpen,
+  colourSamplesSwapUsable,
+  endTurnRequestError,
+  freeActionWindowOf,
+  imperialPriorityUsable,
+  sellableFlawed,
+} from "./freeActionWindow.ts";
 import { availableKilns, kilnAbilityReady } from "./kilns.ts";
 import { kilnMasterOptionFor, loadDestinationOptions } from "./kilnLoading.ts";
 import { lookCount, reservable } from "./market.ts";
@@ -69,6 +78,8 @@ import type {
   CostQuote,
   CrackleDeclaration,
   CrackleDeclarationChecks,
+  EndTurnCommandType,
+  EndTurnOptions,
   FiringContext,
   FiringStageCeramic,
   FiringStageView,
@@ -1053,6 +1064,67 @@ export function freeActionOptions(view: PlayerView): FreeActionOptions | null {
     sellableCeramicIds: sellableFlawed(view.game, viewerId),
     imperialPriority: imperialPriorityUsable(view.game, viewerId),
   };
+}
+
+// "End the turn afterwards" (owner UI decision D21; DELTA §16.24). Re-exported for the UI.
+export { END_TURN_COMMAND_TYPES } from "./freeActionWindow.ts";
+
+/** The commands each Work step finishes or continues the worker action with (D21). */
+const WORKER_ACTION_COMMANDS: { readonly [K in "before_action" | "commission_market" | "colour_samples" | "guild_inspection"]: readonly EndTurnCommandType[] } = {
+  before_action: [
+    "PLACE_MATERIALS_YARD",
+    "PLACE_FORM_DECORATE",
+    "PLACE_GLAZE_LOAD",
+    "PLACE_COMMISSION_MARKET",
+    "PLACE_GUILD_HALL",
+    "PLACE_CANAL_WHARF",
+    "PLACE_MAGISTRATES_HALL",
+  ],
+  commission_market: ["SELECT_CHOOSE"],
+  colour_samples: ["SELECT_CHOOSE"],
+  guild_inspection: ["GUILD_TAKE", "GUILD_FINISH"],
+};
+
+/**
+ * The "end the turn afterwards" request the viewer may put on a command now (owner UI decision
+ * D21, `EndTurnRequest`): null unless it is the viewer's own Work turn or Order Phase turn.
+ * `commandTypes` are the types of the current step that accept `endTurn: true` (the validators'
+ * own `endTurnRequestError` decides, so the list agrees with them); `afterActionWouldOpen` reuses
+ * `afterActionWindowOpen` (R27) on the viewer's public view; `requested` reads the public
+ * `work_turn.endTurnAfterAction`. Nothing here reads a hand, the viewer's own included, so the
+ * same public state gives every viewer in the same seat the same answer.
+ */
+export function endTurnOptions(view: PlayerView): EndTurnOptions | null {
+  const viewerId = view.viewerId;
+  if (viewerId === null || view.own === null || seatedPlayer(view.game, viewerId) === null) {
+    return null;
+  }
+  const game = view.game;
+  const phase = game.phase;
+  const accepted = (types: readonly EndTurnCommandType[]): EndTurnCommandType[] =>
+    END_TURN_COMMAND_TYPES.filter((type) => types.includes(type) && endTurnRequestError(game, viewerId, { type, endTurn: true }) === null);
+  if (phase.type === "orders") {
+    if (phase.turnOrder[phase.index] !== viewerId) {
+      return null;
+    }
+    return { stage: "order_phase", commandTypes: accepted(FREE_ACTION_END_TURN_TYPES), afterActionWouldOpen: false, requested: false };
+  }
+  if (phase.type !== "work_turn" || phase.activePlayerId !== viewerId) {
+    return null;
+  }
+  const step = phase.step;
+  // True in `after_action`, where the step is open only while the predicate holds (R27).
+  const common = { afterActionWouldOpen: afterActionWindowOpen(game, viewerId), requested: phase.endTurnAfterAction === true };
+  switch (step.kind) {
+    case "before_action":
+      return { stage: "before_action", commandTypes: accepted(WORKER_ACTION_COMMANDS.before_action), ...common };
+    case "after_action":
+      return { stage: "after_action", commandTypes: accepted(FREE_ACTION_END_TURN_TYPES), ...common };
+    case "colour_samples_swap":
+      return { stage: "colour_samples_swap", commandTypes: accepted(["SELECT_CHOOSE"]), ...common };
+    default:
+      return { stage: "worker_action", commandTypes: accepted(WORKER_ACTION_COMMANDS[step.kind]), ...common };
+  }
 }
 
 /**

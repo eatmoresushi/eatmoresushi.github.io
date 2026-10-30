@@ -3,7 +3,7 @@
  * Protective Saggars (its floor at Quality and its once-per-round Standard → Fine step), Second
  * Firing (2 cards revealed, 1 chosen, an unused Jun with the choice), Ge's Crackle on a Fine or
  * Standard ceramic (change 29) in the owner's chosen order with eligibility rechecked after each
- * use, no sale during the firing (rev. 5 L176, I1: R20's after-Quality window is withdrawn; the
+ * use, no sale during the firing (rev. 5 L176, R26: R20's after-Quality window is withdrawn; the
  * salvage step is gone), and finishing.
  */
 
@@ -489,7 +489,7 @@ describe("an unused Jun on the Second Firing recalculation, with the choice (L64
   });
 });
 
-describe("Ge Crackle (rev. 5 L482–484, L660; changes 29, 39; I5)", () => {
+describe("Ge Crackle (rev. 5 L482–484, L660; changes 29, 39; R30)", () => {
   it("lists every own ceramic of this firing, any Quality, and turns a Standard one Fine with a Crackle marker", () => {
     const table = openFiringTable(aqSpec(withTechs([], "GE")));
     tendAll(table);
@@ -536,7 +536,7 @@ describe("Ge Crackle (rev. 5 L482–484, L660; changes 29, 39; I5)", () => {
   it.each([
     ["c4", "masterpiece"],
     ["c1", "flawed"],
-  ] as const)("crackles %s, a %s ceramic, which keeps its Quality (rev. 5 L482, change 39, I5)", (ceramicId, quality) => {
+  ] as const)("crackles %s, a %s ceramic, which keeps its Quality (rev. 5 L482, change 39, R30)", (ceramicId, quality) => {
     const table = openFiringTable(aqSpec(withTechs([], "GE")));
     tendAll(table);
     const events = table.act("p1", { type: "USE_GE_CRACKLE", ceramicId });
@@ -636,7 +636,7 @@ describe("Ge Crackle (rev. 5 L482–484, L660; changes 29, 39; I5)", () => {
     expectDocumentedDetails(crackledFirst.expectRuleError("p1", { type: "USE_SECOND_FIRING", ceramicId: "c2" }, "INVALID_TARGET"));
   });
 
-  it("Ge on a Flawed ceramic, then Second Firing on it: the new Quality stands, the marker stays, no second Fine upgrade (I5)", () => {
+  it("Ge on a Flawed ceramic, then Second Firing on it: the new Quality stands, the marker stays, no second Fine upgrade (R30)", () => {
     const table = openFiringTable(aqSpec(withTechs(["T14"], "GE"), [0, 1, 2]));
     tendAll(table);
     table.act("p1", { type: "USE_GE_CRACKLE", ceramicId: "c1" });
@@ -689,7 +689,7 @@ describe("Ge Crackle (rev. 5 L482–484, L660; changes 29, 39; I5)", () => {
   });
 });
 
-describe("no sale during the firing (rev. 5 L176; I1 withdraws R20's after-Quality window)", () => {
+describe("no sale during the firing (rev. 5 L176; R26 withdraws R20's after-Quality window)", () => {
   /**
    * p1 (Second Firing, Kiln Furniture): c1 Moon White in Low over Kiln Furniture −1 → 1, Flawed;
    * c2 White in High → 3, Standard; c4 Moon White in Middle → 2, Standard; c5 a Finished Flawed

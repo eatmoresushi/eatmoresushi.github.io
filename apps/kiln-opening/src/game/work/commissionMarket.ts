@@ -19,14 +19,15 @@
  *   and `LOOKED_ORDERS_DISCARDED.secret`; public payloads carry counts and face-up IDs only.
  *
  * Layer 4 (P4). Imports layers 0–3 and the Select model; the reservation hands over through
- * `ctx.flow.workerActionDone` in `work/selectChoose.ts`.
+ * `ctx.flow.workerActionDone` in `work/selectChoose.ts`. The placement records its `endTurn`
+ * (owner UI decision D21, `state.noteEndTurnRequest`), remembered through the Select.
  */
 
 import { LOCATIONS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { reservable } from "../market.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
-import { phaseAs } from "../state.ts";
+import { noteEndTurnRequest, phaseAs } from "../state.ts";
 import type { ActionHandlerTable, WorkerEffect } from "../types.ts";
 import { openSelect } from "./select.ts";
 
@@ -64,6 +65,8 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_COMMISSION_MARKET"> = {
       return null;
     },
     resolve: (draft, actorId, action, ctx) => {
+      // D21: a request to end the turn is remembered through the Select (`SELECT_CHOOSE`).
+      noteEndTurnRequest(draft, actorId, action.endTurn);
       const placement = placeWorker(draft, actorId, action.workerId, LOCATION, action.seniorApprentice === true, ctx);
       const effect = placement.effect;
       const { n, maxReservations } = commissionLimits(effect);

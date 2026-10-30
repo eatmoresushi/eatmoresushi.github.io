@@ -176,7 +176,7 @@ describe("Cleanup step 2: hand limit 4, or 5 with Colour Samples (L229, L325, L6
     expect(state.round).toBe(3);
   });
 
-  it("is no free-action window: a pending player may not sell, complete or spend Imperial Priority (rev. 5 L176, I1)", () => {
+  it("is no free-action window: a pending player may not sell, complete or spend Imperial Priority (rev. 5 L176, R26)", () => {
     const state = cleanupState({ players: [{ hand: ["S01", "S02", "O10", "O11", "O12"], recognition: 3 }, {}] });
     const flawed = stageCeramic(state, { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" }).id;
     const white = stageCeramic(state, { owner: "p1", stage: "finished", shape: "plate", glaze: "white", quality: "standard" }).id;

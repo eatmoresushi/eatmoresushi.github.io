@@ -7,7 +7,7 @@
  * use, and a player with nothing eligible left is advanced automatically (DESIGN §3.3, §3.7).
  * One player's turn holds at most one of Protective Saggars / Second Firing (both Firing
  * Techs, L240) plus Ge if they own the Ge Kiln, so the order matters only between Ge and that
- * Tech. There are no free actions during the firing (rev. 5 L176, I1): nothing is sold here, and
+ * Tech. There are no free actions during the firing (rev. 5 L176, R26): nothing is sold here, and
  * a Flawed ceramic of this firing becomes a Finished one, sellable from its owner's Order Phase
  * turn on.
  *
@@ -18,12 +18,12 @@
  *
  * Ge (rev. 5 L482, L660, change 39): once per round, 1 of the owner's ceramics from this firing,
  * of any Quality, develops Crackle; a Standard one becomes Fine, a Masterpiece, Fine or Flawed
- * one keeps its Quality (I5: nothing printed excludes a Masterpiece or a Flawed target; a
+ * one keeps its Quality (R30: nothing printed excludes a Masterpiece or a Flawed target; a
  * Flawed one gains nothing). Saggars' Standard → Fine step and then Crackle may both apply to
  * one ceramic; Crackle on a Standard one first leaves no Standard for Saggars' step. A Second
  * Firing may still recalculate a crackled Flawed ceramic afterwards (a crackled Standard one is
  * Fine already): the new Quality stands and the ceramic keeps its marker, with no further
- * Standard → Fine (I5; INT Ge Crackle revision 5). Its 1 VP per delivered Crackle ceramic is scored at Order completion
+ * Standard → Fine (R30; INT Ge Crackle revision 5). Its 1 VP per delivered Crackle ceramic is scored at Order completion
  * (`orders/completion.ts`, rev. 5 L484).
  *
  * Second Firing (T14, L646): `USE_SECOND_FIRING` reveals 2 extra Fire cards
@@ -338,7 +338,7 @@ function resolveSecondFiringChoice(
     });
   }
   record.second = second;
-  // A crackled ceramic keeps `record.crackle` (I5): only its Quality is replaced, and Ge's
+  // A crackled ceramic keeps `record.crackle` (R30): only its Quality is replaced, and Ge's
   // Standard → Fine does not apply again to the new Quality.
   const neverFlawed = saggarsProtects(player(draft, record.ownerId));
   const quality = qualityFor(second.heatDifference, neverFlawed);
@@ -416,7 +416,7 @@ export function finishFiring(draft: GameState, ctx: ResolveContext): void {
       firedInRound: firing.round,
       stage: "finished" as const,
     };
-    // A Crackle ceramic keeps its own Quality (rev. 5 L482, change 39; I5).
+    // A Crackle ceramic keeps its own Quality (rev. 5 L482, change 39; R30).
     const finished: FinishedCeramic = { ...core, crackle: record.crackle, quality: record.quality };
     draft.ceramics[loaded.id] = finished;
     finishedCeramicIds.push(loaded.id);

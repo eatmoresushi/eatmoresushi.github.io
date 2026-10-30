@@ -129,6 +129,9 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     detailKeys: keys("workerId", "workerKind"),
   },
   WORKER_ACTION_REQUIRED: {
+    // `END_TURN` before the worker action, and (owner UI decision D21) `endTurn: true` on a free
+    // action or a swap's Select there (details `field: "endTurn"`, `actionType`, `step`): ending
+    // the turn before placing is passing, so the same sentence fits both.
     en: "You may not pass in the Work Phase: place 1 worker (the Canal Wharf is always available).",
     zh: "派工阶段不能跳过，请派1名工人（总是可以派往漕运码头）",
     detailKeys: keys(),

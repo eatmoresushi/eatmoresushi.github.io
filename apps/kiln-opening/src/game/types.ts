@@ -45,7 +45,7 @@ export type PlayerId = string;
 /**
  * A free-action window (rev. 5 L168–176): the actor's own Work turn before or after the worker
  * action (not during it, so not in a Work sub-step), or the actor's own Order Phase turn. Never
- * another player's turn, the firing, Setup, the Setter's Mark window or Cleanup (I1).
+ * another player's turn, the firing, Setup, the Setter's Mark window or Cleanup (R26).
  */
 export type FreeActionWindow = "before_action" | "after_action" | "order_phase";
 /** `${playerId}:shifu` or `${playerId}:apprentice:${1|2|3}`. */
@@ -407,7 +407,7 @@ export interface LoadedCeramic extends CeramicCore {
   glaze: Glaze;
   /**
    * The round it was loaded: the current round, except for a ceramic loaded by Imperial Priority
-   * in the Order Phase (rev. 5 L170, L174, L314; I3). The firing of that round is over, so it
+   * in the Order Phase (rev. 5 L170, L174, L314; R28). The firing of that round is over, so it
    * waits in its owner's Imperial Kiln through Cleanup and the next Start of Round and is fired
    * in the next round's firing (in Round 5 it stays loaded and scores nothing).
    */
@@ -438,7 +438,7 @@ export interface FiredCeramicCore extends CeramicCore {
  * exhibited, L116). Since change 39 the two are independent: Ge crackles 1 ceramic of any
  * Quality from this firing and raises only a Standard one to Fine; a Masterpiece, Fine or
  * Flawed one keeps its Quality, and a Second Firing may later recalculate a crackled Flawed
- * ceramic, which keeps its marker (I5). Replaces the revision-4 union that made a Crackle
+ * ceramic, which keeps its marker (R30). Replaces the revision-4 union that made a Crackle
  * ceramic exactly Fine. `assertInvariants` checks that only a Ge owner's ceramics carry it.
  */
 export interface FinishedQuality {
@@ -692,8 +692,8 @@ export interface FiringCeramicRecord {
   history: QualityChange[];
   /** Ge Crackle applied this firing (rev. 5 L482, change 39): on a ceramic of any Quality; only
    * a Standard one's Quality changes (to Fine). A later Second Firing recalculation keeps it
-   * (I5). Revision 4's `sold` is gone: there are no free actions during the firing (rev. 5
-   * L176, I1), so nothing leaves it early. */
+   * (R30). Revision 4's `sold` is gone: there are no free actions during the firing (rev. 5
+   * L176, R26), so nothing leaves it early. */
   crackle: boolean;
 }
 
@@ -799,7 +799,8 @@ export type WorkTurnStep =
   | {
       /** Before-action window (L82, rev. 5 L168–176, L632): the free actions (SELL_FLAWED,
        * COMPLETE_ORDER, USE_IMPERIAL_PRIORITY) and USE_COLOUR_SAMPLES_SWAP, in any order and any
-       * number, then a PLACE_* worker action. END_TURN is illegal until the worker action resolves. */
+       * number, then a PLACE_* worker action. END_TURN is illegal until the worker action resolves,
+       * and so is `endTurn: true` on a free action or a swap's Select (D21, `EndTurnRequest`). */
       kind: "before_action";
     }
   | {
@@ -841,9 +842,11 @@ export type WorkTurnStep =
   | {
       /**
        * After-action window (rev. 5 L168–176, L632): the free actions (SELL_FLAWED,
-       * COMPLETE_ORDER, USE_IMPERIAL_PRIORITY), USE_COLOUR_SAMPLES_SWAP, END_TURN. Opened, and
+       * COMPLETE_ORDER, USE_IMPERIAL_PRIORITY), USE_COLOUR_SAMPLES_SWAP, END_TURN (or `endTurn:
+       * true` on a free action or the swap's Select, D21; a worker action that asked for it never
+       * opens this step, `EndTurnRequest`). Opened, and
        * kept open after each of them, only while it can offer something on public facts alone
-       * (I2, DESIGN §4.5, so the window leaks nothing about the hand): the Colour Samples swap
+       * (R27, DESIGN §4.5, so the window leaks nothing about the hand): the Colour Samples swap
        * ready with at least 1 held Order, Imperial Priority usable, a Finished Flawed ceramic to
        * sell, or at least 1 held Order with at least 1 Finished ceramic that is not Flawed.
        * Otherwise the turn ends automatically (`afterActionWindowOpen`).
@@ -871,6 +874,17 @@ export type GamePhase =
       type: "work_turn";
       activePlayerId: PlayerId;
       step: WorkTurnStep;
+      /**
+       * Owner UI decision D21 (`EndTurnRequest`, DELTA §16.24): a command of the worker action now
+       * in progress asked to end the turn when the action finishes. It lives only while one of
+       * the action's sub-steps is open (`commission_market`, `guild_inspection`,
+       * `colour_samples`); `completeWorkerAction` consumes it, and a new turn never has it. A
+       * later command of the same action that carries `endTurn` replaces it (`false` withdraws
+       * it). Public: it is the actor's own choice of pace, carried by their own command; it names
+       * no card and changes nothing the other players could not see a moment later, when the
+       * turn ends (the after-action step opens on public facts alone, R27).
+       */
+      endTurnAfterAction?: true;
     }
   | {
       /** Appendix D step 1 (L678). Secret, simultaneous; any eligible player may submit in any
@@ -900,7 +914,7 @@ export type GamePhase =
   | {
       /**
        * Appendix D step 5 (L682): Saggars, Second Firing, Ge in each owner's chosen order,
-       * in First Player order. No free action here (rev. 5 L176, I1): nothing is sold or
+       * in First Player order. No free action here (rev. 5 L176, R26): nothing is sold or
        * completed during the firing.
        */
       type: "firing_after_quality";
@@ -922,7 +936,7 @@ export type GamePhase =
       /**
        * Phase 4 (rev. 5 L143, L318): a single pass in First Player order; each turn is a
        * free-action window (L170). A turn opens only while its player has a held Order they can
-       * complete, a Finished Flawed ceramic to sell or a usable Imperial Priority (I3,
+       * complete, a Finished Flawed ceramic to sell or a usable Imperial Priority (R28,
        * `orderTurnOpen`); otherwise it is skipped automatically.
        */
       type: "orders";
@@ -932,7 +946,7 @@ export type GamePhase =
   | {
       /** Cleanup step 2 (L325). Skipped in Round 5 (INT). Independent, any order
        * (`DecisionPrompt.mode === "parallel"`). Cleanup is not a free-action window (rev. 5 L170,
-       * I1): the trim is the only choice. */
+       * R26): the trim is the only choice. */
       type: "cleanup_hand_limit";
       pendingPlayerIds: PlayerId[];
       /**
@@ -1159,6 +1173,31 @@ export interface OrderCompletionSpec {
   declineTributeWare?: boolean;
 }
 
+/**
+ * "End the turn afterwards" (owner UI decision D21, 2026-10-30; DELTA §16.24): an optional field
+ * on every command that can finish a worker action and on the free actions, so a client ends a
+ * Work turn (or an Order Phase turn) in the same command as its last confirm and the other
+ * players see one change. Absent means no request: the command behaves exactly as without the
+ * field (the computer players and the canonical fallback always omit it).
+ *
+ * - **Worker action** (`PLACE_*`, `SELECT_CHOOSE` in a worker action's Select, `GUILD_TAKE`,
+ *   `GUILD_FINISH`): `true` ends the turn when the worker action finishes (the deferred refills,
+ *   `WORK_TURN_ENDED`, the next player) instead of opening the after-action step. A request on a
+ *   command that does not finish the action is remembered for the rest of it
+ *   (`work_turn.endTurnAfterAction`); a later command of the same action that carries the field
+ *   replaces it, so `false` withdraws it.
+ * - **After the worker action, or in the Order Phase** (`SELL_FLAWED`, `COMPLETE_ORDER`,
+ *   `USE_IMPERIAL_PRIORITY`, the Colour Samples swap's `SELECT_CHOOSE`): `true` applies the
+ *   action, then ends the turn as `END_TURN` / `END_ORDER_TURN` would (unless the turn already
+ *   ended by itself, R27, R28).
+ * - **Before the worker action**: `true` on a free action, or on the `SELECT_CHOOSE` of a swap
+ *   used there, is `WORKER_ACTION_REQUIRED` (the placement is still due); `false` changes
+ *   nothing.
+ */
+export interface EndTurnRequest {
+  endTurn?: boolean;
+}
+
 export type GameAction =
   // ── Setup ──────────────────────────────────────────────────────────────────────────
   | {
@@ -1177,7 +1216,7 @@ export type GameAction =
   /** Setter's Mark on an empty active space, or null to decline (INT: optional). */
   | { type: "PLACE_SETTERS_MARK"; spaceId: KilnSpaceId | null }
   // ── Work: worker actions (one per turn; L158) ──────────────────────────────────────
-  | {
+  | ({
       /**
        * Materials Yard (L194–195, change 34). clay + wood = 4 (Apprentice) or 8 (Shifu
        * effect, incl. Senior Apprentice, R12). Resolution order, each step validated against the
@@ -1199,8 +1238,8 @@ export type GameAction =
        * enumeration never generates it (DESIGN §5.2).
        */
       preparedClay?: { shape: Shape; decoration: Decoration; useDecoratorsKit?: boolean };
-    }
-  | {
+    } & EndTurnRequest)
+  | ({
       /**
        * Form & Decorate (rev. 5 L201–204, change 30), on your first free unlocked space. Each
        * vessel costs its Shape's Clay + 2 Coins, any Decoration. Placement is legal if at least
@@ -1212,11 +1251,11 @@ export type GameAction =
       workerId: WorkerId;
       /** 1 (Apprentice) or 1–2 (Shifu). Forming 2 with the Shifu reduces one vessel's cost by
        * 1 Coin (rev. 5 L202); the engine applies it. Ding's vessel is not one of these and never
-       * counts toward the 2 (I4, P6). */
+       * counts toward the 2 (R29). */
       vessels: FormVesselSpec[];
       /** Ding (rev. 5 L488, change 40, R1): after forming a Bowl/Plate/Brush Washer, pay 1 Clay
        * + 2 Coins for one more of the same Shape, any Decoration, outside the vessel limit. The
-       * reductions stay on `vessels` (I4: same total and affordability, rev. 5 L658). */
+       * reductions stay on `vessels` (R29: same total and affordability, rev. 5 L658). */
       dingExtra?: { copyOfVesselIndex: number; decoration: Decoration };
       /** Large Throwing Wheel (T01, L621): total Clay −2 (min 0) if ≥1 Vase/Censer formed. */
       useLargeThrowingWheel?: boolean;
@@ -1225,8 +1264,8 @@ export type GameAction =
        * Never together with `useLargeThrowingWheel` in reachable play (both Workshop, L240);
        * the validator still handles both. */
       decoratorsKitVesselIndex?: number;
-    }
-  | {
+    } & EndTurnRequest)
+  | ({
       /**
        * Glaze & Load (L207–217), on your first free unlocked space. The action pays 1
        * Wood when any of its loads goes into the Shared Kiln, whether it loads 1 vessel or 2;
@@ -1237,8 +1276,8 @@ export type GameAction =
       workerId: WorkerId;
       /** 1 (Apprentice) or 1–2 (Shifu). */
       loads: LoadSpec[];
-    }
-  | {
+    } & EndTurnRequest)
+  | ({
       /**
        * Commission Market (v1.6.2 L219–230). Placing the worker always opens the Select: 2 for
        * the Apprentice effect, 3 for the Shifu effect, as many cards as remain (B1); the
@@ -1248,8 +1287,8 @@ export type GameAction =
       type: "PLACE_COMMISSION_MARKET";
       workerId: WorkerId;
       seniorApprentice?: boolean;
-    }
-  | {
+    } & EndTurnRequest)
+  | ({
       /** Guild Hall (v1.6.2 L232–244). Apprentice: `buy_face_up` at printed cost. Shifu:
        * `inspect` a discipline (even one already owned, B2), then GUILD_TAKE (1 or 2) and
        * GUILD_FINISH. Legal for either worker only if an affordable face-up Tech of a discipline
@@ -1257,15 +1296,15 @@ export type GameAction =
       type: "PLACE_GUILD_HALL";
       workerId: WorkerId;
       choice: { kind: "buy_face_up"; techId: TechId } | { kind: "inspect"; discipline: TechDiscipline };
-    }
-  | {
+    } & EndTurnRequest)
+  | ({
       /** Canal Wharf (v1.6.2 L245–250): 2 Coins (Apprentice); 4 Coins, then the top Main Order
        * unseen into the hand, none when the deck and discard are both empty (Shifu, B1).
        * Uncapped and always legal (L165). */
       type: "PLACE_CANAL_WHARF";
       workerId: WorkerId;
-    }
-  | {
+    } & EndTurnRequest)
+  | ({
       /**
        * Magistrate's Hall (L252–263, change 33): both workers pay 4 Coins for +1
        * Recognition, only at 0–2. The Shifu then may reserve 1 face-up Crown Order from the
@@ -1277,9 +1316,9 @@ export type GameAction =
       type: "PLACE_MAGISTRATES_HALL";
       workerId: WorkerId;
       crownOrder?: { slotIndex: number; orderId: OrderId };
-    }
+    } & EndTurnRequest)
   // ── Work: sub-steps that follow a private reveal ───────────────────────────────────
-  | {
+  | ({
       /**
        * The reservations of an open Select (v1.6.2 L80, change 25): the Commission Market's
        * (L225–228), Colour Samples' when acquired or its swap's (L632). 1 to the step's
@@ -1289,8 +1328,8 @@ export type GameAction =
        */
       type: "SELECT_CHOOSE";
       reservations: SelectPick[];
-    }
-  | {
+    } & EndTurnRequest)
+  | ({
       /**
        * Guild Hall Shifu: take 1 Tech, face-up (showing now: a taken position stays empty
        * until the turn ends, v1.6.2 L239) or inspected, paying its printed cost (v1.6.2 L237;
@@ -1299,8 +1338,8 @@ export type GameAction =
        */
       type: "GUILD_TAKE";
       take: GuildTake;
-    }
-  | {
+    } & EndTurnRequest)
+  | ({
       /**
        * Guild Hall Shifu, after at least 1 take ("up to 2" is never 0, L164): stop taking and
        * put every untaken inspected Tech on the bottom of its deck. `bottomOrder` lists each
@@ -1308,7 +1347,7 @@ export type GameAction =
        */
       type: "GUILD_FINISH";
       bottomOrder: TechId[];
-    }
+    } & EndTurnRequest)
   // ── Work: before/after-action window ───────────────────────────────────────────────
   | {
       /**
@@ -1321,11 +1360,11 @@ export type GameAction =
       type: "USE_COLOUR_SAMPLES_SWAP";
       discardOrderId: OrderId;
     }
-  | {
+  | ({
       /**
        * Imperial Priority (rev. 5 L174, L314, R10): a free action, once per game, no Wood; a
        * Shaped vessel → your empty Imperial Kiln. Legal in any free-action window: before or
-       * after your worker action and in your Order Phase turn (I3). A ceramic loaded in the
+       * after your worker action and in your Order Phase turn (R28). A ceramic loaded in the
        * Order Phase is fired in the next round's firing (never in Round 5).
        */
       type: "USE_IMPERIAL_PRIORITY";
@@ -1336,7 +1375,7 @@ export type GameAction =
       reworkShape?: Shape;
       /** Kiln Master's marker on this ceramic (T24, L647, R22: any loading). */
       kilnMaster?: HeatDelta;
-    }
+    } & EndTurnRequest)
   | { /** End your Work turn; triggers the deferred Main display refill (L221). */ type: "END_TURN" }
   // ── Firing ─────────────────────────────────────────────────────────────────────────
   | { /** Test Pieces: pay 1 Wood and peek privately, or decline (L645). */ type: "TEST_PIECES_DECIDE"; peek: boolean }
@@ -1379,24 +1418,30 @@ export type GameAction =
     }
   | { /** Finish your after-Quality turn; remaining abilities are declined (R4). */ type: "END_AFTER_QUALITY" }
   // ── Free actions (rev. 5 L168–176) ───────────────────────────────────────────────────
-  | {
+  | ({
       /**
        * Sell 1 of your Finished Flawed ceramics for 2 Coins and return its Vessel card (rev. 5
        * L172, L300, L302). A free action: only in a free-action window (`FreeActionWindow`), never
-       * during the firing or at Cleanup (I1). It never ends a turn by itself, but an after-action
+       * during the firing or at Cleanup (R26). It never ends a turn by itself, but an after-action
        * window or Order Phase turn with nothing left closes after it.
        */
       type: "SELL_FLAWED";
       ceramicId: CeramicId;
-    }
+    } & EndTurnRequest)
   /** Complete 1 held Order (rev. 5 L173, L417, L422): a free action in any free-action window. */
-  | ({ type: "COMPLETE_ORDER" } & OrderCompletionSpec)
+  | ({ type: "COMPLETE_ORDER" } & OrderCompletionSpec & EndTurnRequest)
   // ── Order Phase ────────────────────────────────────────────────────────────────────
   | { type: "END_ORDER_TURN" }
   // ── Cleanup ────────────────────────────────────────────────────────────────────────
   | { /** Discard exactly hand − limit Orders (4, or 5 with Colour Samples) (L325). */ type: "DISCARD_TO_HAND_LIMIT"; orderIds: OrderId[] };
 
 export type GameActionType = GameAction["type"];
+
+/** The command types that take `endTurn` (owner UI decision D21, `EndTurnRequest`): derived from
+ * `GameAction`, so a variant gains or loses the field in one place. */
+export type EndTurnCommandType = {
+  [K in GameActionType]: "endTurn" extends keyof Extract<GameAction, { type: K }> ? K : never;
+}[GameActionType];
 
 /** Secret Contribution (Appendix D step 1). Applied through `submitContribution`, which
  * also receives and returns the `PrivateFiringState`. Shape-checked by `parseCommand`
@@ -2042,8 +2087,8 @@ export interface ClarificationDefinition {
   zh: string;
   /**
    * The source label, one or more tags joined by " · ": `L124` (V1.6.2 rulebook line), `A1`
-   * (amendment), `R1`–`R25` / `B1`–`B3` (owner rulings), `ED L124` (editorial correction),
-   * `INT <name>` (recorded interpretation), `P1`–`P3` and `P6`–`P7` (provisional rulings), `D7` (owner UI decision).
+   * (amendment), `R1`–`R30` / `B1`–`B3` (owner rulings), `ED L124` (editorial correction),
+   * `INT <name>` (recorded interpretation), `P1`–`P3` and `P7` (provisional rulings), `D7` (owner UI decision).
    */
   source: string;
 }
@@ -2660,6 +2705,35 @@ export interface SellFlawedOptions {
    * ceramic. */
   ceramicIds: CeramicId[];
   coins: number;
+}
+
+/**
+ * The "end the turn afterwards" request the viewer may put on a command now (owner UI decision
+ * D21, `endTurnOptions`; DELTA §16.24): non-null only on the viewer's own Work turn or Order
+ * Phase turn. Public facts and the viewer's own request only: nothing here reads the hand, so
+ * the UI's split buttons never depend on what another player holds.
+ */
+export interface EndTurnOptions {
+  /** Where the viewer's turn stands: before the worker action, during it (a Select or the Guild
+   * Hall inspection), during the Colour Samples swap's Select, after the action, or the Order
+   * Phase turn. */
+  stage: "before_action" | "worker_action" | "colour_samples_swap" | "after_action" | "order_phase";
+  /** The command types on which `endTurn: true` is accepted now, in `GameAction` order (each
+   * command must still be legal on its own). Before the action: the placements. During it: the
+   * step's `SELECT_CHOOSE`, or `GUILD_TAKE` and `GUILD_FINISH`. In the swap's Select:
+   * `SELECT_CHOOSE` only when the swap was used after the worker action. After the action and in
+   * the Order Phase: the three free actions. `endTurn: false` is accepted on every type of
+   * `END_TURN_COMMAND_TYPES` wherever the command itself is. */
+  commandTypes: EndTurnCommandType[];
+  /** In a Work turn: whether the after-action step would open (or stay open) with the public
+   * facts as they stand now (`afterActionWindowOpen`, R27). Before or during the worker action
+   * or the swap's Select, the action itself may still change those facts (a reservation raises
+   * the hand count, a milestone brings Imperial Priority), so it is a hint, not a promise. True
+   * after the action (the step is open only while it holds); false in the Order Phase. */
+  afterActionWouldOpen: boolean;
+  /** An earlier command of the worker action now in progress asked to end the turn when it
+   * finishes (`work_turn.endTurnAfterAction`). */
+  requested: boolean;
 }
 
 /**

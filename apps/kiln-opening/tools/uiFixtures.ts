@@ -2000,7 +2000,7 @@ function newMoments(): Captured[] {
         id: "m14_sell_flawed",
         title: "3P · Order Phase · sell a Flawed ceramic",
         description:
-          "The viewer holds a Finished Flawed ceramic and it is their Order Phase turn, a free-action window (rev. 5 L170): they may sell it for 2 Coins as a free action, its Vessel card back to the supply (sellFlawedOptions), complete Orders, or end the turn. The turn opens for a Flawed ceramic even with nothing to complete (I3). The firing-step salvage of revision 3 is gone.",
+          "The viewer holds a Finished Flawed ceramic and it is their Order Phase turn, a free-action window (rev. 5 L170): they may sell it for 2 Coins as a free action, its Vessel card back to the supply (sellFlawedOptions), complete Orders, or end the turn. The turn opens for a Flawed ceramic even with nothing to complete (R28). The firing-step salvage of revision 3 is gone.",
       },
       playerCounts: [3, 4],
       seeds: 30,

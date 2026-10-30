@@ -61,7 +61,7 @@ describe("handler table", () => {
     expect(HANDLERS.SELECT_CHOOSE.phases).toEqual(["work_turn"]);
     expect(HANDLERS.SELECT_KILN.phases).toEqual(["setup_kiln_selection"]);
     // Free actions (rev. 5 L168–176): a Work turn's before/after-action windows and the Order
-    // Phase turn only; no sale during the firing or at Cleanup (I1; the salvage step is gone).
+    // Phase turn only; no sale during the firing or at Cleanup (R26; the salvage step is gone).
     expect(HANDLERS.SELL_FLAWED.phases).toEqual(["work_turn", "orders"]);
     expect(HANDLERS.COMPLETE_ORDER.phases).toEqual(["work_turn", "orders"]);
     expect(HANDLERS.USE_IMPERIAL_PRIORITY.phases).toEqual(["work_turn", "orders"]);
@@ -102,7 +102,7 @@ describe("validateAction", () => {
     [{ type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O01" }, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
     [{ type: "PLACE_SETTERS_MARK", spaceId: null }, { type: "setup_kiln_selection", selectionOrder: ["p2", "p1"], index: 1 }],
     [{ type: "DISCARD_TO_HAND_LIMIT", orderIds: [] }, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
-    // Free actions (rev. 5 L170, L176): never during the firing, at Setup or at Cleanup (I1).
+    // Free actions (rev. 5 L170, L176): never during the firing, at Setup or at Cleanup (R26).
     [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "firing_contributions", windowId: "w", eligiblePlayerIds: ["p1"], submittedPlayerIds: [] }],
     [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "firing_heat_adjustment", queue: { actorIds: ["p1"], index: 0 } }],
     [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } }],

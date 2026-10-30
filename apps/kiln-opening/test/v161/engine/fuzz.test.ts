@@ -126,13 +126,18 @@ const LOAD_FEATURES = ["inverted_firing", "kiln_furniture", "rework", "kiln_mast
 const DECK_EVENTS = ["setup_take", "looked_discarded", "reshuffle_look", "reshuffle_draw", "flawed_sale", "crackle_vp"];
 
 /** Owner revision 5 (change 36): every free action in every free-action window (rev. 5 L168–176),
- * and an Order Phase Imperial Priority load fired in the next round's firing (I3). */
+ * and an Order Phase Imperial Priority load fired in the next round's firing (R28). */
 const FREE_ACTIONS = [
   ...["CERAMIC_SOLD", "ORDER_COMPLETED", "IMPERIAL_PRIORITY_USED"].flatMap((type) =>
     ["before_action", "after_action", "order_phase"].map((window) => `free:${type}:${window}`),
   ),
   "carried_imperial_fired",
 ];
+
+/** Owner UI decision D21: random play sometimes asks to end the turn afterwards (`endTurn`); each
+ * way it can end a turn in one command, and `endTurn: false`, must occur with zero rejected
+ * commands (`p7_support.withEndTurnSample`). */
+const END_TURN_REQUESTS = ["end_turn_placed", "end_turn_remembered", "end_turn_after_action", "end_turn_order_phase", "end_turn_false"];
 
 /** Owner revision 5, changes 37–40: Ge on a Masterpiece and on a Flawed ceramic (rev. 5 L482),
  * Ding's vessel at 1 Clay + 2 Coins (rev. 5 L488) and Decorator's Kit on a Plain vessel (rev. 5
@@ -207,6 +212,7 @@ describe("fuzz coverage", () => {
         `deck and revision-4 moments: ${DECK_EVENTS.map((moment) => `${moment}=${totals.deckEvents.get(moment) ?? 0}`).join(" ")}`,
         `free actions (revision 5): ${FREE_ACTIONS.map((moment) => `${moment}=${totals.deckEvents.get(moment) ?? 0}`).join(" ")}`,
         `changes 37–40: ${REVISION_5.map((moment) => `${moment}=${totals.deckEvents.get(moment) ?? 0}`).join(" ")}`,
+        `end the turn afterwards (D21): ${END_TURN_REQUESTS.map((moment) => `${moment}=${totals.deckEvents.get(moment) ?? 0}`).join(" ")}`,
         `techs: ${techs.join(" ")}`,
         `kilns: ${kilns.join(" ")}`,
       ].join("\n"),
@@ -226,6 +232,7 @@ describe("fuzz coverage", () => {
     expect(missing(DECK_EVENTS, totals.deckEvents), "revision-4 and R25 moments never reached").toEqual([]);
     expect(missing(FREE_ACTIONS, totals.deckEvents), "revision-5 free-action windows never reached").toEqual([]);
     expect(missing(REVISION_5, totals.deckEvents), "revision-5 Kit, Ding and Ge moments never reached").toEqual([]);
+    expect(missing(END_TURN_REQUESTS, totals.deckEvents), "D21 end-turn requests never made").toEqual([]);
     expect(missing(TECH_IDS, totals.techs), "Techs never used").toEqual([]);
     expect(missing(KILN_IDS, totals.kilns), "Kiln abilities never used").toEqual([]);
   });

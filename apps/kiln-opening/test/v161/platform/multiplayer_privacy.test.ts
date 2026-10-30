@@ -208,7 +208,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     expect(other.ownPrivateView?.orderHand).toEqual([]);
   });
 
-  it("opens the after-action window from public facts only, and publishes a Work-turn completion to every seat (rev. 5 L168–176, L424, I2)", async () => {
+  it("opens the after-action window from public facts only, and publishes a Work-turn completion to every seat (rev. 5 L168–176, L424, R27)", async () => {
     // Two rooms that differ only in what P1's one held Order is: O02 is completable with the
     // Fine Celadon Plate, O40 is not. Everything every seat sees is the same in both.
     const rooms = await Promise.all(

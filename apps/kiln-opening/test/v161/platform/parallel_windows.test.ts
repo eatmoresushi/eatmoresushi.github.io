@@ -4,7 +4,7 @@
  * and a computer act independently; a command based on any revision since the window opened is
  * validated against the current head, in either order and concurrently, without
  * STALE_REVISION. Its only choice is the trim: Cleanup is not a free-action window (rev. 5 L176,
- * I1), so a sale there is refused like any other rule failure, tolerant revision or not. Every
+ * R26), so a sale there is refused like any other rule failure, tolerant revision or not. Every
  * other phase keeps strict equality.
  */
 
@@ -49,7 +49,7 @@ async function openHandLimitWindow(harness: Harness): Promise<{ revision: number
         { id: "P2", hand: [f!, g!, h!, i!, j!] },
       ],
       phase: { type: "cleanup_hand_limit", pendingPlayerIds: ["P1", "P2"], openedAtRevision: revision },
-      // The human holds a Finished Flawed ceramic, which may not be sold while trimming (I1).
+      // The human holds a Finished Flawed ceramic, which may not be sold while trimming (R26).
       ceramics: [{ owner: "P1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" }],
     });
     humanDiscard = [a!];
@@ -99,7 +99,7 @@ describe("parallel windows: cleanup_hand_limit", () => {
   });
 });
 
-describe("parallel windows: no sale in cleanup_hand_limit (rev. 5 L176, I1)", () => {
+describe("parallel windows: no sale in cleanup_hand_limit (rev. 5 L176, R26)", () => {
   it("a pending human's sale on the opening revision is refused (WRONG_PHASE); the human then trims on it, after the computer", async () => {
     const harness = await humanAndComputer();
     const { revision, humanDiscard, humanFlawed } = await openHandLimitWindow(harness);

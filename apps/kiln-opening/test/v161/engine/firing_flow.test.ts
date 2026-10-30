@@ -2,7 +2,7 @@
  * The whole Firing Phase as a state machine (DESIGN §3.1, §3.3, §3.6, §3.7, §7; Appendix D as
  * owner revision 4 left it, L674–683: Contributions (Base Heat) → Test Pieces → Fire →
  * Actual Heat (Jun) → Quality → after-Quality → finish; no Heat-marker step, changes 28, 31, and
- * no salvage step, change 30; no free action during the firing, rev. 5 L176, so no sale, I1):
+ * no salvage step, change 30; no free action during the firing, rev. 5 L176, so no sale, R26):
  * the skip check, every window in Appendix D order with the right actors, automatic steps
  * inside the command that reaches them, an always-legal exit in every window, card
  * conservation, and determinism under a `jsonb`-style key-sorted round trip.
@@ -41,7 +41,7 @@ import type { LocalTable } from "./support/localTable.ts";
  *   c2 White in High (Standard), c3 Grey-Green in its Imperial Kiln;
  * - p3 Second Firing; c4 Moon White in Low (Flawed), c5 White in Low (Masterpiece), and c6, a
  *   Finished Flawed Bowl from an earlier round, which p3 may not sell during the firing (rev. 5
- *   L176, I1): it waits for p3's next free-action window.
+ *   L176, R26): it waits for p3's next free-action window.
  * Fire deck: the round's 0, then −1 and −2 for Second Firing (L646).
  */
 function everyWindow(fire: FireModifier[] = [0, -1, -2]): StateSpec {
@@ -111,7 +111,7 @@ const ABILITY_ACTIONS: Record<AfterQualityAbility, (ceramicId: CeramicId) => Gam
  * Selector–validator agreement (DESIGN §5.4) for the P5 option selectors: every listed option
  * validates, every unlisted target is rejected, and the window's decline always validates. The
  * sale of a Flawed ceramic agrees with `sellFlawedOptions` for every player in every window:
- * nobody may sell during the firing (rev. 5 L176, I1).
+ * nobody may sell during the firing (rev. 5 L176, R26).
  */
 function expectSelectorsAgree(table: LocalTable): void {
   const prompt = table.prompt();
@@ -290,7 +290,7 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
     ]);
     const final = table.state;
     expect(final.firing).toBeNull();
-    // Nothing is sold during the firing (rev. 5 L176, I1): c6 waits, and c4 stays Flawed after
+    // Nothing is sold during the firing (rev. 5 L176, R26): c6 waits, and c4 stays Flawed after
     // Second Firing and finishes, both sellable in p3's next free-action window.
     expect(final.ceramics["c6"]).toMatchObject({ stage: "finished", quality: "flawed" });
     expect(final.ceramics["c4"]).toMatchObject({ stage: "finished", quality: "flawed" });

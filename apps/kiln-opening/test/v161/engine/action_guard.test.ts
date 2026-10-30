@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { COMMAND_TYPES, parseCommand } from "../../../src/game/actionGuard.ts";
 import { isGameRuleError } from "../../../src/game/errors.ts";
+import { END_TURN_COMMAND_TYPES } from "../../../src/game/freeActionWindow.ts";
 import type { AuthoritativeCommand } from "../../../src/game/types.ts";
 import { expectDocumentedDetails } from "./support/ruleErrors.ts";
 
@@ -355,5 +356,59 @@ describe("parseCommand: MALFORMED_ACTION", () => {
       message: "Malformed command: fuelLedger is not allowed.",
       details: { field: "fuelLedger" },
     });
+  });
+});
+
+describe("parseCommand: the optional endTurn (owner UI decision D21)", () => {
+  const takesEndTurn = new Set<string>(END_TURN_COMMAND_TYPES);
+  const examples = Object.values(VALID)
+    .flat()
+    .map((command) => [command.type, command] as const);
+
+  it("END_TURN_COMMAND_TYPES lists the 10 worker-action commands and the 3 free actions", () => {
+    expect([...END_TURN_COMMAND_TYPES]).toEqual([
+      "PLACE_MATERIALS_YARD",
+      "PLACE_FORM_DECORATE",
+      "PLACE_GLAZE_LOAD",
+      "PLACE_COMMISSION_MARKET",
+      "PLACE_GUILD_HALL",
+      "PLACE_CANAL_WHARF",
+      "PLACE_MAGISTRATES_HALL",
+      "SELECT_CHOOSE",
+      "GUILD_TAKE",
+      "GUILD_FINISH",
+      "USE_IMPERIAL_PRIORITY",
+      "SELL_FLAWED",
+      "COMPLETE_ORDER",
+    ]);
+    // In `GameAction` declaration order, like COMMAND_TYPES.
+    const order = END_TURN_COMMAND_TYPES.map((type) => COMMAND_TYPES.indexOf(type));
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it.each(examples)("%s: endTurn true and false parse exactly on the listed types; anywhere else it is not allowed", (type, command) => {
+    for (const endTurn of [true, false]) {
+      const input = { ...JSON.parse(JSON.stringify(command)), endTurn } as unknown;
+      const parsed = parseCommand(input);
+      if (takesEndTurn.has(type)) {
+        expect(parsed).toEqual({ ...command, endTurn });
+      } else {
+        expectMalformed(input, "endTurn");
+        expect(isGameRuleError(parsed) ? parsed.message : null).toBe("Malformed command: endTurn is not allowed.");
+      }
+    }
+  });
+
+  it.each([...END_TURN_COMMAND_TYPES])("%s: a non-boolean endTurn is a typed shape error; undefined is absent", (type) => {
+    const command = VALID[type][0]!;
+    for (const value of ["yes", 1, 0, null, {}, []]) {
+      const input = { ...JSON.parse(JSON.stringify(command)), endTurn: value } as unknown;
+      expectMalformed(input, "endTurn");
+      const result = parseCommand(input);
+      expect(isGameRuleError(result) ? result.message : null).toBe("Malformed command: endTurn must be a boolean.");
+    }
+    const parsed = parseCommand({ ...command, endTurn: undefined });
+    expect(parsed).toEqual(command);
+    expect(Object.keys(parsed)).not.toContain("endTurn");
   });
 });

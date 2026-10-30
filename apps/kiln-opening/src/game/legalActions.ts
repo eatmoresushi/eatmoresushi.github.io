@@ -32,7 +32,7 @@
  * | `COMPLETE_ORDER` (a free action, rev. 5 L173: before and after the worker action and in the Order Phase turn) | per held Order: the first match, plus the first Ru-triggering match; each triggered Ru/Guan and Tribute Ware used and declined | every match × decline flags |
  * | `USE_IMPERIAL_PRIORITY` (a free action, rev. 5 L174: before and after the worker action and in the Order Phase turn) | vessel class × Glaze × modifier; with Reworking Table ready, one variant per class and other Shape; with Kiln Master ready, one variant per class and face (R22) | every vessel × Glaze × modifier × rework × Kiln Master |
  * | firing windows, `END_*` | all, incl. the `null` / decline choice; `SECOND_FIRING_CHOOSE` both cards × Jun {none, +1, −1 when ready}; `USE_GE_CRACKLE` each own ceramic of the firing, any Quality (rev. 5 L482, change 39) | same |
- * | `SELL_FLAWED` (a free action, rev. 5 L172) | each `sellFlawedOptions` ceramic, in the before- and after-action windows of a Work turn and the Order Phase turn; never in the after-Quality step or the Cleanup trim (I1) | same |
+ * | `SELL_FLAWED` (a free action, rev. 5 L172) | each `sellFlawedOptions` ceramic, in the before- and after-action windows of a Work turn and the Order Phase turn; never in the after-Quality step or the Cleanup trim (R26) | same |
  * | `DISCARD_TO_HAND_LIMIT` | every C(hand, excess) | same |
  *
  * **Bounds.** `perFamilyLimit` (default 64 in canonical, unlimited in exhaustive) stops each
@@ -45,6 +45,10 @@
  * 1-per-discipline Tech limit (L240) makes unreachable are never generated together (Prepared
  * Clay with Senior Apprentice or Decorator's Kit; Kiln Furniture with Inverted Firing comes
  * from P3's option list, which never offers it); validators still handle them.
+ *
+ * No command here carries `endTurn` (owner UI decision D21, `EndTurnRequest`): the enumerator and
+ * the sampler leave it absent, so the computer players and the canonical fallback keep the
+ * behaviour they had before D21. The fuzz adds it where `endTurnOptions` accepts it.
  *
  * `legalCommands` is `legalContributions(view)` in `firing_contributions` and `legalActions`
  * elsewhere (DESIGN §4.6, §5.2). `legalActionFamilies` lists the families with at least one
@@ -987,12 +991,12 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
     case "firing_second_firing_choice":
       return [SECOND_FIRING_CHOOSE];
     case "firing_after_quality":
-      // No free actions during the firing (rev. 5 L176, I1).
+      // No free actions during the firing (rev. 5 L176, R26).
       return [USE_PROTECTIVE_SAGGARS, USE_SECOND_FIRING, USE_GE_CRACKLE, END_AFTER_QUALITY];
     case "orders":
       return [COMPLETE_ORDER, SELL_FLAWED, USE_IMPERIAL_PRIORITY, END_ORDER_TURN];
     case "cleanup_hand_limit":
-      // Cleanup is not a free-action window (I1): no sale while trimming.
+      // Cleanup is not a free-action window (R26): no sale while trimming.
       return [DISCARD_TO_HAND_LIMIT];
     case "finished":
       return [];

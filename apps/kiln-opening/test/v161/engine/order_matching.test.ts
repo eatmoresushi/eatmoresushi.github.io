@@ -469,7 +469,7 @@ describe("ruTriggers (L474)", () => {
   });
 });
 
-describe("a Crackle ceramic keeps its own Quality (rev. 5 L482, change 39, I5)", () => {
+describe("a Crackle ceramic keeps its own Quality (rev. 5 L482, change 39, R30)", () => {
   it("a crackled Masterpiece fills a Masterpiece requirement, with its wildcard Decoration", () => {
     // O13: any Shape · any Glaze · Painted, Masterpiece. A printed-Plain crackled Masterpiece
     // declares Painted.

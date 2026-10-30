@@ -364,7 +364,7 @@ describe("Inverted Firing stacks (found by the fuzz test)", () => {
 
   it("a stacked ceramic left alone in its space is reported: nothing leaves a kiln before step 6 (rev. 5 L176)", () => {
     // Revision 4 let the bottom ceramic of a stack be sold in its owner's after-Quality turn (R20);
-    // revision 5 has no free actions during the firing (I1), so a lone stacked ceramic is a bug.
+    // revision 5 has no free actions during the firing (R26), so a lone stacked ceramic is a bug.
     const state = stackState();
     expect(invariantViolations(state)).toEqual([]);
     state.sharedKiln.spaces.low_1.ceramicIds = ["c2"];
@@ -616,7 +616,7 @@ describe("free actions and the Order Phase Imperial load (rev. 5 L168–176; DEL
     expect(invariantViolations(shared, { live: true }).join("\n")).toMatch(/c1 is still loaded in orders/);
   });
 
-  it("reports an after-action window with nothing to offer and an Order Phase turn with nothing in it (I2, I3)", () => {
+  it("reports an after-action window with nothing to offer and an Order Phase turn with nothing in it (R27, R28)", () => {
     const after = buildState({ placements: [{ player: "p1", worker: 1, locationId: "canal_wharf" }], phase: { type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } } });
     expect(invariantViolations(after, { live: true }).join("\n")).toMatch(/p1's after-action window is open with nothing to offer/);
     stageCeramic(after, { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" });

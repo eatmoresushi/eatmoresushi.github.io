@@ -1,7 +1,7 @@
 /**
  * Work Phase turns (L156–166, L221, L405, rev. 5 L168–176, L632; DESIGN §3.2, §3.6, §3.7, §4.5,
  * §7): First Player clockwise, 1 worker per turn, no passing, until every worker is placed; the
- * after-action window (I2: the Colour Samples swap ready with a held Order, Imperial Priority
+ * after-action window (R27: the Colour Samples swap ready with a held Order, Imperial Priority
  * usable, a Finished Flawed ceramic to sell, or a held Order with a Finished ceramic that is not
  * Flawed — public facts only, whatever the hand holds), rechecked after each free action;
  * END_TURN; the deferred Main display refill at the end of the reserving player's turn; and
@@ -137,7 +137,7 @@ describe("turn order and placements (L158, L160)", () => {
   });
 });
 
-describe("the after-action window (DESIGN §3.2 step 3, §4.5; I2)", () => {
+describe("the after-action window (DESIGN §3.2 step 3, §4.5; R27)", () => {
   it("opens when the Colour Samples swap is ready with a held Order, and END_TURN closes it (not automatic)", () => {
     const t = table({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] });
     const events = t.act("p1", wharf(t.state, "p1"));
@@ -161,7 +161,7 @@ describe("the after-action window (DESIGN §3.2 step 3, §4.5; I2)", () => {
     expect(afterActionWindowOpen(projectPublicState(barge.state), "p1")).toBe(false);
   });
 
-  it("opens for a Finished Flawed ceramic to sell, or a held Order with a Finished ceramic that is not Flawed (I2)", () => {
+  it("opens for a Finished Flawed ceramic to sell, or a held Order with a Finished ceramic that is not Flawed (R27)", () => {
     const flawed: StateSpec = { players: [{}, {}], ceramics: [{ owner: "p1", shape: "bowl", stage: "finished", glaze: "white", quality: "flawed" }] };
     expect(afterActionWindowOpen(projectPublicState(buildState(flawed)), "p1")).toBe(true);
     // A completion that public facts cannot rule out: 1 held Order, 1 Finished Standard ceramic.
@@ -334,7 +334,7 @@ describe("determinism and storage key order (DESIGN §7)", () => {
     const script: Array<[PlayerId, GameAction]> = [
       ["p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" }],
       ["p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O08" }, { kind: "face_up", slotIndex: 1, orderId: "O02" }] }],
-      // p1 holds Orders and a Finished Standard Bowl, so the after-action window opens (I2).
+      // p1 holds Orders and a Finished Standard Bowl, so the after-action window opens (R27).
       ["p1", { type: "END_TURN" }],
       ["p2", { type: "PLACE_GUILD_HALL", workerId: "p2:shifu", choice: { kind: "inspect", discipline: "glazing_loading" } }],
       ["p2", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T10" } }],

@@ -1,11 +1,11 @@
 /**
  * P6 `orders/phase.ts`: the Order Phase (rev. 5 L143, L318, L700; INT: Order Phase; DESIGN §3.4,
- * §3.6, §3.7, §8.2 "Single-pass Order Phase, held Orders only"; change 36, I3).
+ * §3.6, §3.7, §8.2 "Single-pass Order Phase, held Orders only"; change 36, R28).
  *
  * - One pass, First Player then clockwise; each turn is a free-action window (rev. 5 L170): any
  *   number of held Orders, one at a time, Flawed sales and Imperial Priority, in any order.
  * - A turn opens only for a completable held Order, a Finished Flawed ceramic or a usable Imperial
- *   Priority (I3); otherwise it is skipped, at its start and after each free action.
+ *   Priority (R28); otherwise it is skipped, at its start and after each free action.
  * - Imperial Priority there loads a ceramic that is fired in the next round's firing (never in
  *   Round 5); the Colour Samples swap is not a free action and is refused.
  * - Face-up Main Orders can never be completed; the display never changes.
@@ -97,7 +97,7 @@ describe("openOrderPhase", () => {
     expect(state.phase).toEqual({ type: "orders", turnOrder: ["p3", "p1", "p2"], index: 3 });
   });
 
-  it("opens a turn for a usable Imperial Priority alone, but not for the Colour Samples swap (I3)", () => {
+  it("opens a turn for a usable Imperial Priority alone, but not for the Colour Samples swap (R28)", () => {
     // p1: token held, Imperial Kiln empty, a Shaped vessel. p2: Colour Samples ready and a held
     // Order it cannot complete. p3: a Shaped vessel but no token.
     const state = buildState({
@@ -156,7 +156,7 @@ describe("the single pass (L318)", () => {
       { type: "ORDER_TURN_ENDED", playerId: "p2", automatic: true },
       { type: "ORDER_TURN_STARTED", playerId: "p3" },
     ]);
-    // p3 can complete nothing, but holds a Flawed ceramic: the turn opens for the sale (I3).
+    // p3 can complete nothing, but holds a Flawed ceramic: the turn opens for the sale (R28).
     expect(table.prompt().actorIds).toEqual(["p3"]);
     const sale = table.act("p3", { type: "SELL_FLAWED", ceramicId: ids.p3Flawed });
     expect(sale).toEqual([
@@ -196,7 +196,7 @@ describe("the single pass (L318)", () => {
     expect(table.state.ceramics[ids.p3Flawed]).toMatchObject({ stage: "finished", quality: "flawed" });
   });
 
-  it("a sale keeps the turn while something is left to complete or sell (I3)", () => {
+  it("a sale keeps the turn while something is left to complete or sell (R28)", () => {
     const state = buildState({ players: [{ hand: ["S08"] }, {}] });
     const vase = finished(state, "p1", "vase");
     const flawedA = finished(state, "p1", "bowl", "flawed");

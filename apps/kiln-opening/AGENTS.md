@@ -11,7 +11,7 @@ Target session length for the physical design is approximately 90–120 minutes.
 Priority order:
 
 1. `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` — the V1.6.2 Player Rulebook, designated by the owner on 2026-10-17 as the **only** mechanical source of truth. It replaces V1.6.1 (`docs/KILN_OPENING_v1.6.1_EN_SOURCE.md`, now history). The Chinese edition `docs/KILN_OPENING_v1.6.2_ZH.md` and the component text `docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md` are the owner's matching files.
-2. `docs/RULEBOOK_AUDIT_V1.6.2.md` — source checksums, owner amendments (A1, superseded by change 27; A2), owner rulings (R1–R25, B1–B3, as still valid under V1.6.2), editorial corrections and recorded interpretations. `docs/RULEBOOK_AUDIT_V1.6.1.md` is history.
+2. `docs/RULEBOOK_AUDIT_V1.6.2.md` — source checksums, owner amendments (A1, superseded by change 27; A2), owner rulings (R1–R30, B1–B3, as still valid under V1.6.2), editorial corrections and recorded interpretations. `docs/RULEBOOK_AUDIT_V1.6.1.md` is history.
 3. `docs/GAME_RULES.md` — source index.
 4. `data/*.json` — derived content.
 5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations.
@@ -111,7 +111,7 @@ Removed by V1.6.2 (rulebook changes 21–42; changes 26–27 are the last two it
 - a seat Coin for players after the first (change 35), a dealt starting Main Order (change 32), and 2 starting Wood
 - the Decoration cost table and Decoration costs (change 30: a vessel costs its Clay + 2 Coins)
 - the Magistrate's Hall Shifu at 3 Coins (change 33), Materials Yard 3 / 6 (change 34), Fuel Ledger at 2 (change 30)
-- Ge crackling only a Standard ceramic, 'a Crackle ceramic is never a Masterpiece' as a separate rule, and revision 3's ban on Saggars' Standard → Fine step and Crackle on the same ceramic (change 29: both may apply to one ceramic, L641)
+- Ge crackling only a Standard ceramic, 'a Crackle ceramic is never a Masterpiece' as a separate rule, and revision 3's ban on Saggars' Standard → Fine step and Crackle on the same ceramic (change 29: both may apply to one ceramic, rev. 5 L660)
 - free loading into the Shared Kiln (change 34: 1 Wood per Glaze & Load action into it)
 - Order completion only in the Order Phase, and a Flawed sale in the after-Quality step or the Cleanup hand trim (change 36: free actions happen only on your own turn, before or after your worker action, and in the Order Phase; never during the firing)
 - a resource bought for Coins, and a Standard ceramic sold for Coins (change 36's draft, removed by changes 41 and 42)
@@ -174,7 +174,7 @@ The following are secret:
 - **The Main Order discard pile**, which is face down; only its count is public. This includes the held Order discarded for a Colour Samples swap; a discarded Starting Order goes to the box.
 - **Looked-at Orders not reserved**, which are discarded face down to the Main Order discard pile (R25): which cards they are is visible only to the looker; the discard count is public.
 
-The number of cards each look shows, face-up reservations (including the Setup Main Order take and the Magistrate's Hall Shifu's Crown Order), Kiln Master's marker, the two Second Firing cards and the number of buried Fire cards are public.
+The number of cards each look shows, face-up reservations (including the Setup Main Order take and the Magistrate's Hall Shifu's Crown Order), Kiln Master's marker, the two Second Firing cards, the number of buried Fire cards and a remembered end-turn request (`work_turn.endTurnAfterAction`, owner UI decision D21) are public.
 
 Do not expose other players' secret information in realtime payloads, logs visible to clients, browser state, or database rows readable under client credentials.
 
@@ -210,8 +210,8 @@ At minimum:
   - Shape costs and non-limiting Vessel-card proxies
   - all five Kiln abilities:
     - Ru and Guan whenever an Order is completed (a Work-turn window or the Order Phase), once per round;
-    - Ge Crackle (changes 29, 39): 1 ceramic of any Quality from this firing (a Standard one becomes Fine; Masterpiece, Fine and Flawed keep their Quality), Saggars' Standard → Fine then Crackle on one ceramic allowed, wildcard Decoration, 1 VP per delivered Crackle ceramic;
-    - Ding: 1 Clay + 2 Coins (change 40), not counted against the action's vessel limit;
+    - Ge Crackle (changes 29, 39): 1 ceramic of any Quality from this firing (a Standard one becomes Fine; Masterpiece, Fine and Flawed keep their Quality), Saggars' Standard → Fine then Crackle on one ceramic allowed, wildcard Decoration, 1 VP per delivered Crackle ceramic; a crackled Flawed ceramic keeps its marker through a Second Firing (R30);
+    - Ding: 1 Clay + 2 Coins (change 40), not counted against the action's vessel limit nor toward the Shifu's "if you form 2" discount (R29);
     - Jun: including during Second Firing per R7, after the chosen card
 - **Advanced Techs**
   - all 18, including:
@@ -229,18 +229,23 @@ At minimum:
   - Base Heat clamp 0–5
   - Test Pieces after Base Heat and before the Fire card (private peek, public bury)
   - no Heat-marker step (changes 28, 31); Kiln Master's marker in Actual Heat
-  - Fire deck 1/3/4/3/1 and open discard; when the deck runs out, the shuffled discard goes on top and a buried Test Pieces card is drawn last (rev. 4 L636, R15), including a run-out caused by Second Firing
+  - Fire deck 1/3/4/3/1 and open discard; when the deck runs out, the shuffled discard goes on top and a buried Test Pieces card is drawn last (rev. 5 L655, R15), including a run-out caused by Second Firing
   - Actual Heat for Shared Kiln (zone or Kiln Furniture modifier + Kiln Master's marker) and court-fired Imperial Kiln ceramics
   - Quality assignment, including Protective Saggars: the owner's Shared and Imperial ceramics are never Flawed (Heat Difference 3+ counts as Standard)
   - after-Quality abilities in the owner's chosen order: Saggars (1 Standard → Fine once per round, no Wood, never Masterpiece), Second Firing (2 extra cards revealed, 1 chosen, both discarded), Ge
-  - selling a Flawed ceramic for 2 Coins as a free action (changes 30, 36, R20): before or after its owner's worker action and in their Order Phase turn; never during another player's turn, the firing (the Contribution choice and the after-Quality step included) or the Cleanup hand trim; no firing-step salvage
+  - selling a Flawed ceramic for 2 Coins as a free action (changes 30, 36, R20 as changed by R26): before or after its owner's worker action and in their Order Phase turn; never during another player's turn, the firing (the Contribution choice and the after-Quality step included) or the Cleanup hand trim; no firing-step salvage
   - skipping the firing when nothing is loaded
 - **Orders**
   - all 8 Starting and 48 Main Orders at their V1.6.2 values (a content contract against Appendix A), including independent multi-ceramic matching, S07's Decoration alternative (Carved, Impressed or Painted; Plain refused) and Crackle wildcards
   - empty Main Order supply (B1)
   - round-start discard-2 / slide / reveal-2 rotation
   - free actions (change 36): completing held Orders, selling Flawed ceramics and spending Imperial Priority before or after the worker action on your own Work turn and in your Order Phase turn, any number in any order; rewards usable for the placement that follows; never on another player's turn or during the firing
-  - single-pass Order Phase in First Player order, held Orders only; this round's ceramics first deliverable there
+  - the after-action step opens on public facts only (R27): the Colour Samples swap or Imperial Priority usable, a Finished Flawed ceramic, or at least 1 held Order with at least 1 Finished ceramic that is not Flawed, whatever the hand holds
+  - an Order reserved by the worker action (or taken by a Colour Samples swap) delivered in the same turn (INT Same-turn delivery; open question 2)
+  - a free action during the Colour Samples swap's own Select is refused (`WORKER_ACTION_IN_PROGRESS`, the message naming the Select)
+  - ending the turn in the same command (owner UI decision D21): `endTurn` only on the seven placements, `SELECT_CHOOSE`, `GUILD_TAKE`, `GUILD_FINISH` and the three free actions (any other command, or a non-boolean, is `MALFORMED_ACTION`); one command gives the same events and state as the two-command path (deferred refills once, `WORK_TURN_ENDED.automatic` as there, phase hand-overs included); a request is remembered through a Select or the Guild Hall inspection and a later command of the same action overrides it; `true` before the worker action (the swap's Select included) is `WORKER_ACTION_REQUIRED`, ahead of the action's own checks; Order Phase deliver-and-done; computer players never send it; the actor's own reconnect mid-Select restores the request
+  - single-pass Order Phase in First Player order, the post-firing free-action window (R28): a turn opens for a completable held Order, a Flawed ceramic or a usable Imperial Priority; held Orders only; this round's ceramics first deliverable there; the Colour Samples swap stays a Work-turn ability
+  - Imperial Priority spent in the Order Phase (R28): its ceramic waits in the Imperial Kiln for the next round's firing (never fired in Round 5) and blocks that round's Imperial loading; Kiln Master's one marker waits with it (P7; open question 1)
   - hand limit 4/5 at Cleanup
 - **Recognition**
   - Crown advancement one at a time, every crossed milestone, the 0–4 cap and +1 VP per Crown beyond 4

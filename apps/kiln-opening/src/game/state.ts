@@ -162,6 +162,27 @@ export function selectStep(game: PublicCore): SelectStep | null {
   return step.kind === "commission_market" || step.kind === "colour_samples" || step.kind === "colour_samples_swap" ? step : null;
 }
 
+/**
+ * Records a worker-action command's "end the turn afterwards" request (owner UI decision D21,
+ * `EndTurnRequest`; DELTA §16.24) on the `work_turn` phase, for `work/turn.completeWorkerAction`
+ * to read when the action finishes: `true` remembers it for the rest of the action, `false`
+ * withdraws an earlier one, absent leaves it as it is. Every worker-action resolver calls this
+ * first (the `PLACE_*` handlers, `SELECT_CHOOSE` outside the Colour Samples swap, `GUILD_TAKE`,
+ * `GUILD_FINISH`).
+ */
+export function noteEndTurnRequest(draft: GameState, playerId: PlayerId, endTurn: boolean | undefined): void {
+  if (endTurn === undefined) {
+    return;
+  }
+  const phase = phaseAs(draft, "work_turn");
+  invariant(phase.activePlayerId === playerId, `${playerId} asked to end another player's turn`);
+  if (endTurn) {
+    phase.endTurnAfterAction = true;
+  } else {
+    delete phase.endTurnAfterAction;
+  }
+}
+
 /** The Main Orders a pending look holds (Commission Market, Colour Samples and its swap). */
 export function lookOrderIds(look: PendingLook | null): OrderId[] {
   return look === null || look.kind === "guild_inspection" ? [] : look.orderIds;

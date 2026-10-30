@@ -5,8 +5,8 @@
  *
  * - The swap is usable in `before_action` and `after_action` of the owner's Work turn only, in
  *   either order with the free actions (INT: before/after window). It is not a free action
- *   (I3): it is not in the Order Phase. Imperial Priority is a free action, legal in every
- *   free-action window, the Order Phase turn included (I3); its handler is in `freeActions.ts`,
+ *   (R28): it is not in the Order Phase. Imperial Priority is a free action, legal in every
+ *   free-action window, the Order Phase turn included (R28); its handler is in `freeActions.ts`,
  *   which uses `imperialPriorityError` and `useImperialPriority` from here. Neither is a worker
  *   action (v1.6.2 L656, L656): the swap never touches a worker or Senior Apprentice, and
  *   Imperial Priority loads with `loadedBy: "imperial_priority"`.
@@ -130,7 +130,7 @@ export function validateColourSamplesSwap(view: ActorView, discardOrderId: Order
  * Imperial Priority's own checks, the free-action window aside (`freeActions.ts` checks it first):
  * the token is held (`IMPERIAL_PRIORITY_UNAVAILABLE`), the Imperial Kiln has been gained and is
  * empty (`IMPERIAL_KILN_UNAVAILABLE`; a ceramic loaded in an earlier Order Phase may still wait
- * there, I3), then the load itself as a Glaze & Load load into the Imperial Kiln (R10, R11, R22).
+ * there, R28), then the load itself as a Glaze & Load load into the Imperial Kiln (R10, R11, R22).
  */
 export function imperialPriorityError(view: ActorView, action: ImperialPriorityAction): GameRuleError | null {
   const p = player(view.game, view.viewerId);

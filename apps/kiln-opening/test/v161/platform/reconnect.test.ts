@@ -221,7 +221,7 @@ describe("V1.6.2 reconnect", () => {
   });
 
   it.each(["after_action", "order_phase"] as const)(
-    "restores a free-action window (%s) with the seat's own hand only; the window is the same for every seat, and the seat completes after (rev. 5 L168–176, I2, I3)",
+    "restores a free-action window (%s) with the seat's own hand only; the window is the same for every seat, and the seat completes after (rev. 5 L168–176, R27, R28)",
     async (window) => {
       const { harness } = await started();
       await seedState(harness, (gameId) =>

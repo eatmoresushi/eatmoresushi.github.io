@@ -123,7 +123,7 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
  * The fallback candidates: the canonical legal commands, then the safe exits, without
  * duplicates. If the enumerator fails, the safe exits alone are returned (the service still
  * validates every candidate before committing it). Imperial Priority is left out in the Order
- * Phase of the last round: legal there (I3), but its ceramic would wait for a firing that never
+ * Phase of the last round: legal there (R28), but its ceramic would wait for a firing that never
  * comes, so a computer seat never spends the token there. In earlier rounds an Order Phase use
  * stays a candidate (its ceramic is fired in the next round's firing).
  */

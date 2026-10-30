@@ -9,12 +9,20 @@
  *   `work/turn.afterWindowAbilityUsed`, which ends the turn after the worker action when the
  *   window has nothing left.
  *
+ * "End the turn afterwards" (owner UI decision D21, `EndTurnRequest`; DELTA §16.24): in the two
+ * worker-action Selects the request is recorded for `completeWorkerAction`
+ * (`state.noteEndTurnRequest`; it overrides one made by the placement or an earlier take). In the
+ * swap's Select it ends the turn after the swap, as `END_TURN` would, when the swap was used
+ * after the worker action; when it was used before, `endTurn: true` is
+ * `WORKER_ACTION_REQUIRED` (`endTurnRequestError`).
+ *
  * Layer 4 (P4). Imports layers 0–3, the Select model, `work/guildHall` and `work/turn`; none of
  * them imports this module (no cycle).
  */
 
 import { invariant, ruleError } from "../errors.ts";
-import { phaseAs, selectStep } from "../state.ts";
+import { endTurnRequestError } from "../freeActionWindow.ts";
+import { noteEndTurnRequest, phaseAs, selectStep } from "../state.ts";
 import type { ActionHandlerTable } from "../types.ts";
 import { afterColourSamples } from "./guildHall.ts";
 import { resolveSelectPicks, selectPicksError } from "./select.ts";
@@ -35,13 +43,16 @@ export const handlers: Pick<ActionHandlerTable, "SELECT_CHOOSE"> = {
       if (step === null) {
         return ruleError("WRONG_PHASE", "No Select is due now.", { phase: phase.type, step: phase.step.kind });
       }
-      return selectPicksError(view, step.kind, step.select, action.reservations);
+      return endTurnRequestError(view.game, view.viewerId, action) ?? selectPicksError(view, step.kind, step.select, action.reservations);
     },
     resolve: (draft, actorId, action, ctx) => {
       const phase = phaseAs(draft, "work_turn");
       invariant(phase.activePlayerId === actorId, `${actorId} is not the active player`);
       const step = selectStep(draft);
       invariant(step !== null, `Expected a Select step, found ${phase.step.kind}`);
+      if (step.kind !== "colour_samples_swap") {
+        noteEndTurnRequest(draft, actorId, action.endTurn);
+      }
       const look = resolveSelectPicks(draft, actorId, step.kind, action.reservations, ctx);
       switch (step.kind) {
         case "commission_market":
@@ -53,7 +64,7 @@ export const handlers: Pick<ActionHandlerTable, "SELECT_CHOOSE"> = {
           return;
         case "colour_samples_swap":
           phase.step = { kind: step.returnTo };
-          afterWindowAbilityUsed(draft, actorId, ctx);
+          afterWindowAbilityUsed(draft, actorId, ctx, action.endTurn === true);
           return;
         default: {
           const unknown: never = step;

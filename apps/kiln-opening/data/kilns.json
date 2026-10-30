@@ -80,12 +80,12 @@
         {
           "en": "Ge may target any of your ceramics from this firing, whatever its Quality. A Standard one becomes Fine; a Masterpiece, Fine or Flawed one keeps its Quality, and a Flawed one gains nothing. The ceramic carries a Crackle marker.",
           "zh": "哥窑可以选择你本次烧成中的任意1件器物，品质不限。良品升为上品；臻品、上品与瑕品保持原品质，瑕品开片没有收益。该器物带上开片标。",
-          "source": "INT Ge Crackle revision 5"
+          "source": "R30"
         },
         {
           "en": "Second Firing may still recalculate a crackled Flawed ceramic: the new Quality stands and the ceramic keeps its Crackle marker. Crackle does not raise the new Quality.",
           "zh": "复烧仍可以重算已开片的瑕品：新品质照常生效，该器物保留开片标。开片不会再提升新品质。",
-          "source": "INT Ge Crackle revision 5"
+          "source": "R30"
         },
         {
           "en": "Ge's Crackle is an after-Quality effect; Ge chooses its order among their own after-Quality effects. With Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' Standard → Fine step and Crackle may both apply to the same ceramic.",
@@ -151,14 +151,14 @@
           "source": "L658"
         },
         {
-          "en": "Provisional ruling: Ding's extra vessel does not count toward the Shifu's \"If you form 2, one of them costs 1 Coin less\". A Shifu who forms 1 vessel and Ding's gets no Shifu discount; a Shifu who forms 2 and Ding's gets one.",
-          "zh": "暂定裁定：定窑的额外坯不计入师傅“若制2件，其中1件少付1铜钱”所说的2件。师傅只制1件再加定窑的坯，没有师傅的减免；制2件再加定窑的坯，有1次减免。",
-          "source": "P6"
+          "en": "Ding's extra vessel does not count toward the Shifu's \"If you form 2, one of them costs 1 Coin less\". A Shifu who forms 1 vessel and Ding's gets no Shifu discount; a Shifu who forms 2 and Ding's gets one.",
+          "zh": "定窑的额外坯不计入师傅“若制2件，其中1件少付1铜钱”所说的2件。师傅只制1件再加定窑的坯，没有师傅的减免；制2件再加定窑的坯，有1次减免。",
+          "source": "R29"
         },
         {
           "en": "The Shifu's discount and Decorator's Kit could also reduce Ding's vessel, but each is once per action or round and the vessel that triggers Ding can always carry it. The online game applies them to the action's other vessels; the total is the same.",
           "zh": "师傅的减免与饰坯匣也可以作用于定窑的额外坯，但每项每次行动或每轮只用一次，而触发定窑的那件坯总能承接它。数字版把减免算在该行动的其他坯上，总额相同。",
-          "source": "INT Ding and the discounts revision 5"
+          "source": "R29"
         }
       ]
     },

@@ -14,23 +14,24 @@
  *   the Shifu discount (its 2 Coins become 0, rev. 5 L622, L658).
  * - Ding: after forming a Bowl/Plate/Brush Washer, 1 Clay + 2 Coins for one more of the same
  *   Shape with any Decoration (rev. 5 L488, change 40); outside the action's vessel limit, so
- *   the Shifu's "If you form 2" counts only the action's ordinary vessels (I4, P6); either
+ *   the Shifu's "If you form 2" counts only the action's ordinary vessels (R29); either
  *   worker type (R1). Change 40 dropped the no-discount clause, but each reduction is once per
  *   action or round and the vessel that triggers Ding can always carry it, so the engine keeps
  *   the reductions on the ordinary vessels: the total and the affordability are the same
- *   wherever a reduction sits (I4).
+ *   wherever a reduction sits (R29).
  *
  * Placement legality (rev. 5 L204, `canFormAny`): the full cost of at least 1 vessel is
  * affordable after every reduction a ready Workshop Tech gives.
  *
- * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
+ * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2), after recording the
+ * command's `endTurn` (owner UI decision D21, `state.noteEndTurnRequest`; DELTA §16.24).
  */
 
 import { DECORATIONS, KILNS, LOCATIONS, SHAPES, TECHS, shapeClay, vesselCoins } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { hasKiln, kilnAbilityReady, markKilnAbilityUsed } from "../kilns.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
-import { canAfford, formCeramic, lookup, player, spend } from "../state.ts";
+import { canAfford, formCeramic, lookup, noteEndTurnRequest, player, spend } from "../state.ts";
 import { markTechUsed, ownsTech, techReady } from "../techs.ts";
 import type {
   ActionHandlerTable,
@@ -164,7 +165,7 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
   if (effect === "shifu" && vessels.length === 2) {
     // Automatic (DESIGN §3.7). Every vessel costs the same, so which one takes it never
     // changes the total; it goes to the first vessel with Coins left to reduce. `vessels` are
-    // the action's ordinary vessels: Ding's does not count toward the 2 (I4, P6).
+    // the action's ordinary vessels: Ding's does not count toward the 2 (R29).
     const discount = LOCATIONS.form_decorate.effects.shifu.twoVesselDiscount;
     const index = remaining.findIndex((cost) => cost > 0);
     if (index >= 0) {
@@ -176,7 +177,7 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
   const vesselCost: ResourceState = { clay, wood: 0, coins: remaining.reduce((sum, cost) => sum + cost, 0) };
 
   // Ding (rev. 5 L488, change 40, R1): 1 Clay + 2 Coins, outside the vessel limit. The
-  // reductions stay on the ordinary vessels (I4): same total, same affordability.
+  // reductions stay on the ordinary vessels (R29): same total, same affordability.
   const dingCost = zero();
   const ding = action.dingExtra;
   if (ding !== undefined) {
@@ -279,6 +280,7 @@ function validate(view: ActorView, action: FormDecorateAction): GameRuleError | 
 }
 
 function resolve(draft: GameState, playerId: PlayerId, action: FormDecorateAction, ctx: ResolveContext): void {
+  noteEndTurnRequest(draft, playerId, action.endTurn);
   const placement = placeWorker(draft, playerId, action.workerId, "form_decorate", false, ctx);
   const cost = computeCost(draft, playerId, action, placement.effect);
   invariant(cost.quote.ok, "Form & Decorate command must be validated first");

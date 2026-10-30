@@ -55,7 +55,7 @@
         {
           "en": "A ceramic Imperial Priority loads in the Order Phase stays in your Imperial Kiln through Cleanup and is fired in the next round's firing. Until then your Imperial Kiln is not empty, so no Glaze & Load action can load into it.",
           "zh": "在交货阶段通过御烧优先装进御窑的器物，经过收工仍留在御窑中，到下一轮烧窑时才烧成。在此之前御窑不空，施釉装窑行动不能再装进去。",
-          "source": "INT Imperial Priority in the Order Phase"
+          "source": "R28 · INT Imperial Priority in the Order Phase"
         },
         {
           "en": "Its Actual Heat is the Kiln Die result + the Fire modifier + that modifier (plus the Kiln Master marker if it carries it), whatever the Contributions were. It still fires during the shared Firing Phase.",
@@ -103,7 +103,7 @@
         {
           "en": "Imperial Priority is a free action: you may spend it before or after your worker action or in your Order Phase turn. A ceramic it loads in the Order Phase stays in your Imperial Kiln and is fired in the next round's firing; in Round 5 it is never fired.",
           "zh": "御烧优先是自由行动：可以在工人行动之前或之后，或在你的交货阶段回合中使用。在交货阶段装进御窑的器物留在御窑中，到下一轮烧窑时才烧成；第5轮装进的则不会烧成。",
-          "source": "L174 · L314 · INT Imperial Priority in the Order Phase"
+          "source": "L174 · L314 · R28"
         },
         {
           "en": "Imperial Priority is a token effect, not a worker action. It never counts as a Glaze & Load action and does not trigger effects that require that action.",

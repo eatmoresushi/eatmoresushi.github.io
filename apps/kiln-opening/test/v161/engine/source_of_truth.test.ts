@@ -202,12 +202,12 @@ describe("every data file is V1.6.2 content with current IDs only", () => {
     [/never a Masterpiece|永远不是臻品|永远不算臻品/, "Ge's 'never a Masterpiece' clause (change 29)"],
     // Owner revision 5 (changes 36–42): Orders are completed as free actions, not only in the
     // Order Phase; a Flawed ceramic is sold only in a free-action window (not "at any time", not in
-    // the after-Quality step or at Cleanup, I1); Decorator's Kit reduces any vessel; Ding's vessel
+    // the after-Quality step or at Cleanup, R26); Decorator's Kit reduces any vessel; Ding's vessel
     // costs 1 Clay + 2 Coins with no no-discount clause; Ge crackles any ceramic of the firing; the
     // withdrawn draft's Wood-in-hand note. (The four Tech prices are pinned numerically by the
     // content contract; no data prose states a price.)
     [/only in the Order Phase|the only time Orders are completed|only place Orders are completed|while completing an Order in the Order Phase|只在交货阶段|只有交货阶段才能完成|在交货阶段完成委托时/, "Order completion only in the Order Phase (change 36)"],
-    [/(?:sold?|sell)[^."。]{0,40}at any time|随时[^。"]{0,12}卖出|after-Quality turn included|定品后回合|(?:sold?|sell)[^."]{0,40}(?:during|in) (?:the |your |its owner's )?(?:after-Quality|Cleanup|hand trim)|(?:定品后|收工时)[^。"]{0,12}卖出/i, "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+    [/(?:sold?|sell)[^."。]{0,40}at any time|随时[^。"]{0,12}卖出|after-Quality turn included|定品后回合|(?:sold?|sell)[^."]{0,40}(?:during|in) (?:the |your |its owner's )?(?:after-Quality|Cleanup|hand trim)|(?:定品后|收工时)[^。"]{0,12}卖出/i, "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; R26)"],
     [/with a Carved, Impressed or Painted Decoration costs|刻花、印花或画花的坯少付/, "Decorator's Kit's Decoration condition (change 37)"],
     [/1 Clay (?:and|\+) 1 Coin|1泥和1铜钱|1泥1铜钱|1-Coin (?:extra )?vessel|1铜钱额外坯|no (?:further )?discounts?\b|不享减免|takes neither|两项都不适用|not one of the 2 vessels|不算师傅减免/, "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
     [/Fine or Standard|上品或良品/, "Ge limited to a Fine or Standard ceramic (change 39)"],

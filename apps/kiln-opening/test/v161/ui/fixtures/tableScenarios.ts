@@ -417,8 +417,8 @@ export function tableScenarios(): TableScenario[] {
   }
 
   // 12–14. Selling a Flawed ceramic (change 30; a free action since owner revision 5, change 36):
-  //     no sale in the own after-Quality turn (the firing is not a free-action window, I1), a sale
-  //     in the before-action step of a Work turn, and no sale in a pending Cleanup hand trim (I1).
+  //     no sale in the own after-Quality turn (the firing is not a free-action window, R26), a sale
+  //     in the before-action step of a Work turn, and no sale in a pending Cleanup hand trim (R26).
   {
     const table = openFiringTable({
       kilnDie: 1,

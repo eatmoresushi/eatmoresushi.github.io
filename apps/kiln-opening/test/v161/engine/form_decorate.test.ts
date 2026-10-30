@@ -3,7 +3,7 @@
  * Shape Clay + 2 Coins whatever its Decoration, the Shifu's −1 Coin on one vessel when forming 2
  * (rev. 5 L202), Large Throwing Wheel (T01, rev. 5 L621), Decorator's Kit on any vessel (T16,
  * rev. 5 L622, change 37) and Ding at 1 Clay + 2 Coins (rev. 5 L488, change 40, R1), incl. the two
- * separate reductions of rev. 5 L658, I4 and provisional default P6.
+ * separate reductions of rev. 5 L658, owner ruling R29.
  */
 
 import { describe, expect, it } from "vitest";
@@ -238,7 +238,7 @@ describe("Ding (rev. 5 L488, change 40, R1): 1 Clay + 2 Coins for one more Bowl/
     ]);
   });
 
-  it("does not count toward the Shifu's \"If you form 2\": 1 vessel and Ding's gets no Shifu discount (P6)", () => {
+  it("does not count toward the Shifu's \"If you form 2\": 1 vessel and Ding's gets no Shifu discount (R29)", () => {
     const state = buildState({ players: ding() });
     const quote = quoteFormDecorate(actorViewOf(state, "p1"), fd("p1:shifu", [v("bowl")], { dingExtra: { copyOfVesselIndex: 0, decoration: "plain" } }));
     expect(quote.pay).toEqual({ clay: 2, wood: 0, coins: 4 });
@@ -248,7 +248,7 @@ describe("Ding (rev. 5 L488, change 40, R1): 1 Clay + 2 Coins for one more Bowl/
     expect(t.player("p1").resources).toEqual({ clay: 8, wood: 0, coins: 6 });
   });
 
-  it("totals with Decorator's Kit and the Shifu discount as if either reduction sat on Ding's vessel (I4)", () => {
+  it("totals with Decorator's Kit and the Shifu discount as if either reduction sat on Ding's vessel (R29)", () => {
     // Shifu, 2 vessels + Ding's, Kit and Shifu discount: 3 × 2 Coins − 2 = 4, whichever vessel
     // carries the reductions; the engine places them on the action's own vessels.
     const kit = table({ players: ding({ techs: ["T16"] }) });

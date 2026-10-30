@@ -1621,9 +1621,9 @@ const RETIRED_CLARIFICATION_WORDING: ReadonlyArray<readonly [RegExp, string]> = 
   [/cannot both apply|不能作用于同一件器物/, "Saggars' step and Crackle never on one ceramic (change 29)"],
   [/6 resources|6份资源/, "the Materials Yard Shifu's 6 resources (change 34)"],
   [/bottom of the (?:Main Order )?deck, in random order|go(?:es)? face down to the bottom of the Main Order deck|put the rest of the N on the bottom|放到主委托牌堆底|其余的放到牌堆底|哪几张放到牌堆底/, "looked cards to the deck bottom (change 24, R19; reversed by R25)"],
-  // Owner revision 5 (changes 36–42) and interpretation I1.
+  // Owner revision 5 (changes 36–42) and owner ruling R26.
   [/only in the Order Phase|the only time Orders are completed|only place Orders are completed|while completing an Order in the Order Phase|只在交货阶段|只有交货阶段才能完成|在交货阶段完成委托时/, "Order completion only in the Order Phase (change 36)"],
-  [/(?:sold?|sell)[^.。]{0,40}at any time|随时[^。]{0,12}卖出|after-Quality turn included|定品后回合|(?:sold?|sell)[^.]{0,40}(?:during|in) (?:the |your |its owner's )?(?:after-Quality|Cleanup|hand trim)|(?:定品后|收工时)[^。]{0,12}卖出/i, "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+  [/(?:sold?|sell)[^.。]{0,40}at any time|随时[^。]{0,12}卖出|after-Quality turn included|定品后回合|(?:sold?|sell)[^.]{0,40}(?:during|in) (?:the |your |its owner's )?(?:after-Quality|Cleanup|hand trim)|(?:定品后|收工时)[^。]{0,12}卖出/i, "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; R26)"],
   [/with a Carved, Impressed or Painted Decoration costs|刻花、印花或画花的坯少付/, "Decorator's Kit's Decoration condition (change 37)"],
   [/1 Clay (?:and|\+) 1 Coin|1泥和1铜钱|1泥1铜钱|1-Coin (?:extra )?vessel|1铜钱额外坯|no (?:further )?discounts?\b|不享减免|takes neither|两项都不适用|not one of the 2 vessels|不算师傅减免/, "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],
   [/Fine or Standard|上品或良品/, "Ge limited to a Fine or Standard ceramic (change 39)"],
@@ -1678,10 +1678,12 @@ describe("clarifications (owner decision D10, K15)", () => {
     expect(clarificationSourceKind("R19")).toBe("ruling");
     // Owner rulings R20–R25 (2026-10-23).
     expect(clarificationSourceKind("R25")).toBe("ruling");
-    // Revision 5's provisional defaults P6 and P7 (audit); P4 and P5 are cited by no item.
-    expect(clarificationSourceKind("P6")).toBe("provisional");
+    // Owner rulings R26–R30 (2026-10-30), which confirmed revision 5's interpretations I1–I5
+    // and provisional default P6 (now R29).
+    for (const ruling of ["R26", "R27", "R28", "R29", "R30"]) expect(clarificationSourceKind(ruling), ruling).toBe("ruling");
+    // Revision 5's provisional default P7 (audit); P4 and P5 are cited by no item, and P6 is R29.
     expect(clarificationSourceKind("P7")).toBe("provisional");
-    for (const bad of ["L0", "R26", "B4", "P4", "P5", "P8", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
+    for (const bad of ["L0", "R31", "R0", "B4", "P4", "P5", "P6", "P8", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
     expect(resolveTag("L9999")).toBeNull();
     expect(resolveTag("INT Imaginary ruling")).toBeNull();
     expect(resolveTag("ED L16")).toContain("It is superseded by change 21 (L31, L202), change 22 (L32, L622) and change 25 (L35).");
@@ -1694,7 +1696,7 @@ describe("clarifications (owner decision D10, K15)", () => {
     expect(cited).toEqual([]);
   });
 
-  it("names none of the mechanics V1.6.2 removed (changes 21–42, owner ruling R25, interpretation I1)", () => {
+  it("names none of the mechanics V1.6.2 removed (changes 21–42, owner rulings R25 and R26)", () => {
     const offences = all.flatMap(({ key, item }) => RETIRED_CLARIFICATION_WORDING
       .filter(([pattern]) => pattern.test(item.en) || pattern.test(item.zh)).map(([, label]) => `${key}: ${label}`));
     expect(offences).toEqual([]);
@@ -1708,11 +1710,11 @@ describe("clarifications (owner decision D10, K15)", () => {
       ["它的2铜钱在交货阶段获得，只有交货阶段才能完成委托。", "Order completion only in the Order Phase (change 36)"],
       ["Ru triggers while completing an Order in the Order Phase.", "Order completion only in the Order Phase (change 36)"],
       ["汝窑在交货阶段完成委托时触发。", "Order completion only in the Order Phase (change 36)"],
-      ["You may sell a Flawed ceramic for 2 Coins during your own turn, your after-Quality turn included.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
-      ["你可以在自己的回合中以2铜钱卖出瑕品，包括你的定品后回合。", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
-      ["A Flawed ceramic may be sold at any time for 2 Coins.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
-      ["You may also sell it during the Cleanup trim.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
-      ["收工时也可以卖出瑕品。", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; I1)"],
+      ["You may sell a Flawed ceramic for 2 Coins during your own turn, your after-Quality turn included.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; R26)"],
+      ["你可以在自己的回合中以2铜钱卖出瑕品，包括你的定品后回合。", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; R26)"],
+      ["A Flawed ceramic may be sold at any time for 2 Coins.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; R26)"],
+      ["You may also sell it during the Cleanup trim.", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; R26)"],
+      ["收工时也可以卖出瑕品。", "a sale at any time, in the after-Quality step or at Cleanup (changes 36, 41–42; R26)"],
       ["Once per round, a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less.", "Decorator's Kit's Decoration condition (change 37)"],
       ["每轮一次，你制的1件刻花、印花或画花的坯少付1铜钱。", "Decorator's Kit's Decoration condition (change 37)"],
       ["you may pay 1 Clay and 1 Coin to form one additional vessel", "Ding's 1-Coin vessel and its no-discount clause (changes 37, 40)"],

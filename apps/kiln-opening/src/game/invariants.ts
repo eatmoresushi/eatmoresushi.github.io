@@ -95,16 +95,16 @@ const FIRING_PHASES: readonly GamePhaseType[] = [
 ];
 /**
  * Phases between firings (the firing has finished or been skipped): the Shared Kiln is empty, and
- * the only loaded ceramics are Imperial Priority loads made in the Order Phase (rev. 5 L174, I3),
+ * the only loaded ceramics are Imperial Priority loads made in the Order Phase (rev. 5 L174, R28),
  * each waiting in its owner's Imperial Kiln for the next round's firing. Loaded in this round in
  * these phases, in the previous round at the next Start of Round.
  */
 const BETWEEN_FIRINGS_THIS_ROUND: readonly GamePhaseType[] = ["orders", "cleanup_hand_limit", "finished"];
 const BETWEEN_FIRINGS_LAST_ROUND: readonly GamePhaseType[] = ["round_start_setters_mark"];
-/** Phases in which a ceramic loaded in the previous round's Order Phase may still be loaded (I3). */
+/** Phases in which a ceramic loaded in the previous round's Order Phase may still be loaded (R28). */
 const CARRIED_CERAMIC_PHASES: readonly GamePhaseType[] = ["round_start_setters_mark", "work_turn", ...FIRING_PHASES];
 
-/** A ceramic Imperial Priority loaded in an Order Phase (rev. 5 L174, I3): it waits in its
+/** A ceramic Imperial Priority loaded in an Order Phase (rev. 5 L174, R28): it waits in its
  * owner's Imperial Kiln for the next round's firing. */
 function isOrderPhaseImperialLoad(c: LoadedCeramic, round: number): boolean {
   return c.placement.kiln === "imperial" && c.loadedBy === "imperial_priority" && c.loadedInRound === round;
@@ -780,6 +780,7 @@ function checkPhaseShape(state: GameState, v: Violations): void {
       break;
     case "work_turn":
       v.check(seated(phase.activePlayerId), () => `active player ${phase.activePlayerId} is not seated`);
+      v.check(phase.endTurnAfterAction === undefined || phase.endTurnAfterAction === true, () => "the end-turn request is not `true`");
       break;
     case "firing_contributions": {
       v.check(phase.eligiblePlayerIds.every(seated) && unique(phase.eligiblePlayerIds), () => "Contribution eligibility is malformed");
@@ -932,7 +933,7 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
         v.check(Object.hasOwn(firing.ceramics, c.id), () => `${c.id} is loaded but not in this firing`);
       }
     }
-    // Nothing leaves the firing early (rev. 5 L176: no free actions during the firing, I1).
+    // Nothing leaves the firing early (rev. 5 L176: no free actions during the firing, R26).
     for (const ceramicId of Object.keys(firing.ceramics)) {
       const c = lookup(state.ceramics, ceramicId);
       v.check(c?.stage === "loaded", () => `firing record ${ceramicId} has no loaded ceramic`);
@@ -975,7 +976,7 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
   } else {
     v.check(Object.keys(state.hidden.firePeeks).length === 0, () => "a Test Pieces peek outlived its firing");
   }
-  // Between firings (I3): no Shared ceramic; only Order Phase Imperial Priority loads wait.
+  // Between firings (R28): no Shared ceramic; only Order Phase Imperial Priority loads wait.
   if (phase.type === "setup_kiln_selection") {
     v.check(!ceramics.some((c) => c.stage === "loaded"), () => `a ceramic is loaded in ${phase.type}`);
   }
@@ -992,11 +993,17 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
     }
   }
 
-  // The after-action window is open exactly while it offers something on public facts (I2).
+  // A remembered "end the turn afterwards" request (owner UI decision D21) lives only while a
+  // sub-step of the worker action is open; `completeWorkerAction` consumes it.
+  if (phase.type === "work_turn" && phase.endTurnAfterAction !== undefined) {
+    const kind = phase.step.kind;
+    v.check(kind === "commission_market" || kind === "guild_inspection" || kind === "colour_samples", () => `an end-turn request outlived its worker action (${kind})`);
+  }
+  // The after-action window is open exactly while it offers something on public facts (R27).
   if (phase.type === "work_turn" && phase.step.kind === "after_action") {
     v.check(afterActionWindowOpen(publicGameOf(state), phase.activePlayerId), () => `${phase.activePlayerId}'s after-action window is open with nothing to offer`);
   }
-  // An Order Phase turn is open only while something is in it (I3).
+  // An Order Phase turn is open only while something is in it (R28).
   if (phase.type === "orders") {
     const current = phase.turnOrder[phase.index];
     v.check(

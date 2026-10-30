@@ -27,6 +27,7 @@ import {
 } from "../../../src/game/content.ts";
 import { applyAction, createGame, submitContribution, validateAction } from "../../../src/game/engine.ts";
 import { validateContribution } from "../../../src/game/firing/contributions.ts";
+import { END_TURN_COMMAND_TYPES } from "../../../src/game/freeActionWindow.ts";
 import { parseCommand } from "../../../src/game/actionGuard.ts";
 import { assertInvariants, hiddenIdsIn, publiclyVisibleIds } from "../../../src/game/invariants.ts";
 import { type SampleOptions, legalActionFamilies, legalActions, legalCommands, sampleLegalAction } from "../../../src/game/legalActions.ts";
@@ -38,6 +39,7 @@ import {
   commissionOptions,
   completableOrders,
   contributionOptions,
+  endTurnOptions,
   freeActionOptions,
   dingCopyableVesselIndexes,
   guildInspectionOptions,
@@ -65,6 +67,7 @@ import { actorViewOf, eventForViewer, projectEvent, projectPublicState } from ".
 import type {
   ActorView,
   AuthoritativeCommand,
+  EndTurnCommandType,
   SelectPick,
   GameAction,
   GameEvent,
@@ -408,7 +411,8 @@ export interface FuzzResult {
    * `crackle_vp` (an Order completed with a Crackle ceramic, change 29). Revision 5:
    * `free:<event>:<window>`, `carried_imperial_fired`, `ge_masterpiece` and `ge_flawed` (Ge on a
    * ceramic that keeps its Quality, change 39), `ding_two_coins` (change 40) and `kit_plain`
-   * (Decorator's Kit on a Plain vessel, change 37). */
+   * (Decorator's Kit on a Plain vessel, change 37). Owner UI decision D21: `end_turn_placed`,
+   * `end_turn_remembered`, `end_turn_after_action`, `end_turn_order_phase`, `end_turn_false`. */
   deckEvents: Map<string, number>;
 }
 
@@ -424,6 +428,8 @@ function pickIndex(length: number, rng: SeededRandom): number {
 export function playFuzzGame(options: FuzzOptions): FuzzResult {
   const where = label(options);
   const chooser = new SeededRandom(options.chooserSeed);
+  // D21's `endTurn` draws from its own stream (`withEndTurnSample`).
+  const endTurnChooser = new SeededRandom(options.chooserSeed * 7 + 3);
   const table =
     options.start === "rich"
       ? FuzzTable.fromState(richStartState(options.seed, options.playerCount), options.seed)
@@ -453,7 +459,7 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
       else if (event.type === "CERAMIC_SOLD") count(deckEvents, "flawed_sale");
       else if (event.type === "ORDER_COMPLETED" && (event.record.crackleVp ?? 0) > 0) count(deckEvents, "crackle_vp");
       // Free actions by window (rev. 5 L168–176): `free:<event>:<window>`; an Order Phase Imperial
-      // Priority load before Round 5 waits for the next round's firing (I3).
+      // Priority load before Round 5 waits for the next round's firing (R28).
       if (event.type === "CERAMIC_SOLD" || event.type === "ORDER_COMPLETED" || event.type === "IMPERIAL_PRIORITY_USED") {
         count(deckEvents, `free:${event.type}:${event.window}`);
       }
@@ -513,7 +519,7 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
       }
       command = chosen;
     } else {
-      const sampled = sampleLegalAction(view, chooser, options.weights === undefined ? {} : { weights: options.weights });
+      const sampled = withEndTurnSample(view, sampleLegalAction(view, chooser, options.weights === undefined ? {} : { weights: options.weights }), endTurnChooser);
       const error = validateAction(view, sampled);
       if (error !== null) {
         throw new Error(`${context}: sampled ${sampled.type} does not validate: ${error.code} ${error.message}`);
@@ -598,6 +604,21 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
       throw new Error(`${context} after ${command.type}: ${privacy.join("; ")}`);
     }
     countDeckEvents(events, before);
+    // Owner UI decision D21: a turn ended by `endTurn` in the same command (`end_turn_placed` by a
+    // worker-action command carrying it, `end_turn_remembered` by a later command of the action,
+    // `end_turn_after_action` by a free action or the swap's Select, `end_turn_order_phase`), each
+    // skipping a step or turn that was still open (`automatic: false`); `end_turn_false`.
+    const requested = (command as { endTurn?: boolean }).endTurn;
+    if (requested === false) count(deckEvents, "end_turn_false");
+    if (phaseNow.type === "work_turn" && command.type !== "END_TURN") {
+      const ended = events.some((event) => event.type === "WORK_TURN_ENDED" && event.playerId === actorId && !event.automatic);
+      const kind = phaseNow.step.kind;
+      if (ended && requested === true) count(deckEvents, kind === "after_action" || kind === "colour_samples_swap" ? "end_turn_after_action" : "end_turn_placed");
+      else if (ended && phaseNow.endTurnAfterAction === true) count(deckEvents, "end_turn_remembered");
+    }
+    if (phaseNow.type === "orders" && requested === true && events.some((event) => event.type === "ORDER_TURN_ENDED" && event.playerId === actorId && !event.automatic)) {
+      count(deckEvents, "end_turn_order_phase");
+    }
     // Decorator's Kit on a Plain vessel (any vessel since change 37, rev. 5 L622).
     if (command.type === "PLACE_FORM_DECORATE" && command.decoratorsKitVesselIndex !== undefined && command.vessels[command.decoratorsKitVesselIndex]?.decoration === "plain") {
       count(deckEvents, "kit_plain");
@@ -710,6 +731,27 @@ const PLACEMENT_LEVEL: ReadonlySet<GameRuleErrorCode> = new Set<GameRuleErrorCod
 
 function codeOf(view: ActorView, action: GameAction): GameRuleErrorCode | null {
   return validateAction(view, action)?.code ?? null;
+}
+
+function isEndTurnType(type: string): type is EndTurnCommandType {
+  return (END_TURN_COMMAND_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * Owner UI decision D21 in random play: sometimes asks to end the turn afterwards where
+ * `endTurnOptions` says the request is accepted (1 in 4), sometimes sends `endTurn: false`
+ * (1 in 8, accepted wherever the command is). Draws from its own chooser, so the field never
+ * perturbs the other choices' stream by itself.
+ */
+function withEndTurnSample(view: ActorView, action: GameAction, chooser: SeededRandom): GameAction {
+  if (!isEndTurnType(action.type)) {
+    return action;
+  }
+  const roll = chooser.nextInt(8);
+  if (roll < 2 && (endTurnOptions(view)?.commandTypes.includes(action.type) ?? false)) {
+    return { ...action, endTurn: true } as GameAction;
+  }
+  return roll === 2 ? ({ ...action, endTurn: false } as GameAction) : action;
 }
 
 /**
@@ -974,6 +1016,20 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
       const anyMatch = order !== undefined && orderMatchOptions(view, orderId, 1).length > 0;
       expect(anyMatch === listed.some((o) => o.orderId === orderId), `completableOrders and orderMatchOptions disagree on ${orderId}`);
     }
+  }
+
+  // "End the turn afterwards" (owner UI decision D21): `endTurnOptions` lists exactly the types
+  // whose legal commands accept `endTurn: true` now; `endTurn: false` is accepted wherever the
+  // command is.
+  const endTurn = endTurnOptions(view);
+  const ownTurn = acts && (phase.type === "work_turn" || phase.type === "orders");
+  expect((endTurn !== null) === ownTurn, `endTurnOptions is ${endTurn === null ? "null" : "set"} in ${phase.type} for ${actorId}`);
+  for (const action of canonical) {
+    if (!isEndTurnType(action.type)) continue;
+    const listed = endTurn?.commandTypes.includes(action.type) ?? false;
+    const ok = codeOf(view, { ...action, endTurn: true } as GameAction) === null;
+    expect(ok === listed, `endTurnOptions lists ${action.type}=${listed} but endTurn: true ok=${ok} (${phase.type})`);
+    expect(codeOf(view, { ...action, endTurn: false } as GameAction) === null, `${action.type} with endTurn: false is rejected (${phase.type})`);
   }
 
   // Firing.

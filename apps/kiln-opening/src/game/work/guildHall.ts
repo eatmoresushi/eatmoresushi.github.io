@@ -27,6 +27,11 @@
  *   refill (B2).
  * - Legality (v1.6.2 L242), for the Apprentice and the Shifu alike: an affordable face-up Tech
  *   from a discipline the player does not own, within the 3-total limit (L240).
+ * - "End the turn afterwards" (owner UI decision D21, DELTA §16.24): `PLACE_GUILD_HALL`,
+ *   `GUILD_TAKE` and `GUILD_FINISH` each record their `endTurn` first
+ *   (`state.noteEndTurnRequest`), so a request made on the placement or a first take carries
+ *   through the inspection and any Colour Samples Select to `completeWorkerAction`, unless a
+ *   later command of the action carries the field.
  *
  * Layer 4 (P4). Imports layers 0–3 only; hands over through `ctx.flow.workerActionDone`.
  */
@@ -35,7 +40,7 @@ import { DISCIPLINES, GAME_CONFIG, LOCATIONS, TECHS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { drawTechsForInspection, returnTechsToBottom, takeFaceUpTech } from "../market.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
-import { emit, phaseAs, player, spend } from "../state.ts";
+import { emit, noteEndTurnRequest, phaseAs, player, spend } from "../state.ts";
 import { acquisitionError, grantTech, techPrice } from "../techs.ts";
 import type {
   ActionHandlerTable,
@@ -313,6 +318,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       }
     },
     resolve: (draft, actorId, action, ctx) => {
+      noteEndTurnRequest(draft, actorId, action.endTurn);
       placeWorker(draft, actorId, action.workerId, LOCATION, false, ctx);
       const choice = action.choice;
       if (choice.kind === "buy_face_up") {
@@ -367,6 +373,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       return acquireError(player(view.game, view.viewerId), take.techId);
     },
     resolve: (draft, actorId, action, ctx) => {
+      noteEndTurnRequest(draft, actorId, action.endTurn);
       const inspection = inspectionOf(draft, actorId);
       const take: GuildTake = { kind: action.take.kind, techId: action.take.techId };
       if (take.kind === "inspected") {
@@ -409,6 +416,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       return null;
     },
     resolve: (draft, actorId, action, ctx) => {
+      noteEndTurnRequest(draft, actorId, action.endTurn);
       finishInspection(draft, actorId, action.bottomOrder, ctx);
     },
   },

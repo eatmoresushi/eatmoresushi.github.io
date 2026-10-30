@@ -3,7 +3,7 @@
  * an Order, gain 2 Coins. It does not complete Orders itself. Completing an Order is a free action
  * (rev. 5 L173, L417, L422), so the 2 Coins come on the owner's first completion of the round in
  * whichever free-action window it is (before or after the worker action, or the Order Phase),
- * once per round across those windows (L176); automatic (I5), Starting Orders included.
+ * once per round across those windows (L176); automatic (R30), Starting Orders included.
  */
 
 import { describe, expect, it } from "vitest";
@@ -172,7 +172,7 @@ describe("in any free-action window, once per round across windows (rev. 5 L176,
     expect(only(t.act("p1", complete("O01", ["c1"])), "ORDER_COMPLETED")).toMatchObject({ window: "order_phase", record: { canalBargeCoins: 2 } });
   });
 
-  it("opens the after-action window only on public facts: a held Order and a Finished ceramic that is not Flawed (I2)", () => {
+  it("opens the after-action window only on public facts: a held Order and a Finished ceramic that is not Flawed (R27)", () => {
     const open = new LocalTable(buildState({ players: [{ techs: ["T23"], hand: ["O30"] }, {}], ceramics: [WHITE_BOWL] }), {
       flow: "halt",
       pass: ["worker_action_done"],

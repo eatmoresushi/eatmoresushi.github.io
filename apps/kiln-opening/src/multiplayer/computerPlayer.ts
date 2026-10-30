@@ -33,9 +33,9 @@
  * - **Sales.** A Finished Flawed ceramic can complete no Order and enter no Exhibition (rev. 5
  *   L300), so it is sold for 2 Coins as a free action (rev. 5 L172) in the seat's next free-action
  *   window (before or after its worker action, or its Order Phase turn), before any other choice.
- *   There is no sale during the firing or at Cleanup (I1).
+ *   There is no sale during the firing or at Cleanup (R26).
  * - **Imperial Priority** is spent in a Work turn's windows (threshold 1.5). In the Order Phase
- *   (legal there, I3) its ceramic waits for the next round's Kiln Die and keeps the Imperial
+ *   (legal there, R28) its ceramic waits for the next round's Kiln Die and keeps the Imperial
  *   Kiln full, so the seat spends it there only in Rounds 1–4 and only when waiting for that
  *   roll could not change the best load (`orderPhaseImperialPriority`); never in Round 5, where
  *   the ceramic is never fired.
@@ -1889,7 +1889,7 @@ function decideSecondFiringChoice(k: Know): GameAction | null {
  * before any other choice of a free-action window: before or after the worker action, or the
  * Order Phase turn. A Finished Flawed ceramic can complete no Order and enter no Exhibition
  * (rev. 5 L300), so its 2 Coins are pure gain. There is no sale during the firing or at Cleanup
- * (I1); the after-action window and the Order Phase turn always open for a sale. Null when there
+ * (R26); the after-action window and the Order Phase turn always open for a sale. Null when there
  * is nothing to sell.
  */
 function decideSellFlawed(k: Know): GameAction | null {
@@ -2329,7 +2329,7 @@ function windowAbility(k: Know): GameAction | null {
 }
 
 /**
- * Imperial Priority in the Order Phase turn (a free action, rev. 5 L174, L314; I3). Its ceramic
+ * Imperial Priority in the Order Phase turn (a free action, rev. 5 L174, L314; R28). Its ceramic
  * waits in the Imperial Kiln for the next round's firing, under a Kiln Die not yet rolled, and
  * in Round 5 it is never fired, so the seat never spends the token there. In Rounds 1–4 it
  * spends it only when waiting for the roll gains nothing: the best load chosen now (Glaze and
@@ -3139,7 +3139,7 @@ function decide(k: Know): AuthoritativeCommand | null {
     case "orders":
       return decideSellFlawed(k) ?? decideOrders(k);
     case "cleanup_hand_limit":
-      // Cleanup is not a free-action window (I1): no sale while trimming.
+      // Cleanup is not a free-action window (R26): no sale while trimming.
       return decideHandLimit(k);
     case "finished":
       return null;

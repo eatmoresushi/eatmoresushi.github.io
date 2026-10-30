@@ -97,6 +97,11 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        the firing (GE `upgradeFrom` / `upgradeTo`; a Crackle ceramic keeps its own Quality);
  *        Ding's vessel 1 Clay + 2 Coins. Rules version stays 1.6.2; r32 rooms and schema-9
  *        saves are rejected, never migrated.
+ *        Amended in place by owner UI decision D21 (2026-10-30): the optional `endTurn` field
+ *        on the worker-action commands and the free actions ends the turn in the same command
+ *        (`work_turn.endTurnAfterAction` remembers a request through the action's sub-steps).
+ *        Not bumped: no r33 room or schema-10 save had been deployed when D21 landed, and a
+ *        command without the field behaves exactly as before.
  */
 export const RULES_BEHAVIOUR_REVISION = 33;
 

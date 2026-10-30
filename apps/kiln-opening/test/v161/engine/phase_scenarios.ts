@@ -215,7 +215,7 @@ export function phaseScenarios(): PhaseScenario[] {
     table.act("p1", { type: "USE_SECOND_FIRING", ceramicId: "c1" });
     add("Second Firing choice with Jun (R7)", table, "p1", (c) => c.type === "SECOND_FIRING_CHOOSE" && c.cardIndex === 0 && c.jun === null);
   }
-  // Free actions after the worker action (rev. 5 L168–176, I2): a held Order with a Finished
+  // Free actions after the worker action (rev. 5 L168–176, R27): a held Order with a Finished
   // ceramic and a Finished Flawed ceramic open the window; the player may complete, sell, or end.
   {
     const table = work({
@@ -228,7 +228,7 @@ export function phaseScenarios(): PhaseScenario[] {
     table.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
     add("After the worker action: complete an Order and sell (free actions)", table, "p1", (c) => c.type === "END_TURN");
   }
-  // Imperial Priority in the Order Phase (rev. 5 L174, L314, I3): the token alone opens the turn;
+  // Imperial Priority in the Order Phase (rev. 5 L174, L314, R28): the token alone opens the turn;
   // the ceramic would wait for the next round's firing.
   add(
     "Order Phase: Imperial Priority",
@@ -243,7 +243,7 @@ export function phaseScenarios(): PhaseScenario[] {
     "p1",
     (c) => c.type === "END_ORDER_TURN",
   );
-  // The Order Phase turn opens for a Finished Flawed ceramic even with nothing to complete (I3);
+  // The Order Phase turn opens for a Finished Flawed ceramic even with nothing to complete (R28);
   // the player may sell it (SELL_FLAWED, a free action) or end the turn.
   add(
     "Order Phase: sell a Flawed ceramic",

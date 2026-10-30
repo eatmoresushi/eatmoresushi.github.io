@@ -7,7 +7,7 @@
  * - **When:** it is a free action (L168–176), so only in a free-action window: before or after
  *   the worker action of your own Work turn, and in your own Order Phase turn
  *   (`freeActionWindow.ts`). Never on another player's turn, never during the firing (the
- *   after-Quality step included) and never at Cleanup (I1: owner ruling R20's after-Quality and
+ *   after-Quality step included) and never at Cleanup (R26: owner ruling R20's after-Quality and
  *   Cleanup trim windows are withdrawn). In Round 5 the Order Phase turn is the last chance
  *   before scoring.
  * - The sale is not a worker action. The handler (`freeActions.ts`, layer 5) rechecks an
