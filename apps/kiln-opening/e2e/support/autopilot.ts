@@ -58,7 +58,7 @@
  * (`crownOrder`) and Ge's Crackle (an `afterQuality` option; on any ceramic of the firing since
  * owner revision 5, change 39). There is no Heat-marker step and no salvage window any more.
  *
- * **Owner revision 5 (changes 36–42, R26–R30) and owner UI decision D21.** The free actions are
+ * **Owner revision 5 (changes 36–42, R26–R32) and owner UI decision D21.** The free actions are
  * native radios too: the pane's list after the worker action and in the Order Phase (`freeAction`,
  * valued `complete-<OrderId>`, `sell_flawed`, `imperial_priority`, `colour_samples_swap`), then the
  * form of the chosen one: the sale's ceramic (`work.sell`, `orders.sell`), the Order's group and

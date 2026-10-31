@@ -4,7 +4,7 @@
  * Spend the Imperial Priority token, a free action (rev. 5 L174, L314): a Shaped vessel, Reworking
  * Table's Shape change (P1), its Glaze and the public −1/0/+1 Imperial modifier, from
  * `imperialPriorityOptions(view).ceramics`, and Kiln Master's optional +1/−1 marker when it is
- * ready (T24, R22; not while its one marker waits in a kiln, P7). It costs no Wood.
+ * ready (T24, R22; not while its one marker waits in a kiln, R32). It costs no Wood.
  * The Recognition milestone and Reworking Table open their rules details (D10). `ImperialPriority`
  * is composed by `ActionWindow` before and after the worker action (the work draft's sub-draft);
  * `ImperialPriorityForm` takes any draft, and the Order Phase turn uses it too (R28).

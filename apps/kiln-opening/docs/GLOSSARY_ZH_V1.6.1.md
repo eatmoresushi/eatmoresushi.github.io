@@ -41,8 +41,9 @@ Flawed ceramic, completing held Orders and spending Imperial Priority are free a
 the Order Phase (§1.4, §2.9 已卖出, §2.10 卖出瑕品, §2.11 交货阶段, §2.12 完成委托, §2.13 and §4.8 御烧优先, §5.1, §7, §9); the draft's 卖出良品 and
 买泥／买柴 (changes 41–42) are not terms (§1.5); see §10.
 Owner rulings R26–R30 (2026-10-30): the owner confirmed revision 5's digital readings (interpretations I1–I5, provisional default P6). The
-自由行动 row (§2.2), the sale row (§2.10), 御烧优先 (§2.13, §4.8) and §9 questions 4, 6 and 7 now cite 裁定R26, R28 and R29; questions 5 (P7) and 8
-(same-turn delivery) stay open; see §10.
+自由行动 row (§2.2), the sale row (§2.10), 御烧优先 (§2.13, §4.8) and §9 questions 4, 6 and 7 now cite 裁定R26, R28 and R29; see §10.
+Owner rulings R31–R32 (2026-10-31): the owner answered revision 5's last two questions. The Kiln Master marker row (§2.10), the
+`TECH_MARKER_IN_KILN` row (§7) and §9 questions 5 and 8 now cite 裁定R32 and R31; see §10.
 
 ---
 
@@ -319,7 +320,7 @@ Owner rulings R26–R30 (2026-10-30): the owner confirmed revision 5's digital r
 | Preferred Heat | 适烧火候 | 沿用。 |
 | Heat Difference | 火候差 | 沿用。 |
 | Heat marker | 火标 | 已取消（V1.6.2 规则书变更28、31）：没有玩家火标，也没有翻火标步骤；“暗置”“翻为+1或−1／收回”随之不用。 |
-| Kiln Master marker | 窑工标 | 窑工每轮一次：装窑1件器物时，可在它上面面朝上放+1或−1标记，公开（R22：施釉装窑行动或御烧优先，共窑或御窑皆可）。计入该器物的实际火候，钧窑叠加其上；复烧重算时留在原处；开窑取器时收回。窑工只有一个标记：它留在交货阶段以御烧优先装进御窑、等下一轮烧窑的器物上时，不能再放（暂定默认 P7）。 |
+| Kiln Master marker | 窑工标 | 窑工每轮一次：装窑1件器物时，可在它上面面朝上放+1或−1标记，公开（R22：施釉装窑行动或御烧优先，共窑或御窑皆可）。计入该器物的实际火候，钧窑叠加其上；复烧重算时留在原处；开窑取器时收回。窑工只有一个标记：它留在交货阶段以御烧优先装进御窑、等下一轮烧窑的器物上时，不能再放（裁定R32）。 |
 | Crackle marker / Crackle ceramic | 开片标／开片器 | — |
 | Imperial modifier (−1/0/+1, chosen at loading) | 御窑修正 | 装进御窑时公开选定并记录（R10、R11）。 |
 | court-fired | 御匠代烧 | 御窑器物由宫中窑匠代烧，不受控火影响。见 4.8。 |
@@ -876,7 +877,7 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 | `TECH_TAKE_REQUIRED` | 未选技艺 | 至少要习得1项技艺 |
 | `TECH_NOT_OWNED` / `KILN_ABILITY_NOT_OWNED` | 未拥有 | 你没有{tech} |
 | `TECH_ALREADY_USED` / `ABILITY_ALREADY_USED` | 本轮已用 | {tech}本轮已用 |
-| `TECH_MARKER_IN_KILN` | 窑工标仍在窑中（暂定默认 P7） | {tech}标还在窑中的器物上，要到那次烧窑开窑取器时才收回 |
+| `TECH_MARKER_IN_KILN` | 窑工标仍在窑中（裁定R32） | {tech}标还在窑中的器物上，要到那次烧窑开窑取器时才收回 |
 | `INVALID_BOTTOM_ORDER` | 置底顺序无效 | 请为每张没有拿的所看技艺牌排定置底顺序 |
 | `INVALID_TARGET` | 目标不合法 | 此目标不合法：{reason} |
 | `RECOGNITION_GATE` | 州衙声望限制 | 州衙只能在声望0–2时使用，不能推进到声望4 |
@@ -912,7 +913,7 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 ## 9. 待裁定问题（不得自行定规则）
 
 以下问题列入时，英文源与审计均未裁定。仍未裁定的，中文文字暂按英文原样保持泛指，不写定答案；业主裁定并记入
-RULEBOOK_AUDIT_V1.6.2.md 后，在相应条目标明“已裁定”并补一句（如第4、6、7条）；审计已记录做法的，标明“已记录”（如第1条）。
+RULEBOOK_AUDIT_V1.6.2.md 后，在相应条目标明“已裁定”并补一句（如第4至8条）；审计已记录做法的，标明“已记录”（如第1条）。
 
 1. **（已记录，2026-10-15）复烧作用于御窑器物：**审计“Interpretations”已记录：沿用同一窑骰点数、御窑修正与窑工标（修订4之前为火标），配合新窑火修正重算；已列入复烧的配件澄清（INT Imperial Second Firing）。原问题：英文写“相同的基础火候、温区修正、窑具修正与火标”，但御窑器物的实际火候
    由窑骰点数与御窑修正构成，不用基础火候与温区修正（EN L646、L657、L680）。沿用哪些数值未定。
@@ -923,16 +924,17 @@ RULEBOOK_AUDIT_V1.6.2.md 后，在相应条目标明“已裁定”并补一句�
    数字版是否也自动结算其余各项（放弃毫无所得），由 IMPLEMENTATION_DECISIONS 记录；本表文字不受影响。
 4. **（修订5，已裁定，2026-10-30：R29，原暂定默认 P6）定窑的额外坯与师傅的“若制2件”：**定窑的额外坯不计入该行动的制坯件数上限（EN L488）。
    师傅只制1件、再由定窑多制1件时，不能享受“若制2件，其中1件少付1铜钱”（裁定R29）；定窑的配件澄清已改为引用R29。
-5. **（修订5，暂定默认 P7，仍待裁定：审计问题1）窑工标与交货阶段的御烧优先：**窑工只有一个标记（EN L105），开窑取器时收回（EN L683）。
-   交货阶段以御烧优先装进御窑的器物要等到下一轮烧窑，标记若放在它上面，下一轮这次烧窑结束前窑工能否再用，审计暂定为不能。
+5. **（修订5，已裁定，2026-10-31：R32，原暂定默认 P7）窑工标与交货阶段的御烧优先：**窑工只有一个标记（EN L105），开窑取器时收回（EN L683）。
+   交货阶段以御烧优先装进御窑的器物要等到下一轮烧窑，标记放在它上面，就一直留到下一轮这次烧窑结束；在此之前窑工不能再放这个标记，虽然开工时“每轮一次”已经重置（裁定R32）。窑工的配件澄清已改为引用R32。
 6. **（修订5，已裁定，2026-10-30：R26）定品后与收工时卖出瑕品：**R20 曾把“定品后自己的回合”与“收工削减委托时”列为卖出时机；变更36的自由行动时机不含二者（EN L170、L176）。
    业主裁定这两个时机都不能卖出（R26，R20 随之改变）。
 7. **（修订5，已裁定，2026-10-30：R28）交货阶段的御烧优先：**御烧优先是自由行动（EN L174、L314），所以交货阶段也可以使用；装进的器物到下一轮烧窑才烧成，第5轮装进的不会烧成。
    业主裁定交货阶段可以使用（R28：交货阶段就是烧窑之后做自由行动的时机）。规则书的术语表（中文第84行）、声望表（中文第450行）与速查（中文第728行）仍写“在你的工人行动之前或之后”；
    这三行是否改写为自由行动属于规则书措辞，仍待业主决定（审计“Observations on the owner's files”），中文不改。
-8. **（修订5，INT Same-turn delivery，仍待裁定：审计问题2）承接当回合交货：**规则书写在手委托“可以作为自由行动在你之后的任何回合或任何一次烧窑之后完成”（中文第419行），
+8. **（修订5，已裁定，2026-10-31：R31，原 INT Same-turn delivery）承接当回合交货：**规则书写在手委托“可以作为自由行动在你之后的任何回合或任何一次烧窑之后完成”（中文第419行），
    字面上不含承接它的那个回合；变更36的理由写明“同一回合承接并交付”（中文第48行），自由行动一节也不排除本回合承接的委托（中文第172–175行）。
-   数字版暂定承接后的同一回合（工人行动之后，或行动前换单之后）就可以完成，委托通则相应写作“委托一收入手中，就可以作为自由行动完成”；待业主确认。
+   业主裁定承接后的同一回合（工人行动之后，或行动前换单之后）就可以完成，“之后”指承接之后（裁定R31）；委托通则写作“委托一收入手中，就可以作为自由行动完成”，引用R31。
+   第419行的措辞还写“之后”，与R31读起来不一致；这属于规则书措辞，审计“Observations on the owner's files”记录了向业主提议的改法，中文不改。
 
 ---
 
@@ -1053,7 +1055,7 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
   卖出瑕品, 完成在手委托 and 使用御烧优先, in your own turn before or after the worker action and in the 交货阶段. The timing label 作为自由行动 is added (§1.4)
   and 完成委托时 no longer says 只在交货阶段. 已卖出 is a ceramic state (§2.9, Chinese line 377).
 - The sale (§2.10) and 御烧优先 (§2.13, §4.8) follow the printed free-action windows; R20's after-Quality and Cleanup windows are gone (I1, open question 6; now R26),
-  and an Order Phase 御烧优先 is fired next round (I3, open question 7; now R28). Kiln Master's one marker (§2.10, P7, open question 5).
+  and an Order Phase 御烧优先 is fired next round (I3, open question 7; now R28). Kiln Master's one marker (§2.10, P7, open question 5; now R32).
 - The draft wording of changes 36 and 38 (卖出良品3铜钱, 以2铜钱买1泥或1柴, Chinese lines 48 and 50) was withdrawn by changes 41–42 (Chinese lines 53–54);
   §1.5 bans it.
 - §3: 饰坯匣 (any vessel), 哥窑 (any of your ceramics of the firing; only a 良品 becomes 上品) and 定窑 (1泥2铜钱; no 不享减免) are the owner's component
@@ -1063,7 +1065,7 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
   the reason 器物不是上品或良品 is deleted.
 - Review fixes (2026-10-30): §7 gains `WORKER_ACTION_IN_PROGRESS` for the swap's own Select (先完成{tech}的精选：…不能在中途进行), since
   换单 is no worker action and its Select may be open before the worker is placed. The 自由行动 row separates the printed text (Chinese line 178:
-  其他玩家的回合中和烧窑过程中) from the digital readings (收工, I1; 换单, I3; since 2026-10-30 owner rulings R26 and R28). §9 gains question 8 (an Order delivered the turn it is reserved;
+  其他玩家的回合中和烧窑过程中) from the digital readings (收工, I1; 换单, I3; since 2026-10-30 owner rulings R26 and R28). §9 gains question 8 (an Order delivered the turn it is reserved, now R31;
   the Orders clarification reads 委托一收入手中，就可以作为自由行动完成).
 
 **Owner rulings R26–R30 (2026-10-30)**
@@ -1071,5 +1073,10 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
   points the rulebook does not print are owner rulings (收工, 裁定R26; 换单, 裁定R28) and that 交货阶段 is the post-firing free-action window (R28);
   the sale row (§2.10) cites 裁定R26; 御烧优先 (§2.13) and the §4.8 paragraph cite 裁定R28.
 - §9: question 4 (定窑, was P6) is answered by R29, question 6 (定品后与收工时卖出) by R26 and question 7 (交货阶段的御烧优先) by R28; whether the
-  rulebook's three Imperial Priority lines should name the free action stays with the owner as wording. Questions 5 (P7) and 8 (承接当回合交货) stay
-  open (the audit's open questions 1 and 2). No term changes.
+  rulebook's three Imperial Priority lines should name the free action stays with the owner as wording. Questions 5 (P7) and 8 (承接当回合交货) stayed
+  open that day (the audit's open questions 1 and 2 until 2026-10-31). No term changes.
+
+**Owner rulings R31–R32 (2026-10-31)**
+- The owner answered revision 5's last two questions. §9 question 8 (承接当回合交货, was INT Same-turn delivery) is answered by R31 and question 5 (窑工标, was P7) by R32.
+  The Kiln Master marker row (§2.10) and the `TECH_MARKER_IN_KILN` row (§7) cite 裁定R32. The Orders' clarifications keep their wording and cite R31; Kiln Master's clarification drops 暂定裁定： and cites R32.
+- Chinese line 419 (EN L417) still says 之后; that stays with the owner as rulebook wording (§9 question 8). No term changes.

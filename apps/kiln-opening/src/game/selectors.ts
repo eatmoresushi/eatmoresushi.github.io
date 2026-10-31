@@ -1221,7 +1221,7 @@ export function afterActionMayOpen(view: PlayerView, brings: ActionBrings = {}):
  * empty gained Imperial Kiln and a Shaped vessel, which may be any of them. Free: no Wood. Per
  * vessel (§5 gap 16), probed through `validateAction`: its Glazes, Imperial modifiers and
  * Reworking Table Shapes (DESIGN §11 Q1). `kilnMaster`: Kiln Master's marker may go on this load
- * (T24 ready and its marker not on a ceramic still in a kiln, L647, R22, P7).
+ * (T24 ready and its marker not on a ceramic still in a kiln, L647, R22, R32).
  */
 export function imperialPriorityOptions(view: PlayerView): ImperialPriorityOptions {
   const actor = asActorView(view);

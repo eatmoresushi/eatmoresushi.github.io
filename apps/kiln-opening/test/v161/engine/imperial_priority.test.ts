@@ -1,12 +1,12 @@
 /**
  * Imperial Priority (rev. 5 L174, L314, L448, R10, R11; DESIGN §11 Q1 / audit P1; change 36, R28,
- * P7): once per game, as a free action, spend the token — free — to give 1 of your Shaped vessels
+ * R32): once per game, as a free action, spend the token — free — to give 1 of your Shaped vessels
  * a Glaze and load it into your empty Imperial Kiln with a chosen public modifier. Any free-action
  * window: before or after your worker action, or your Order Phase turn, whose ceramic waits for
  * the next round's firing (in Round 5 it is never fired). It is a token effect, not a Glaze &
  * Load action, and burns no kiln fuel. Reworking Table may change the Shape first; Kiln Master's
  * marker may go on the load (R22, `kiln_master.test.ts`), and while it waits on an Order Phase
- * load it cannot be placed again (P7).
+ * load it cannot be placed again (R32).
  */
 
 import { describe, expect, it } from "vitest";
@@ -326,7 +326,7 @@ describe("Imperial Priority in the Order Phase (rev. 5 L174, L314; R28)", () => 
   });
 });
 
-describe("Kiln Master's one marker on an Order Phase load (P7)", () => {
+describe("Kiln Master's one marker on an Order Phase load (R32)", () => {
   it("stays on the waiting ceramic until the next round's firing finishes; meanwhile it cannot be placed (TECH_MARKER_IN_KILN)", () => {
     const t = orderPhaseHolder(2, { techs: ["T24"], resources: { wood: 5 } });
     expect(imperialPriorityOptions(t.view("p1")).kilnMaster).toBe(true);

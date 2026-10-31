@@ -36484,7 +36484,7 @@
         "mode": "single",
         "phaseType": "orders"
       },
-      "description": "In their Order Phase turn, the post-firing free-action window (owner ruling R28), the viewer may spend Imperial Priority: a Shaped vessel is glazed and loaded into their empty Imperial Kiln, free, with a public Imperial modifier (rev. 5 L174, L314). This round's firing is over, so the ceramic waits in the Imperial Kiln and is fired in the next round's firing; in Round 5 it is never fired, which the form says plainly. Kiln Master's one marker would wait with it (P7).",
+      "description": "In their Order Phase turn, the post-firing free-action window (owner ruling R28), the viewer may spend Imperial Priority: a Shaped vessel is glazed and loaded into their empty Imperial Kiln, free, with a public Imperial modifier (rev. 5 L174, L314). This round's firing is over, so the ceramic waits in the Imperial Kiln and is fired in the next round's firing; in Round 5 it is never fired, which the form says plainly. Kiln Master's one marker would wait with it (R32).",
       "draftCommand": {
         "ceramicId": "c17",
         "glaze": "white",

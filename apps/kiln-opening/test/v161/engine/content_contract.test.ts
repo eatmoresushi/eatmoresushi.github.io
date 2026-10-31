@@ -1681,9 +1681,13 @@ describe("clarifications (owner decision D10, K15)", () => {
     // Owner rulings R26–R30 (2026-10-30), which confirmed revision 5's interpretations I1–I5
     // and provisional default P6 (now R29).
     for (const ruling of ["R26", "R27", "R28", "R29", "R30"]) expect(clarificationSourceKind(ruling), ruling).toBe("ruling");
-    // Revision 5's provisional default P7 (audit); P4 and P5 are cited by no item, and P6 is R29.
-    expect(clarificationSourceKind("P7")).toBe("provisional");
-    for (const bad of ["L0", "R31", "R0", "B4", "P4", "P5", "P6", "P8", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
+    // Owner rulings R31–R32 (2026-10-31): same-turn delivery (was INT Same-turn delivery) and
+    // Kiln Master's one marker (was provisional default P7).
+    for (const ruling of ["R31", "R32"]) expect(clarificationSourceKind(ruling), ruling).toBe("ruling");
+    // P4 and P5 are cited by no item, P6 is R29 and P7 is R32.
+    for (const bad of ["L0", "R33", "R0", "B4", "P4", "P5", "P6", "P7", "P8", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
+    // A rule the owner has decided is not worded as provisional.
+    expect(all.filter(({ item }) => clarificationTags(item.source).some((tag) => tag === "R31" || tag === "R32")).map(({ item }) => item.en + item.zh).join("\n")).not.toMatch(/Provisional ruling|暂定裁定/);
     expect(resolveTag("L9999")).toBeNull();
     expect(resolveTag("INT Imaginary ruling")).toBeNull();
     expect(resolveTag("ED L16")).toContain("It is superseded by change 21 (L31, L202), change 22 (L32, L622) and change 25 (L35).");

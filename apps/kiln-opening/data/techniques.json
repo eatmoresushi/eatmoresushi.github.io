@@ -696,9 +696,9 @@
           "source": "L654 · L683"
         },
         {
-          "en": "Provisional ruling: Kiln Master has one marker. A marker placed on a ceramic that Imperial Priority loads in the Order Phase stays on it until the next round's firing finishes; until then you cannot place the marker again.",
-          "zh": "暂定裁定：窑工只有一个窑工标。在交货阶段通过御烧优先装窑时放上的窑工标，一直留在该器物上，直到下一轮开窑取器时才收回；在此之前你不能再放窑工标。",
-          "source": "P7"
+          "en": "Kiln Master has one marker. A marker placed on a ceramic that Imperial Priority loads in the Order Phase stays on it until the next round's firing finishes; until then you cannot place the marker again.",
+          "zh": "窑工只有一个窑工标。在交货阶段通过御烧优先装窑时放上的窑工标，一直留在该器物上，直到下一轮开窑取器时才收回；在此之前你不能再放窑工标。",
+          "source": "R32"
         },
         {
           "en": "In the Shared Kiln the marker adds to the zone or Kiln Furniture modifier; in your Imperial Kiln it adds to the modifier chosen at loading. Jun's adjustment applies on top of it.",

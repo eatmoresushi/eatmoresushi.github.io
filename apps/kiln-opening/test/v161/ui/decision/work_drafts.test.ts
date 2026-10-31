@@ -1009,7 +1009,7 @@ describe("Imperial Priority draft (gap 16)", () => {
     expect(options.kilnMaster).toBeNull();
   });
 
-  it("offers no Kiln Master's marker while its one marker waits with a ceramic in a kiln (P7, R28)", () => {
+  it("offers no Kiln Master's marker while its one marker waits with a ceramic in a kiln (R32, R28)", () => {
     // Kiln Master's owner, with its marker on a Shaped vessel made a loaded ceramic: what Imperial
     // Priority in an Order Phase leaves behind, carried into the next round with the Tech ready again.
     const c = ctxWith(KM_FUEL, (view) => {

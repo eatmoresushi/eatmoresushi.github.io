@@ -2336,7 +2336,7 @@ function windowAbility(k: Know): GameAction | null {
  * Imperial modifier, its value averaged over the Kiln Die's faces) is worth as much as the best
  * load chosen after the roll, and clears the Work-turn threshold. It places no Kiln Master
  * marker: the tile's one marker would stay on the ceramic and keep Kiln Master unusable next
- * round until that firing finishes (P7). Null otherwise.
+ * round until that firing finishes (R32). Null otherwise.
  */
 function orderPhaseImperialPriority(k: Know): GameAction | null {
   if (k.lastRound) return null;

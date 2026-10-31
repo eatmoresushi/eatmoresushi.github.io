@@ -317,7 +317,7 @@ describe("rewards count for the placement that follows (rev. 5 L176)", () => {
   });
 });
 
-describe("reserve and deliver in one turn (rev. 5 L176; change 36; INT Same-turn delivery: L417's \"later\" is later than the reservation)", () => {
+describe("reserve and deliver in one turn (rev. 5 L176; change 36; R31: L417's \"later\" is later than the reservation)", () => {
   it("a face-up Order taken by a before-action Colour Samples swap, completed before the worker action", () => {
     const t = new LocalTable(
       buildState({ players: [{ techs: ["T10"], hand: ["O40"] }, {}], ceramics: [STANDARD_BOWL], display: ["O01", "O02", "O03", "O04", "O05", "O06"] }),

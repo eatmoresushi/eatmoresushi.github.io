@@ -791,7 +791,7 @@ describe("strategic computer choices", () => {
         { flow: "halt", pass: ["worker_action_done"] },
       );
     // S04 needs Moon White (Preferred Heat 4): +1 is the best modifier whatever the next Kiln
-    // Die shows, so nothing is learnt by waiting. No Kiln Master marker (P7: it would stay on
+    // Die shows, so nothing is learnt by waiting. No Kiln Master marker (R32: it would stay on
     // the ceramic until next round's firing finishes).
     for (const round of [2, 4] as const) {
       const table = orderTurn(round, ["S04"], ["T24"]);

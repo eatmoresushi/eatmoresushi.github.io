@@ -350,7 +350,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     detailKeys: keys("techId"),
   },
   TECH_MARKER_IN_KILN: {
-    // P7: Kiln Master has one marker (rev. 5 L105); it returns when its ceramic's firing
+    // R32: Kiln Master has one marker (rev. 5 L105); it returns when its ceramic's firing
     // finishes (L683), so it cannot go on another ceramic while one loaded in an earlier
     // Order Phase still waits in a kiln.
     en: "{techId}'s marker is still on a ceramic in a kiln; it returns when that firing finishes.",

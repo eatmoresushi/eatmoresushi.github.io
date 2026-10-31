@@ -10,7 +10,7 @@
       {
         "en": "A held Order can be completed as a free action as soon as you hold it: on any turn of yours, before or after your worker action (including the turn you reserved it), and in any Order Phase from then on. Ceramics fired this round first become available after the firing.",
         "zh": "委托一收入手中，就可以作为自由行动完成：在你的任何回合中工人行动之前或之后（包括承接它的那个回合），以及此后的任何交货阶段。本轮烧成的器物要到烧窑之后才可使用。",
-        "source": "L417 · L176 · INT Same-turn delivery"
+        "source": "L417 · L176 · R31"
       },
       {
         "en": "When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged.",
@@ -32,7 +32,7 @@
       {
         "en": "A held Order can be completed as a free action as soon as you hold it: on any turn of yours, before or after your worker action (including the turn you reserved it), and in any Order Phase from then on. Ceramics fired this round first become available after the firing.",
         "zh": "委托一收入手中，就可以作为自由行动完成：在你的任何回合中工人行动之前或之后（包括承接它的那个回合），以及此后的任何交货阶段。本轮烧成的器物要到烧窑之后才可使用。",
-        "source": "L417 · L176 · INT Same-turn delivery"
+        "source": "L417 · L176 · R31"
       },
       {
         "en": "Requirements are independent unless a specific pairing is explicitly printed.",

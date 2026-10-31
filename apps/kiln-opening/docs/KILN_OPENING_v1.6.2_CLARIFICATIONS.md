@@ -27,11 +27,11 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 | --- | --- | --- |
 | `L124` | Line of the V1.6.2 rulebook (EN source, as it stands after owner revision 5; re-cited from revision-4 lines with ENGINE_V1.6.2_DELTA.md §16.2) | Rulebook |
 | `A1`–`A2` | Owner amendments; A1 (Tech VP on gain) is superseded by rulebook change 27, so no item cites it | Owner amendment |
-| `R1`–`R30` | Owner rulings; R3, R6, R9 and R19 are obsolete and R14 superseded under V1.6.2, so no item cites them | Owner ruling |
+| `R1`–`R32` | Owner rulings; R3, R6, R9 and R19 are obsolete and R14 superseded under V1.6.2, so no item cites them | Owner ruling |
 | `B1`–`B3` | Owner rulings (supply, Guild Hall, hidden Orders) | Owner ruling |
 | `ED Lnnn` | Audit editorial correction to that line | Editorial correction |
 | `INT <name>` | Audit "Interpretations of V1.6.2 text" | Recorded interpretation |
-| `P1`–`P3`, `P7` | Audit provisional defaults (P4 and P5 are cited by no item; P6 became owner ruling R29) | Provisional ruling (owner may change) |
+| `P1`–`P3` | Audit provisional defaults (P4 and P5 are cited by no item; P6 and P7 became owner rulings R29 and R32) | Provisional ruling (owner may change) |
 | `D7` | Owner UI decision D7 (wording only) | Wording |
 
 ---
@@ -156,7 +156,7 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 
 - [R22 · INT Kiln Master at loading] The marker may be placed at any loading: a Glaze & Load action or Imperial Priority, into the Shared Kiln or your Imperial Kiln. It goes on the ceramic as that ceramic is loaded, never on one already in a kiln. / 窑工标可以在任何一次装窑时放置：施釉装窑行动或御烧优先，装进共窑或你的御窑都可以。它在器物装窑的当时放上，不能放在已在窑中的器物上。
 - [L654 · L683] The marker is chosen when the ceramic is loaded, like the Imperial Kiln's modifier, and is open information. It stays in place through a Second Firing recalculation and returns when the firing finishes. / 窑工标在装窑时选定，与御窑修正的选法相同，且是公开信息。复烧重算时窑工标留在原处，开窑取器时收回。
-- [P7] Provisional ruling: Kiln Master has one marker. A marker placed on a ceramic that Imperial Priority loads in the Order Phase stays on it until the next round's firing finishes; until then you cannot place the marker again. / 暂定裁定：窑工只有一个窑工标。在交货阶段通过御烧优先装窑时放上的窑工标，一直留在该器物上，直到下一轮开窑取器时才收回；在此之前你不能再放窑工标。
+- [R32] Kiln Master has one marker. A marker placed on a ceramic that Imperial Priority loads in the Order Phase stays on it until the next round's firing finishes; until then you cannot place the marker again. / 窑工只有一个窑工标。在交货阶段通过御烧优先装窑时放上的窑工标，一直留在该器物上，直到下一轮开窑取器时才收回；在此之前你不能再放窑工标。
 - [L680 · L654] In the Shared Kiln the marker adds to the zone or Kiln Furniture modifier; in your Imperial Kiln it adds to the modifier chosen at loading. Jun's adjustment applies on top of it. / 在共窑中，窑工标与温区或支烧窑具修正相加；在你的御窑中，它与装窑时选定的御窑修正相加。钧窑的调整叠加在它之上。
 
 ### T25 — Tribute Ware / 贡瓷
@@ -320,14 +320,14 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 ### orders.starting — Starting Orders / 起始委托
 
 - [L535] Starting Orders never enter the Main Order deck and have no Crowns; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order. / 起始委托永远不进入主委托牌堆，也没有御令；若在收工时从手中弃置，放回盒中。对所有规则与窑口传承能力而言，起始委托都算作委托。玩家没有义务完成任何起始委托。
-- [L417 · L176 · INT Same-turn delivery] A held Order can be completed as a free action as soon as you hold it: on any turn of yours, before or after your worker action (including the turn you reserved it), and in any Order Phase from then on. Ceramics fired this round first become available after the firing. / 委托一收入手中，就可以作为自由行动完成：在你的任何回合中工人行动之前或之后（包括承接它的那个回合），以及此后的任何交货阶段。本轮烧成的器物要到烧窑之后才可使用。
+- [L417 · L176 · R31] A held Order can be completed as a free action as soon as you hold it: on any turn of yours, before or after your worker action (including the turn you reserved it), and in any Order Phase from then on. Ceramics fired this round first become available after the firing. / 委托一收入手中，就可以作为自由行动完成：在你的任何回合中工人行动之前或之后（包括承接它的那个回合），以及此后的任何交货阶段。本轮烧成的器物要到烧窑之后才可使用。
 - [L484] When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged. / 完成委托时，你的每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。
 - [L229 · L325] Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup. / 起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查。
 
 ### orders.main — Main Orders and Crown Orders / 主委托与御令委托
 
 - [L318] Face-up Main Orders cannot be completed; they are reserved at the Commission Market during the Work Phase. / 委托榜上的主委托不能完成；它们要在派工阶段到瓷牙行承接。
-- [L417 · L176 · INT Same-turn delivery] A held Order can be completed as a free action as soon as you hold it: on any turn of yours, before or after your worker action (including the turn you reserved it), and in any Order Phase from then on. Ceramics fired this round first become available after the firing. / 委托一收入手中，就可以作为自由行动完成：在你的任何回合中工人行动之前或之后（包括承接它的那个回合），以及此后的任何交货阶段。本轮烧成的器物要到烧窑之后才可使用。
+- [L417 · L176 · R31] A held Order can be completed as a free action as soon as you hold it: on any turn of yours, before or after your worker action (including the turn you reserved it), and in any Order Phase from then on. Ceramics fired this round first become available after the firing. / 委托一收入手中，就可以作为自由行动完成：在你的任何回合中工人行动之前或之后（包括承接它的那个回合），以及此后的任何交货阶段。本轮烧成的器物要到烧窑之后才可使用。
 - [L437] Requirements are independent unless a specific pairing is explicitly printed. / 各项要求彼此独立，除非卡面直接写明配对。
 - [L484 · INT Ge Crackle revision 5] Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged. Each Crackle ceramic you deliver to complete an Order scores 1 VP. / 每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。你每交付1件开片器完成委托，得1分。
 - [L430] Resolve 1 Crown at a time. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4; after that, each further Crown scores 1 VP immediately. Resolve every milestone crossed. / 逐个结算御令。每个御令使御府声望推进1格，直到声望4。到达声望4之后，每再获得1个御令，立即得1分。途经的每一格奖励都要结算。
@@ -384,12 +384,18 @@ Carried over from the V1.6.1 file on 2026-10-18 (engine track, stage 4), under t
 
 - **Renumbered.** Every `L` tag and inline line reference now cites the English source after owner revision 5 (756 lines), by the map of ENGINE_V1.6.2_DELTA.md §16.2 (`L`n → n for n ≤ 45, n + 7 to 71, n + 8 to 159, n + 18 to 356, n + 19 after); every line revision 5 rewrote was re-read and the item checked against the new text.
 - **Rewritten:** the discounts items of Decorator's Kit and Form & Decorate (L658: the Shifu's discount and Decorator's Kit are two separate reductions, change 40); Ding's discounts item, which keeps only its Large Throwing Wheel clause (L658); Canal Barge's timing item and its INT item (any free-action window, once per round, L170, L176); Second Firing's sale item (R20's after-Quality sale is gone: no free action during the firing, I1, now owner ruling R26); Ru's and Guan's timing items (while completing an Order, in any window, once per round, L499, L176); Ge's target item (any Quality, change 39) and its Crackle VP item (in any window, no limit, L499); the Main Orders' Crackle item (its tag now names INT Ge Crackle revision 5).
-- **Added:** Ding's P6 (its vessel does not count toward the Shifu's "If you form 2"; now owner ruling R29) and INT Ding and the discounts (revision 5); Ge's Second Firing item (a crackled Flawed ceramic keeps its marker, I5, now R30); Kiln Master's one marker (P7); Colour Samples' swap is not a free action (INT Colour Samples swap); Imperial Priority as a free action, in the Order Phase too, with its carried ceramic (L174, L314, INT Imperial Priority in the Order Phase) on Imperial Priority and the Imperial Gift; held Orders completed as a free action, this round's ceramics after the firing (L417, L176) on the Starting and Main Orders.
+- **Added:** Ding's P6 (its vessel does not count toward the Shifu's "If you form 2"; now owner ruling R29) and INT Ding and the discounts (revision 5); Ge's Second Firing item (a crackled Flawed ceramic keeps its marker, I5, now R30); Kiln Master's one marker (P7, now owner ruling R32); Colour Samples' swap is not a free action (INT Colour Samples swap); Imperial Priority as a free action, in the Order Phase too, with its carried ceramic (L174, L314, INT Imperial Priority in the Order Phase) on Imperial Priority and the Imperial Gift; held Orders completed as a free action, this round's ceramics after the firing (L417, L176) on the Starting and Main Orders.
 - The count goes from 167 to 176 (9 added, none removed).
 
 ### Owner rulings R26–R30 (2026-10-30)
 
 - The owner confirmed revision 5's interpretations I1–I5 and provisional default P6 as owner rulings R26–R30 (audit, rulings table). No item's wording changes except Ding's former P6 item, which drops "Provisional ruling:" / 暂定裁定：.
 - **Re-tagged:** Second Firing's sale item `L176 · INT Free-action windows revision 5` → `L176 · R26`; Colour Samples' "not a free action" item `INT Colour Samples swap` → `R28`; Canal Barge's automatic item gains `R30` (`R30 · INT Canal Barge · INT Completion effects across windows`); Ge's target item and its Second Firing item `INT Ge Crackle revision 5` → `R30`; Ding's `P6` → `R29` and its INT Ding and the discounts (revision 5) item → `R29`; the Imperial Gift's carried-ceramic item gains `R28` (`R28 · INT Imperial Priority in the Order Phase`); Imperial Priority's free-action item `L174 · L314 · INT Imperial Priority in the Order Phase` → `L174 · L314 · R28`.
-- Unchanged: the Starting and Main Orders' same-turn delivery items (`L417 · L176 · INT Same-turn delivery`; still an open question, audit question 2), Kiln Master's `P7` item (audit question 1) and the Main Orders' Crackle item (`L484 · INT Ge Crackle revision 5`).
+- Unchanged: the Starting and Main Orders' same-turn delivery items (`L417 · L176 · INT Same-turn delivery`; then an open question, now owner ruling R31), Kiln Master's `P7` item (then an open question, now owner ruling R32) and the Main Orders' Crackle item (`L484 · INT Ge Crackle revision 5`).
 - The source tags accept `R26`–`R30`; `P6` is no longer a tag. The count stays 176.
+
+### Owner rulings R31–R32 (2026-10-31)
+
+- The owner answered revision 5's last two questions as owner rulings R31 and R32 (audit, rulings table). No item's wording changes except Kiln Master's former P7 item, which drops "Provisional ruling:" / 暂定裁定：.
+- **Re-tagged:** the Starting and Main Orders' same-turn delivery items `L417 · L176 · INT Same-turn delivery` → `L417 · L176 · R31`; Kiln Master's `P7` → `R32`.
+- The source tags accept `R31` and `R32`; `P7` is no longer a tag. The count stays 176.

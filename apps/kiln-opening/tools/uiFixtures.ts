@@ -1954,7 +1954,7 @@ function revision4Moments(): Captured[] {
   return [glazeLoadFuelMoment(), magistratesCrownMoment(), geOnFineMoment(), crackleVpMoment()];
 }
 
-// ── Owner revision 5 (changes 36–42; owner rulings R26–R30) ─────────────────────────────
+// ── Owner revision 5 (changes 36–42; owner rulings R26–R32) ─────────────────────────────
 
 /** The firing record's Quality of a ceramic in this firing, or null. */
 function firedQuality(table: Table, ceramicId: string): string | null {
@@ -2048,7 +2048,7 @@ function revision5Moments(): Captured[] {
           id: "m30_order_phase_imperial_priority",
           title: "Order Phase · Imperial Priority after the firing (a free action)",
           description:
-            "In their Order Phase turn, the post-firing free-action window (owner ruling R28), the viewer may spend Imperial Priority: a Shaped vessel is glazed and loaded into their empty Imperial Kiln, free, with a public Imperial modifier (rev. 5 L174, L314). This round's firing is over, so the ceramic waits in the Imperial Kiln and is fired in the next round's firing; in Round 5 it is never fired, which the form says plainly. Kiln Master's one marker would wait with it (P7).",
+            "In their Order Phase turn, the post-firing free-action window (owner ruling R28), the viewer may spend Imperial Priority: a Shaped vessel is glazed and loaded into their empty Imperial Kiln, free, with a public Imperial modifier (rev. 5 L174, L314). This round's firing is over, so the ceramic waits in the Imperial Kiln and is fired in the next round's firing; in Round 5 it is never fired, which the form says plainly. Kiln Master's one marker would wait with it (R32).",
         },
         playerCounts: [3],
         seeds: 20,

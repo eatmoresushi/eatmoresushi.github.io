@@ -390,7 +390,7 @@ function simulateLoad(
 
   // 6. Kiln Master (T24, L647, R22): its marker on this load, into either kiln. The tile
   // has one marker (L105), back only when its ceramic's firing finishes (L683): while it is on a
-  // ceramic loaded by Imperial Priority in an earlier Order Phase, it cannot be placed (P7).
+  // ceramic loaded by Imperial Priority in an earlier Order Phase, it cannot be placed (R32).
   if (spec.kilnMaster !== undefined) {
     const error = techUseError(p, KILN_MASTER, sim.kilnMasterUsed, `${field}.kilnMaster`);
     if (error !== null) {
@@ -587,7 +587,7 @@ export function loadCeramic(
 /**
  * Kiln Master (T24) for a player's loading command (L647, R22): null without the tile;
  * otherwise whether its marker may go on a load now (unused this round, and the marker not still
- * on a ceramic waiting in a kiln, P7) and its faces.
+ * on a ceramic waiting in a kiln, R32) and its faces.
  */
 export function kilnMasterOptionFor(game: PublicCore, playerId: PlayerId): { ready: boolean; values: HeatDelta[] } | null {
   const p = lookup(game.players, playerId);

@@ -1105,7 +1105,7 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
       if (c.placement.kiln === "shared" && c.placement.stacked) {
         v.check(used(INVERTED_FIRING), () => `${c.id} is stacked but ${INVERTED_FIRING} is ready`);
       }
-      // A marker placed in an earlier round's Order Phase waits with its ceramic (P7); the
+      // A marker placed in an earlier round's Order Phase waits with its ceramic (R32); the
       // allowance it used was that round's.
       if (c.kilnMasterMarker !== null && c.loadedInRound === state.round) {
         v.check(used(KILN_MASTER), () => `${c.id} carries the Kiln Master marker but ${KILN_MASTER} is ready`);

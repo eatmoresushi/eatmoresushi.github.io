@@ -593,7 +593,7 @@ describe("free actions and the Order Phase Imperial load (rev. 5 L168–176; DEL
     });
     expect(invariantViolations(marks, { live: true })).toEqual([]);
     expect(invariantViolations(carried(3, 2, P2_WORK), { live: true })).toEqual([]);
-    // Its Kiln Master marker belongs to round 2's allowance: T24 may be ready again in round 3 (P7).
+    // Its Kiln Master marker belongs to round 2's allowance: T24 may be ready again in round 3 (R32).
     const marked = carried(3, 2, P2_WORK, { kilnMaster: true });
     marked.players["p1"]!.techs[0]!.usedThisRound = false;
     expect(invariantViolations(marked, { live: true })).toEqual([]);

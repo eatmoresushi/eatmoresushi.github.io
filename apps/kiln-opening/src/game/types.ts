@@ -1866,7 +1866,7 @@ export type GameRuleErrorCode =
   | "TECH_TAKE_REQUIRED"
   | "TECH_NOT_OWNED"
   | "TECH_ALREADY_USED"
-  /** Kiln Master's one marker is still on a ceramic waiting in a kiln (P7). */
+  /** Kiln Master's one marker is still on a ceramic waiting in a kiln (R32). */
   | "TECH_MARKER_IN_KILN"
   | "INVALID_BOTTOM_ORDER"
   | "KILN_ABILITY_NOT_OWNED"
@@ -2087,8 +2087,8 @@ export interface ClarificationDefinition {
   zh: string;
   /**
    * The source label, one or more tags joined by " · ": `L124` (V1.6.2 rulebook line), `A1`
-   * (amendment), `R1`–`R30` / `B1`–`B3` (owner rulings), `ED L124` (editorial correction),
-   * `INT <name>` (recorded interpretation), `P1`–`P3` and `P7` (provisional rulings), `D7` (owner UI decision).
+   * (amendment), `R1`–`R32` / `B1`–`B3` (owner rulings), `ED L124` (editorial correction),
+   * `INT <name>` (recorded interpretation), `P1`–`P3` (provisional rulings), `D7` (owner UI decision).
    */
   source: string;
 }
@@ -3064,7 +3064,7 @@ export interface ImperialPriorityOptions {
   ceramicIds: CeramicId[];
   ceramics: ImperialPriorityCeramicOption[];
   /** Kiln Master's marker may go on this load (T24 ready and its marker not on a ceramic still
-   * in a kiln, R22, P7). */
+   * in a kiln, R22, R32). */
   kilnMaster: boolean;
 }
 
