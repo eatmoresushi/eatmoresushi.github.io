@@ -1,5 +1,5 @@
 /**
- * CommissionMarket (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L195–206, change 25). Owner: B4.
+ * CommissionMarket (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L219–230, change 25). Owner: B4.
  *
  * Nothing to choose at placement: the pane says what follows. Confirm opens the private look
  * (only you see the cards), and the next step reserves from the display and the looked cards.

@@ -1,47 +1,49 @@
 /**
  * Work Phase: turns, the before/after-action window, END_TURN and the deferred refills of the
- * Main display and the Tech displays (L134–144, L191, L293, L391, v1.6.2 L209, L625;
+ * Main display and the Tech displays (L156–166, L221, L314, L405, v1.6.2 L239, L632;
  * DESIGN §3.2).
  *
  * - Turns run First Player clockwise, one worker per turn, until nobody has an available
- *   worker (L136). Passing is impossible: END_TURN before the worker action is
- *   `WORKER_ACTION_REQUIRED` (L143).
+ *   worker (L158). Passing is impossible: END_TURN before the worker action is
+ *   `WORKER_ACTION_REQUIRED` (L165).
  * - Every location module ends its worker action through `ctx.flow.workerActionDone`, which
  *   production wires to `completeWorkerAction` (DESIGN §2.2, §2.5).
- * - `completeWorkerAction` opens the after-action window only when the Colour Samples swap is
- *   ready with at least 1 held Order, or Imperial Priority is usable: public facts only,
- *   deliberately regardless of what the hand holds (DESIGN §4.5). Otherwise the turn ends
- *   automatically (DESIGN §3.7).
- * - `endTurn` runs the deferred refill (L191, L391) after the after-action window, so a swap
+ * - The before- and after-action steps are the player's free-action windows (rev. 5 L168–176):
+ *   selling a Flawed ceramic, completing held Orders and spending Imperial Priority
+ *   (`freeActions.ts`), and the Colour Samples swap (`work/windowAbilities.ts`), any number, in
+ *   any order. Their rewards count for the placement that follows (L176).
+ * - `completeWorkerAction` opens the after-action window only while it can offer something on
+ *   public facts alone (R27, `afterActionWindowOpen`): the Colour Samples swap ready with at least
+ *   1 held Order, Imperial Priority usable, a Finished Flawed ceramic to sell, or at least 1 held
+ *   Order with at least 1 Finished ceramic that is not Flawed, deliberately regardless of what
+ *   the hand holds (DESIGN §4.5). Otherwise the turn ends automatically (DESIGN §3.7). After each
+ *   free action or swap there, `afterWindowAbilityUsed` rechecks it.
+ * - `endTurn` runs the deferred refill (L221, L405) after the after-action window, so a swap
  *   there may discard an Order the same action reserved, and its look takes deck cards before
  *   the refill does (INT: deferred refill). It then refills each Tech discipline to 2 as its
- *   deck allows: a taken Tech's position stays empty until the taker's turn ends (v1.6.2 L209).
+ *   deck allows: a taken Tech's position stays empty until the taker's turn ends (v1.6.2 L239).
+ * - **"End the turn afterwards"** (owner UI decision D21, `EndTurnRequest`; DELTA §16.24): a
+ *   worker action whose commands asked for it (`work_turn.endTurnAfterAction`, recorded by
+ *   `state.noteEndTurnRequest`) ends the turn as it finishes instead of opening the after-action
+ *   step; a free action or swap with `endTurn: true` after the action ends the turn after it.
+ *   Either way the events are those of the two-command path (the action, then `END_TURN`), so
+ *   `WORK_TURN_ENDED.automatic` is false exactly when the after-action step would have opened
+ *   (public facts, R27) and true when the turn would have ended by itself anyway.
  *
  * Layer 4 (P4). Imports layers 0–3 only; `work/windowAbilities` imports this module.
  */
 
 import { DISCIPLINES } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
-import { imperialKilnEmpty } from "../kilnLoading.ts";
+import { afterActionWindowOpen, publicGameOf } from "../freeActionWindow.ts";
 import { refillMainDisplay, refillTechDisplay } from "../market.ts";
 import { availableWorkers } from "../placement.ts";
-import { ceramicsOf, emit, lookup, nextClockwise, phaseAs, player } from "../state.ts";
-import { techReady } from "../techs.ts";
-import type {
-  ActionHandlerTable,
-  ActorView,
-  GameRuleError,
-  GameState,
-  PlayerId,
-  PublicCore,
-  PublicGameState,
-  ResolveContext,
-  TechId,
-} from "../types.ts";
-import { publicCounts } from "../view.ts";
+import { emit, nextClockwise, phaseAs } from "../state.ts";
+import type { ActionHandlerTable, ActorView, GameRuleError, GameState, PlayerId, PublicCore, ResolveContext } from "../types.ts";
 
-/** Colour Samples (T10, v1.6.2 L625): its swap is once per round, before or after a worker action. */
-const COLOUR_SAMPLES: TechId = "T10";
+// The public-fact predicates moved to `freeActionWindow.ts` (DELTA §16.10.1); re-exported here
+// so existing imports keep working.
+export { afterActionWindowOpen, colourSamplesSwapUsable, imperialPriorityUsable } from "../freeActionWindow.ts";
 
 /** The first player, from `start` clockwise (inclusive), who still has an available worker. */
 function firstWithWorker(game: PublicCore, start: PlayerId): PlayerId | null {
@@ -69,8 +71,8 @@ function endWorkPhase(draft: GameState, ctx: ResolveContext): void {
 
 /**
  * Opens the Work Phase after the Start of Round (wired to `round_start_done`): the First
- * Player takes the first turn (L132, L136). With nobody holding a worker the phase ends at
- * once (unreachable in play: workers return at Cleanup, L303).
+ * Player takes the first turn (L154, L158). With nobody holding a worker the phase ends at
+ * once (unreachable in play: workers return at Cleanup, L324).
  */
 export function openWorkPhase(draft: GameState, ctx: ResolveContext): void {
   const first = firstWithWorker(draft, draft.firstPlayerId);
@@ -82,84 +84,67 @@ export function openWorkPhase(draft: GameState, ctx: ResolveContext): void {
 }
 
 /**
- * Imperial Priority may be used now (L293, R10): the token is held, the Imperial Kiln has been
- * gained and is empty, and the player has at least 1 Shaped vessel. All public facts.
- */
-export function imperialPriorityUsable(game: PublicCore, playerId: PlayerId): boolean {
-  return (
-    player(game, playerId).imperial.priority === "held" &&
-    imperialKilnEmpty(game, playerId) &&
-    ceramicsOf(game, playerId, "shaped").length > 0
-  );
-}
-
-/**
- * The Colour Samples swap may be offered now (v1.6.2 L625): T10 owned and unused this round,
- * and at least 1 held Order. Both facts are public (the hand count is public, L506); the hand's
- * content, its Starting/Main mix and the Main supply are deliberately ignored, so offering the
- * window reveals nothing (DESIGN §4.5). Whether a particular discard works is the validator's.
- */
-export function colourSamplesSwapUsable(game: PublicGameState, playerId: PlayerId): boolean {
-  return techReady(player(game, playerId), COLOUR_SAMPLES) && (lookup(game.counts.orderHands, playerId) ?? 0) > 0;
-}
-
-/**
- * The after-action window has something to offer: the Colour Samples swap (public facts only,
- * see `colourSamplesSwapUsable`) or Imperial Priority usable.
- */
-export function afterActionWindowOpen(game: PublicGameState, playerId: PlayerId): boolean {
-  return colourSamplesSwapUsable(game, playerId) || imperialPriorityUsable(game, playerId);
-}
-
-/** The public view of an authoritative state, for the public-facts tests above. */
-function publicOf(draft: GameState): PublicGameState {
-  const { hidden: _hidden, ...core } = draft;
-  return { ...core, counts: publicCounts(draft) };
-}
-
-/**
  * The production `flow.workerActionDone` (DESIGN §2.5): the worker action, including any
  * sub-steps, has fully resolved. Opens the after-action window, or ends the turn
  * automatically when it would offer nothing (DESIGN §3.7).
+ *
+ * D21: when a command of the action asked to end the turn (`endTurnAfterAction`), the turn ends
+ * here instead, with `automatic` as the two-command path gives it: false when the request
+ * skipped an after-action step that would have opened (as `END_TURN` there would), true when
+ * the turn would have ended by itself anyway. Both depend only on public facts (R27) and the
+ * actor's own request, never on the hand. The request is consumed either way.
  */
 export function completeWorkerAction(draft: GameState, playerId: PlayerId, ctx: ResolveContext): void {
   const phase = phaseAs(draft, "work_turn");
   invariant(phase.activePlayerId === playerId, `${playerId} finished a worker action outside their turn`);
-  if (afterActionWindowOpen(publicOf(draft), playerId)) {
+  const requested = phase.endTurnAfterAction === true;
+  delete phase.endTurnAfterAction;
+  const windowOpen = afterActionWindowOpen(publicGameOf(draft), playerId);
+  if (windowOpen && !requested) {
     phase.step = { kind: "after_action" };
     return;
   }
-  endTurn(draft, playerId, true, ctx);
+  endTurn(draft, playerId, !windowOpen, ctx);
 }
 
 /**
- * Called by `work/windowAbilities` after each Imperial Priority use and each completed Colour
- * Samples swap. Before the worker action nothing changes (the action is still due). After it,
- * the window is rechecked and the turn ends automatically once nothing is left (DESIGN §3.2).
+ * Called after each free action of a Work turn (`freeActions.ts`) and each completed Colour
+ * Samples swap (`work/selectChoose.ts`). Before the worker action nothing changes (the action is
+ * still due). After it, the window is rechecked (`afterActionWindowOpen`, R27) and the turn ends
+ * automatically once nothing is left (DESIGN §3.2).
+ *
+ * D21: `endTurnRequested` (the command's `endTurn: true`) then ends a turn the recheck left open,
+ * as `END_TURN` would (`automatic: false`). The validators refuse the request before the worker
+ * action (`endTurnRequestError`), so it never reaches this function there.
  */
-export function afterWindowAbilityUsed(draft: GameState, playerId: PlayerId, ctx: ResolveContext): void {
+export function afterWindowAbilityUsed(draft: GameState, playerId: PlayerId, ctx: ResolveContext, endTurnRequested = false): void {
   const phase = phaseAs(draft, "work_turn");
   invariant(phase.activePlayerId === playerId, `${playerId} used a window ability outside their turn`);
   if (phase.step.kind !== "after_action") {
+    invariant(!endTurnRequested, `${playerId} asked to end the turn before the worker action`);
     return;
   }
-  if (!afterActionWindowOpen(publicOf(draft), playerId)) {
+  if (!afterActionWindowOpen(publicGameOf(draft), playerId)) {
     endTurn(draft, playerId, true, ctx);
+    return;
+  }
+  if (endTurnRequested) {
+    endTurn(draft, playerId, false, ctx);
   }
 }
 
 /**
  * Ends the active player's Work turn (DESIGN §3.2 step 4):
- * 1. the deferred Main display refill if this player reserved a face-up Order this turn (L191,
- *    L391): at a Select, or the Magistrate's Hall Shifu's Crown Order (rev. 4 L245), one refill
+ * 1. the deferred Main display refill if this player reserved a face-up Order this turn (L221,
+ *    L405): at a Select, or the Magistrate's Hall Shifu's Crown Order (L263), one refill
  *    for every face-up take of the turn;
  * 2. the deferred Tech refill: every discipline back to 2 as its deck allows, in
- *    `DISCIPLINES` order (v1.6.2 L209). Only a Guild Hall take this turn leaves a display
+ *    `DISCIPLINES` order (v1.6.2 L239). Only a Guild Hall take this turn leaves a display
  *    short with cards in its deck, so this refills exactly the taker's disciplines;
  *    `TECH_DISPLAY_REFILLED` is emitted only where a Tech is revealed;
  * 3. `WORK_TURN_ENDED`;
  * 4. the next clockwise player with an available worker starts a turn, or, when nobody has
- *    one, `WORK_PHASE_ENDED` and the hand-over to the Firing Phase (L136).
+ *    one, `WORK_PHASE_ENDED` and the hand-over to the Firing Phase (L158).
  */
 export function endTurn(draft: GameState, playerId: PlayerId, automatic: boolean, ctx: ResolveContext): void {
   const phase = phaseAs(draft, "work_turn");

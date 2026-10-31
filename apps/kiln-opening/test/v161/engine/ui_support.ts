@@ -118,12 +118,12 @@ export const FIRING_STAGE_KEYS = {
   contribution: ["playerId", "revealed"],
   revealed: ["card", "heat", "woodPaid"],
   testPieces: ["playerId", "peeked", "buried"],
-  /** Second Firing's 2 revealed cards (v1.6.2 L639): face up on the table. */
+  /** Second Firing's 2 revealed cards (v1.6.2 L646): face up on the table. */
   extraFire: ["playerId", "ceramicId", "modifiers"],
-  /** `secondFireRevealed` (both revealed cards) and `saggarsFloor` (v1.6.2 L636) are recorded
+  /** `secondFireRevealed` (both revealed cards) and `saggarsFloor` (v1.6.2 L643) are recorded
    * facts of the table, not analysis (DELTA §2.7, D3, D4). */
-  /** `kilnMasterMarker` (rev. 4 L628): the public ±1 Kiln Master marker, a number or null. */
-  ceramic: ["id", "ownerId", "kiln", "spaceId", "kilnMasterMarker", "quality", "crackle", "sold", "secondFireModifier", "secondFireRevealed", "saggarsFloor"],
+  /** `kilnMasterMarker` (L647): the public ±1 Kiln Master marker, a number or null. */
+  ceramic: ["id", "ownerId", "kiln", "spaceId", "kilnMasterMarker", "quality", "crackle", "secondFireModifier", "secondFireRevealed", "saggarsFloor"],
 } as const;
 
 /** Heat-calculation, preview and deck vocabulary that must never reach the firing stage. */
@@ -219,7 +219,7 @@ export function everyDestination(): Array<LoadSpec["destination"]> {
 type MaterialsYardAction = Extract<GameAction, { type: "PLACE_MATERIALS_YARD" }>;
 
 /** Every Materials Yard command for a worker option (any split, Prepared Clay), validated:
- * the exhaustive oracle of `materialsYardOptions` (v1.6.2 L164–165: no Shifu Coin option). */
+ * the exhaustive oracle of `materialsYardOptions` (v1.6.2 L194–195: no Shifu Coin option). */
 export function legalMaterialsYardCommands(view: ActorView, worker: PlacementWorkerOption): MaterialsYardAction[] {
   const total = LOCATIONS.materials_yard.effects[worker.effect].resources;
   const prepared: Array<MaterialsYardAction["preparedClay"]> = [undefined];
@@ -368,7 +368,7 @@ export function uiOptionAgreementViolations(state: GameState, privateState: Priv
   }
 
   // Gap 8: Crackle declaration verdicts against COMPLETE_ORDER in the Order Phase (the only place
-  // Orders are completed, v1.6.2 L296).
+  // Orders are completed, v1.6.2 L318).
   const type = phase.type === "orders" && decisionPrompt(game).actorIds.includes(actorId) ? ("COMPLETE_ORDER" as const) : null;
   if (type !== null) {
     for (const orderId of view.own.orderHand) {

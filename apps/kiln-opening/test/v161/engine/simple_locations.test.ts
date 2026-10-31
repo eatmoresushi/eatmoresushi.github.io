@@ -1,9 +1,9 @@
 /**
- * Canal Wharf (v1.6.2 L216–220) and Magistrate's Hall (rev. 4 L234–245, change 33, R21):
- * Apprentice and Shifu effects — the Canal Wharf Shifu's unseen top Main Order (v1.6.2 L220, B1,
+ * Canal Wharf (v1.6.2 L245–250) and Magistrate's Hall (L252–263, change 33, R21):
+ * Apprentice and Shifu effects — the Canal Wharf Shifu's unseen top Main Order (v1.6.2 L250, B1,
  * B3) and the Magistrate's Hall Shifu's optional face-up Crown Order (R21) included — 4 Coins
  * for both Magistrate's Hall effects, Recognition 0–2 only, never to 4, the reached milestone
- * resolved (fixed Grant 1/1/1, L432, change 8), both spaces usable by one player at 4 players.
+ * resolved (fixed Grant 1/1/1, L446, change 8), both spaces usable by one player at 4 players.
  */
 
 import { describe, expect, it } from "vitest";
@@ -30,7 +30,7 @@ function supply(mainDeck: OrderId[], mainDiscard: OrderId[]) {
   return { players: [{}, { hand: MAIN_ORDER_IDS.filter((id) => !placed.includes(id)) }], display, mainDeck, mainDiscard };
 }
 
-describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins and the top Main Order unseen (Shifu) (v1.6.2 L219–220)", () => {
+describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins and the top Main Order unseen (Shifu) (v1.6.2 L249–250)", () => {
   it("the Apprentice gains 2 Coins and hands over", () => {
     const t = table();
     const events = t.act("p1", wharf("p1:apprentice:2"));
@@ -88,7 +88,7 @@ describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins and the top Main Order uns
     expect(t.view("p1").own?.orderHand).toEqual(["S01", top]);
   });
 
-  it("with an empty deck the Shifu's card comes from the shuffled discard (L511)", () => {
+  it("with an empty deck the Shifu's card comes from the shuffled discard (L525)", () => {
     const t = table(supply([], ["O07", "O08"]));
     const events = t.act("p1", wharf("p1:shifu"));
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "MAIN_DECK_RESHUFFLED", "ORDER_RESERVED"]);
@@ -114,7 +114,7 @@ describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins and the top Main Order uns
     expect(t.view(null).game.counts.orderHands["p1"]).toBe(5);
   });
 
-  it("is uncapped and costs nothing, so it is always legal (L143), even with no supply (B1)", () => {
+  it("is uncapped and costs nothing, so it is always legal (L165), even with no supply (B1)", () => {
     const t = table({
       players: [{ resources: { clay: 0, wood: 0, coins: 0 } }, {}, {}, {}],
       placements: [
@@ -135,8 +135,8 @@ describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins and the top Main Order uns
   });
 });
 
-describe("Magistrate's Hall: 4 Coins for +1 Recognition, either worker (rev. 4 L240–241)", () => {
-  it("Apprentice: pays 4, advances 0 → 1 and receives the fixed Imperial Grant (L432)", () => {
+describe("Magistrate's Hall: 4 Coins for +1 Recognition, either worker (L258–259)", () => {
+  it("Apprentice: pays 4, advances 0 → 1 and receives the fixed Imperial Grant (L446)", () => {
     const t = table({ players: [{ resources: { clay: 2, wood: 2, coins: 7 } }, {}] });
     const events = t.act("p1", hall("p1:apprentice:1"));
     expect(types(events)).toEqual([
@@ -155,7 +155,7 @@ describe("Magistrate's Hall: 4 Coins for +1 Recognition, either worker (rev. 4 L
     expectPublicEvents(events);
   });
 
-  it("its quote previews the milestone's resources: the Imperial Grant from 0 → 1, nothing later (L432)", () => {
+  it("its quote previews the milestone's resources: the Imperial Grant from 0 → 1, nothing later (L446)", () => {
     const first = table({ players: [{ resources: { clay: 2, wood: 2, coins: 7 } }, {}] });
     const quote = magistratesHallQuote(viewOf(first.state, "p1"), "apprentice");
     expect(quote).toMatchObject({ ok: true, reachable: 1, pay: { clay: 0, wood: 0, coins: 4 }, gain: { clay: 1, wood: 1, coins: 1 } });
@@ -168,7 +168,7 @@ describe("Magistrate's Hall: 4 Coins for +1 Recognition, either worker (rev. 4 L
     }
   });
 
-  it("Shifu: pays 4, advances 1 → 2 and gains the Imperial Kiln tile (L285, L433)", () => {
+  it("Shifu: pays 4, advances 1 → 2 and gains the Imperial Kiln tile (L306, L447)", () => {
     const t = table({ players: [{ recognition: 1, resources: { coins: 4 } }, {}] });
     const events = t.act("p1", hall("p1:shifu"));
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "RECOGNITION_ADVANCED", "IMPERIAL_KILN_GAINED"]);
@@ -176,19 +176,19 @@ describe("Magistrate's Hall: 4 Coins for +1 Recognition, either worker (rev. 4 L
     expect(t.player("p1").imperial).toMatchObject({ recognition: 2, kilnGained: true });
   });
 
-  it("advances 2 → 3 and takes the Imperial Priority token (L434)", () => {
+  it("advances 2 → 3 and takes the Imperial Priority token (L448)", () => {
     const t = table({ players: [{ recognition: 2, resources: { coins: 4 } }, {}] });
     const events = t.act("p1", hall("p1:apprentice:3"));
     expect(types(events).slice(2)).toEqual(["RECOGNITION_ADVANCED", "IMPERIAL_PRIORITY_GAINED"]);
     expect(t.player("p1").imperial).toMatchObject({ recognition: 3, priority: "held" });
   });
 
-  it.each([3, 4] as const)("cannot be used at Recognition %i: it never advances you to 4 (L232–233)", (recognition: Recognition) => {
+  it.each([3, 4] as const)("cannot be used at Recognition %i: it never advances you to 4 (L261–262)", (recognition: Recognition) => {
     const error = reject(table({ players: [{ recognition, resources: { coins: 9 } }, {}] }), "p1", hall("p1:shifu"), "RECOGNITION_GATE");
     expect(error.details).toMatchObject({ recognition });
   });
 
-  it("needs no Crown, only the Coins (L232)", () => {
+  it("needs no Crown, only the Coins (L261)", () => {
     expect(verdict(buildState({ players: [{ resources: { coins: 4 } }, {}] }), "p1", hall("p1:apprentice:1"))).toBeNull();
     const short = reject(table({ players: [{ resources: { coins: 3 } }, {}] }), "p1", hall("p1:apprentice:1"), "INSUFFICIENT_RESOURCES");
     expect(short.details).toMatchObject({ resource: "coins", needed: 4, have: 3 });
@@ -196,7 +196,7 @@ describe("Magistrate's Hall: 4 Coins for +1 Recognition, either worker (rev. 4 L
     expect(shifu.details).toMatchObject({ resource: "coins", needed: 4, have: 3 });
   });
 
-  it("a player may use both spaces in a 4-player round (L225)", () => {
+  it("a player may use both spaces in a 4-player round (L254)", () => {
     const t = table({ players: [{ resources: { coins: 10 } }, {}, {}, {}] });
     t.act("p1", hall("p1:apprentice:1"));
     t.act("p1", hall("p1:shifu"));
@@ -214,7 +214,7 @@ function fullTurn(spec: StateSpec): LocalTable {
   return new LocalTable(buildState(spec), { flow: "halt", pass: ["worker_action_done"] });
 }
 
-describe("Magistrate's Hall Shifu: then reserve 1 face-up Crown Order (rev. 4 L241, L245, change 33, R21)", () => {
+describe("Magistrate's Hall Shifu: then reserve 1 face-up Crown Order (L259, L263, change 33, R21)", () => {
   it("reserves the chosen Crown Order after the payment and the step; its position stays empty until the turn ends", () => {
     const t = table({ players: [{ resources: { coins: 4 } }, {}], display: CROWN_DISPLAY });
     const events = t.act("p1", hall("p1:shifu", { slotIndex: 3, orderId: "O39" }));
@@ -227,7 +227,7 @@ describe("Magistrate's Hall Shifu: then reserve 1 face-up Crown Order (rev. 4 L2
       "ORDER_RESERVED",
     ]);
     expect(events[1]).toMatchObject({ coins: -4, reason: "magistrates_hall" });
-    // A face-up reservation is public, like any other (rev. 4 L245).
+    // A face-up reservation is public, like any other (L263).
     expect(events[5]).toEqual({ type: "ORDER_RESERVED", playerId: "p1", via: "magistrates_hall", source: "face_up", slotIndex: 3, orderId: "O39" });
     expectPublicEvents(events);
     expect(t.state.hidden.orderHands["p1"]).toEqual(["O39"]);
@@ -235,13 +235,13 @@ describe("Magistrate's Hall Shifu: then reserve 1 face-up Crown Order (rev. 4 L2
     expect(t.player("p1").imperial.recognition).toBe(1);
   });
 
-  it("the milestone of the step resolves first, then the reservation (rev. 4 L241)", () => {
+  it("the milestone of the step resolves first, then the reservation (L259)", () => {
     const t = table({ players: [{ recognition: 1, resources: { coins: 4 } }, {}], display: CROWN_DISPLAY });
     const events = t.act("p1", hall("p1:shifu", { slotIndex: 1, orderId: "O17" }));
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "RECOGNITION_ADVANCED", "IMPERIAL_KILN_GAINED", "ORDER_RESERVED"]);
   });
 
-  it("refills the display once at the end of the turn, as at the Commission Market (rev. 4 L245, L386)", () => {
+  it("refills the display once at the end of the turn, as at the Commission Market (L263, L405)", () => {
     const t = fullTurn({ players: [{ resources: { coins: 4 } }, {}], display: CROWN_DISPLAY });
     const next = t.state.hidden.mainDeck[0];
     const events = t.act("p1", hall("p1:shifu", { slotIndex: 3, orderId: "O39" }));
@@ -259,7 +259,7 @@ describe("Magistrate's Hall Shifu: then reserve 1 face-up Crown Order (rev. 4 L2
     expect(t.state.market).toEqual({ display: CROWN_DISPLAY, refillPendingFor: null });
   });
 
-  it("with no Crown Order showing nothing is reserved; a non-Crown pick is refused (rev. 4 L245)", () => {
+  it("with no Crown Order showing nothing is reserved; a non-Crown pick is refused (L263)", () => {
     const plain: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06"];
     expect(verdict(buildState({ players: [{ resources: { coins: 4 } }, {}], display: plain }), "p1", hall("p1:shifu"))).toBeNull();
     const error = reject(
@@ -283,7 +283,7 @@ describe("Magistrate's Hall Shifu: then reserve 1 face-up Crown Order (rev. 4 L2
       expect(error.details).toMatchObject({ ...crownOrder, field: "crownOrder" });
       expectDocumentedDetails(error);
     }
-    // A position emptied earlier in the turn stays empty (rev. 4 L245).
+    // A position emptied earlier in the turn stays empty (L263).
     const emptied = table({ players: [{ resources: { coins: 4 } }, {}], display: ["O01", "O17", null, "O39", "O05", "O06"], refillPendingFor: "p1" });
     reject(emptied, "p1", hall("p1:shifu", { slotIndex: 2, orderId: "O03" }), "ORDER_NOT_AVAILABLE");
   });

@@ -1,11 +1,11 @@
 /**
- * Commission Market (v1.6.2 L64, L195–206, L395, L401, L615, L649; changes 24–25; R4, R12, B1,
+ * Commission Market (v1.6.2 L80, L219–230, L405, L411, L625, L659; changes 24–25; R4, R12, B1,
  * B3; DESIGN §3.2 as amended by ENGINE_V1.6.2_DELTA.md §4.2): the placement always opens the
  * Select (Select 2 for the Apprentice effect, Select 3 reserving up to 2 for the Shifu effect),
  * then `SELECT_CHOOSE` reserves 1 (Apprentice) or 1–2 (Shifu) from the display and the looked
  * cards in any mix; the rest of the look is discarded face down to the Main Order discard
- * (owner ruling R25, rev. 4 L72, L203; it reversed change 24's deck bottom and R19), so the deck
- * runs out and the discard is reshuffled when a card is needed (rev. 4 L506); no resource; the
+ * (owner ruling R25, L80, L221; it reversed change 24's deck bottom and R19), so the deck
+ * runs out and the discard is reshuffled when a card is needed (L525); no resource; the
  * single deferred refill at the end of the turn; Senior Apprentice; the empty-supply rules (B1,
  * R16); privacy (B3).
  */
@@ -84,7 +84,7 @@ function supplySpec(display: Array<OrderId | null>, mainDeck: OrderId[], mainDis
 
 const DISPLAY: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06"];
 
-describe("the placement opens the private look (v1.6.2 L195–196; INT: Commission Market looks)", () => {
+describe("the placement opens the private look (v1.6.2 L225–226; INT: Commission Market looks)", () => {
   it("Apprentice effect: Select 2, the top 2 Main Orders privately; no resource; the step waits for SELECT_CHOOSE", () => {
     const t = table();
     const [a, b, next] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId];
@@ -144,8 +144,8 @@ describe("the placement opens the private look (v1.6.2 L195–196; INT: Commissi
   });
 });
 
-describe("Apprentice effect (v1.6.2 L195): reserve 1 from the display or the 2 looked cards", () => {
-  it("a face-up reservation: the position stays empty until the turn ends, then one refill (v1.6.2 L191)", () => {
+describe("Apprentice effect (v1.6.2 L225): reserve 1 from the display or the 2 looked cards", () => {
+  it("a face-up reservation: the position stays empty until the turn ends, then one refill (v1.6.2 L221)", () => {
     const t = table();
     const top = t.state.hidden.mainDeck.slice(0, 2) as [OrderId, OrderId];
     const refillCard = t.state.hidden.mainDeck[2];
@@ -218,8 +218,8 @@ describe("Apprentice effect (v1.6.2 L195): reserve 1 from the display or the 2 l
   });
 });
 
-describe("Shifu effect (v1.6.2 L196, L198): reserve 1–2 from the display and the 3 looked cards", () => {
-  it("two face-up reservations choose from the Orders showing now; one refill after the turn (L390)", () => {
+describe("Shifu effect (v1.6.2 L226, L228): reserve 1–2 from the display and the 3 looked cards", () => {
+  it("two face-up reservations choose from the Orders showing now; one refill after the turn (L405)", () => {
     const t = table();
     const top = t.state.hidden.mainDeck.slice(0, 5);
     t.act("p1", place("p1:shifu"));
@@ -308,7 +308,7 @@ describe("SELECT_CHOOSE refusals at the Commission Market", () => {
   });
 });
 
-describe("Senior Apprentice at the Commission Market (v1.6.2 L618, L652, R12)", () => {
+describe("Senior Apprentice at the Commission Market (v1.6.2 L625, L659, R12)", () => {
   it("an Apprentice resolves the whole Shifu effect: the top-3 look and up to 2 reservations", () => {
     const t = table({ players: [{ techs: ["T18"] }, {}] });
     const top = t.state.hidden.mainDeck.slice(0, 3) as [OrderId, OrderId, OrderId];
@@ -336,7 +336,7 @@ describe("Senior Apprentice at the Commission Market (v1.6.2 L618, L652, R12)", 
   });
 });
 
-describe("Empty Main supply (B1, L511)", () => {
+describe("Empty Main supply (B1, L525)", () => {
   it("with the deck and discard both empty: a 0-card look, only face-up Orders, the gap stays empty", () => {
     const t = table(supplySpec(DISPLAY, [], []));
     const events = t.act("p1", place("p1:shifu"));
@@ -359,7 +359,7 @@ describe("Empty Main supply (B1, L511)", () => {
     t.act("p1", choose(looked("O07")));
   });
 
-  it("R25: a looked card discarded from the last card of the deck comes back through the end-of-turn reshuffle (rev. 4 L506)", () => {
+  it("R25: a looked card discarded from the last card of the deck comes back through the end-of-turn reshuffle (L525)", () => {
     const t = table(supplySpec(DISPLAY, ["O07"], ["O08", "O09"]));
     t.act("p1", place("p1:apprentice:1"));
     expect(t.state.hidden.mainDeck).toEqual([]);
@@ -409,7 +409,7 @@ describe("Empty Main supply (B1, L511)", () => {
     expect([...discards]).toEqual(["O09 O08 O07 O10"]);
   });
 
-  it("an empty deck is replaced by the shuffled discard when the look starts (L511)", () => {
+  it("an empty deck is replaced by the shuffled discard when the look starts (L525)", () => {
     const t = table(supplySpec(DISPLAY, [], ["O07", "O08", "O09", "O10"]));
     const events = t.act("p1", place("p1:apprentice:1"));
     expect(types(events)).toEqual(["WORKER_PLACED", "MAIN_DECK_RESHUFFLED", "PRIVATE_LOOK_OPENED"]);

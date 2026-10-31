@@ -1,26 +1,26 @@
 /**
  * Test Pieces, Fire reveal, Actual Heat, Jun and Quality (Appendix D steps 1–4 as owner
- * revision 4 left them, rev. 4 L655–664, L626, L628; changes 28, 31).
+ * revision 4 left them, L674–683, L645, L647; changes 28, 31).
  *
  * Revision 4 removed the player Heat marker and its step (changes 28, 31): the firing runs
  * Contributions (Base Heat) → Test Pieces → Fire → Actual Heat (Jun) → Quality. Kiln Master's
- * marker is chosen when the ceramic is loaded (T24, rev. 4 L628, R22; `kilnLoading.ts`), so it
+ * marker is chosen when the ceramic is loaded (T24, L647, R22; `kilnLoading.ts`), so it
  * is already on the ceramic here.
  *
- * - `firing_test_pieces` (T13, rev. 4 L626, L670: after Base Heat is determined, before the
+ * - `firing_test_pieces` (T13, L645, L689: after Base Heat is determined, before the
  *   Fire card is revealed; INT): First Player order; queued when Test Pieces is ready, the
  *   owner has a ceramic in this firing (Imperial included) and 1 Wood.
  *   `TEST_PIECES_DECIDE{peek}` pays and peeks privately (`hidden.firePeeks`,
  *   `TEST_PIECES_PEEKED.secret`), then `TEST_PIECES_BURY{bury}` publicly leaves the card or
  *   moves it to the bottom. The peek reshuffles the discard on top when only buried cards
- *   are left (R15), so the buried card is drawn last (v1.6.2 L648).
- * - Fire and Actual Heat are automatic (rev. 4 L660–661): the command that ends Test Pieces (or
+ *   are left (R15), so the buried card is drawn last (v1.6.2 L655).
+ * - Fire and Actual Heat are automatic (L679–680): the command that ends Test Pieces (or
  *   the one that determines Base Heat when nobody uses Test Pieces) reveals the Fire card and
  *   calculates Actual Heat, Kiln Master's marker included.
- * - `firing_heat_adjustment` (L478, rev. 4 L661): Jun in First Player order (ready, a ceramic
- *   in this firing, 1 Wood). Quality is then assigned automatically (L274–279); a Protective
- *   Saggars owner's ceramics are never Flawed (T11, v1.6.2 L636), in the Shared and Imperial
- *   Kilns alike (L650).
+ * - `firing_heat_adjustment` (L497, L680): Jun in First Player order (ready, a ceramic
+ *   in this firing, 1 Wood). Quality is then assigned automatically (L295–300); a Protective
+ *   Saggars owner's ceramics are never Flawed (T11, v1.6.2 L643), in the Shared and Imperial
+ *   Kilns alike (L657).
  *
  * Layer 4: imports layers 0–3 and, inside P5, `firing/afterQuality` (DESIGN §2.4).
  */
@@ -97,7 +97,7 @@ function testPiecesEligible(game: PublicCore, playerId: PlayerId): boolean {
 
 /**
  * Continues after Base Heat (the end of Appendix D step 1): opens Test Pieces for its eligible
- * owners in First Player order (rev. 4 L626, L670), else reveals the Fire card at once.
+ * owners in First Player order (L645, L689), else reveals the Fire card at once.
  */
 export function openAfterBaseHeat(draft: GameState, ctx: ResolveContext): void {
   const firing = requireFiring(draft);
@@ -145,10 +145,10 @@ export function testPiecesOptions(view: PlayerView): TestPiecesOptions | null {
 // ── Fire and Actual Heat (Appendix D steps 2–3, automatic) ────────────────────────────
 
 /**
- * Step 2 (rev. 4 L660): reveal the top Fire card (reshuffling only if the deck is empty);
- * Global Heat = Base Heat + Fire, unclamped. Step 3 (rev. 4 L661): every ceramic's Actual Heat —
+ * Step 2 (L679): reveal the top Fire card (reshuffling only if the deck is empty);
+ * Global Heat = Base Heat + Fire, unclamped. Step 3 (L680): every ceramic's Actual Heat —
  * Shared: Global Heat + (Kiln Furniture ?? zone) + Kiln Master marker; Imperial: Kiln Die + Fire
- * + Imperial modifier + Kiln Master marker, whatever the Contributions were (rev. 4 L292). Then
+ * + Imperial modifier + Kiln Master marker, whatever the Contributions were (L310). Then
  * Jun.
  */
 function revealFireAndCalculate(draft: GameState, ctx: ResolveContext): void {
@@ -208,9 +208,9 @@ function advanceHeatAdjustment(draft: GameState, ctx: ResolveContext): void {
 }
 
 /**
- * Step 4 (L274–279, rev. 4 L662): Quality from each ceramic's final Heat Difference, then the
+ * Step 4 (L295–300, L681): Quality from each ceramic's final Heat Difference, then the
  * after-Quality abilities (step 5).
- * Protective Saggars' owner never gets Flawed: a difference of 3+ is Standard (v1.6.2 L636),
+ * Protective Saggars' owner never gets Flawed: a difference of 3+ is Standard (v1.6.2 L643),
  * recorded as `saggarsFloor`; the Heat Difference stays the real one.
  */
 function assignQuality(draft: GameState, ctx: ResolveContext): void {
@@ -237,7 +237,7 @@ function assignQuality(draft: GameState, ctx: ResolveContext): void {
 }
 
 /** The viewer's Jun choice (Appendix D step 3); otherwise null. Jun during Second Firing (rev. 4
- * L627, formerly R7) is part of `secondFiringChoiceOptions`. */
+ * L646, formerly R7) is part of `secondFiringChoiceOptions`. */
 export function junOptions(view: PlayerView): JunOptions | null {
   const game = view.game;
   const viewerId = view.viewerId;

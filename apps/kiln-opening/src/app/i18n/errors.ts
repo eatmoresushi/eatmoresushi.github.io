@@ -14,9 +14,9 @@
  *   same space identically. The engine prints a non-ID string as it is.
  * - An unknown code throws in development and tests; in production it shows the raw code.
  * - `NO_MAIN_ACTION_POSSIBLE` names the location's own placement condition where the catalogue
- *   has one (`NO_MAIN_ACTION_KEYS`: the Guild Hall's, v1.6.2 L212; Glaze & Load's with the kiln
- *   fuel, rev. 4 L198), instead of the engine's
- *   generic "at least 1 instance of the main action" sentence (L144).
+ *   has one (`NO_MAIN_ACTION_KEYS`: the Guild Hall's, v1.6.2 L242; Glaze & Load's with the kiln
+ *   fuel, L216), instead of the engine's
+ *   generic "at least 1 instance of the main action" sentence (L164).
  */
 import { KILN_SPACE_IDS, LOCATION_IDS, RULE_ERROR_TEXT, formatRuleError } from "../../game/index.ts";
 import type { CeramicId, GameRuleError, GameRuleErrorCode, KilnSpaceId, LocationId, PlayerId } from "../../game/index.ts";
@@ -100,12 +100,12 @@ function withSpaceNames(details: Details, t: Translator): Details {
 
 /**
  * A location's own placement condition for `NO_MAIN_ACTION_POSSIBLE` (the "at least 1 instance
- * of the main action" test, L144), where the rulebook states one the engine's generic sentence
+ * of the main action" test, L164), where the rulebook states one the engine's generic sentence
  * leaves out.
  */
 const NO_MAIN_ACTION_KEYS: Partial<Readonly<Record<LocationId, MessageKey & `work.noMain.${string}`>>> = {
   guild_hall: "work.noMain.guildHall",
-  // The kiln fuel: 1 Wood when the action loads into the Shared Kiln (rev. 4 L198, R24).
+  // The kiln fuel: 1 Wood when the action loads into the Shared Kiln (L216, R24).
   glaze_load: "work.noMain.glazeLoad",
 };
 

@@ -50,7 +50,7 @@ function copyOf(scenario: PhaseScenario): LocalTable {
   });
 }
 
-describe("revision-4 families (rev. 4 L122, L241; R21, R23)", () => {
+describe("revision-4 families (L130, L259; R21, R23)", () => {
   it("Setup step 9: every available Kiln with every face-up Main Order", () => {
     const created = createGame({ gameId: "la-setup", players: [{ id: "p1", displayName: "A" }, { id: "p2", displayName: "B" }] }, new SeededRandom(4));
     if (!created.ok) throw new Error(created.error.code);
@@ -77,6 +77,91 @@ describe("revision-4 families (rev. 4 L122, L241; R21, R23)", () => {
       { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crownOrder: { slotIndex: 1, orderId: "O17" } },
       { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crownOrder: { slotIndex: 3, orderId: "O40" } },
     ]);
+  });
+});
+
+describe("revision-5 families: free actions (rev. 5 L168–176; DELTA §16.15)", () => {
+  const scenario = (name: string) => {
+    const found = phaseScenarios().find((s) => s.name === name);
+    if (found === undefined) throw new Error(`no scenario ${name}`);
+    return found;
+  };
+
+  it("after the worker action: the swap, Imperial Priority, a sale, a completion, END_TURN", () => {
+    const after = scenario("After the worker action: complete an Order and sell (free actions)");
+    expect(legalActionFamilies(after.table.view("p1"))).toEqual(["SELL_FLAWED", "COMPLETE_ORDER", "END_TURN"]);
+  });
+
+  it("before the worker action: the free actions come before the placements", () => {
+    const state = buildState({
+      players: [{ recognition: 3, hand: ["S08"] }, {}],
+      ceramics: [
+        { owner: "p1", stage: "finished", shape: "plate", glaze: "white", quality: "standard" },
+        { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" },
+        { owner: "p1", stage: "shaped", shape: "vase" },
+      ],
+    });
+    expect(legalActionFamilies(actorViewOf(state, "p1")).slice(0, 3)).toEqual(["USE_IMPERIAL_PRIORITY", "SELL_FLAWED", "COMPLETE_ORDER"]);
+  });
+
+  it("the Order Phase: a completion, a sale, Imperial Priority, END_ORDER_TURN; Cleanup: the trim only", () => {
+    expect(legalActionFamilies(scenario("Order Phase: Imperial Priority").table.view("p1"))).toEqual(["USE_IMPERIAL_PRIORITY", "END_ORDER_TURN"]);
+    expect(legalActionFamilies(scenario("Order Phase: sell a Flawed ceramic").table.view("p1"))).toEqual(["SELL_FLAWED", "END_ORDER_TURN"]);
+    const trim = buildState({
+      players: [{ hand: ["S01", "S02", "O01", "O02", "O03"] }, {}],
+      phase: { type: "cleanup_hand_limit", pendingPlayerIds: ["p1"], openedAtRevision: 0 },
+      ceramics: [{ owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" }],
+    });
+    expect(legalActionFamilies(actorViewOf(trim, "p1"))).toEqual(["DISCARD_TO_HAND_LIMIT"]);
+  });
+});
+
+describe("revision-5 families: Decorator's Kit, Ding and Ge (changes 37, 39, 40; DELTA §16.15)", () => {
+  type FD = Extract<GameAction, { type: "PLACE_FORM_DECORATE" }>;
+  const forms = (state: ReturnType<typeof buildState>, mode: "canonical" | "exhaustive"): FD[] =>
+    legalActions(actorViewOf(state, "p1"), { mode, perFamilyLimit: 1_000_000 }).filter((a): a is FD => a.type === "PLACE_FORM_DECORATE");
+
+  it("enumerates the Kit on every vessel of an action (exhaustive) and on the first one (canonical), Plain included", () => {
+    const state = buildState({ players: [{ techs: ["T16"], resources: { clay: 6, wood: 0, coins: 6 } }, {}] });
+    const exhaustive = forms(state, "exhaustive");
+    // A Plain single with the Kit (no Decoration check since change 37, rev. 5 L622).
+    expect(exhaustive).toContainEqual({ type: "PLACE_FORM_DECORATE", workerId: "p1:shifu", vessels: [{ shape: "bowl", decoration: "plain" }], decoratorsKitVesselIndex: 0 });
+    // Either vessel of a Shifu pair.
+    const pair = [{ shape: "bowl", decoration: "plain" }, { shape: "plate", decoration: "plain" }];
+    for (const index of [0, 1]) {
+      expect(exhaustive).toContainEqual({ type: "PLACE_FORM_DECORATE", workerId: "p1:shifu", vessels: pair, decoratorsKitVesselIndex: index });
+    }
+    const canonical = forms(state, "canonical");
+    expect(canonical.filter((a) => a.decoratorsKitVesselIndex !== undefined).every((a) => a.decoratorsKitVesselIndex === 0)).toBe(true);
+    expect(canonical).toContainEqual({ type: "PLACE_FORM_DECORATE", workerId: "p1:shifu", vessels: [{ shape: "bowl", decoration: "plain" }], decoratorsKitVesselIndex: 0 });
+    for (const action of [...exhaustive.slice(0, 200), ...canonical]) expect(validateAction(actorViewOf(state, "p1"), action), JSON.stringify(action)).toBeNull();
+  });
+
+  it("offers Ding's vessel only when its 1 Clay + 2 Coins are affordable (rev. 5 L488)", () => {
+    // 2 Clay, 3 Coins: a Bowl (1 + 2) leaves 1 Clay and 1 Coin, short of Ding's 2 Coins.
+    const poor = buildState({ players: [{ kilnId: "DI", resources: { clay: 2, wood: 0, coins: 3 } }, {}] });
+    expect(forms(poor, "exhaustive").filter((a) => a.dingExtra !== undefined)).toEqual([]);
+    // 2 Clay, 4 Coins: the Apprentice's Bowl and Ding's vessel exactly.
+    const exact = buildState({ players: [{ kilnId: "DI", resources: { clay: 2, wood: 0, coins: 4 } }, {}] });
+    const withDing = forms(exact, "exhaustive").filter((a) => a.dingExtra !== undefined);
+    expect(withDing).toContainEqual({
+      type: "PLACE_FORM_DECORATE",
+      workerId: "p1:apprentice:1",
+      vessels: [{ shape: "bowl", decoration: "plain" }],
+      dingExtra: { copyOfVesselIndex: 0, decoration: "painted" },
+    });
+    for (const action of withDing) expect(validateAction(actorViewOf(exact, "p1"), action), JSON.stringify(action)).toBeNull();
+  });
+
+  it("offers Ge on every own ceramic of the firing, any Quality (rev. 5 L482)", () => {
+    const ge = phaseScenarios().find((s) => s.phase === "firing_after_quality" && s.table.state.players[s.actor]?.kilnId === "GE");
+    if (ge === undefined) throw new Error("no Ge after-Quality scenario");
+    const view = ge.table.view(ge.actor);
+    const firing = ge.table.state.firing;
+    const own = Object.values(firing?.ceramics ?? {}).filter((record) => record?.ownerId === ge.actor).map((record) => record?.ceramicId);
+    const targets = legalActions(view, { mode: "exhaustive" }).flatMap((a) => (a.type === "USE_GE_CRACKLE" ? [a.ceramicId] : []));
+    expect(targets.length).toBeGreaterThan(0);
+    expect(new Set(targets)).toEqual(new Set(own));
   });
 });
 

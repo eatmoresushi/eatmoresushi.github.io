@@ -59,15 +59,15 @@ export function firingCeramicFacts(view: PlayerView, stage: FiringStageView | nu
   };
 }
 
-/** The viewer's ceramics of this firing (not sold, R20), in ceramic sequence order. */
+/** The viewer's ceramics of this firing, in ceramic sequence order (none is sold during the firing, R26). */
 export function ownFiringCeramicIds(model: GameModel): CeramicId[] {
   const stage = model.firingStage;
   if (stage === null || model.viewerId === null) return [];
-  return stage.ceramics.filter((ceramic) => ceramic.ownerId === model.viewerId && !ceramic.sold).map((ceramic) => ceramic.id);
+  return stage.ceramics.filter((ceramic) => ceramic.ownerId === model.viewerId).map((ceramic) => ceramic.id);
 }
 
 /**
- * Protective Saggars keeps this ceramic Standard this firing instead of Flawed (v1.6.2 L636;
+ * Protective Saggars keeps this ceramic Standard this firing instead of Flawed (v1.6.2 L643;
  * `FiringStageCeramic.saggarsFloor`, a public fact the game log also records). Only while its
  * recorded Quality is still Standard: once Saggars' own upgrade or Ge's Crackle makes it Fine,
  * "counts as Standard" no longer describes it (the engine keeps the flag set).

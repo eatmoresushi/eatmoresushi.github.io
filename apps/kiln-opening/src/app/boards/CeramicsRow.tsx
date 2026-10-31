@@ -7,8 +7,8 @@
  * words (D9) with its details; chips the open decision points at are highlighted
  * (`highlightedCeramicIds`). All undelivered ceramics are public (AGENTS.md). While a group's
  * attributes are not in the model (CR B2-1), the group shows its count instead. On the viewer's
- * own board, a Flawed ceramic they may sell now carries a Sell button (`SellButton`, change 30,
- * R20: only during their own turn).
+ * own board, a Flawed ceramic they may sell now carries a Sell button (`SellButton`, a free action:
+ * only in their own free-action windows, change 36, R26).
  */
 import type { CeramicId, PlayerId } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";

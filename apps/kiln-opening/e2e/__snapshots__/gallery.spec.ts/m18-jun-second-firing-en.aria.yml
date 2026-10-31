@@ -6,7 +6,7 @@
     - group "Resources":
       - strong: "1"
       - text: Clay
-      - strong: "1"
+      - strong: "2"
       - text: Wood
       - strong: "0"
       - text: Coins
@@ -15,7 +15,7 @@
     - paragraph: Firing step 5, in First Player order
     - paragraph: Second Firing turned 2 extra Fire cards face up, for everyone to see. Choose the one your ceramic is fired with again.
     - heading "Ceramic" [level=3]
-    - text: Moon White Vase, Plain · Standard (in High 2)
+    - text: White Vase, Plain · Standard (in Low 1)
     - group "Choose a Fire card":
       - text: ""
       - paragraph: The new Quality replaces the old one, even if it is worse.

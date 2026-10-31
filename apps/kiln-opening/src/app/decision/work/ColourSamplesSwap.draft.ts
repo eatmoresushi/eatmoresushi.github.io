@@ -1,5 +1,5 @@
 /**
- * The draft model of the Colour Samples swap (T10, v1.6.2 L622, R17; UI_V1.6.1_ARCHITECTURE §3.4).
+ * The draft model of the Colour Samples swap (T10, v1.6.2 L632, R17; UI_V1.6.1_ARCHITECTURE §3.4).
  * Owner: B4.
  *
  * Once per round, before or after one of your worker actions: discard 1 held Order (a Main Order
@@ -43,7 +43,7 @@ export interface SwapDiscardChoice {
   short: boolean;
   /**
    * The look would show no card at all, but the discard is legal: the Select can still reserve a
-   * face-up Order (v1.6.2 L64, B1). Shown on the option.
+   * face-up Order (v1.6.2 L80, B1). Shown on the option.
    */
   none: boolean;
   legal: boolean;

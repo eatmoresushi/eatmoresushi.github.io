@@ -61,7 +61,7 @@ function secretRichState(): GameState {
       { owner: "p2", stage: "finished", shape: "vase", glaze: "celadon", quality: "fine", crackle: true },
     ],
   });
-  // A completed Order is public (L410).
+  // A completed Order is public (L424).
   state.hidden.mainDeck = state.hidden.mainDeck.filter((id) => id !== "O40");
   state.players["p3"]!.completedOrders.push({
     orderId: "O40",
@@ -140,7 +140,7 @@ describe("projectPublicState", () => {
     expect(projected.firing?.testPieces).toEqual([{ playerId: "p1", peeked: true, buried: false }]);
   });
 
-  it("keeps every ceramic attribute public, including the Kiln Master marker field and Crackle (L508, rev. 4 L635)", () => {
+  it("keeps every ceramic attribute public, including the Kiln Master marker field and Crackle (L522, L654)", () => {
     const projected = projectPublicState(secretRichState());
     expect(projected.ceramics["c1"]).toMatchObject({ stage: "loaded", kilnMasterMarker: null });
     expect(projected.ceramics["c2"]).toMatchObject({ crackle: true, quality: "fine" });

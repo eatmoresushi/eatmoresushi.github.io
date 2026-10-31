@@ -295,9 +295,9 @@ export interface StoredRoom extends PublicRoom {
   contentVersion: StoredRulesVersion;
   /**
    * Rules fingerprint at room creation, `r<revision>-<digest>`. V1.6.2 rooms always carry
-   * an `r32-` fingerprint; a missing or different one (an `r31-` room from before owner
-   * revision 4, an `r30-` room from before revision 3 or a V1.6.1 `r29-` room included) is
-   * rejected, never reinterpreted.
+   * an `r33-` fingerprint; a missing or different one (an `r32-` room from before owner
+   * revision 5, an `r31-` room from before revision 4, an `r30-` room from before revision 3
+   * or a V1.6.1 `r29-` room included) is rejected, never reinterpreted.
    */
   contentDigest: string | null;
 }

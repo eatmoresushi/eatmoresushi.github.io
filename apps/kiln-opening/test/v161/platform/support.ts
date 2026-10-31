@@ -290,7 +290,7 @@ export function exitCommand(view: ActorView): AuthoritativeCommand | null {
   const phase = game.phase;
   switch (phase.type) {
     case "setup_kiln_selection": {
-      // Setup step 9 (rev. 4 L122, R23): a Kiln and a face-up Main Order in one command.
+      // Setup step 9 (L130, R23): a Kiln and a face-up Main Order in one command.
       const taken = new Set(game.playerOrder.map((id) => game.players[id]?.kilnId ?? null));
       const kilnId = KILN_IDS.find((id) => !taken.has(id));
       const slotIndex = game.market.display.findIndex((orderId) => orderId !== null);

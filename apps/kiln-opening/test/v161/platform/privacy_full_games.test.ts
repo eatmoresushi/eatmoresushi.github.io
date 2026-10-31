@@ -2,14 +2,15 @@
  * Hidden information across complete V1.6.2 games played through the authoritative service
  * (AGENTS.md "Hidden information", DESIGN §4, ENGINE_V1.6.2_DELTA.md §7). Every seat is a
  * human seat driven by the strategic policy, so the games reach every private V1.6.2 moment
- * in the course of play: the Commission Market's Select 2 or Select 3 (v1.6.2 L64, L201–202),
- * Colour Samples' Select 3 when acquired and in its swap (L622, change 25), the Guild Hall
- * Shifu's inspection (L213, B2), the Canal Wharf Shifu's card taken unseen (L226), and the
+ * in the course of play: the Commission Market's Select 2 or Select 3 (v1.6.2 L80, L225–226),
+ * Colour Samples' Select 3 when acquired and in its swap (L632, change 25), the Guild Hall
+ * Shifu's inspection (L237, B2), the Canal Wharf Shifu's card taken unseen (L250), and the
  * looked cards not reserved that are discarded face down (owner ruling R25, B3; line citations
- * are revision-3 lines), which come back through a Main deck reshuffle (rev. 4 L506). They also
+ * are revision-5 lines), which come back through a Main deck reshuffle (L525). They also
  * reach Orders a seat saw and that then moved where only another seat saw them go (`rehidden`:
  * a face-up Order later given up for a swap or a trim, a discarded looked card reshuffled and
- * later drawn or looked at by another seat).
+ * later drawn or looked at by another seat), and a held Order completed in a Work turn, which
+ * reveals it before the Order Phase (a free action, rev. 5 L173).
  *
  * The fixture privacy oracle (`tools/fixturePrivacy.ts`) checks, against the authoritative
  * head and the full event log: the acting seat's response, every seat's reconnect payload, and
@@ -34,7 +35,16 @@ const STRATEGIC = createStrategicComputerPolicy({ decisionBudgetMs: 10_000 });
 const SPECTATOR = "spectator";
 
 /** The private moments the games must reach, so the sweep is known to cover them. */
-type Moment = "commission_market" | "colour_samples" | "colour_samples_swap" | "guild_inspection" | "canal_wharf_draw" | "looked_discarded" | "main_reshuffle" | "rehidden";
+type Moment =
+  | "commission_market"
+  | "colour_samples"
+  | "colour_samples_swap"
+  | "guild_inspection"
+  | "canal_wharf_draw"
+  | "looked_discarded"
+  | "main_reshuffle"
+  | "rehidden"
+  | "work_turn_completion";
 
 interface SweepResult {
   state: GameState;
@@ -104,6 +114,7 @@ function noteMoments(moments: Set<Moment>, state: GameState, rows: readonly Publ
     if (event.type === "ORDER_RESERVED" && event.source === "deck_top") moments.add("canal_wharf_draw");
     if (event.type === "LOOKED_ORDERS_DISCARDED" && event.count > 0) moments.add("looked_discarded");
     if (event.type === "MAIN_DECK_RESHUFFLED") moments.add("main_reshuffle");
+    if (event.type === "ORDER_COMPLETED" && event.window !== "order_phase") moments.add("work_turn_completion");
   }
 }
 
@@ -148,7 +159,10 @@ async function sweep(players: PlayerCount, seedBase: number): Promise<SweepResul
       const next = await headState(harness);
       const recent = await harness.store.listPublicEvents(harness.roomId, before);
       noteMoments(moments, next, recent);
-      const secretDealt = recent.some(({ event }) => event.type === "ORDER_RESERVED" || event.type === "ORDERS_DEALT" || event.type === "HELD_ORDER_DISCARDED");
+      // A completion reveals a held Order (rev. 5 L424), in a Work turn as in the Order Phase.
+      const secretDealt = recent.some(
+        ({ event }) => event.type === "ORDER_RESERVED" || event.type === "ORDERS_DEALT" || event.type === "HELD_ORDER_DISCARDED" || event.type === "ORDER_COMPLETED",
+      );
       const private_ = head.hidden.pendingLook !== null || next.hidden.pendingLook !== null || response.ownSecrets.length > 0 || secretDealt;
       if (!private_ && next.revision % 10 !== 0) continue;
       const events = fullEventsOf(harness);
@@ -186,7 +200,7 @@ describe("V1.6.2 privacy across complete service games", () => {
     expect(result.problems).toEqual([]);
     expect(result.checks).toBeGreaterThan(15);
     // The strategic seats always visit the Commission Market, which always looks and discards
-    // the unreserved cards face down (rev. 4 L203, owner ruling R25); the Canal Wharf Shifu's
+    // the unreserved cards face down (L221, owner ruling R25); the Canal Wharf Shifu's
     // draw is the commonest Shifu opening.
     for (const moment of ["commission_market", "looked_discarded", "canal_wharf_draw"] as const) expect(result.moments, moment).toContain(moment);
   }, 300_000);
@@ -197,18 +211,31 @@ describe("V1.6.2 privacy across complete service games", () => {
       [2, 31_201],
       [3, 31_301],
       [4, 31_401],
-      // Re-baselined for owner revision 4 (changes 28–35): 31 302 and 31 402 no longer reach a
-      // Guild Hall Shifu inspection with the new costs and resources; 31 303 and 31 403 do.
-      [3, 31_303],
-      [4, 31_403],
+      // Re-baselined for owner revision 4 (changes 28–35): 31 302 and 31 402 no longer reached a
+      // Guild Hall Shifu inspection with the new costs and resources; 31 303 and 31 403 did.
+      // Re-baselined again for owner revision 5 (changes 36–42: free actions, the new Tech
+      // prices): 31 303 and 31 403 no longer reach one; 31 214 (2 players) and 31 412 do.
+      [2, 31_214],
+      [4, 31_412],
     ] as const) {
       const result = await sweepOnce(players, seedBase);
       expect(result.problems).toEqual([]);
       for (const moment of result.moments) moments.add(moment);
     }
-    // R25: the discarded looked cards return through a Main deck reshuffle (rev. 4 L506), and a
+    // R25: the discarded looked cards return through a Main deck reshuffle (L525), and a
     // card a seat saw and discarded can come back unseen to another seat (`rehidden`).
-    for (const moment of ["commission_market", "colour_samples", "colour_samples_swap", "guild_inspection", "canal_wharf_draw", "looked_discarded", "main_reshuffle", "rehidden"] as const) {
+    // A held Order completed in a Work turn (a free action, rev. 5 L173) is revealed there.
+    for (const moment of [
+      "commission_market",
+      "colour_samples",
+      "colour_samples_swap",
+      "guild_inspection",
+      "canal_wharf_draw",
+      "looked_discarded",
+      "main_reshuffle",
+      "rehidden",
+      "work_turn_completion",
+    ] as const) {
       expect(moments, moment).toContain(moment);
     }
   }, 600_000);

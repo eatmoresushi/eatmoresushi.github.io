@@ -115,7 +115,8 @@ export const shell = defineNamespace({
     "announce.turn.jun": "Your turn: decide on your Jun Kiln ability.",
     "announce.turn.after_quality": "Your turn: after-Quality abilities.",
     "announce.turn.second_firing": "Your turn: choose one of the {n} Second Firing cards.",
-    "announce.turn.orders": "Your turn: complete held Orders.",
+    "announce.turn.orders": "Your turn: take free actions.",
+    "announce.turn.afterAction": "Your turn: take free actions, or end your turn.",
     "announce.turn.hand_limit": { one: "Cleanup: discard {n} Order to reach your limit of {limit}.", other: "Cleanup: discard {n} Orders to reach your limit of {limit}." },
     "announce.final.winner": "Game over. Winner: {names}, {vp} VP.",
     "announce.final.shared": "Game over. Shared victory: {names}, {vp} VP.",
@@ -202,6 +203,10 @@ export const shell = defineNamespace({
     "ev.KILN_ABILITY_USED.vp": "{name} used {ability}: +{vp} VP",
     "ev.KILN_ABILITY_USED.vpCoins": "{name} used {ability}: +{vp} VP, +{coins}",
     "ev.IMPERIAL_PRIORITY_USED": "{name} used Imperial Priority on {ceramic}",
+    // A free action in the Order Phase (R28): the ceramic waits for the next round's firing; in the
+    // last round there is none. Whether this round had a firing at all does not matter to the line.
+    "ev.IMPERIAL_PRIORITY_USED.afterFiring": "{name} used Imperial Priority on {ceramic} in the Order Phase; it waits in their Imperial Kiln for the next round’s firing",
+    "ev.IMPERIAL_PRIORITY_USED.lastRound": "{name} used Imperial Priority on {ceramic} in the last Order Phase; it is never fired and does not score",
     "ev.WORK_TURN_ENDED": "{name}’s work turn ended",
     "ev.WORK_PHASE_ENDED": "Work Phase ended",
 
@@ -249,7 +254,7 @@ export const shell = defineNamespace({
     "ev.ORDER_COMPLETED.coins": "{name} completed {order}: +{vp} VP, +{coins}",
     "ev.ORDER_COMPLETED.crackle": "{line}; Crackle: +{crackle} VP",
     "ev.ORDER_TURN_ENDED": "{name} ended their Order turn",
-    "ev.ORDER_TURN_ENDED.automatic": "{name} has nothing more to complete or sell",
+    "ev.ORDER_TURN_ENDED.automatic": "{name} has no more free actions",
 
     "ev.WORKERS_RETURNED": "Workers and markers returned",
     "ev.HAND_TRIMMED": { one: "{name} discarded {n} Order down to the hand limit", other: "{name} discarded {n} Orders down to the hand limit" },
@@ -352,7 +357,8 @@ export const shell = defineNamespace({
     "announce.turn.jun": "轮到你了：决定是否使用钧窑传承。",
     "announce.turn.after_quality": "轮到你了：定品后结算。",
     "announce.turn.second_firing": "轮到你了：从复烧翻开的{n}张窑火牌中选一张。",
-    "announce.turn.orders": "轮到你了：完成在手委托。",
+    "announce.turn.orders": "轮到你了：做自由行动。",
+    "announce.turn.afterAction": "轮到你了：做自由行动，或结束回合。",
     "announce.turn.hand_limit": "收工：要弃置{n}张委托，弃到上限{limit}张。",
     "announce.final.winner": "终局。胜者：{names}，{vp}分。",
     "announce.final.shared": "终局。共享胜利：{names}，{vp}分。",
@@ -433,6 +439,8 @@ export const shell = defineNamespace({
     "ev.KILN_ABILITY_USED.vp": "{name}使用「{ability}」：+{vp}分",
     "ev.KILN_ABILITY_USED.vpCoins": "{name}使用「{ability}」：+{vp}分，得{coins}",
     "ev.IMPERIAL_PRIORITY_USED": "{name}用御烧优先把{ceramic}装进御窑",
+    "ev.IMPERIAL_PRIORITY_USED.afterFiring": "{name}在交货阶段用御烧优先把{ceramic}装进御窑，器物留在御窑里，到下一轮烧窑时才烧成",
+    "ev.IMPERIAL_PRIORITY_USED.lastRound": "{name}在最后的交货阶段用御烧优先把{ceramic}装进御窑，这件器物不会烧成，也不计分",
     "ev.WORK_TURN_ENDED": "{name}的派工回合结束",
     "ev.WORK_PHASE_ENDED": "派工阶段结束",
 
@@ -480,7 +488,7 @@ export const shell = defineNamespace({
     "ev.ORDER_COMPLETED.coins": "{name}完成委托{order}：+{vp}分，得{coins}",
     "ev.ORDER_COMPLETED.crackle": "{line}；开片器+{crackle}分",
     "ev.ORDER_TURN_ENDED": "{name}结束回合",
-    "ev.ORDER_TURN_ENDED.automatic": "{name}再没有可以完成的委托或可以卖出的瑕品",
+    "ev.ORDER_TURN_ENDED.automatic": "{name}没有可做的自由行动了",
 
     "ev.WORKERS_RETURNED": "收回工人与标记",
     "ev.HAND_TRIMMED": "{name}弃置{n}张委托，削减到上限",

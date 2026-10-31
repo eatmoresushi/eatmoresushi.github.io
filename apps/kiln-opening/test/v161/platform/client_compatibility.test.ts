@@ -31,7 +31,7 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllEnvs());
 
-function snapshot(rulesVersion = "1.6.2", schemaVersion = 8) {
+function snapshot(rulesVersion = "1.6.2", schemaVersion = 9) {
   return {
     ok: true,
     value: {
@@ -77,6 +77,9 @@ describe("client rules compatibility", () => {
     // V1.6.2 saves from before owner revision 4 (schema 8) no longer continue.
     ["1.6.2", 8],
     ["1.6.1", 9],
+    // V1.6.2 saves from before owner revision 5 (schema 9) no longer continue.
+    ["1.6.2", 9],
+    ["1.6.1", 10],
   ] as const)("refuses a %s / schema %i snapshot and drops its private payload", async (rulesVersion, schemaVersion) => {
     const response = snapshot(rulesVersion, schemaVersion);
     const result = await respondsWith(response).reconnect("ROOM01", "private-seat-token");
@@ -84,7 +87,7 @@ describe("client rules compatibility", () => {
     expect(JSON.stringify(result)).not.toMatch(/PRIVATE_ORDER|private-seat-token/);
   });
 
-  it.each([null, { rulesVersion: "1.6.2", schemaVersion: 9, revision: 18 }])("keeps compatible responses (%j)", async (game) => {
+  it.each([null, { rulesVersion: "1.6.2", schemaVersion: 10, revision: 18 }])("keeps compatible responses (%j)", async (game) => {
     const response = { ok: true, value: { room: { rulesVersion: "1.6.2", latestRevision: 18 }, game } };
     expect(await respondsWith(response).reconnect("ROOM01", "seat-token")).toBe(response);
     expect(snapshotCompatibilityError(response)).toBeNull();

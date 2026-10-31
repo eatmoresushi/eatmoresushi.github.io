@@ -2,17 +2,18 @@
 
 Branch `kiln-opening-v162-engine`. The design and records of the V1.6.2 engine track, written in stage 1 and kept current as the stages land.
 
-- **Rules authority:** the [V1.6.2 Player Rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md), designated by the owner on 2026-10-17, with its [Chinese edition](./KILN_OPENING_v1.6.2_ZH.md) and [component text](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md). [The V1.6.2 audit](./RULEBOOK_AUDIT_V1.6.2.md) records the checksums, the owner rulings (R1–R25, B1–B3; R15–R18 are the owner's confirmations of 2026-10-17; R19 of 2026-10-18 replaced provisional default P5; R20–R25 are of 2026-10-23; R3 is obsolete and R14 superseded since owner revision 2, R9 obsolete since owner revision 4, R19 obsolete since R25), the amendments (A1 superseded by owner revision 3's change 27, A2), interpretations (INT) and provisional defaults (P1–P3).
+- **Rules authority:** the [V1.6.2 Player Rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md), designated by the owner on 2026-10-17, with its [Chinese edition](./KILN_OPENING_v1.6.2_ZH.md) and [component text](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md). [The V1.6.2 audit](./RULEBOOK_AUDIT_V1.6.2.md) records the checksums, the owner rulings (R1–R32, B1–B3; R15–R18 are the owner's confirmations of 2026-10-17; R19 of 2026-10-18 replaced provisional default P5; R20–R25 are of 2026-10-23; R26–R30 of 2026-10-30 confirm owner revision 5's interpretations I1–I5 and provisional default P6; R31–R32 of 2026-10-31 answer its last two questions, same-turn delivery and Kiln Master's one marker (was P7); R3 is obsolete and R14 superseded since owner revision 2, R9 obsolete since owner revision 4, R19 obsolete since R25; R20 changed by R26, its digital windows given by the printed free-action windows since owner revision 5), the amendments (A1 superseded by owner revision 3's change 27, A2), interpretations (INT) and provisional defaults (P1–P3).
 - **Owner revision 2026-10-17 (Guild Hall).** After stage 1 was written, the owner revised the Guild Hall in the English and Chinese rulebooks (changes 21, L31; L207, L209, L212, L714). The Shifu takes up to 2 Techs from different disciplines at printed cost, with no discount. A taken Tech's position stays empty until the end of the taker's turn, for Apprentice and Shifu takes alike. Placement legality is the same for both workers. This document describes the revised rules; §1 rows 6–8, §4.3 and §13 say what changed.
 - **Owner revision 2, 2026-10-17 (changes 23–24, L33–34).** The owner then rebuilt the Starting Order deck as 8 cards (S01–S08, new values; S07 "Carved, Impressed or Painted"; a 4-player game deals all 8), re-valued nineteen Main Orders, and sent every looked-at Order not reserved to the **bottom of the Main Order deck** instead of the discard: the Commission Market's 2 or 3, Colour Samples' when-acquired 3 and the other card of its swap's 2. That supersedes ruling R14; the held Order a swap discards still goes to the discard (a Starting Order to the box). Several cards put on the bottom go there in random order (owner ruling R19, 2026-10-18, which replaced the provisional default P5, draw order). §1 rows 17–20, §3.5, §4.1–§4.4, §7 and §13 item 7 describe it.
 - **Owner revision 3, 2026-10-18 (changes 25–27, L35–37).** The owner added the keyword **Select N** (look at the top N Main Orders, reserve 1 of them or 1 face-up Main Order, the rest to the deck bottom): the Commission Market Apprentice Selects 2, the Shifu Selects 3 reserving up to 2, and Colour Samples Selects 3 when acquired and for its swap, which therefore looks at 3 and, like the when-acquired Select, may take a face-up Order. **Fuel Ledger** became 2 Contribution cards, Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2), in place of the secret Wood commitment; its owner plays 1 of 5 cards and plain Bank and Stoke stay free. **Tech VP is removed** (owner amendment A1 superseded). §1 rows 21–23, §1.1, §14 and stage 7 describe it; the sections below are amended where revision 3 changed them.
 - **Owner revision 4, 2026-10-22 and 2026-10-23 (changes 28–35, L38–45), and owner rulings R20–R25 (2026-10-23).** No player Heat marker (Kiln Master's marker is chosen at loading); Ge crackles a Fine or Standard ceramic and each delivered Crackle ceramic scores 1 VP; Fuel Ledger 4, forming at Clay + 2 Coins, an unused Jun on a Second Firing, a Flawed ceramic sold for 2 Coins; the starting Main Order taken face up with the Kiln; the Magistrate's Hall Shifu at 4 Coins with an optional Crown Order; 1 Wood per Glaze & Load action into the Shared Kiln, Materials Yard 4 / 8, 3 starting Wood and no seat Coin. R25 discards every Select's unreserved looked cards, reversing change 24's deck bottom and R19. **§15 is the design**; it supersedes the passages of §1–§14 on the Heat marker, salvage, the deck bottom (R19), the dealt starting Main Order, the Decoration cost table and the revision-3 values.
-- **Line numbers.** Revision 2 shortened Appendix A0 by 8 lines (revision-1 lines 540–756 became 532–748); revision 3 moved most lines down 5 or 6 (§1.1; the audit gives both maps). The `L` numbers in §1–§13 were written before revision 2 and are revision-1 numbers (for example L625 for Colour Samples, revision-2 L617, revision-3 L622) unless marked; §14 and the audit use revision-3 numbers. The clarifications and the line-pinned content tests use revision-4 numbers since the content step of owner revision 4 (§15.20); other code comments keep the numbers they were written with until the renumbering pass (§1.1). §15 uses revision-4 numbers (the audit maps revision 3 to revision 4).
+- **Owner revision 5, 2026-10-28 (changes 36–42, rev. 5 L46–52; copied in on 2026-10-30, commit `25c759d`).** **Free actions**: on your own turn, before or after your worker action (not during it), and in your Order Phase turn after the firing, any number of: sell a Flawed ceramic (2 Coins), complete held Orders, spend Imperial Priority; no free actions on other players' turns or during the firing. Decorator's Kit reduces any vessel; Canal Barge 3, Prepared Clay 4, Colour Samples 3, Protective Saggars 2; Ge crackles any 1 of its owner's ceramics from the firing (a Standard one becomes Fine); Ding's extra vessel costs 1 Clay + 2 Coins. Change 36's draft resource buy and Standard sale are removed by changes 41–42. **§16 is the design**; it supersedes the passages of §1–§15 that complete Orders only in the Order Phase, sell in the after-Quality turn or the Cleanup trim (§15.4, §15.9.11, §15.9.13), restrict Ge to Fine or Standard, give Ding's vessel 1 Coin and no discount, limit Decorator's Kit to Carved, Impressed or Painted, or state the revision-4 prices.
+- **Line numbers.** Revision 2 shortened Appendix A0 by 8 lines (revision-1 lines 540–756 became 532–748); revision 3 moved most lines down 5 or 6 (§1.1; the audit gives both maps). The `L` numbers in §1–§13 were written before revision 2 and are revision-1 numbers (for example L625 for Colour Samples, revision-2 L617, revision-3 L622) unless marked; §14 and the audit use revision-3 numbers. The clarifications, the line-pinned content tests and every code and test comment use revision-5 numbers since stages 13–15 of owner revision 5 (§16.22; `types.ts` states the convention: a plain line citation is a revision-5 line). §15 uses revision-4 numbers (the audit maps revision 3 to revision 4). §16 uses revision-5 numbers; §16.2 maps revision 4 to revision 5 for the English, Chinese and component-text files and says how to re-cite every citation.
 - **Base contract:** [ENGINE_V1.6.1_DESIGN.md](./ENGINE_V1.6.1_DESIGN.md) and `src/game/types.ts`. Everything this document does not change stays as that design says. Where the two disagree, this document wins.
 - **Notation:** `L124` is a line of the V1.6.2 English source. `1.6.1:L124` is a line of the V1.6.1 source. `R4`, `B1`, `R15`, `P3` are audit entries. `DESIGN §x` is a section of the V1.6.1 engine design.
-- **Versions after this track:** rules `1.6.2`, state schema `9`, `RULES_BEHAVIOUR_REVISION` `32` after owner revision 4 (§15.2); schema 8 and revision 31 from owner revision 3 (stage 7); schema 7 and revision 30 before.
+- **Versions after this track:** rules `1.6.2`, state schema `10`, `RULES_BEHAVIOUR_REVISION` `33` (`r33-`) since owner revision 5 (§16.3, stages 13–15; the new Supabase migration is written, not deployed); schema 9 and revision 32 after owner revision 4 (§15.2); schema 8 and revision 31 from owner revision 3 (stage 7); schema 7 and revision 30 before.
 
-Nothing here changes a rule or a balance value. Every value below is printed in V1.6.2. §13 lists the cases the text left open and the owner's rulings on them (2026-10-17); §15.21 the rulings of 2026-10-23.
+Nothing here changes a rule or a balance value. Every value below is printed in V1.6.2. §13 lists the cases the text left open and the owner's rulings on them (2026-10-17); §15.21 the rulings of 2026-10-23; §16.23 the rulings of 2026-10-30 and 2026-10-31 (R26–R32), which answer owner revision 5's questions.
 
 **Stage status.**
 
@@ -59,10 +60,13 @@ Nothing here changes a rule or a balance value. Every value below is printed in 
   - Review fixes: `RESERVATION_LIMIT` names the Select and reads for a limit of 1 (§2.5; glossary §7); the audit records that change 25 makes R4, R19 and B1 reach further than approved, for the owner to confirm, and the owner's shorter Second Firing tile text; T12's L669 · L670 clarification says the same in both languages; the revision-2 passages left here (§1 rows 10 and 13, §2.2, §11.1, §12, §13), in `DESIGN_SPEC.md`, `UI_UX_SPEC.md` and `UI_V1.6.1_ARCHITECTURE.md` (Tech VP), the fixtures m16 and m20 and their `FIXTURES.md` rows, and the test headers that cited revision-2 lines are brought up to date. The `AGENTS.md` lines still to change are listed in §12.
 - **Stage 8 (landed): design and records for owner revision 4 and rulings R20–R25** (§15). The audit gained the revision-4 section (checksums, line map, R20–R25, the re-check of every ruling and interpretation); `GAME_RULES.md` followed. That stage changed no code, data or test.
 - **Stages 9–11 (landed): owner revision 4 and R25 in the engine, content, platform and computer players** (§15.20 and its three implementation notes): schema 9, revision 32 (`r32-`); Setup, the Work Phase, firing and scoring; R25's discards; the data texts, clarifications, component text source and glossary; the computer policy, privacy and the platform tests; `npm run test:fuzz:long`. A review step then removed the separate Crackle "never a Masterpiece" reason, corrected the sale's turn-passing text and added a Setup-pick reconnect test (§15.20, review note).
-- **Still to come:**
-  - The renumbering pass of the remaining code and test comments (§1.1, now including revision 2's −8 after line 539, revision 3's +5/+6 and revision 4's map in the audit) and the documents of §12 and §15.19.
-  - `src/app` (the UI stage): the swap, the Second Firing choice, S07's `decorations`, the 8-card Starting deck, and revision 3: `SELECT_CHOOSE` with `step.select` for all three Selects (a face-up pick in every one), the 5-card Contribution chooser from `contributionCards`, and no Tech VP line; and revision 4: the Setup choice, Kiln Master at loading, the fuel line, the Magistrate's Hall Crown Order, the sale, Ge on Fine and Crackle VP, no Heat-marker step or salvage step, `LOOKED_ORDERS_DISCARDED` (R25) in place of `LOOKED_ORDERS_TO_BOTTOM`, and the glossary §2.16 button 装进御窑 for `verb.loadImperial`.
-- **Line citations in code:** an unchanged rule keeps its V1.6.1 `L` number until the renumbering pass (§1.1); a rule V1.6.2 changed is cited `v1.6.2 L195`.
+- **Stage 12 (landed): design and records for owner revision 5** (§16). The audit gained the revision-5 section (checksums, line map, the re-check of every ruling and interpretation, interpretations I1–I5 with the new provisional defaults P6–P7, the open questions; on 2026-10-30 the owner confirmed I1–I5 and P6 as owner rulings R26–R30, and on 2026-10-31 answered the last two questions as R31–R32); `GAME_RULES.md` followed. That stage changed no code, data or test.
+- **Stages 13–15 (landed, 2026-10-30): owner revision 5 in the engine, content, platform and computer players** (§16.22 and its progress notes): schema 10, revision 33 (`r33-`), the new Supabase migration (written, not deployed); the documents of §16.21; the renumbering pass of every remaining code and test comment to revision-5 lines (§16.22, "Renumbering"). Every gate passes, `npm run fixtures` and `fixtures:check` included: the same commit (`6342feb`) changed the two `test/v161/ui/fixtures/tableScenarios.ts` scenarios that asserted the withdrawn sales, which had blocked the fixtures (§16.18).
+- **Owner rulings R26–R30 (recorded 2026-10-30):** the owner confirmed interpretations I1–I5 and provisional default P6 (§16.23). The audit, this document, the clarifications (doc and data), the glossary, the other documents and every code, test and error-detail citation now name R26–R30; P7 and same-turn delivery stayed open that day (then open questions 1 and 2). No engine behaviour changed: the clarification tag pattern accepts `R26`–`R30` and refuses `P6`, and the clarifications that cited P6 or an interpretation the rulings replaced cite the ruling.
+- **Owner rulings R31–R32 (recorded 2026-10-31):** the owner answered revision 5's last two questions (§16.23): same-turn delivery is R31 and Kiln Master's one marker (P7) is R32. The audit, this document, the clarifications (doc and data), the glossary, the other documents and every code and test citation now name them. No code behaviour changed: the clarification tag pattern accepts `R31` and `R32` and refuses `P7`, the Orders' items cite `R31`, and Kiln Master's item cites `R32` and drops "Provisional ruling:" / 暂定裁定：. The content digest and `RULES_BEHAVIOUR_REVISION` do not move.
+- **Owner UI decision D21, engine side (2026-10-30, §16.24):** the optional `endTurn` on the worker-action commands and the free actions ends the Work turn or the Order Phase turn in the same command, with a request remembered through the worker action's sub-steps (`work_turn.endTurnAfterAction`, public) and refused before the worker action (`WORKER_ACTION_REQUIRED`); `parseCommand` checks it, `endTurnOptions` exposes it to the UI, the fuzz plays it. No rule, schema or revision change.
+- **UI stage (landed, 2026-10-31): owner revision 5 and owner UI decision D21 in the app.** `src/app` follows the V1.6.2 rules through revision 5 (§16.18): no sale control in the after-Quality step or the Cleanup trim, `FiringStageCeramic.sold` gone, `window` on `ORDER_COMPLETED`, `CERAMIC_SOLD` and `IMPERIAL_PRIORITY_USED`, Ge on any ceramic of the firing, Decorator's Kit on any vessel and Ding's 1 Clay + 2 Coins. D21 (§16.24): the free-action chips and piece affordances, the split Confirm that sends `endTurn` from `endTurnOptions`, and the Order Phase as the same free-action list. `docs/UI_V1.6.1_ARCHITECTURE.md` describes it and marks the calls awaiting the owner.
+- **Line citations in code:** since the revision-5 renumbering (§16.22) every plain `L` citation in code and tests is a revision-5 line; `rev. 5 L…` and `v1.6.2 L…` keep their prefix and cite revision-5 lines too. Before it, an unchanged rule kept its V1.6.1 `L` number and a rule V1.6.2 changed was cited `v1.6.2 L195`.
 
 ---
 
@@ -1516,3 +1520,600 @@ Still to do after that step: Ge (§15.9.9), the sale (§15.9.11, which removes `
 ### 15.21 Rulings and open questions
 
 The owner answered revision 4's questions on 2026-10-23 (audit: R20–R24) and ruled R25 the same day. Recorded as interpretations, not questions (each can change without changing the contract): selling a ceramic of this firing in the own after-Quality turn (R20 names that turn; the ceramic leaves the kiln); the Order Phase turn opening for a sale; the Setup refill after each take sliding left as L386 does; the Magistrate's Hall Shifu's Crown Order chosen in the placement command from what shows then; Crackle VP automatic and recorded as Kiln Tradition VP. No question is open.
+
+---
+
+## 16. Owner revision 5 (changes 36–42): design
+
+Stage 12 (design and records; no engine code). Sources: the V1.6.2 rulebook as the owner left it on 2026-10-28 and as copied in on 2026-10-30 (commit `25c759d`; checksums in the audit), `AGENTS.md`'s "Changes 36–42" bullet and the digital interpretations I1–I5 recorded in the audit (revision-5 section; "Interpretations", "Provisional defaults" P6–P7 and "Open questions"). The owner confirmed I1–I5 and P6 on 2026-10-30, the same day, as owner rulings R26–R30, and on 2026-10-31 answered the last two questions as R31 and R32 (audit, rulings table); this section cites the rulings. Nothing in the engine changed with either answer.
+
+**Line numbers in §16 are revision-5 lines**: lines of the English source as it stands now (756 lines). The Chinese edition is still the English line plus 2 from English line 3 on (758 lines); the component text keeps its numbering (140 lines). `rev. 4 L…` marks a revision-4 line. §16.2 maps revision 4 to revision 5.
+
+**Final text only.** Change 36 (L46) and change 38 (L48) still describe the draft: a Standard sale for 3 Coins, a 2-Coin resource buy and "Wood for the firing must be in hand when it begins". Changes 41 and 42 (L51–52) remove all three, and the printed rules (the Free Actions section L168–176, L300, L302, L748) never mention them. Change 37's "Ding's vessel takes no discount" (L47) is likewise reversed by change 40 (L50, L488, L658). The engine implements the printed rules: no Standard sale, no resource buy, no Wood-in-hand rule, and no Ding-specific discount clause.
+
+Nothing below changes a rule or a balance value. Where §1–§15 complete Orders only in the Order Phase, sell in the after-Quality turn or the Cleanup trim, restrict Ge to Fine or Standard, price Ding's vessel at 1 Coin, limit Decorator's Kit to Carved, Impressed or Painted, or state the revision-4 prices, §16 supersedes them.
+
+### 16.1 What changes
+
+| # | Rule | Revision 4 | Revision 5 | Lines |
+| --- | --- | --- | --- | --- |
+| 41 | Free actions (change 36) | Orders completed only in the Order Phase (rev. 4 L300, L403); a Flawed ceramic sold "at any time", digitally during the owner's turn (R20: Work before/after windows, Order Phase turn, own after-Quality turn, pending Cleanup trim); Imperial Priority "before or after your worker action" | **Free actions**, any number, in any order, on your own turn before or after your worker action (not during it) and in your Order Phase turn after the firing: sell a Flawed ceramic for 2 Coins (Vessel card to the supply); complete held Orders, one at a time, by the usual procedure; spend Imperial Priority. Rewards gained before a placement count for it. Ceramics fired this round are available only after the firing. **No free actions on other players' turns or during the firing** | L46, L79, L143, L168–176, L300, L302, L314, L318, L375, L417, L422, L499, L698, L700, L748 |
+| 42 | Completion triggers (change 36) | Ru, Guan, Tribute Ware and Canal Barge once per round, all in the Order Phase | Once per round **whichever window** the completion is in: one shared use across the round's Work turns and its Order Phase. Crackle VP keeps no limit | L176, L474, L478, L484, L499, L637, L648 |
+| 43 | Order Phase (change 36) | Each player completes held Orders | Each player may take any number of free actions; "the first chance to deliver ceramics fired this round"; the display does not change | L143, L318, L700 |
+| 44 | Decorator's Kit (change 37) | Once per round, 1 Coin off a vessel with a Carved, Impressed or Painted Decoration | Once per round, 1 Coin off **any** vessel you form; may be the vessel the Shifu's discount reduces | L47, L622, L658; component text 15/17 |
+| 45 | Tech prices (change 38) | Canal Barge 2, Prepared Clay 3, Colour Samples 2, Protective Saggars 3 | Canal Barge **3**, Prepared Clay **4**, Colour Samples **3**, Protective Saggars **2**; Test Pieces stays 3; every other price unchanged | L48, L624, L632, L637, L643 |
+| 46 | Ge (change 39) | 1 Fine or Standard ceramic of the firing → Crackle and Fine | 1 of your ceramics of the firing, **any Quality** → Crackle; a Standard one becomes Fine; Masterpiece, Fine and Flawed keep their Quality. Wildcard Decoration and 1 VP per delivered Crackle ceramic unchanged; Saggars' Standard → Fine and Crackle may still both apply to one ceramic | L49, L482, L484, L660, L747; component text 128/130 |
+| 47 | Ding (change 40) | 1 Clay + 1 Coin; outside every reduction; not one of the Shifu's 2 | **1 Clay + 2 Coins**, any Decoration; does not count against the action's vessel limit; counts as formed by the action. The no-discount clauses are gone; the Discounts clarification now reads "the Shifu's discount and Decorator's Kit are two separate reductions and may apply to the same vessel (its 2 Coins become 0)" | L50, L488, L658; component text 133/135 |
+| 48 | Draft removed (changes 41–42) | — | No resource buy, no Standard sale, no "Wood in hand" note. Only a Flawed ceramic sells | L51–52 (L46, L48 are history) |
+
+Owner rulings (audit rulings table, 2026-10-30; recorded first as the digital interpretations I1–I5 and confirmed by the owner the same day): **R26** (was I1) the free-action windows replace R20's sale windows (no sale in the after-Quality step or the Cleanup trim); **R27** (was I2) the after-action window opens on public facts only; **R28** (was I3) the Order Phase is the post-firing free-action window: a turn opens for a completable Order, a Flawed ceramic or a usable Imperial Priority, and Imperial Priority is legal there (Round 5 included); the Colour Samples swap is not a free action; **R29** (was I4 and provisional default P6) Ding's vessel does not count toward the Shifu's "If you form 2", and the reductions stay on the ordinary vessels; **R30** (was I5) Ge on a Masterpiece or a Flawed ceramic, Crackle through a Second Firing, Canal Barge automatic, Ru, Guan and Tribute Ware optional. An Imperial ceramic loaded in the Order Phase fires in the next round's firing (R28; INT Imperial Priority in the Order Phase). On 2026-10-31 the owner answered the last two questions: **R31** (was INT Same-turn delivery) a held Order may be completed in any free-action window from the moment it is held, the turn that reserved it included; **R32** (was provisional default P7) Kiln Master's single marker stays on such a ceramic until that firing finishes and cannot be placed again before then.
+
+### 16.2 Line map, revision 4 → revision 5, and how to re-cite
+
+English (`n` a revision-4 line; 737 → 756 lines):
+
+| Revision-4 lines | Revision-5 lines | Shift |
+| --- | --- | --- |
+| 1–45 | 1–45 | 0 |
+| — | 46–52 | new changes 36–42 |
+| 46–71 | 53–78 | +7 |
+| — | 79 | new glossary row "Free action" |
+| 72–134 | 80–142 | +8 |
+| 135 | 143 | reworded (Round Structure, Order Phase) |
+| 136–159 | 144–167 | +8 |
+| — | 168–177 | new section "Free Actions" (heading 168, rule 170, bullets 172–174, paragraph 176; 169, 171, 175 and 177 blank) |
+| 160–281 | 178–299 | +18 |
+| 282 | 300 | reworded (Quality table, Flawed row: "sold as a free action") |
+| 283 | 301 | +18 |
+| 284 | 302 | reworded (the sale as a free action) |
+| 285–295 | 303–313 | +18 |
+| 296 | 314 | reworded (Imperial Priority "as a free action") |
+| 297–299 | 315–317 | +18 |
+| 300 | 318 | reworded (Order Phase: free actions; first chance for this round's ceramics) |
+| 301–356 | 319–374 | +18 |
+| — | 375 | new Ceramic state "Sold" |
+| 357–397 | 376–416 | +19 |
+| 398 | 417 | reworded (a held Order is completed as a free action) |
+| 399–402 | 418–421 | +19 |
+| 403 | 422 | reworded (Completing Orders: "Whenever you complete an Order (a free action)") |
+| 404–462 | 423–481 | +19 |
+| 463 | 482 | reworded (Ge) |
+| 464–468 | 483–487 | +19 |
+| 469 | 488 | reworded (Ding) |
+| 470–479 | 489–498 | +19 |
+| 480 | 499 | reworded (Ru, Guan and Crackle VP "while completing an Order") |
+| 481–602 | 500–621 | +19 |
+| 603 | 622 | reworded (Decorator's Kit) |
+| 604 | 623 | +19 |
+| 605 | 624 | reworded (Prepared Clay cost 4) |
+| 606–612 | 625–631 | +19 |
+| 613 | 632 | reworded (Colour Samples cost 3) |
+| 614–617 | 633–636 | +19 |
+| 618 | 637 | reworded (Canal Barge cost 3) |
+| 619–623 | 638–642 | +19 |
+| 624 | 643 | reworded (Protective Saggars cost 2) |
+| 625–638 | 644–657 | +19 |
+| 639 | 658 | reworded (Discounts) |
+| 640–678 | 659–697 | +19 |
+| 679 | 698 | reworded (quick reference, Work: free actions) |
+| 680 | 699 | +19 |
+| 681 | 700 | reworded (quick reference, Orders) |
+| 682–727 | 701–746 | +19 |
+| 728–729 | 747–748 | reworded (quick reference: Ge; free actions) |
+| 730–737 | 749–756 | +19 |
+
+As a function: `rev5(n) = n ≤ 45 ? n : n ≤ 71 ? n + 7 : n ≤ 159 ? n + 8 : n ≤ 356 ? n + 18 : n + 19`. For a reworded line the number moves the same way, but the citation must be re-read against the new text (the rule may have changed).
+
+Chinese (739 → 758 lines): Chinese line = English line + 2 from English line 3 on, before and after revision 5. So Chinese lines 1–47 keep their numbers; 48–54 are new (changes 36–42); 48–73 → 55–80 (+7); 81 is new (自由行动 row); 74–161 → 82–169 (+8, 137 → 145 reworded); 170–179 are new (### 自由行动); 162–358 → 180–376 (+18; 284 → 302, 286 → 304, 298 → 316 and 302 → 320 reworded); 377 is new (已卖出); 359–739 → 378–758 (+19; reworded 400 → 419, 405 → 424, 465 → 484, 471 → 490, 482 → 501, 605 → 624, 607 → 626, 615 → 634, 620 → 639, 626 → 645, 641 → 660, 681 → 700, 683 → 702, 730–731 → 749–750). Chinese line 3 (the A1 note) and Chinese line 320 (到瓷牙行) carry the two approved fixes, re-applied after the owner's export (audit).
+
+Component text (140 lines): no line moves. Lines 15 and 17 (Decorator's Kit), 128 and 130 (Ge), 133 and 135 (Ding) are reworded.
+
+**Re-citing.** Every citation in data (`clarifications` tags), docs, code comments and tests is re-cited: the clarification sources and the line-pinned content tests in stage 13, the remaining code and test comments and the documents in stage 14 (§16.22):
+
+- `L###` and `rev. 4 L###` written against revision 4 (the clarifications, the line-pinned content tests and every comment written in stages 8–11): apply `rev5`. Revision-3 or older numbers (`v1.6.2 L…` in comments from stages 2–7, the audit's unmarked numbers, §1–§14): chain the audit's maps (revision 1 → 2 → 3 → 4) and then `rev5`.
+- 0-based pins such as `SOURCE.split("\n")[39]` index lines 1–45, which do not move.
+- Chinese line numbers: the same map on the English line (Chinese − 2).
+- Citations of a reworded line must be checked against the new text. In particular, every citation of rev. 4 L282, L284 or L729 for "sold at any time", of rev. 4 L300 or L403 for "only in the Order Phase", of rev. 4 L463 for "Fine or Standard", of rev. 4 L469 or L639 for Ding's discounts, of rev. 4 L603 for the Kit's Decoration condition and of rev. 4 L605, L613, L618, L624 for the old prices now cites a changed rule.
+- The audit keeps its own convention (unmarked numbers are revision-3 lines; "rev. 4" and "rev. 5" mark the later ones) and gains the map above.
+
+### 16.3 Versions and fingerprint
+
+- `SchemaVersion = 10` (`types.ts`; `setup.ts` writes 10). Rules version stays `1.6.2`; the package version stays `1.6.2`.
+- `RULES_BEHAVIOUR_REVISION = 33`, rooms `r33-<digest>`. History line in `src/game/rulesFingerprint.ts`: "33 -- V1.6.2 owner revision 5 (changes 36–42, 2026-10-28), state schema 10: free actions (selling a Flawed ceramic, completing held Orders and spending Imperial Priority before or after the worker action of the actor's own Work turn and in the actor's own Order Phase turn; `COMPLETE_ORDER` and `USE_IMPERIAL_PRIORITY` legal in `work_turn` and `orders`, `SELL_FLAWED` no longer in the after-Quality step or the Cleanup trim; the after-action window opens on public facts for a sale or a possible completion; `window` on `ORDER_COMPLETED`, `CERAMIC_SOLD` and `IMPERIAL_PRIORITY_USED`; `FiringCeramicRecord.sold` gone); an Imperial Priority load made in the Order Phase fires in the next round's firing; Kiln Master's one marker; Decorator's Kit on any vessel (T16 `decorations` gone); Canal Barge 3, Prepared Clay 4, Colour Samples 3, Protective Saggars 2; Ge crackles any of its owner's ceramics of the firing (GE `upgradeFrom` / `upgradeTo`; a Crackle ceramic keeps its own Quality); Ding's vessel 1 Clay + 2 Coins. Rules version stays 1.6.2; r32 rooms and schema-9 saves are rejected, never migrated."
+- The content digest moves with the data (§16.9): the four costs, T16 `params`, GE `params` and DI `params.coins` are mechanical keys.
+- The fingerprint comment "the V1.6.2 Supabase gate requires `^r32-…`" becomes `^r33-…`.
+
+### 16.4 State (`src/game/types.ts`)
+
+```ts
+export type SchemaVersion = 10;
+
+/**
+ * A free-action window (rev. 5 L168–176): the actor's own Work turn before or after the worker
+ * action, or the actor's own Order Phase turn. Never another player's turn, never during the
+ * worker action or the firing, never at Cleanup (R26).
+ */
+export type FreeActionWindow = "before_action" | "after_action" | "order_phase";
+
+/**
+ * Quality and the Ge Crackle marker (L116, L482). Since change 39 the two are independent: Ge
+ * crackles a ceramic of any Quality and raises only a Standard one to Fine; a Second Firing
+ * may later recalculate a crackled Flawed ceramic (R30), which keeps its marker. Replaces the
+ * revision-4 union that made a Crackle ceramic exactly Fine.
+ */
+export interface FinishedQuality {
+  crackle: boolean;
+  quality: Quality;
+}
+
+/** As `FinishedQuality`, but a delivered ceramic is never Flawed (L300). */
+export interface DeliveredQuality {
+  crackle: boolean;
+  quality: Exclude<Quality, "flawed">;
+}
+
+export interface LoadedCeramic extends CeramicCore {
+  // … unchanged fields …
+  /**
+   * The round it was loaded. Equal to the current round, except for a ceramic loaded by
+   * Imperial Priority in the Order Phase (rev. 5 L170, L174, L314, R28): it stays in its owner's
+   * Imperial Kiln through Cleanup and the next Start of Round and is fired in the next round's
+   * firing (in Round 5 it stays loaded and scores nothing).
+   */
+  loadedInRound: RoundNumber;
+}
+
+export interface FiringCeramicRecord {
+  // … unchanged fields, except:
+  /** Ge Crackle applied this firing (L482): on a ceramic of any Quality; only a Standard one's
+   * Quality changes (to Fine). A later Second Firing recalculation keeps it (R30). */
+  crackle: boolean;
+  // `sold` is deleted: nothing is sold during the firing any more (R26).
+}
+```
+
+- `KilnParamsById.GE`: `{ upgradeFrom: Quality; upgradeTo: Quality; vpPerDeliveredCrackle: number }` (replaces `fromQualities`, `toQuality`). `KilnParamsById.DI`: same shape (`coins` becomes 2 in data).
+- `TechParamsById.T16`: `{ coinReduction: number }` (`decorations` deleted).
+- `CompletedOrderRecord`: no new field (the window is on the event, §16.7, so `test/v161/ui/fixtures/tableScenarios.ts`, which builds a record literal, still compiles). JSDoc: `canalBargeCoins` is 2 on the first completion of the round in any free-action window (L176, L637); delete "Orders are completed only in the Order Phase, so there is no `via`". `crackleVp` stays optional in the type until the UI stage (§15.20).
+- `ScoreLedger.kilnAbilities` JSDoc: Crackle VP "whenever an Order is completed" (L484, L499).
+- `TechId` JSDoc table (read by `content_contract`): T10 3, T11 2, T17 4, T23 3.
+- `PlayerState`, `ImperialState`, `MainOrderMarketState`, `HiddenState`, `PendingLook`, `FiringContext`, phases: no new fields. No new stable IDs; none retired.
+
+### 16.5 Phases, windows and turn flow
+
+No phase type is added or removed. What changes is which commands a phase accepts and when a turn opens or ends.
+
+**Free-action windows** (`freeActionWindowOf(game, playerId): FreeActionWindow | null`, §16.10.1):
+
+- `work_turn` with `activePlayerId === playerId` and `step.kind === "before_action"` → `"before_action"`; `"after_action"` → `"after_action"`. Every other Work step (`commission_market`, `colour_samples`, `colour_samples_swap`, `guild_inspection`) is "during the worker action" (L170): no window.
+- `orders` with `turnOrder[index] === playerId` → `"order_phase"`.
+- Otherwise null: Setup, the Setter's Mark window, every firing phase (`firing_contributions`, `firing_test_pieces`, `firing_heat_adjustment`, `firing_after_quality`, `firing_second_firing_choice`; L176 "or during the firing itself"), `cleanup_hand_limit` (Cleanup is not a free-action window, L170), `finished`, and any phase while it is another player's turn.
+
+**Removed windows (R26).** `SELL_FLAWED` is no longer legal in `firing_after_quality` (including a ceramic of this firing that is Flawed now) or in `cleanup_hand_limit`. No after-Quality queue membership existed only for a sale (`openAfterQuality` queues players with an after-Quality ability only), so the queue rule does not change. The Round 5 Order Phase turn stays the last chance to sell before scoring.
+
+**The before-action window** always exists (the player must still place, L165).
+
+**The after-action window (R27)** opens after the worker action, and stays open after each free action, the Colour Samples swap or its Select, exactly while `afterActionWindowOpen(public view, player)` holds; otherwise the turn ends automatically (`WORK_TURN_ENDED{automatic: true}`). The predicate reads public facts only (DESIGN §4.5), so whether the window opens reveals nothing about the hand:
+
+```ts
+afterActionWindowOpen(game: PublicGameState, playerId) =
+  colourSamplesSwapUsable(game, playerId)          // T10 ready and ≥ 1 held Order (unchanged)
+  || imperialPriorityUsable(game, playerId)         // unchanged
+  || sellableFlawed(game, playerId).length > 0      // a Finished Flawed ceramic
+  || (counts.orderHands[playerId] ≥ 1
+      && ceramicsOf(game, playerId, "finished").some((c) => c.quality !== "flawed"))
+```
+
+The last clause opens the window whenever a completion is conceivable from public facts; whether one exists is the player's own business (they end the turn with `END_TURN`). "Reserve and deliver in one turn" (L46) is the case this enables (L417's "on any later turn of yours" is read as later than the reservation: owner ruling R31): a Commission Market Select, the Canal Wharf Shifu's card or the Magistrate's Hall Shifu's Crown Order raises the hand count, and the Order may be completed before `END_TURN`.
+
+**The Order Phase turn (R28)** opens (is not skipped) exactly while `orderTurnOpen(state, player)` holds, and closes automatically after each free action once it no longer holds (`ORDER_TURN_ENDED{automatic: true}`); `END_ORDER_TURN` stays always legal:
+
+```ts
+orderTurnOpen(state: GameState, playerId) =
+  completableOrderIds(state, playerId, hidden.orderHands[playerId]).length > 0   // hidden; accepted precedent (DESIGN §4.5)
+  || sellableFlawed(state, playerId).length > 0
+  || imperialPriorityUsable(state, playerId)
+```
+
+Imperial Priority is legal in the Order Phase turn in every round, Round 5 included (legal but pointless there: the ceramic is never fired). The Colour Samples swap is not a free action (L632 "before or after one of your worker actions"; it is not in L172–174): it stays a Work-turn before/after ability and is `WRONG_PHASE` in the Order Phase.
+
+**An Imperial ceramic loaded after the firing (R28; INT Imperial Priority in the Order Phase).** After `finishFiring` every kiln is empty, so in the Order Phase Imperial Priority can load the player's empty Imperial Kiln. That ceramic (`loadedBy: "imperial_priority"`, `loadedInRound: r`) stays loaded through Cleanup and the next Start of Round and is fired in round r + 1's firing, with round r + 1's Kiln Die; it is in that firing for every Tech and ability (Test Pieces eligibility, Saggars, Second Firing, Jun, Ge), never makes its owner a Contribution participant, and makes round r + 1's firing happen even when nothing else is loaded. Meanwhile the Imperial Kiln is not empty, so in round r + 1 no Glaze & Load may load into it (R5 (b)). In Round 5 it stays loaded at `finished` and scores nothing (only Finished ceramics are exhibited). Its Imperial modifier, Reworking Table and Kiln Master use belong to round r's allowances (they happen at loading).
+
+**Kiln Master's one marker (R32, was P7).** The Kiln Master tile "comes with its own marker" (L105), which returns when the firing finishes (L683). A marker placed on an Order Phase Imperial Priority load in round r is still on that ceramic in round r + 1 until its firing finishes, so Kiln Master cannot place a marker in round r + 1 before then (its once-per-round allowance is readied, but the marker is in use). Engine: Kiln Master may place its marker only when T24 is ready **and** no loaded ceramic of its owner carries a marker (`kilnMasterCarrier(game, owner) === null`).
+
+**Once-per-round completion effects (L176).** Ru, Guan, Tribute Ware and Canal Barge use the existing per-round flags (`kilnAbilityUsedThisRound`, `OwnedTechState.usedThisRound`), readied only at Start of Round (`readyAllAbilities`), so one use is shared by every completion window of the round with no new state.
+
+### 16.6 Commands and handlers
+
+No command shape changes (owner UI decision D21 later adds the optional `endTurn`, §16.24). The handler table changes:
+
+| Command | Module | `phases` | Notes |
+| --- | --- | --- | --- |
+| `SELL_FLAWED` | `freeActions.ts` (new, layer 5; replaces `flawedSaleHandler.ts`) | `["work_turn", "orders"]` | Finished Flawed ceramics only |
+| `COMPLETE_ORDER` | `freeActions.ts` (moved from `orders/phase.ts`) | `["work_turn", "orders"]` | the usual completion (L422–431) in any free-action window |
+| `USE_IMPERIAL_PRIORITY` | `freeActions.ts` (moved from `work/windowAbilities.ts`) | `["work_turn", "orders"]` | unchanged shape (`kilnMaster`, `reworkShape` optional) |
+| `USE_COLOUR_SAMPLES_SWAP` | `work/windowAbilities.ts` | `["work_turn"]` | unchanged; not a free action |
+| `END_TURN` | `work/turn.ts` | `["work_turn"]` | unchanged |
+| `END_ORDER_TURN` | `orders/phase.ts` | `["orders"]` | unchanged |
+| `USE_GE_CRACKLE` | `firing/afterQuality.ts` | `["firing_after_quality"]` | target: any own ceramic of this firing |
+| `PLACE_FORM_DECORATE` | `work/formDecorate.ts` | `["work_turn"]` | `decoratorsKitVesselIndex` may name any vessel of the action |
+| `DISCARD_TO_HAND_LIMIT` | `round.ts` | `["cleanup_hand_limit"]` | unchanged; no sale before it |
+
+Every free-action handler validates in this order: the dispatcher (game over, seat, `phases`, `decisionPrompt` actor), then `freeActionWindowError(game, viewerId, action.type)` (§16.10.1), then the action's own checks. `actionGuard.ts`: unchanged (`COMMAND_TYPES` unchanged).
+
+### 16.7 Events
+
+| Event | Change |
+| --- | --- |
+| `ORDER_COMPLETED` | adds `window: FreeActionWindow` (public) |
+| `CERAMIC_SOLD` | `{ playerId; ceramicId; coins; window: FreeActionWindow }`: `from` deleted (always a Finished ceramic now) |
+| `IMPERIAL_PRIORITY_USED` | adds `window: FreeActionWindow` |
+| `QUALITY_IMPROVED{cause: "ge_crackle"}` | only when Ge turns a Standard ceramic Fine; on a Masterpiece, Fine or Flawed target only `CRACKLE_APPLIED` |
+| `CRACKLE_APPLIED` | on any target Quality |
+| `RESOURCES_CHANGED.reason` | `"canal_barge"`, `"order_reward"`, `"guan"`, `"flawed_sale"` may now occur in a Work turn |
+| `WORK_TURN_ENDED`, `ORDER_TURN_STARTED`, `ORDER_TURN_ENDED` | unchanged payloads; `automatic: true` per §16.5 |
+| `KILN_MASTER_PLACED`, `CERAMIC_LOADED` | unchanged; may occur in the Order Phase |
+
+The event order inside `resolveOrderCompletion` is unchanged (§15.9.9).
+
+### 16.8 Rule errors (`GameRuleErrorCode`, `ruleErrorText.ts`)
+
+Plain modern Chinese, glossary terms (自由行动, 工人行动, 窑工标).
+
+- **New `WORKER_ACTION_IN_PROGRESS`** (detail keys: the common ones): EN "Finish your worker action first: this can be done before or after it, not during it." / ZH 先完成工人行动：这一步只能在工人行动之前或之后进行，不能在行动中途进行. Emitted when the active player sends a free action or `USE_COLOUR_SAMPLES_SWAP` in a Work sub-step (details `phase`, `step`, `actionType`). It replaces the `WRONG_PHASE` "Finish your worker action first." of `work/windowAbilities.windowError` and `flawedSale.saleWindowError`. `END_TURN` in a sub-step keeps its `WRONG_PHASE`. **Review fix (2026-10-30):** the Colour Samples swap's own Select (step `colour_samples_swap`) is no worker action and may be open before the worker is placed (`returnTo: "before_action"`), so there the error also carries `techId: "T10"` and reads EN "Finish the {techId} Select first: this can be done before or after it, not during it." / ZH 先完成{techId}的精选：这一步只能在精选之前或之后进行，不能在中途进行 (the main template; the worker-action sentence is its fallback, used whenever `techId` is absent). Detail keys: `techId` and the common ones.
+- **New `TECH_MARKER_IN_KILN`** (detail keys `techId`, `ceramicId` and the common ones): EN "{techId}'s marker is still on a ceramic in a kiln; it returns when that firing finishes." / ZH {techId}标还在窑中的器物上，要到那次烧窑开窑取器时才收回 (T24 renders as 窑工, so the sentence names the glossary's 窑工标, and 开窑取器 is the glossary's step 6; the two templates must carry the same placeholders, which the content contract checks). Emitted for `LoadSpec.kilnMaster` while the owner's marker is in a kiln (R32; details `techId: "T24"`, `field`, `ceramicId` of the carrier).
+- **Deleted:** `REASON_TEXT.not_fine_or_standard` (Ge's target check is gone); Ge's message "Crackle needs one of your Fine or Standard ceramics from this firing."; Decorator's Kit's `INVALID_VESSEL_CHOICE` "reduces only a vessel with a Carved, Impressed or Painted Decoration" (the index check stays).
+- **`WRONG_PHASE`** from the dispatcher for `SELL_FLAWED` in `firing_after_quality` or `cleanup_hand_limit`, and for `COMPLETE_ORDER` or `USE_IMPERIAL_PRIORITY` outside `work_turn` and `orders`; for `USE_COLOUR_SAMPLES_SWAP` in `orders`.
+- **`NOT_YOUR_DECISION`** from the dispatcher for a free action on another player's Work or Order turn.
+- `ORDER_NOT_HELD`, `ILLEGAL_CERAMIC_STAGE` (a ceramic loaded this round is not Finished: "Ceramics fired this round first become available after the firing", L176), `ORDER_REQUIREMENTS_NOT_MET`, `INVALID_CRACKLE_DECLARATION`, `IMPERIAL_PRIORITY_UNAVAILABLE`, `IMPERIAL_KILN_UNAVAILABLE`: unchanged, now reachable in any free-action window.
+- `PHASE_TEXT`: unchanged.
+- Glossary §7 gains the two sentences above and drops 器物不是上品或良品（哥窑，修订4）.
+
+### 16.9 Data (`data/*.json`) and content definitions
+
+Values and display texts, both in stage 13 (§16.22): the content contract checks them against the revision-5 lines.
+
+| File | Change |
+| --- | --- |
+| `techniques.json` | `cost`: T10 3 (L632), T11 2 (L643), T17 4 (L624), T23 3 (L637). T16 `params` `{coinReduction: 1}` (`decorations` deleted, L622). Texts: T16 `ability` (L622), `abilityZh` (Chinese 624), `shortText` / `shortTextZh` (component text 15 / 17); the cost changes touch no text. `clarifications` follow the clarifications file (§16.21) |
+| `kilns.json` | GE `params` `{upgradeFrom: "standard", upgradeTo: "fine", vpPerDeliveredCrackle: 1}` (L482, L484); GE `ability` (L482 + L484), `abilityZh` (Chinese 484 + 486), short texts (component text 128 / 130). DI `params.coins` 2 (L488); DI `ability` (L488), `abilityZh` (Chinese 490), short texts (component text 133 / 135). RU, GU, GE and DI `clarifications` (§16.21) |
+| `round_structure.json` | the Order Phase summary (L143 / Chinese 145): "In turn order, each player may take any number of free actions; the first chance to deliver ceramics fired this round." / 按回合顺序，每位玩家可以进行任意数量的自由行动；这是本轮烧成的器物首次可以交付的时机。 |
+| `firing.json` | unchanged (`flawedSaleCoins: 2`, L172, L302) |
+| `imperial_progress.json` | unchanged: the Recognition 3 text still reads "before or after your worker action", as L448 prints (audit observation) |
+| `action_locations.json`, `game_config.json`, `components.json`, `orders.json`, `asset_specs.json` | unchanged (L201–202, L354 and the Components table did not change) |
+
+`content.ts` validation: GE `upgradeFrom === "standard"` and `upgradeTo === "fine"`; T16 `coinReduction` a positive integer and no other key; DI `clay`, `coins` non-negative integers. `ENGINE_V1.6.1_DESIGN.md` §6.4 (GE and DI rows) and §6.5 (T16 row), which `content_contract` reads, are amended in place with a note, as revision 4 did for GE and T24.
+
+### 16.10 Module behaviour
+
+#### 16.10.1 `freeActionWindow.ts` (new, layer 3; imports layers 0–2 only)
+
+The public-fact predicates every layer above needs, moved here so that `orders/phase.ts`, `work/turn.ts`, `flawedSale.ts`, the selectors and the invariants share one implementation:
+
+- `freeActionWindowOf(game: PublicCore, playerId): FreeActionWindow | null` (§16.5).
+- `freeActionWindowError(game: PublicCore, viewerId, actionType: GameActionType): GameRuleError | null`: null in a window; `WORKER_ACTION_IN_PROGRESS` for the active player in a Work sub-step; `NOT_YOUR_DECISION` in `work_turn` or `orders` when it is another player's turn; `WRONG_PHASE` otherwise (the dispatcher normally answers the last two first).
+- `imperialPriorityUsable(game, playerId)` (moved from `work/turn.ts`): token `held`, Imperial Kiln gained and empty (`imperialKilnCeramic` from `state.ts`), ≥ 1 Shaped vessel.
+- `colourSamplesSwapUsable(game: PublicGameState, playerId)` (moved from `work/turn.ts`, unchanged).
+- `sellableFlawed(game, playerId): CeramicId[]` (moved from `flawedSale.ts`): the player's Finished Flawed ceramics in sequence order; the `firing_after_quality` branch is deleted.
+- `afterActionWindowOpen(game: PublicGameState, playerId)` (moved from `work/turn.ts`, R27 rule of §16.5).
+
+Two helpers live here as well: `workerActionInProgress(game, actionType)` builds the `WORKER_ACTION_IN_PROGRESS` error (details `phase`, `step`, `actionType`, and `techId` in the swap's Select, §16.8) for the free-action handlers and the Colour Samples swap, and `publicGameOf(state)` is the cheap public view (no `hidden`, with `publicCounts`) that `work/turn.ts` and the invariants pass to `afterActionWindowOpen` (it replaces `work/turn.ts`'s private `publicOf`).
+
+`work/turn.ts` re-exports `afterActionWindowOpen`, `colourSamplesSwapUsable` and `imperialPriorityUsable`, and `flawedSale.ts` re-exports `sellableFlawed`, so existing imports keep working.
+
+#### 16.10.2 `freeActions.ts` (new, layer 5; replaces `flawedSaleHandler.ts`)
+
+Handlers `SELL_FLAWED`, `COMPLETE_ORDER`, `USE_IMPERIAL_PRIORITY` (§16.6), and one continuation:
+
+- **`SELL_FLAWED`** validate: `freeActionWindowError`; the ceramic exists (`CERAMIC_NOT_FOUND`), is the viewer's (`CERAMIC_NOT_OWNED`), is in `sellableFlawed` (`INVALID_TARGET`, `not_flawed`). Resolve: `sellFlawedCeramic(draft, actor, id, window, ctx)`; continue.
+- **`COMPLETE_ORDER`** validate: `freeActionWindowError`, then `validateOrderCompletion(view, action)` (unchanged). Resolve: `resolveOrderCompletion(draft, actor, action, window, ctx)`; continue.
+- **`USE_IMPERIAL_PRIORITY`** validate: `freeActionWindowError`, then `imperialPriorityError(view, action)` (exported by `work/windowAbilities.ts`: the token check `IMPERIAL_PRIORITY_UNAVAILABLE`, the empty Imperial Kiln `IMPERIAL_KILN_UNAVAILABLE`, then `validateLoads(view, [load], 1, "imperial_priority")`). Resolve: `useImperialPriority(draft, actor, action, window, ctx)` (exported by `work/windowAbilities.ts`: token `spent`, `IMPERIAL_PRIORITY_USED{window}`, `loadCeramic(…, "imperial_priority")`; no Wood); continue.
+- **Continuation** `continueAfterFreeAction(draft, actor, ctx)`: `work_turn` → `work/turn.afterWindowAbilityUsed` (before the action nothing changes; after it the window is rechecked with `afterActionWindowOpen` and the turn ends automatically when it is closed); `orders` → `orders/phase.continueOrderTurn` (the turn ends automatically when `orderTurnOpen` no longer holds).
+
+`window` is `freeActionWindowOf(draft, actor)` read before resolving. `engine.ts`: `HANDLER_PARTS` replaces `flawedSaleHandlers` with `freeActionHandlers`; `orderPhaseHandlers` keeps only `END_ORDER_TURN`, `windowAbilitiesHandlers` only `USE_COLOUR_SAMPLES_SWAP`.
+
+Layers (DESIGN §2.2 as extended by §15.9.11): `freeActionWindow.ts` 3 (imports `types`, `errors`, `content`, `state`, `techs`); `flawedSale.ts` 4 (was 3); `freeActions.ts` 5 (imports `orders/completion` 3, `freeActionWindow` 3, `flawedSale`, `orders/phase`, `work/turn`, `work/windowAbilities` 4). No module imports from its own layer.
+
+#### 16.10.3 `flawedSale.ts` (now layer 4)
+
+- `sellFlawedCeramic(draft, playerId, ceramicId, window, ctx)`: Finished Flawed only (invariant); delete the ceramic, return its Vessel card, `CERAMIC_SOLD{…, window}`, `gain(coins: flawedSaleCoins, "flawed_sale")`. `leaveKilnSpace` and the `"firing"` branch are deleted.
+- `sellFlawedOptions(view): SellFlawedOptions | null`: non-null in the viewer's free-action window with ≥ 1 Finished Flawed ceramic. `saleWindowError` is deleted (replaced by `freeActionWindowError`).
+- Imports `freeActionWindow.ts` (layer 3), so it moves to layer 4; no layer-4 module imports it (`orders/phase.ts` takes `sellableFlawed` from `freeActionWindow.ts`).
+
+#### 16.10.4 `orders/completion.ts` (layer 3)
+
+- `resolveOrderCompletion(draft, playerId, spec, window: FreeActionWindow, ctx)`: unchanged steps; `ORDER_COMPLETED{playerId, record, window}`. The header no longer says "in the Order Phase, the only place Orders are completed"; it cites L417, L422 and L176 (once per round in any window).
+- `completionTriggers`: unchanged (the flags are per round). Canal Barge stays automatic (R30: 2 Coins earlier are never worse; declining could only move them to a later completion of the same round). Ru, Guan and Tribute Ware stay optional (R4, R30) in every window: a decline keeps the round's use for a later completion, Work turn or Order Phase.
+- `deliver`: keeps `crackle` and `quality` as they are (Flawed refused by invariant); no Crackle-is-Fine branch.
+
+#### 16.10.5 `orders/phase.ts`
+
+- `orderTurnOpen(state, playerId)` (§16.5) replaces `hasOrderTurnBusiness`; `startNextTurn` skips a player only when it is false.
+- `continueOrderTurn(draft, playerId, ctx)` replaces `continueAfterSale` (called after every free action in the Order Phase).
+- Handlers: `END_ORDER_TURN` only. Header: L318, L700; "each player may take any number of free actions"; this round's ceramics are first deliverable here.
+
+#### 16.10.6 `work/turn.ts`
+
+- `completeWorkerAction` and `afterWindowAbilityUsed` use the new `afterActionWindowOpen` (via the re-export). Header: the window opens for the swap, Imperial Priority, a sale or a possible completion, all public facts (R27).
+- `endTurn` unchanged: the deferred refills still run after every free action of the after-action window.
+
+#### 16.10.7 `work/windowAbilities.ts`
+
+- Keeps `USE_COLOUR_SAMPLES_SWAP` (Work turn only; its `windowError` returns `WORKER_ACTION_IN_PROGRESS` in a sub-step).
+- Exports `imperialPriorityError(view, action)` and `useImperialPriority(draft, actorId, action, window, ctx)` for `freeActions.ts`; the `USE_IMPERIAL_PRIORITY` handler leaves this module. Header: Imperial Priority is a free action (L174, L314) in the Work-turn windows and the Order Phase.
+
+#### 16.10.8 `kilnLoading.ts`
+
+- `simulateLoad` step 6 (Kiln Master): after `techUseError`, refuse with `TECH_MARKER_IN_KILN` when `kilnMasterCarrier(game, playerId) !== null` (R32).
+- `kilnMasterOptionFor`: `ready = techReady(p, T24) && kilnMasterCarrier(game, playerId) === null`.
+- `imperialKilnEmpty` unchanged; `hasAnyLegalLoad` unchanged (a carried Imperial ceramic makes the Imperial Kiln not empty).
+
+#### 16.10.9 `firing/afterQuality.ts`
+
+- **No sale.** Delete `continueAfterSale` and every `record.sold` test (`ownFiringCeramic`, `ownRecords`); header without R20.
+- **Ge (change 39, R30):** options list every own record of this firing with a Quality (any Quality). `USE_GE_CRACKLE` validates Kiln, readiness and `ownFiringCeramic` only. Resolve: `markKilnAbilityUsed`; `to = from === GE.params.upgradeFrom ? GE.params.upgradeTo : from`; `setQuality(record, to, "ge_crackle")` (the history records the unchanged Quality too); `record.crackle = true`; `QUALITY_IMPROVED` only when `from !== to`; `CRACKLE_APPLIED`. A Ge owner whose only ceramics are Masterpieces or Flawed now joins the after-Quality queue (the option is eligible; END_AFTER_QUALITY declines).
+- **Second Firing** may target a crackled Flawed ceramic (it is Flawed); `resolveSecondFiringChoice` replaces the Quality and keeps `record.crackle`. Ge's Standard → Fine applies only when Crackle develops, never again after a recalculation (INT Ge Crackle revision 5).
+- **`finishFiring`:** `finished = { ...core, crackle: record.crackle, quality: record.quality }`; the "Crackle must be Fine" check is deleted. Kilns empty as before; an Imperial ceramic loaded later in the Order Phase does not exist yet at this point.
+
+#### 16.10.10 `firing/contributions.ts`, `firing/pipeline.ts`
+
+- The record builder drops `sold: false`. `openFiringPhase` already builds records from every loaded ceramic, so a carried Imperial ceramic is fired with no change; a firing with only that ceramic is not skipped (L267).
+
+#### 16.10.11 `work/formDecorate.ts` (changes 37, 40; R29)
+
+- Decorator's Kit: `decoratorsKitVesselIndex` must name a vessel of the action (`INVALID_VESSEL_CHOICE` otherwise); no Decoration check. `canFormAny`: the Kit, when ready, reduces any single vessel's 2 Coins by 1.
+- Ding: `KILNS.DI.params` (1 Clay + 2 Coins) with any Decoration, after a Bowl, Plate or Brush Washer of the action; outside `maxVessels` (unchanged). The Shifu's "If you form 2" (`effect === "shifu" && vessels.length === 2`) still counts only the action's ordinary vessels (R29). The reductions stay on the ordinary vessels: each is once per action or round, and the vessel that triggers Ding can always carry them, so totals and affordability equal any placement on Ding's vessel (R29). Cost lines unchanged (`ding_extra` with Clay 1 and Coins 2).
+- Header: rev. 5 L201–204, L354, L488, L622, L658 (two reductions on the same vessel; Ding's vessel at full price).
+
+#### 16.10.12 `orders/matching.ts`
+
+- `orderRank` comment: the printed Quality, Crackle or not (a crackled Masterpiece fills a Masterpiece requirement). `ruTriggers` drops `!c.crackle` (Ru reads the actual Quality, Glaze and printed Decoration, L474; unreachable anyway, since only Ge makes Crackle).
+
+#### 16.10.13 `round.ts`, `scoring.ts`, `state.ts`, `view.ts`, `index.ts`
+
+- `round.ts`: header without the Cleanup sale; code unchanged.
+- `scoring.ts`: unchanged (Finished ceramics only; a crackled Masterpiece exhibits at 5, counts for Connoisseur's Cabinet and tie-breaker 3).
+- `state.ts`: `decisionPrompt` unchanged; `kilnMasterCarrier` unchanged (used by §16.10.8).
+- `view.ts`: unchanged (all new facts are public).
+- `index.ts`: unchanged barrel lines; the selectors module exports `freeActionOptions`.
+
+### 16.11 Once-per-round effects across windows (L176)
+
+| Effect | Flag | Behaviour |
+| --- | --- | --- |
+| Ru (L474) | `kilnAbilityUsedThisRound` | optional (R4); first accepted use in any window spends it for the round |
+| Guan (L478) | `kilnAbilityUsedThisRound` | optional (R4); idem |
+| Tribute Ware (T25, L648) | `T25.usedThisRound` | optional (R4); idem |
+| Canal Barge (T23, L637) | `T23.usedThisRound` | automatic on the round's first completion, any window |
+| Crackle VP (L484) | — | every delivered Crackle ceramic, no limit |
+
+A Work-turn completion's Coins, Crowns and milestones resolve at once and count for the placement that follows (L176).
+
+### 16.12 Legality ("at least 1 instance of the main action", L164)
+
+| Location | Revision 5 |
+| --- | --- |
+| Form & Decorate | `canFormAny` with the Kit on any vessel (L204) |
+| Glaze & Load | unchanged; an Imperial Kiln holding a carried ceramic is not a destination (R5 (b)) |
+| Magistrate's Hall, Guild Hall, every location | unchanged gates, evaluated with the resources, Recognition and Techs as they stand after any before-action free action (L176) |
+
+### 16.13 Progress guarantee and automatic steps
+
+- `work_turn` `after_action`: `END_TURN` always legal; the window closes by itself when nothing public is left (§16.5).
+- `orders`: `END_ORDER_TURN` always legal; a turn opens only while `orderTurnOpen`.
+- Termination: every free action consumes something finite (a held Order, a Finished ceramic, the once-per-game token), so no window loops.
+- Automatic, never declined: Canal Barge's Coins (any window), Crackle VP, the turn endings above.
+
+### 16.14 Invariants (`invariants.ts`, layer 5; imports layers 0–3)
+
+- **Crackle:** delete `crackle ⇒ quality === "fine"` (Finished, delivered and firing records). Keep: a Crackle ceramic or record belongs to a Ge owner (Finished and firing records too, not only delivered ones); at most 1 crackled record per owner per firing.
+- **Sold:** delete the firing-record `sold` checks and the stacked-space `soldBeneath` exception; every firing record has a loaded ceramic while the firing is open.
+- **Kilns between firings:** replace `KILN_EMPTY_PHASES` with: in `setup_kiln_selection` no ceramic is loaded; in `orders`, `cleanup_hand_limit`, `round_start_setters_mark` and `finished` the Shared Kiln is empty and every loaded ceramic is in its owner's Imperial Kiln with `loadedBy === "imperial_priority"` and `loadedInRound === state.round` (`orders`, `cleanup_hand_limit`, `finished`) or `state.round − 1` (`round_start_setters_mark`).
+- **Loaded round:** a loaded ceramic has `loadedInRound === state.round`, or it is such a carried Imperial ceramic (`loadedInRound === state.round − 1`) and the phase is `round_start_setters_mark`, `work_turn` or a firing phase.
+- **Kiln Master:** the "marker ⇒ T24 used this round" check applies only to a ceramic with `loadedInRound === state.round`; the "at most 1 carrier" check stays.
+- **Windows (live tier):** `work_turn` with `step.kind === "after_action"` ⇒ `afterActionWindowOpen(projectPublicState(state), active)`; `orders` ⇒ the current player's turn is open (recomputed inline from `completableOrderIds`, `sellableFlawed` and `imperialPriorityUsable`, all layer 3).
+- **Once per round (live tier):** among the completed Orders of `state.round`, at most 1 with `canalBargeCoins ≠ 0`, at most 1 with `kilnAbility ≠ null`, at most 1 with `bonusCrowns ≠ 0`; each such record ⇒ the matching flag is spent (T23 used, `kilnAbilityUsedThisRound`, T25 used), in every phase (the revision-4 check only looked in `orders`).
+
+### 16.15 Selectors and legal actions
+
+Selectors:
+
+- New `freeActionOptions(view): FreeActionOptions | null`: null outside the viewer's free-action window; else `{ window: FreeActionWindow; completableOrderIds: OrderId[] /* viewer's own held Orders completable now, hand order */; sellableCeramicIds: CeramicId[]; imperialPriority: boolean }`.
+- `imperialPriorityOptions`: usable in any free-action window (`freeActionWindowOf !== null` replaces `ownActionWindow`); `kilnMaster` false while the marker is in a kiln (R32).
+- `kilnMasterOption`: `ready` per §16.10.8.
+- `colourSamplesSwapOptions`: unchanged (Work-turn windows only).
+- `sellFlawedOptions`: per §16.10.3 (`SellFlawedOptions` JSDoc: Finished Flawed only).
+- `afterQualityOptions`: Ge lists every own ceramic of this firing; no sale. `AfterQualityOption` JSDoc follows.
+- `firingStageView` / `firingRecapView`: `FiringStageCeramic.sold` deleted (the D3 key allow-list test follows).
+- `completableOrders`, `orderMatchOptions`, `orderSelectionCheck`: unchanged (phase-agnostic); the UI shows them in every free-action window.
+- `formDiscountVariants`: the Kit on the first vessel (index 0) when ready.
+
+`legalActions` families by phase:
+
+| Phase / step | Families, in order |
+| --- | --- |
+| `work_turn` `before_action` | `USE_COLOUR_SAMPLES_SWAP`, `USE_IMPERIAL_PRIORITY`, `SELL_FLAWED`, `COMPLETE_ORDER`, placements |
+| `work_turn` `after_action` | `USE_COLOUR_SAMPLES_SWAP`, `USE_IMPERIAL_PRIORITY`, `SELL_FLAWED`, `COMPLETE_ORDER`, `END_TURN` |
+| `firing_after_quality` | `USE_PROTECTIVE_SAGGARS`, `USE_SECOND_FIRING`, `USE_GE_CRACKLE`, `END_AFTER_QUALITY` |
+| `orders` | `COMPLETE_ORDER`, `SELL_FLAWED`, `USE_IMPERIAL_PRIORITY`, `END_ORDER_TURN` |
+| `cleanup_hand_limit` | `DISCARD_TO_HAND_LIMIT` |
+
+`USE_GE_CRACKLE`: every own ceramic of the firing. `PLACE_FORM_DECORATE`: exhaustive Kit variants on every vessel index; canonical on the first. The module header table follows. `sampleLegalAction` needs no change (its candidates are phase-agnostic); the perf fixture (with `COMPLETE_ORDER` now enumerated before the action) stays under 50 ms.
+
+### 16.16 Hidden information
+
+| Item | Lives in | Visible to | Public |
+| --- | --- | --- | --- |
+| A completion in a Work turn | `ORDER_COMPLETED{window}`, the completed Order and its ceramics | everyone | all (the Order is revealed, L424) |
+| Whether the after-action window opened | `phase.step` | everyone | yes, computed from public facts only (R27) |
+| Whether the Order Phase turn opened | `phase.index` | everyone | yes; may reflect a completable hidden Order (accepted, DESIGN §4.5, as before) |
+| An Order Phase Imperial Priority load | the loaded ceramic, `IMPERIAL_PRIORITY_USED{window}` | everyone | all (the modifier and Kiln Master marker are public) |
+
+No new secret. The projection test must show that two states differing only in hand content (same count) open the after-action window identically; `tools/fixturePrivacy.ts` treats a Work-turn completion like an Order Phase one (the Order becomes public).
+
+### 16.17 Determinism
+
+No new randomness. Every seeded game moves (after-action windows open more often, the computer completes in Work turns, prices change), so seed-pinned expectations are re-recorded. The fuzz seed base stays 7400 if every coverage check passes there; otherwise it is re-baselined and the reason recorded (§16.20).
+
+### 16.18 Platform
+
+- `service.ts` (`CURRENT_SCHEMA_VERSION = 10`), `projection.ts` (schema 10), `inMemoryStore.ts` (`CURRENT_ROOM_FINGERPRINT_PATTERN = /^r33-[0-9a-f]{16}$/`, stored state schema 10), `client.ts` (`EXPECTED_SCHEMA_VERSION = 10`), `store.ts` and `types.ts` comments: schema 10, `r33`; schema-9 saves and `r32` rooms are refused, never migrated (`UNSUPPORTED_RULES_VERSION` / `RULES_FINGERPRINT_MISMATCH`).
+- `revisionAcceptance` / `computerAdvanceAccepted`: unchanged code; the comment drops the Cleanup sale (the tolerant rule now covers only the trim).
+- **Supabase (deploy nothing).** `202610150001_v161_rules.sql` and `202610150002_playtest_v161.sql` are applied to the live database and are never edited again. New migration `supabase/migrations/202610300001_v162_rev5_rules.sql`:
+  1. header: V1.6.2 owner revision 5, schema 10, `r33`; the two applied files stay as they are; older rows are history and are never rewritten.
+  2. `alter table public.rooms drop constraint if exists rooms_v162_fingerprint_check;` and add it again with `coalesce(content_digest, '') ~ '^r3[23]-[0-9a-f]{16}$'` (existing `r32` rows stay valid as history; every write path below requires `r33`).
+  3. `create or replace function` for `server_create_room`, `server_join_room`, `server_add_computer_seat`, `server_commit_start` and `server_commit_transition`: each body and signature copied verbatim from `202610150001_v161_rules.sql`, with only `^r32-[0-9a-f]{16}$` → `^r33-[0-9a-f]{16}$` and, in the two commit functions, every `<> 9` schema check → `<> 10`. Same signatures, so no overload is created; the five `revoke all … from public, anon, authenticated` / `grant execute … to service_role` lines are restated.
+  4. `server_load_private_submissions`, `server_find_own_pending`, `server_list_private_events` and the playtest function pin neither `r32` nor schema 9 and are not touched.
+  - `supabase/tests/rls.test.sql`: fixtures on `r33`; an `r32` row is still accepted by the constraint (history), `server_create_room` with an `r32` digest returns `session_not_active`, an `r31` row is refused by the constraint.
+  - `test/v161/platform/supabase_contract.test.ts`: the applied file keeps its `r32` / schema-9 gates (pinned as history); the latest definition of each gated function (across all migrations) carries `^r33-` and `<> 10` and no `^r32-` or `<> 9`; the new file re-creates exactly those five functions and the constraint with `^r3[23]-`, and runs no `update`/`delete`/`truncate`.
+  - `supabase/README.md`, `supabase/functions/_shared/supabaseStore.ts` comments.
+- `tools/` (keep compiling): `localBackendV161.ts` (schema 10, `r33-` comment); `fixturePrivacy.ts` (Work-turn completions are public and need nothing; `isHistoryPath` lets a `rehidden` ID appear in the viewer's own steered commands, `source.steered[i]` with `playerId === viewerId`, and never in another seat's, which are raw commands that may name an Order put face down); `uiFixtures.ts` (the firing selectors stop dumping a sale in the after-Quality step; new scripted windows from `phase_scenarios.ts`, §16.20).
+- **The fixtures gate (`npm run fixtures`, `fixtures:check`): blocked during stages 13–15, unblocked in commit `6342feb`.** `test/v161/ui/fixtures/tableScenarios.ts` (imported by `tools/uiFixtures.ts`) used to throw when a sale was missing: scenario 12 (`t-after-quality-sale`, line 432) and scenario 14 (`t-cleanup-sale`, line 460). Under R26 both sales are illegal, so both throws fired and the fixtures could not be generated. Before the commit, with permission to edit that file, the smallest fix was applied: both scenarios keep their tables and now throw when a sale *is* offered (`sellFlawedOptions(view) !== null`), renamed "After Quality: Lin may fire a Flawed ceramic again; no sale during the firing" and "Cleanup: no sale while trimming". Nothing else in that file changed (scenario 10 buys Colour Samples at 3 Coins with 4; scenarios 7–8 still finish). `npm run fixtures` and `fixtures:check` pass (no drift; the privacy check passes). Left for the UI stage: the comment above the two scenarios (lines 420–421) still cites I1 where it means R26.
+- `src/app`, `e2e`, `test/v161/ui`: the UI stage (`npm run typecheck` may fail until then: `FiringStageCeramic.sold`, `CERAMIC_SOLD.from`, the Crackle union, the after-Quality sale control).
+
+### 16.19 Computer policy (`computerPlayer.ts`, `computerFallback.ts`)
+
+Heuristics, not rules; `computer_strength` thresholds may be re-baselined with the reason recorded.
+
+1. **Completions in Work turns (`decideFreeCompletion`):** in `before_action` (after the sale, before the window abilities and the placement) and in `after_action` (after the sale, before the window abilities, then `END_TURN`): take `bestCompletion(k)` when its `gain > 0` and none of its ceramics is planned by `handPlan(k)` for a different held Order (`planOf.get(id)?.orderId` is undefined or the same Order); otherwise wait. Before the worker action it also waits while a face-up Main Order would complete at once from Finished ceramics, one of them a ceramic of that completion, for more than the held Order is worth (`displayWantsCeramics`): the placement may reserve it and deliver it after the action ("reserve and deliver", L176). The Order Phase keeps `decideOrders` (`gain > 0`).
+2. **Sale:** `decideSellFlawed` in `before_action`, `after_action` and the Order Phase turn; the `cleanup_hand_limit` branch is deleted (illegal); nothing in the after-Quality step (illegal).
+3. **Imperial Priority:** in the Work-turn windows (`windowAbility`, threshold 1.5) as before. In the Order Phase (`orderPhaseImperialPriority`, after the sale and the completions) never in Round 5, where the ceramic is never fired; in Rounds 1–4 only when waiting for the next Kiln Die gains nothing: the best load chosen now (vessel, Glaze, Imperial modifier; its value averaged over the die's faces) is worth as much as the best load chosen after the roll (the face-by-face maximum, averaged), and clears the same threshold. Such a load carries no Kiln Master marker (R32 would keep the marker on it until the next firing). Otherwise an Order turn opened only by Imperial Priority ends with `END_ORDER_TURN`. Stage 15 changed this item: the stage-12 design never spent the token in the Order Phase; the task text (I3, now owner ruling R28) asks only that computer players never do it in Round 5.
+4. **Ge:** candidates on every own ceramic of the firing. Gain = (utility(Fine) − utility(Standard) for a Standard target) + `crackleValue` for a non-Flawed target; 0 for a Flawed one (below the 0.02 threshold, so never chosen). Between targets of equal value the better ceramic is preferred (a 0.001 × Quality-rank tie-break, so a Masterpiece before a Fine one). The Saggars ordering rule is unchanged. Quality models: `finishedRank` no longer caps a Crackle ceramic at Fine; `loadedQualityP.pMp` no longer excludes Crackle; the `aimedQualityP` comment follows L482.
+5. **Decorator's Kit:** `formVariants` puts the Kit on the first vessel when ready; `planFit("T16")` is 1 (no Decoration share).
+6. **Ding:** costs from data (1 Clay + 2 Coins) in `formVariants` and the planner's `FD` step; no code change beyond comments.
+7. **Prices:** `techValue` reads `TECHS[id].cost`; no change. Canal Barge's value keeps its formula (completions in Work turns make its trigger slightly more likely; noted, not tuned).
+8. **Fallback:** the safe exits are unchanged (`END_TURN`, `END_ORDER_TURN`, the trim); `legalCommands` respects the new families. `fallbackComputerCommands` drops `USE_IMPERIAL_PRIORITY` from the canonical list in the Order Phase of Round 5 only (the canonical baseline policy samples from that list, and the Round 5 load is pointless); in Rounds 1–4 it stays a candidate, legal like any other.
+
+### 16.20 Test plan
+
+Engine (`test/v161/engine`):
+
+| File | Cases |
+| --- | --- |
+| `free_actions.test.ts` (new) | each free action in `before_action`, `after_action` and the Order Phase turn, any number, in any order (a sale, a completion and Imperial Priority in one window); `WORKER_ACTION_IN_PROGRESS` in every Work sub-step (`commission_market`, `colour_samples`, `colour_samples_swap`, `guild_inspection`); `NOT_YOUR_DECISION` on another player's turn; `WRONG_PHASE` in Setup, Setter's Mark, every firing phase and Cleanup; rewards count for the placement that follows (Coins making the Guild Hall affordable; a Crown to Recognition 2, then a Glaze & Load into the new Imperial Kiln; to Recognition 3, then Imperial Priority in the same window; a Crown to Recognition 3 making the Magistrate's Hall illegal for that placement); reserve and deliver in one turn (Commission Market Select, Canal Wharf Shifu card, Magistrate's Hall Crown Order, each then `COMPLETE_ORDER` after the action); a ceramic loaded this round cannot complete (`ILLEGAL_CERAMIC_STAGE`); `window` on the three events |
+| `work_turn.test.ts` | `afterActionWindowOpen` per R27 (swap; Imperial Priority; a Finished Flawed ceramic; hand ≥ 1 with a Finished non-Flawed ceramic; closed for hand 0, or for no Finished non-Flawed ceramic and nothing else); the same answer for two hands of equal size; the window rechecked after each free action, the turn ending automatically after the last; `END_TURN` still ends it |
+| `order_phase.test.ts` | the turn opens for a completable Order, a Flawed ceramic or a usable Imperial Priority and is skipped otherwise; it closes after each free action when nothing is left; Imperial Priority in the Order Phase (Rounds 1–4 and Round 5); Round 5 sale before scoring |
+| `imperial_priority.test.ts` | legal in the Order Phase, no Wood; Reworking Table and Kiln Master use round r's allowances; the ceramic stays loaded through Cleanup and Start of Round, blocks the Imperial destination in round r + 1 (R5 (b)), is fired in round r + 1 with that round's Kiln Die, keeps a firing that has nothing else loaded, never makes a Contribution participant and counts for Test Pieces eligibility; in Round 5 it stays loaded at `finished` and scores nothing |
+| `kiln_master.test.ts` | a marker placed at an Order Phase Imperial Priority load stays until round r + 1's firing finishes; meanwhile `kilnMasterOption.ready` is false and a `kilnMaster` load is `TECH_MARKER_IN_KILN`; free again once the firing finishes (R32) |
+| `canal_barge.test.ts`, `kilns_orders.test.ts` | Canal Barge's 2 Coins on a Work-turn completion, spendable at once, none on the round's later completions in either window, ready next round; Ru, Guan and Tribute Ware in a Work-turn completion, once per round across windows; a declined Guan, Ru or Tribute Ware in a Work turn keeps the use for the Order Phase (R4); Crackle VP in a Work turn |
+| `flawed_sale.test.ts` | accepted before and after the action and in the Order turn; refused in the after-Quality step (also a ceramic of this firing that is Flawed now) and the Cleanup trim (`WRONG_PHASE`), in a Work sub-step (`WORKER_ACTION_IN_PROGRESS`); Finished Flawed only; `window` |
+| `after_quality.test.ts` | no sale; Ge on a Masterpiece, Fine, Standard (→ Fine) and Flawed target (`QUALITY_IMPROVED` only for Standard); Ge on a Flawed ceramic, then Second Firing on it (Crackle kept, the new Quality stands, no second Fine upgrade); Saggars then Ge on one ceramic; Ge on a Standard then Saggars refused; a Ge owner with only a Masterpiece joins the queue; `finishFiring` keeps the crackled Quality |
+| `order_matching.test.ts`, `scoring.test.ts` | a crackled Masterpiece fills a Masterpiece slot, a crackled Standard counts as Standard, a crackled Flawed never matches; wildcard Decoration at every Quality; a crackled Masterpiece exhibited at 5, counted by Connoisseur's Cabinet and tie-breaker 3; Crackle VP for it |
+| `cleanup.test.ts` | no sale while pending (`WRONG_PHASE`); the trim unchanged |
+| `form_decorate.test.ts`, `vessels.test.ts` | the Kit on a Plain vessel and on any index; the Shifu's discount and the Kit on one vessel (0 Coins); Ding at 1 Clay + 2 Coins with any Decoration; a Shifu forming 1 + Ding gets no Shifu discount (R29); forming 2 + Ding gets one; Kit + Ding totals; legality after the Kit on a Plain vessel; the Decoration error gone |
+| `content_contract.test.ts`, `source_of_truth.test.ts`, `localization_content.test.ts` | the revision-5 rows and lines (L79, L143, L168–176, L300, L302, L314, L318, L375, L417, L422, L482–488, L499, L622, L624, L632, L637, L643, L658, L698, L700, L747–748; component text 15/17/128/130/133/135; the change log 46–52); DESIGN §6.4 / §6.5 rows; the `TechId` JSDoc costs; "charges the V1.6.2 costs" (T11 2, T10 3, T17 4, T23 3); the new checksums; the retired revision-4 wording refused in data; the two new error codes and the deleted reason |
+| `rules_fingerprint.test.ts` | revision 33, `r33-`; the data changes move the digest |
+| `dispatcher.test.ts`, `errors.test.ts`, `action_guard.test.ts` | the new `phases` lists (e.g. `COMPLETE_ORDER` before the action is accepted; `SELL_FLAWED` in `cleanup_hand_limit` is `WRONG_PHASE`); the new codes |
+| `invariants.test.ts` | §16.14 on broken states: Crackle on a non-Ge ceramic; a Shared ceramic in `orders`; a carried Imperial ceramic two rounds old; an `after_action` step with nothing to offer; an `orders` turn with nothing to do; Canal Barge Coins this round with T23 ready (in `work_turn`); two Guan records in one round; a carried Kiln Master marker with T24 ready accepted |
+| `legal_actions*.test.ts`, `selector_agreement.test.ts`, `ui_selectors.test.ts`, `tech_matrix.test.ts`, `ability_cases.ts`, `optional_abilities.test.ts`, `colour_samples_swap.test.ts`, `round_start.test.ts`, `firing_flow.test.ts`, `guild_hall.test.ts`, `placement_legality_guild.test.ts`, `techs_kilns.test.ts`, `state_helpers.test.ts` | §16.15 families and `freeActionOptions`; `FiringStageCeramic` without `sold`; the Kit, Ge, Imperial Priority and completion rows as optional, Canal Barge as automatic in any window; the swap refused in the Order Phase and usable in either order with free actions; the new prices in Guild Hall affordability; the carried ceramic across Start of Round; the firing script without the after-Quality sale |
+| `fuzz.test.ts`, `determinism.test.ts`, `p7_support.ts`, `phase_scenarios.ts`, `fixtures.test.ts` | coverage now also requires `COMPLETE_ORDER` before and after the action, `SELL_FLAWED` after the action, `USE_IMPERIAL_PRIORITY` in the Order Phase (a round before 5, whose ceramic is fired next round), Ge on a Masterpiece or a Flawed ceramic, Ding at 2 Coins and the Kit on a Plain vessel; new scripted windows "after the worker action: complete an Order and sell (free actions)" and "Order Phase: Imperial Priority"; full games for 2/3/4 players reach `finished` |
+
+Platform (`test/v161/platform`): `rules_fingerprint_gate`, `client_compatibility`, `local_backend_v161`, `tsconfig_includes`, `multiplayer_privacy` (schema 10, `r33`; `r32` and schema 9 refused); `supabase_contract` (§16.18); `parallel_windows` (no sale in Cleanup; the tolerant rule for the trim only); `reconnect` (mid after-action window and mid Order turn; the seat's own hand); `privacy_full_games` and `fixture_privacy_oracle` (Work-turn completions public, the after-action window from public facts; a rehidden ID allowed in the viewer's own steered command, refused in another seat's); `computer_decisions` (a Work-turn completion with and without a conflicting plan; a sale after the action; Imperial Priority in the Order Phase only in Rounds 1–4 and only when the next Kiln Die roll could not change the best load, never in Round 5 (§16.19 item 3 as amended in stage 15); Ge on any target; the Kit on a Plain vessel; Ding at 2 Coins); `computer_legality` (every revision-5 window); `computer_fallback`; `computer_full_games`, `online_computer_player`, `multiplayer_computer_turns`, `computer_strength`.
+
+Gates for every stage: `npm run typecheck:engine`, `npm run typecheck:platform`, `npm run typecheck:edge`, `npx vitest run test/v161/engine test/v161/platform`, `npm run test:fuzz:long`, `npm run print:orders`, then `npm run fixtures` and `npm run fixtures:check` (blocked by `tableScenarios.ts` during stages 13–15, until §16.18's fix; passing since commit `6342feb`).
+
+### 16.21 Documents and content
+
+- **Clarifications** (`KILN_OPENING_v1.6.2_CLARIFICATIONS.md`, stage 13): re-cite every `L` tag with §16.2. `CLARIFICATION_TAG` also accepts `P6` and `P7` (since owner rulings R26–R30 of 2026-10-30 it accepts `R26`–`R30`, no longer `P6`; since owner rulings R31–R32 of 2026-10-31 it accepts `R31` and `R32`, no longer `P7`). Rewrite or retire:
+  - T23: "You gain its 2 Coins in the Order Phase, the only time Orders are completed" → whenever you complete an Order, in any free-action window, once per round (L176, L637); INT Canal Barge item: the round's first completion in any window;
+  - T14: the R20 sale item (a ceramic of this firing sold in the after-Quality turn) is retired;
+  - T16, DI and `form_decorate`: the Discounts items → L658's two reductions; DI's 1 Clay + 2 Coins (L488) and P6 (now R29);
+  - RU, GU: "in the Order Phase" → "while completing an Order" (L499), once per round across windows (L176);
+  - GE: the target item → any of your ceramics of the firing, a Standard one becomes Fine, the others keep their Quality (L482, R30); Crackle through a Second Firing (R30); the Crackle VP timing item (L499);
+  - `imperial_priority`, `imperial_gift`, T24: Imperial Priority is a free action, in the Order Phase too (L174, L314); the carried Imperial ceramic (R28); Kiln Master's one marker (R32, was P7);
+  - `orders.main` / `orders.starting`: completed as a free action (L417, L422); this round's ceramics first in the Order Phase (L318);
+  - the Flawed-sale, Saggars ("never sold") and Cleanup items: the free-action windows (L172, L300, L302; R26), no sale while trimming.
+  The revision notes list the count.
+- **Component text source** (`KILN_OPENING_v1.6.2_COMPONENT_TEXT_SOURCE.md`): lines 15/17, 128/130, 133/135; `SHORT_TEXT_SECONDARY_LABELS` unchanged unless a new bold clause appears (none does).
+- **Glossary** (`GLOSSARY_ZH_V1.6.1.md`): add 自由行动 (Free action; §2.11 or a new row near §2.2's worker action) with L79's definition and the windows; §1.4 "While completing an Order | 完成委托时" note (no longer only the Order Phase); §1.5 卖出 note and §2.10 sale row (free-action windows, R20 withdrawn in part); §2.11 Order Phase row (free actions); §2.13 and §4.8 Imperial Priority (a free action, in the Order Phase too); §3.1 饰坯匣 (any vessel) and 练泥 4; §3.2 色样簿 3, 漕船 3; §3.3 匣钵护烧 2; §3.4 哥窑 and 定窑 texts and paragraphs (Chinese 484, 486, 490; component text 130, 135); §5.1 drops "但永不满足“臻品”" (a crackled Masterpiece is possible); §7 the two new sentences, the deleted reason.
+- `IMPLEMENTATION_DECISIONS.md`, `ONLINE_GAME_SPEC.md` (free actions, windows, Imperial Priority in the Order Phase, the carried ceramic), `UI_V1.6.1_ARCHITECTURE.md` (free-action controls), `DESIGN_SPEC.md` (if it names the Order Phase as the only completion window), `ENGINE_V1.6.1_DESIGN.md` (header note naming the free actions, the module moves of §16.10.2 and the layer change; §6.4 GE and DI rows and §6.5 T16 row, amended in place with a note), `supabase/README.md`.
+- **`AGENTS.md`** (the owner's file; not edited by this track). Already revision 5. Suggested additions, for the owner: under "Tests that must exist", (a) Imperial Priority in the Order Phase: its ceramic fires in the next round's firing (never in Round 5) and blocks that round's Imperial loading; (b) Kiln Master's single marker while such a ceramic waits (P7, now R32); (c) Ding's vessel and the Shifu's "If you form 2" (P6, now R29); (d) the after-action window opening on public facts only (I2, now R27), perhaps under "Hidden information". Nothing in it contradicts revision 5. `AGENTS.md` as updated on 2026-10-30 lists all four, citing R28, P7, R29 and R27; since 2026-10-31 it cites R32 for the marker.
+
+### 16.22 Stages
+
+**Starting point.** Since commit `25c759d` copied in the revision-5 sources, 23 tests of `content_contract.test.ts` and `source_of_truth.test.ts` fail (checked 2026-10-30, after this stage's document edits, which add none): the three checksums, the five re-priced or reworded Tech rows (T10, T11, T16, T17, T23), the Ge and Ding texts and short texts, the Round Structure row, the component-text copy, and the clarification tags that now point at moved or blank lines (for example `T17: L481`, `GE: L479`, `imperial_gift: L292`). They pass again only when the data values and texts, the component text source, the clarifications and the pinned checksums follow revision 5, so those content items travel with the engine stage.
+
+1. **Stage 12 (landed): design and records** (§16, the audit's revision-5 section, `GAME_RULES.md`). No code, data or test.
+2. **Stage 13, engine, data and content contract** (the workflow splits it; its first part, change 36, has landed, see "Progress" below): §16.3–§16.17; §16.9's values and texts (including the DESIGN §6.4/§6.5 rows and the `TechId` JSDoc costs); the component text source; the clarifications re-cited with §16.2 and rewritten per §16.21; the pinned checksums; the engine tests (§16.20); schema 10 / revision 33 with every platform pin and the new Supabase migration (§16.18); and the computer changes needed for legality (§16.19 items 2 and 4: no Cleanup sale, a sale after the action, Ge on any target; item 3 needs no code), so that every gate except the fixtures (§16.18 blocker, since resolved) passes.
+3. **Stage 14, glossary, documents and citations:** the glossary (§16.21), `IMPLEMENTATION_DECISIONS.md`, `ONLINE_GAME_SPEC.md`, `UI_V1.6.1_ARCHITECTURE.md`, `ENGINE_V1.6.1_DESIGN.md`'s header, `supabase/README.md`; the renumbering of every remaining code and test citation with §16.2.
+4. **Stage 15, computer players, privacy and platform tests:** §16.19 items 1 and 5–8, `computer_strength`, the privacy and reconnect cases, `npm run test:fuzz:long`, and the fixtures once `tableScenarios.ts` may be fixed (§16.18; done before commit `6342feb`).
+5. **UI stage (later):** `src/app`, `e2e`, `test/v161/ui`.
+
+**Progress (2026-10-30), change 36 landed.** The free actions as §16.5–§16.8, §16.10.1–§16.10.8, §16.11–§16.16 describe them, with the computer's legality changes (§16.19 items 2 and 3, and item 8's fallback filter): `freeActionWindow.ts` and `freeActions.ts` are new, `flawedSaleHandler.ts` is gone; `FiringCeramicRecord.sold`, `FiringStageCeramic.sold` and `CERAMIC_SOLD.from` are deleted; `window` is on the three events; `WORKER_ACTION_IN_PROGRESS` and `TECH_MARKER_IN_KILN` exist with EN and ZH text; the after-action window opens on I2's public facts (now R27); the Order Phase turn opens per I3 (now R28) and accepts Imperial Priority, whose ceramic waits for the next round's firing (Kiln Master's one marker, P7, now R32); the after-Quality and Cleanup sales are refused; the invariants follow §16.14. Tests: `free_actions.test.ts` (new) and the rows of §16.20 for `work_turn`, `order_phase`, `imperial_priority` (Order Phase, carried ceramic, P7, now R32), `canal_barge`, `flawed_sale`, `after_quality` (no sale), `cleanup`, `dispatcher`, `colour_samples_swap`, `invariants`, `legal_actions`, `firing_flow`, `ui_selectors`, `fuzz` (coverage also requires every free action in every window and a carried Imperial ceramic fired, at seed base 7400 unchanged) and, on the platform, `parallel_windows` (Cleanup sale refused) and `computer_decisions`. Still open in stage 13: changes 37–40 and their data and content (§16.9, §16.10.9 Ge, §16.10.11, §16.10.12, the Crackle type of §16.4), schema 10 / revision 33 with the platform pins and the Supabase migration (§16.3, §16.18), and the content tests that fail since `25c759d`. In that later part, `afterQuality.ts` already has no sale (§16.10.9's first bullet is done).
+
+**Progress (2026-10-30), changes 37–40 and the versioning landed; stage 13 is complete.** Data (§16.9): T10 3, T11 2, T17 4, T23 3; T16 `params` `{coinReduction: 1}`; GE `params` `{upgradeFrom: "standard", upgradeTo: "fine", vpPerDeliveredCrackle: 1}`; DI `params.coins` 2; the T16, GE and DI full and short texts in both languages; the Order Phase summary of `round_structure.json`; `content.ts` validates GE, DI and T16 as §16.9 says; DESIGN §6.4 (GE, DI) and §6.5 (T16) amended in place with a note; the `TechId` JSDoc costs. Engine: the Crackle type of §16.4 (`FinishedQuality` / `DeliveredQuality` with an independent `crackle` flag); Ge per §16.10.9 (every own ceramic of the firing; only a Standard one changes Quality; `finishFiring` and `deliver` keep the crackled Quality; Second Firing keeps the marker; `REASON_TEXT.not_fine_or_standard` and Ge's Quality error are deleted); Decorator's Kit and Ding per §16.10.11 (the Kit on any vessel, in `formDecorate.ts`, `materialsYard.ts`'s unreachable Prepared Clay branch, `legalActions.ts` and `formDiscountVariants`; Ding at 1 Clay + 2 Coins from data, the Shifu's "If you form 2" on the ordinary vessels only, P6, now R29); `ruTriggers` without the Crackle exclusion and `orderRank` per §16.10.12; the invariants per §16.14's Crackle bullet (a Crackle ceramic or firing record is a Ge owner's; at most 1 crackled record per owner per firing). Computer (needed to compile and for legality): Ge on any target, never a Flawed one (gain 0); `finishedRank` and `loadedQualityP` without the Crackle cap; the Kit on the first vessel; `planFit("T16")` 1. Versioning (§16.3, §16.18): schema 10, revision 33 (`r33-`), every platform pin (`service.ts`, `projection.ts`, `inMemoryStore.ts` incl. its state-schema gate, `client.ts`, `types.ts`, `tools/localBackendV161.ts`), and `supabase/migrations/202610300001_v162_rev5_rules.sql` (the constraint at `^r3[23]-…`, the five gates verbatim with `^r33-` and `<> 10`, their privileges restated; no row rewritten), with `supabase/tests/rls.test.sql`, `supabase/README.md` and `supabase_contract.test.ts` following. Content (§16.21): the component text source lines (T16, GE, DI), the pinned checksums, every clarification tag and inline line reference re-cited with §16.2 (doc and data), the rewrites §16.21 lists (176 items; the doc's revision notes), `CLARIFICATION_TAG` accepting P6 and P7 (P7 and R26–R30 since the owner's rulings of 2026-10-30; R26–R32 and no P7 since those of 2026-10-31), and the glossary rows the localization contract reads (§3 texts and costs of 饰坯匣, 练泥, 色样簿, 漕船, 匣钵护烧, 哥窑, 定窑; the §8 减免 line; the §7 reason list). Tests: §16.20's rows for `form_decorate` (the Kit on any vessel, Kit + Shifu on one vessel, Ding at 2 Coins, P6 and I4 totals, now R29), `after_quality` (Ge on every Quality, a Masterpiece-only Ge owner queued, Ge then Second Firing on a Flawed ceramic), `order_matching` and `scoring` (a crackled Masterpiece fills a Masterpiece slot, exhibits at 5, counts for the Cabinet and tie-breaker 3), `invariants`, `legal_actions` (Kit, Ding and Ge families), `guild_hall`, `placement_legality_guild`, `techs_kilns`, `tech_no_vp`, `materials_yard`, `content_contract`, `localization_content`, `source_of_truth`, `rules_fingerprint`, `fixtures`, `fuzz` (coverage also requires Ge on a Masterpiece and on a Flawed ceramic, Ding at 2 Coins and the Kit on a Plain vessel, reached at seed base 7400) and, on the platform, `rules_fingerprint_gate`, `client_compatibility`, `multiplayer_privacy`, `supabase_contract`, `computer_decisions` (Ge on a Masterpiece, never on a Flawed ceramic; the Kit on a Plain vessel; Ding at 2 Coins) and `privacy_full_games` (re-baselined: 31 303 and 31 403 no longer reach a Guild Hall Shifu inspection, 31 214 and 31 412 do). The phase scenario "Order Phase with Ru, Tribute Ware and a Crackle wildcard" became "Order Phase with Ru and Tribute Ware" and "Order Phase with a Crackle wildcard" (a Ge owner's, with a crackled Masterpiece), since only a Ge owner may hold a Crackle ceramic; `tools/uiFixtures.ts` falls back to the second. Still blocked at this point: `npm run fixtures` and `fixtures:check` at `test/v161/ui/fixtures/tableScenarios.ts:432` (§16.18; fixed before commit `6342feb`).
+
+**Progress (2026-10-30), stages 14 and 15 landed: documents, citations, computer players and privacy.** Every gate passed except `npm run fixtures` and `fixtures:check`, then still blocked at `test/v161/ui/fixtures/tableScenarios.ts:432` (§16.18; fixed before commit `6342feb`, and both gates pass since); the moment fixtures themselves still generated (checked with `buildMomentFixtures`, nothing written).
+- **Glossary** (§16.21): 自由行动 (§2.2, Chinese lines 81 and 170–178), the timing label 作为自由行动 and 完成委托时 without "only in the Order Phase" (§1.4), 已卖出 (§2.9), the sale, Order Phase, completion and Imperial Priority rows and paragraphs (§2.10–§2.13, §4.8), Kiln Master's one marker (§2.10, P7, now R32), §5.1 (a crackled Masterpiece fills 臻品), the two new error sentences (§7), open questions 4–7 (§9; P6, P7, I1, I3; 4, 6 and 7 were answered on 2026-10-30 by R29, R26 and R28, and 5 on 2026-10-31 by R32) and the revision-5 dispositions (§10); §1.5 bans the withdrawn draft's 卖出良品 and 买泥／买柴. `localization_content.test.ts` checks 自由行动 against the Chinese rulebook and the draft wording's absence from the data.
+- **Documents:** `IMPLEMENTATION_DECISIONS.md` and `ONLINE_GAME_SPEC.md` (free actions and their windows, the after-action window on public facts, the Order Phase turn, the carried Imperial ceramic, P6 (now R29), P7 (now R32), Ge on any Quality, Ding and the Kit, schema 10 / `r33-`, the new migration not yet deployed), a revision-5 note in `DESIGN_SPEC.md`, the header note of `ENGINE_V1.6.1_DESIGN.md`, `data/asset_specs.json`'s Kiln Master note. `UI_V1.6.1_ARCHITECTURE.md`'s free-action controls stay with the UI stage (owner decision D21).
+- **Renumbering (§16.2), method.** Each citation's candidate targets were computed from every source version in the history (V1.6.1 and V1.6.2 revisions 1–4, from git), each mapped to revision 5 through line diffs of consecutive versions; the candidates were limited to versions no newer than the commit that last wrote the comment line (`git blame` on the pre-squash branch `kiln-opening-next-version`), an explicit "rev. 4" took that version, and the target whose cited text best matched the comment was chosen. About 290 low-confidence cases (close scores, or a zero score under an explicit label) were checked by hand against the revision-5 text. 1 900 citations in 119 code and test files were rewritten; every "rev. 4 L…" became a plain revision-5 line, "rev. 5 L…" and "v1.6.2 L…" keep their prefix. Untouched on purpose: examples and test inputs (`` `L124` ``, `` `ED L124` ``, `clarificationSourceKind("L375")`, `resolveTag("ED L16")` and the audit text it pins, the fingerprint test's `"L298"`), `1.6.1:L649` and the applied Supabase migrations. Three "L350" citations that match no version (Prepared Clay and Senior Apprentice) now cite L240. `types.ts` states the convention: every plain line citation is a revision-5 line. Stale comments found on the way were fixed (a Crackle ceramic "is Fine" in `orders/matching.ts`, "only in the Order Phase" in `kilns_orders.test.ts`, the Decorator's Kit legality test now also forms a Plain vessel).
+- **Computer players** (§16.19 items 1, 3, 4 and 8 as amended above): Work-turn completions (`decideFreeCompletion`, with the plan-conflict and display-reservation waits), Imperial Priority in the Order Phase only in Rounds 1–4 and only when the next roll could not change the load, the fallback's Round 5 filter, Ge preferring the better ceramic. Tests in `computer_decisions` (a completion before and after the action, a plan conflict, a face-up Order worth reserving first, the swap scenarios now completing the reserved Order, Order Phase Imperial Priority in Rounds 2 and 4 against Round 5 and a White Order, Ge on the Masterpiece of two) and `computer_fallback` (Imperial Priority among the Order Phase candidates before Round 5 only). `computer_legality`, `computer_full_games` and `computer_strength` pass unchanged.
+- **Privacy:** `multiplayer_privacy` (two rooms whose P1 holds a completable or an uncompletable Order: the after-action window, events and counts every seat sees are identical; the completion is public with its `window`), `reconnect` (mid after-action window and mid Order Phase turn: the seat's own hand only, nothing written, the seat completes after), `fixture_privacy_oracle` (a Work-turn completion makes the Order public), `privacy_full_games` (the sweep checks privacy after every completion and requires a Work-turn completion over the seeded games). `tools/fixturePrivacy.ts` reads completions from events, whatever the window; its one change is the steered-command exemption (§16.18), limited by the review fix to the viewer's own commands.
+
+**Review fixes (2026-10-30), after stages 13–15.**
+- `WORKER_ACTION_IN_PROGRESS` in the Colour Samples swap's own Select (step `colour_samples_swap`, which may open before the worker is placed) carries `techId: "T10"` and reads "Finish the {techId} Select first: …" / 先完成{techId}的精选：… (§16.8); the worker-action sentence stays for every other sub-step. Tests: `free_actions.test.ts` (the swap's Select opened before and after the action, both messages in both languages).
+- **Same-turn delivery** (owner ruling R31 of 2026-10-31; until then audit INT Same-turn delivery, open question 5, renumbered 2 after R26–R30): L417's "on any later turn of yours" is read as later than the reservation, so an Order reserved by the worker action or a swap may be delivered the same turn. The Orders clarifications (`orders.starting`, `orders.main`, source `L417 · L176 · R31`, until R31 `L417 · L176 · INT Same-turn delivery`) now say so: "as soon as you hold it … (including the turn you reserved it)" / 委托一收入手中，就可以作为自由行动完成. Test: a face-up Order taken by a before-action swap is delivered before the worker action.
+- `tools/fixturePrivacy.ts`: the steered-command exemption covers only the viewer's own commands (§16.18); `fixture_privacy_oracle` checks that another seat's swap or face-up pick naming a rehidden Order is refused.
+- Retired revision-4 wording (§16.20): `source_of_truth` (`RETIRED`, all data prose) and `content_contract` (`RETIRED_CLARIFICATION_WORDING`, every clarification) refuse Order completion only in the Order Phase, a sale "at any time", in the after-Quality step or at Cleanup, Decorator's Kit's Decoration condition, Ding's 1 Clay + 1 Coin and its no-discount clause, Ge on "Fine or Standard", and the withdrawn draft (Standard sale, resource buy, Wood-in-hand note), each with positive controls taken from the revision-4 texts. The four Tech prices are pinned numerically (`charges the V1.6.2 costs`); no data prose states a price.
+- Documents: the front matter above, `DEPLOYMENT.md` (the revision-5 rollout and why the migration, the Edge Functions and the client go out together), `GAME_RULES.md` (the rulings revision 5 touches, as the audit lists them; five open questions, two since R26–R30, none since R31–R32), the glossary's 自由行动 row (printed text and digital readings separated) and §9 question 8, `UI_V1.6.1_ARCHITECTURE.md` (the work, after-Quality, Order Phase and hand-trim rows and the sale paragraph follow revision 5), `data/asset_specs.json`'s Crackle marker note, `ui-v1.6.1/FIXTURES.md` (`t-after-quality-sale` and `t-cleanup-sale` marked withdrawn by revision 5; m26), the m6 fixture description, and the comments of `orders/matching.ts`, `computerPlayer.ts` (Imperial Priority in the Order Phase) and the "Rev. 4 L643/L646" labels (revision-5 lines).
+- Blocked at the time of these fixes: `npm run fixtures` / `fixtures:check` at `test/v161/ui/fixtures/tableScenarios.ts:432` and `:460` (§16.18). The two-scenario change described there was applied before commit `6342feb`; both gates pass since.
+
+### 16.23 Rulings on owner revision 5's questions
+
+Recorded in the audit (revision-5 section and rulings table). Stage 12 recorded the digital reading of revision 5 as interpretations I1–I5 with provisional defaults P6 and P7 and five open questions. On 2026-10-30 the owner answered, verbatim: "you are all correct, the "Order Phase" right now just a window after firing that player could do free actions". I1–I5 and P6 are therefore owner rulings:
+
+- **R26** (was I1): free actions (selling a Flawed ceramic, completing held Orders, spending Imperial Priority) only in the actor's own Work-turn before-action and after-action steps and their own Order Phase turn; never during a worker action or any of its sub-steps, on another player's turn, during the firing (the after-Quality step included) or at Cleanup. It changes R20: its after-Quality and Cleanup windows are withdrawn.
+- **R27** (was I2): the after-action step opens on public facts only (the swap usable, Imperial Priority usable, a Finished Flawed ceramic to sell, or at least 1 held Order with at least 1 Finished ceramic that is not Flawed, whatever the hand holds), rechecked after each free action; the turn ends automatically when nothing is left.
+- **R28** (was I3): the Order Phase is the post-firing free-action window, in turn order; a turn opens for a completable held Order, a Flawed ceramic or a usable Imperial Priority; Imperial Priority is legal there, Round 5 included (its ceramic waits for the next round's firing and in Round 5 is never fired; computer players do not spend it in Round 5); the Colour Samples swap is not a free action and stays a Work-turn ability.
+- **R29** (was I4 and P6): Ding's extra vessel does not count toward the Shifu's "If you form 2"; the reductions may stay on the ordinary vessels (identical totals).
+- **R30** (was I5): Ge may crackle a ceramic of any Quality from the firing, a Masterpiece or a Flawed one included (only a Standard one changes, to Fine); the marker survives a Second Firing recalculation, and Second Firing may take a crackled Flawed ceramic (Ge does not upgrade the recalculated Quality); Canal Barge stays automatic; Ru, Guan and Tribute Ware stay optional (R4).
+
+The engine already applied each of these readings, so the rulings change no code, data value or behaviour: only citations, clarification source tags (`R26`–`R30` accepted, `P6` refused) and documents. What stays outside the rulings: the once-per-round completion effects shared across windows are printed (L176), so INT Completion effects across windows records printed text and only its optional and automatic parts are R30's; the carried Imperial ceramic's details stay an INT entry under R28 (INT Imperial Priority in the Order Phase); and same-turn delivery (L417's "later turn" read as later than the reservation) stayed an open interpretation that day. Same-turn delivery was tagged I2 in the text the owner confirmed, so "you are all correct" could be read as covering it; it was kept open because it was also asked directly (question 5), which the answer did not address, and because it departs from a printed line (L417), which a general confirmation is not taken to override. P6, by contrast, filled a point the text leaves unprinted, so the same answer confirmed it (R29).
+
+On 2026-10-31 the owner answered the last two questions. The audit listed Kiln Master's marker as open question 1 and same-turn delivery as open question 2; the question put to the owner numbered them the other way round, so the owner's "1" answers same-turn delivery and the owner's "2" answers the marker. Verbatim: "1. yes 2. this is a bit awkward,  as Imperial Priority shouldn't be used in Order Phase, but it's easier for the current rule, so we don't need create an extra rules only for Imperial Priority, keep the current default". Both are owner rulings:
+
+- **R31** (was INT Same-turn delivery): a held Order may be completed in any free-action window from the moment it is held, the turn that reserved it included: after the worker action that reserved it (a Commission Market Select, the Canal Wharf Shifu's card, the Magistrate's Hall Shifu's Crown Order) and after a Colour Samples swap's Select in either window. L417's "later" is later than the reservation. Owner UI decision D21 builds on it ("Reserve, then free actions" and the hint "You can deliver this now").
+- **R32** (was P7): Kiln Master's one marker placed on an Imperial Priority load in the Order Phase stays on that ceramic until the next round's firing finishes; until then Kiln Master cannot place its marker again (`TECH_MARKER_IN_KILN`), although its once-per-round use is readied at Start of Round.
+
+The rest of the owner's second answer is a remark on R28, recorded as context in R28's audit row; R28 is unchanged. The engine already applied both readings, so **no code behaviour changes**: no command, event, data value, schema or revision moves, only citations, clarification source tags (`R31` and `R32` accepted, `P7` refused), Kiln Master's clarification, which drops "Provisional ruling:" / 暂定裁定：, and documents. Clarifications are display prose, so the content digest does not move and `RULES_BEHAVIOUR_REVISION` stays 33. L417 and Chinese L419 still print "later"; the audit keeps that under "Observations on the owner's files", with the wording proposed to the owner, and no rulebook text has changed.
+
+No question of owner revision 5 remains open.
+
+Answered on 2026-10-30: the former question 1 (Ding and the Shifu's discount: R29), question 3 (R20's after-Quality and Cleanup windows: R26) and the first part of question 4 (Imperial Priority in the Order Phase: R28). The second part of question 4, whether L82, L448 and L726 should name the free action, is rulebook wording, not answered; the audit keeps it under "Observations on the owner's files".
+
+### 16.24 "End the turn afterwards": the engine side of owner UI decision D21
+
+Source: owner UI decision D21 (`docs/ui-v1.6.1/OWNER_DECISIONS.md`, 2026-10-30): the worker action's last Confirm is a split button, **Place · end turn** (the default) / 派工并结束回合 beside **Place, then free actions** / 派工后做自由行动; where the action's last step brings an Order into the hand, **Reserve · end turn** / 承接并结束回合 and **Reserve, then free actions** / 承接后做自由行动; after "then free actions" each free action offers ⟨Action⟩ · end turn; the Order Phase offers **Deliver · done**. "The server ends the turn in the same command (an optional 'end the turn afterwards' field on the confirming command), so other players see one change." This section is that field. It changes no rule: ending the turn is what `END_TURN` / `END_ORDER_TURN` already do, and the windows stay R26–R28.
+
+**Field** (`EndTurnRequest` in `types.ts`): `endTurn?: boolean` on the worker-action commands `PLACE_MATERIALS_YARD`, `PLACE_FORM_DECORATE`, `PLACE_GLAZE_LOAD`, `PLACE_COMMISSION_MARKET`, `PLACE_GUILD_HALL`, `PLACE_CANAL_WHARF`, `PLACE_MAGISTRATES_HALL`, `SELECT_CHOOSE`, `GUILD_TAKE`, `GUILD_FINISH`, and on the free actions `USE_IMPERIAL_PRIORITY`, `SELL_FLAWED`, `COMPLETE_ORDER` (`EndTurnCommandType`, derived from `GameAction`; `END_TURN_COMMAND_TYPES` in `freeActionWindow.ts`, re-exported by the selectors). `SELECT_CHOOSE` covers the swap's finishing Select too. `USE_COLOUR_SAMPLES_SWAP` (which only opens a Select), `END_TURN`, `END_ORDER_TURN` and every other command refuse the key. **Absent means the behaviour before D21, exactly**: the computer players, the canonical fallback and `legalActions` never set it (zero behaviour change for them; a test checks every proposal and fallback candidate of seeded strategic and canonical games).
+
+**Worker action.** Every worker-action resolver first records the command's value on the phase (`state.noteEndTurnRequest`): `true` sets `work_turn.endTurnAfterAction`, `false` deletes it, absent leaves it. `completeWorkerAction` reads and deletes it; with a request it ends the turn (the deferred Main and Tech refills, `WORK_TURN_ENDED`, the next player, or the end of the Work Phase) instead of opening the after-action step. So:
+
+- a single-command placement with `true` ends the turn in that command;
+- a request on a command that does not finish the action (a placement that opens a Select or the Guild Hall inspection, a Guild Hall Shifu's first take, the Apprentice's Colour Samples buy, the Shifu's Colour Samples take) is **remembered** for the rest of that worker action, through its Selects and the resumed inspection;
+- a later command of the same action that carries the field **overrides** it (`false` withdraws it, so "Reserve, then free actions" on the Select undoes a "Place · end turn" sent with the placement);
+- the request never outlives the action: `completeWorkerAction` consumes it, a new turn starts with a fresh phase object, and the live invariant checks that it exists only while `commission_market`, `guild_inspection` or `colour_samples` is open (structural: it is `true` or absent). The Magistrate's Hall Shifu's Crown Order is part of the placement command, so that action is always one command.
+
+`endTurnAfterAction` is **public** (on the phase, not in `hidden`). It is the actor's own choice of pace, carried by their own command; it names no card and depends on nothing the other players could not see a moment later, when the turn ends: on the two-command path they see the after-action step open on public facts (R27) and the actor's `END_TURN` right after. Keeping it public lets the actor's client show its pending choice after a reconnect without a private-view field.
+
+**`WORK_TURN_ENDED.automatic`** is what the two-command path gives: **false** when the request skipped an after-action step that would have opened (`afterActionWindowOpen`, public facts only, R27), as `END_TURN` there would; **true** when the step would not have opened, so the turn would have ended by itself anyway. It depends only on public facts and the actor's request, never on the hand.
+
+**After the worker action.** A free action, or the swap's `SELECT_CHOOSE` when the swap was used after the action, with `endTurn: true` resolves, then the window is rechecked as before (`afterWindowAbilityUsed`); if the turn is still open it ends as `END_TURN` would (`automatic: false`), in the same command. If the action left nothing (R27), the turn already ended by itself (`automatic: true`) and the request changes nothing.
+
+**Before the worker action.** `endTurn: true` on a free action, or on the `SELECT_CHOOSE` of a swap used before the action (`returnTo: "before_action"`), is `WORKER_ACTION_REQUIRED` (details `field: "endTurn"`, `actionType`, `step`; all common detail keys), as `END_TURN` there is: the placement is still due (L165). The text is the existing one ("You may not pass in the Work Phase: place 1 worker …" / 派工阶段不能跳过，请派1名工人…), since ending the turn before placing is passing; no new error code. `endTurn: false` is accepted and changes nothing. The check (`endTurnRequestError`, `freeActionWindow.ts`) runs after the window check (`freeActionWindowError`) and before the action's own checks.
+
+**Order Phase.** A free action with `endTurn: true` resolves, then the turn ends automatically if nothing is left (`orderTurnOpen`, R28; `automatic: true`, as without the field) or else as `END_ORDER_TURN` would (`automatic: false`): D21's **Deliver · done** in one command. Whether the turn ended by itself still reflects a completable hidden Order exactly as before (the accepted precedent, R28); the request adds nothing to it.
+
+**Events.** Identical to the two-command path; only the command count (and so the revision) differs. Tests compare whole event lists and final states of both paths for every command type above, and check that the deferred refills still run once (two face-up Commission Market reservations, the Crown Order, the Guild Hall Tech refills) and that Ru, Guan and Canal Barge keep one use per round. They also cover a turn end that hands the phase over (the last Work turn into the Firing's Contributions or, through a skipped firing, into the Order Phase, ended by a placement, a request remembered through a Select, or a free action; the last Order Phase turn into Cleanup or the next round), where the RNG and the private firing state match too and a hand trim the command opens records that command's own revision: `openedAtRevision` is one lower on the one-command path, which is right, since it is the revision of the command that opened the trim (`revisionAcceptance` in the service). Before the worker action the request is refused ahead of the action's own checks (an unsellable ceramic, an Order the ceramics do not complete, Imperial Priority on a Finished ceramic, two picks in the swap's Select) and after the seat and window checks (`NOT_YOUR_DECISION`, `WORKER_ACTION_IN_PROGRESS`).
+
+**Validation where commands enter.** `parseCommand` (`actionGuard.ts`): `endTurn` is optional on exactly the `EndTurnCommandType` parsers; a non-boolean is `MALFORMED_ACTION` with `field: "endTurn"` ("must be a boolean"); on any other command it is an unknown key (`MALFORMED_ACTION`, "is not allowed"); `undefined` is absent. The service runs `parseCommand` on every command, and the Edge Function (`supabase/functions/game-action`) and the local backend (`tools/localBackendV161.ts`) pass the untrusted command to the service unparsed (pinned by `supabase_contract` and a local-backend test), so the one parser covers every entry. No SQL change: the command JSON is stored in `private.game_commands` as before.
+
+**Selector** (`endTurnOptions(view): EndTurnOptions | null`, `selectors.ts`): null unless it is the viewer's own Work turn or Order Phase turn; `stage` (`before_action`, `worker_action`, `colour_samples_swap`, `after_action`, `order_phase`); `commandTypes`, the step's types that accept `endTurn: true` now (the placements before the action; the step's `SELECT_CHOOSE`, or `GUILD_TAKE` and `GUILD_FINISH`, during it; the swap's `SELECT_CHOOSE` only when the swap was used after the action; the three free actions after it and in the Order Phase), filtered by the validators' own `endTurnRequestError`; `afterActionWouldOpen`, `afterActionWindowOpen` on the viewer's public view (a hint before or during the action, which may still change the facts; true after it; false in the Order Phase); `requested`, the public `endTurnAfterAction`. It reads no hand, the viewer's own included, so it never depends on what any player holds; D21's private "You can deliver this now" hint stays the UI's, from the viewer's own view (`completableOrders`, `lookedOrderOptions`). The fuzz's selector-agreement check compares `commandTypes` with the validators on every canonical command.
+
+**Fuzz.** Random play adds `endTurn: true` to 1 in 4 commands whose type `endTurnOptions` lists and `endTurn: false` to 1 in 8 commands of any `EndTurnCommandType`, from its own chooser stream; zero rejected commands; the coverage check requires each way a request ends a turn in one command (`end_turn_placed`, `end_turn_remembered`, `end_turn_after_action`, `end_turn_order_phase`) and `end_turn_false`. The default seed base 7400 still reaches every other coverage item.
+
+**Versions.** No bump: schema 10 and revision 33 (`r33-`) are not deployed; `RULES_BEHAVIOUR_REVISION`'s revision-33 note is amended in place. A command without the field behaves exactly as before. The new optional phase field is JSON-safe and round-trips.
+
+**Files.** `types.ts` (`EndTurnRequest`, `EndTurnCommandType`, `EndTurnOptions`, `work_turn.endTurnAfterAction`), `state.ts` (`noteEndTurnRequest`), `freeActionWindow.ts` (`END_TURN_COMMAND_TYPES`, `endTurnRequestError`), `work/turn.ts` (`completeWorkerAction`, `afterWindowAbilityUsed`), `orders/phase.ts` (`continueOrderTurn`), `freeActions.ts`, `work/selectChoose.ts`, `work/guildHall.ts`, `work/commissionMarket.ts`, `work/materialsYard.ts`, `work/formDecorate.ts`, `work/glazeLoad.ts`, `work/centralSimple.ts`, `actionGuard.ts`, `invariants.ts`, `selectors.ts` (`endTurnOptions`), `ruleErrorText.ts` (a comment on `WORKER_ACTION_REQUIRED`), `rulesFingerprint.ts` (the note). Tests: `test/v161/engine/end_turn_request.test.ts` (new), `action_guard.test.ts`, `fuzz.test.ts` and `p7_support.ts`; `test/v161/platform/end_turn_request.test.ts` (new: the service, the local backend, the computer players, and the actor's own reconnect mid-Select, which restores the request and the look and writes nothing). The UI (`src/app`, `test/v161/ui`, `e2e`) is the later UI stage: the split buttons send the field and read `endTurnOptions`.
+
+**Selectors for the split Confirm (later UI stage).** The two questions the UI's split buttons ask moved from `src/app` into `selectors.ts`; read-only, no command, event, state, schema or revision changes. `guildDecisionLeftAfterTake(view, take)` calls the engine's own `decisionLeft` (`work/guildHall.ts`) on a copy of the player with the cost paid and the Tech added and a copy of the step with the take added; the cost comes from the viewer's own `guildInspectionOptions`, so another seat or a spectator gets false, and the taken Tech, which still shows on the display, is refused by the 1-per-discipline limit. `guildDecisionLeftOnResume(view)` is the same call on the step that Colour Samples' Select resumes. `afterActionMayOpen(view, brings)` is `endTurnOptions(view).afterActionWouldOpen` plus what the action brings (`ActionBrings`, `types.ts`), on public facts only, the hand count and never a hand. Tests: `test/v161/engine/end_turn_selectors.test.ts`, each clause directly, and every legal take in random legal games against the step the engine then leaves open.

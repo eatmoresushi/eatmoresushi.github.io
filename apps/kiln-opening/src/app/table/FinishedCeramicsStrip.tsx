@@ -2,12 +2,13 @@
  * FinishedCeramicsStrip (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B2 (table and boards).
  * Source: wireframe `secOrders` orders branch: `me.finishedCeramicIds`, highlighted groups.
  *
- * In the Order Phase, the viewer's Finished ceramics beside their hand, with the ceramics the
- * open Order decision has chosen highlighted (`highlightedCeramicIds`), and the reminder that
- * face-up Main Orders cannot be completed (L297). Only held Orders are completed; the picker
- * itself is B5's decision window. A Flawed ceramic the viewer may sell in their Order turn carries
- * a Sell button (`SellButton`, change 30, R20). Nothing renders outside the Order Phase or for a
- * spectator.
+ * In the Order Phase, and in the viewer's own Work turn when they hold any (the free actions come
+ * before and after the worker action, owner revision 5, change 36), the viewer's Finished ceramics
+ * beside their hand, with the ceramics the open completion has chosen highlighted
+ * (`highlightedCeramicIds`), and the reminder that face-up Main Orders cannot be completed. Only
+ * held Orders are completed; the picker itself is the decision window's. A Flawed ceramic the
+ * viewer may sell now carries a Sell button (`SellButton`, a free action). Nothing renders
+ * otherwise, or for a spectator.
  */
 import { useT } from "../i18n/I18nProvider.tsx";
 import { locationName } from "../i18n/content.ts";
@@ -23,7 +24,8 @@ export function FinishedCeramicsStrip() {
   const model = useGame();
   const selection = useTableSelection();
   const me = model.me;
-  if (me === null || model.roundPhase !== "orders") return null;
+  if (me === null) return null;
+  if (model.roundPhase !== "orders" && (model.window.kind !== "work" || me.finishedCeramicIds.length === 0)) return null;
   const { known, unknown } = ceramicsFor(model, me.finishedCeramicIds);
   const { labelView, markers } = tableCeramics(model);
   return (

@@ -49,5 +49,5 @@
       - strong: Magistrate's Hall
       - text: — Pay 4 Coins, then reserve
       - strong: O17
+    - button "Reserve · end turn"
     - button "Clear"
-    - button "Confirm"

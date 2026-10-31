@@ -26,7 +26,7 @@ import type {
 } from "./types.ts";
 
 const EXPECTED_RULES_VERSION = "1.6.2";
-const EXPECTED_SCHEMA_VERSION = 9;
+const EXPECTED_SCHEMA_VERSION = 10;
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

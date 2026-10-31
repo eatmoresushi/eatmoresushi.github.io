@@ -1,8 +1,8 @@
 /**
  * The draft model of Jun (UI_V1.6.1_ARCHITECTURE §3.4 `jun`, §3.5). Owner: B5.
  *
- * Appendix D step 3 (`firing_heat_adjustment`, rev. 4 L661, after Actual Heat with any Kiln Master marker): pay Wood, +1 or −1 to one of your ceramics' Actual Heat.
- * An unused Jun after Second Firing (rev. 4 L627) is part of Second Firing's own choice (`SecondFiring.draft.ts`,
+ * Appendix D step 3 (`firing_heat_adjustment`, L680, after Actual Heat with any Kiln Master marker): pay Wood, +1 or −1 to one of your ceramics' Actual Heat.
+ * An unused Jun after Second Firing (L646) is part of Second Firing's own choice (`SecondFiring.draft.ts`,
  * `SECOND_FIRING_CHOOSE`), since V1.6.2 reveals 2 cards and the owner chooses one.
  *
  * The ceramics come from `junOptions` (empty when Jun is used or unaffordable); each side is

@@ -1,10 +1,10 @@
 /**
- * The draft model of Second Firing's choice (UI_V1.6.1_ARCHITECTURE §3.4; T14, rev. 4 L627).
+ * The draft model of Second Firing's choice (UI_V1.6.1_ARCHITECTURE §3.4; T14, L646).
  * Owner: B5.
  *
  * Second Firing turned 2 extra Fire cards face up for one of the owner's ceramics. The owner
- * chooses the card the ceramic is fired with again and, when an unused Jun is ready on it (rev. 4
- * L627, formerly R7: the Jun Kiln, unused this round, 1 Wood), whether to adjust its Actual Heat by
+ * chooses the card the ceramic is fired with again and, when an unused Jun is ready on it (L646,
+ * formerly R7: the Jun Kiln, unused this round, 1 Wood), whether to adjust its Actual Heat by
  * +1 or −1 before Quality. The recalculation keeps the ceramic's Kiln Master marker.
  * One command carries both (`SECOND_FIRING_CHOOSE { cardIndex, jun }`); the new Quality replaces
  * the old one even if worse, and both cards go to the discard.
@@ -28,7 +28,7 @@ import { B5_KILNS, HEAT_DELTA_SIDES, ceramicWords, ownFiringCeramicIds, probe, w
 export interface SecondFiringDraft {
   /** The chosen card: 0 or 1 in reveal order; null until chosen. */
   readonly cardIndex: 0 | 1 | null;
-  /** Rev. 4 L627: an unused Jun's adjustment on this ceramic, or null not to use it (it stays unused, R4). */
+  /** L646: an unused Jun's adjustment on this ceramic, or null not to use it (it stays unused, R4). */
   readonly jun: HeatDelta | null;
 }
 
@@ -39,7 +39,7 @@ export interface SecondFiringOptions {
   /** The 2 revealed cards in reveal order. */
   cards: ReadonlyArray<{ cardIndex: 0 | 1; modifier: FireModifier }>;
   /**
-   * Rev. 4 L627: an unused Jun on this ceramic. `offered` when the viewer owns the Jun Kiln; `ready` when it may be
+   * L646: an unused Jun on this ceramic. `offered` when the viewer owns the Jun Kiln; `ready` when it may be
    * used now (then `sides` are the adjustments); otherwise `reason` is the engine's verdict on
    * using it (already used this round, not enough Wood).
    */

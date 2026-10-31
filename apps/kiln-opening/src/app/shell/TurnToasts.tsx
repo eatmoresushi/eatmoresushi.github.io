@@ -47,18 +47,18 @@
  *   markup it comes after them and before the world, as it is drawn.
  * - The entrance (a fade and a short drop, the next turn's lines a fade) plays only without
  *   `prefers-reduced-motion: reduce`; the band opens and closes without motion.
- * - Formatted at render time, so a language switch re-renders the open toast. Its ceramics read
- *   as they were at the end of the turn (`ceramicViewAsOf`), so a toast that shows some turns
- *   later never calls a ceramic delivered that was still on the table, and its words do not
- *   change while it shows.
+ * - Formatted at render time, so a language switch re-renders the open toast. Each line's ceramics
+ *   read as they were when the line happened (`ceramicViewsAsOf`, the game log's own views), so a
+ *   toast has the log's words (D17), one that shows some turns later never calls a ceramic delivered
+ *   that was still on the table, and its words do not change while it shows.
  */
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react";
 import type { CSSProperties, FocusEvent, KeyboardEvent, MouseEvent } from "react";
 import { useT } from "../i18n/I18nProvider.tsx";
-import { publicEventText } from "../i18n/events.ts";
+import { lastRoundStart, publicEventText } from "../i18n/events.ts";
 import { isPhone } from "../state/layoutMode.ts";
 import { useGame, useLayoutMode, useLog, useSession, useUi } from "../state/hooks.ts";
-import { ceramicViewAsOf } from "./logCeramics.ts";
+import { ceramicViewsAsOf, logCeramicView } from "./logCeramics.ts";
 import { ToastRoom } from "./toastRoom.ts";
 import { GAP_WAIT_MS, MAX_TOAST_LINES, NO_TOASTS, advanceTurns, isMinorToastLine, nextDeadline, showingToast, skipTurns, startTurnTracker, toastLines, toastReducer } from "./turnToasts.ts";
 import type { ToastAction, TurnTracker } from "./turnToasts.ts";
@@ -255,11 +255,13 @@ export function TurnToasts() {
     if (phone) room.current?.dropLead();
   }, [section, phone]);
 
-  // The turn's ceramics as they were when it ended.
-  const upTo = showing?.turn.entries[showing.turn.entries.length - 1]?.sequence ?? null;
-  const view = useMemo(() => (upTo === null ? null : ceramicViewAsOf(model, log, upTo)), [upTo, model, log]);
+  // D17: the game log's words. Each line names its ceramics as they were when it happened, so a
+  // ceramic Imperial Priority loads reads the same here as in the log, and a later move never
+  // changes how a turn's lines read while the toast waits its turn.
+  const views = useMemo(() => (showing === null ? null : ceramicViewsAsOf(model, log, new Set(showing.turn.entries.map((entry) => entry.sequence)))), [showing, model, log]);
+  const lastRoundFrom = useMemo(() => lastRoundStart(log), [log]);
 
-  if (showing === null || view === null) return null;
+  if (showing === null || views === null) return null;
 
   const onFocus = (event: FocusEvent<HTMLDivElement>) => {
     const from = event.relatedTarget;
@@ -309,7 +311,8 @@ export function TurnToasts() {
   const player = model.players.find((summary) => summary.playerId === showing.turn.playerId) ?? null;
   const toastStyle = { "--seat": `var(--seat-${player?.seatIndex ?? 0})` } as CSSProperties;
   const name = player?.displayName || t("common.anotherPlayer");
-  const context = { t, view, viewerId: model.viewerId };
+  const fallback = logCeramicView(model, log);
+  const contextOf = (sequence: number) => ({ t, view: views.get(sequence) ?? fallback, viewerId: model.viewerId, lastRound: lastRoundFrom !== null && sequence >= lastRoundFrom });
   const lines = toastLines(showing.turn.entries, MAX_TOAST_LINES, isMinorToastLine);
   return (
     <div
@@ -336,7 +339,7 @@ export function TurnToasts() {
           <ul className="turn-toast-lines">
             {lines.shown.map((entry) => (
               <li key={entry.sequence} className="turn-toast-line">
-                {publicEventText(entry.event, context)}
+                {publicEventText(entry.event, contextOf(entry.sequence))}
               </li>
             ))}
             {lines.more > 0 ? <li className="turn-toast-line turn-toast-more">{t("shell.toast.more", { n: lines.more })}</li> : null}

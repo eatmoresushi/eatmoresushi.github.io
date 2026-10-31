@@ -1,15 +1,16 @@
 /**
  * P6 `orders/matching.ts` and the matching half of `orders/completion.validateOrderCompletion`
- * (L406–423, L485; rev. 4 L463, L465, L480; DESIGN §6.6, §8.2).
+ * (L420–437, L499; L482, L484, L499; DESIGN §6.6, §8.2).
  *
  * - Table-driven: every one of the 8 Starting (v1.6.2 change 23) and 48 Main Orders has a
  *   passing selection and a near miss with the expected mismatch reason, including S07's
  *   Decoration alternative (Carved, Impressed or Painted).
- * - Independent multi-ceramic requirements (L423), every relation in `data/orders.json`.
+ * - Independent multi-ceramic requirements (L437), every relation in `data/orders.json`.
  * - Crackle wildcards: search mode (fixed order, first hit recorded) and declared mode (used
- *   exactly), both error codes; a Crackle ceramic is Fine, so a Masterpiece requirement
- *   refuses it with the ordinary `masterpiece_required` (change 29 dropped the separate
- *   "never a Masterpiece" reason).
+ *   exactly), both error codes. Since change 39 (rev. 5 L482) a Crackle ceramic keeps its own
+ *   Quality: a crackled Fine one is refused by a Masterpiece requirement with the ordinary
+ *   `masterpiece_required`, a crackled Masterpiece fills one, and a crackled Flawed one never
+ *   counts.
  */
 
 import { describe, expect, it } from "vitest";
@@ -67,11 +68,8 @@ function fc(id: string, spec: string): FinishedCeramic {
     firedInRound: 1 as const,
     stage: "finished" as const,
   };
-  if (crackle === "crackle") {
-    if (q !== "fine") throw new Error("a Crackle ceramic is exactly Fine");
-    return { ...core, crackle: true, quality: "fine" };
-  }
-  return { ...core, crackle: false, quality: q };
+  // Since change 39 a Crackle ceramic keeps any Quality (rev. 5 L482).
+  return { ...core, crackle: crackle === "crackle", quality: q };
 }
 
 /** c1, c2, … in the given order. */
@@ -79,7 +77,7 @@ function set(...specs: string[]): FinishedCeramic[] {
   return specs.map((spec, index) => fc(`c${index + 1}`, spec));
 }
 
-// ── Every Order: a passing set and a near miss (Appendix A, L519–605) ────────────────
+// ── Every Order: a passing set and a near miss (Appendix A, L533–611) ────────────────
 
 type Row = [OrderId, string[], string[], OrderMismatchReason];
 
@@ -198,19 +196,19 @@ describe("every Order: a passing set and a near miss (Appendix A)", () => {
     expect(explainOrderMismatch(order, nearMiss)?.reason).toBe(reason);
     expect(findOrderMatches(order, nearMiss)).toEqual([]);
     expect(findOrderMatches(order, passing).map((m) => m.ceramicIds)).toEqual([passing.map((c) => c.id)]);
-    // A Flawed ceramic never completes any Order (L279).
+    // A Flawed ceramic never completes any Order (L300).
     const flawed = passing.map((c, index) => (index === 0 && !c.crackle ? { ...c, quality: "flawed" as const } : c));
     expect(matchOrder(order, flawed)).toBeNull();
-    // Exactly one ceramic per slot (L423): one more or one fewer never matches.
+    // Exactly one ceramic per slot (L437): one more or one fewer never matches.
     expect(matchOrder(order, [...passing, fc("c9", "bowl white plain mp")])).toBeNull();
     expect(matchOrder(order, passing.slice(1))).toBeNull();
     expect(explainOrderMismatch(order, passing.slice(1))?.reason).toBe("wrong_count");
   });
 });
 
-// ── S07: a Decoration alternative (v1.6.2 change 23, L530) ───────────────────────────
+// ── S07: a Decoration alternative (v1.6.2 change 23, L545) ───────────────────────────
 
-describe("S07 'any Shape · any Glaze · Carved, Impressed or Painted' (v1.6.2 change 23, L530)", () => {
+describe("S07 'any Shape · any Glaze · Carved, Impressed or Painted' (v1.6.2 change 23, L545)", () => {
   const OFFERED: readonly Decoration[] = ["carved", "impressed", "painted"];
 
   it("is filled by each listed Decoration, with any Shape and Glaze, at Standard or better", () => {
@@ -256,9 +254,9 @@ describe("S07 'any Shape · any Glaze · Carved, Impressed or Painted' (v1.6.2 c
   });
 });
 
-// ── Independent multi-ceramic requirements (L423) ─────────────────────────────────────
+// ── Independent multi-ceramic requirements (L437) ─────────────────────────────────────
 
-describe("independent requirements unless paired (L423)", () => {
+describe("independent requirements unless paired (L437)", () => {
   it("O39 assigns Glazes and Decorations between the Shapes however you like", () => {
     // Printed: Vase + Censer; one Celadon, one Moon White; one Plain, one Painted.
     expect(matchOrder(ORDERS.O39, set("vase celadon plain fine", "censer moon_white painted fine"))).not.toBeNull();
@@ -328,7 +326,7 @@ describe("independent requirements unless paired (L423)", () => {
   });
 });
 
-// ── Crackle wildcard (L470, L485, L654, INT: Ge Crackle) ─────────────────────────────
+// ── Crackle wildcard (L484, L499, L660, INT: Ge Crackle) ─────────────────────────────
 
 describe("Crackle wildcard: search mode", () => {
   it("a Crackle ceramic counts as any one Decoration and records the first hit", () => {
@@ -373,7 +371,7 @@ describe("Crackle wildcard: search mode", () => {
     expect(explainOrderMismatch(ORDERS.O20, set("bowl white carved fine crackle"))?.reason).toBe("glaze_mismatch");
   });
 
-  it("a Crackle ceramic is Fine, so a Masterpiece requirement refuses it as masterpiece_required (rev. 4 L463, change 29)", () => {
+  it("a Crackle ceramic keeps its Quality: a crackled Fine one is refused by a Masterpiece requirement as masterpiece_required (L482, changes 29, 39)", () => {
     expect(matchOrder(ORDERS.O13, set("vase celadon plain fine crackle"))).toBeNull();
     expect(explainOrderMismatch(ORDERS.O13, set("vase celadon plain fine crackle"))?.reason).toBe("masterpiece_required");
     // O32 needs ≥1 Masterpiece: a Fine Crackle partner cannot supply it.
@@ -460,7 +458,7 @@ describe("findOrderMatches", () => {
   });
 });
 
-describe("ruTriggers (L460)", () => {
+describe("ruTriggers (L474)", () => {
   it("needs an actual Celadon, printed-Plain Masterpiece", () => {
     expect(ruTriggers(set("vase celadon plain mp"))).toBe(true);
     expect(ruTriggers(set("bowl white carved fine", "vase celadon plain mp"))).toBe(true);
@@ -468,6 +466,39 @@ describe("ruTriggers (L460)", () => {
     expect(ruTriggers(set("vase celadon carved mp"))).toBe(false);
     expect(ruTriggers(set("vase white plain mp"))).toBe(false);
     expect(ruTriggers(set("vase celadon plain fine crackle"))).toBe(false);
+  });
+});
+
+describe("a Crackle ceramic keeps its own Quality (rev. 5 L482, change 39, R30)", () => {
+  it("a crackled Masterpiece fills a Masterpiece requirement, with its wildcard Decoration", () => {
+    // O13: any Shape · any Glaze · Painted, Masterpiece. A printed-Plain crackled Masterpiece
+    // declares Painted.
+    const crackledMasterpiece = set("plate celadon plain mp crackle");
+    expect(matchOrder(ORDERS.O13, crackledMasterpiece)).toEqual({ ceramicIds: ["c1"], crackleDeclarations: [{ ceramicId: "c1", decoration: "painted" }] });
+    // O22: Celadon · Plain, Masterpiece. A printed-Carved crackled Masterpiece declares Plain.
+    expect(matchOrder(ORDERS.O22, set("censer celadon carved mp crackle"))).toEqual({ ceramicIds: ["c1"], crackleDeclarations: [{ ceramicId: "c1", decoration: "plain" }] });
+    // A crackled Fine ceramic still falls short of a Masterpiece requirement.
+    expect(explainOrderMismatch(ORDERS.O13, set("plate celadon plain fine crackle"))?.reason).toBe("masterpiece_required");
+  });
+
+  it("a crackled Standard ceramic counts as Standard; a crackled Flawed one never counts", () => {
+    expect(matchOrder(ORDERS.S01, set("bowl white carved std crackle"))?.ceramicIds).toEqual(["c1"]);
+    expect(explainOrderMismatch(ORDERS.O18, set("vase celadon carved std crackle"))?.reason).toBe("quality_too_low");
+    for (const order of [ORDERS.S01, ORDERS.S07]) {
+      expect(matchOrder(order, set("bowl white plain flawed crackle")), order.id).toBeNull();
+      expect(explainOrderMismatch(order, set("bowl white plain flawed crackle"))?.reason, order.id).toBe("flawed");
+    }
+  });
+
+  it("the wildcard works at every deliverable Quality", () => {
+    for (const quality of ["std", "fine", "mp"] as const) {
+      expect(matchOrder(ORDERS.S07, set(`bowl white plain ${quality} crackle`))?.crackleDeclarations, quality).toEqual([{ ceramicId: "c1", decoration: "carved" }]);
+    }
+  });
+
+  it("Ru reads the actual Quality, Glaze and printed Decoration, Crackle or not", () => {
+    expect(ruTriggers(set("vase celadon plain mp crackle"))).toBe(true);
+    expect(ruTriggers(set("vase celadon carved mp crackle"))).toBe(false);
   });
 });
 

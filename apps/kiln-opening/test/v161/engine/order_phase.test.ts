@@ -1,11 +1,13 @@
 /**
- * P6 `orders/phase.ts`: the Order Phase (rev. 4 L298–302, INT: Order Phase; DESIGN §3.4, §3.6,
- * §3.7, §8.2 "Single-pass Order Phase, held Orders only"; R20).
+ * P6 `orders/phase.ts`: the Order Phase (rev. 5 L143, L318, L700; INT: Order Phase; DESIGN §3.4,
+ * §3.6, §3.7, §8.2 "Single-pass Order Phase, held Orders only"; change 36, R28).
  *
- * - One pass, First Player then clockwise; any number of held Orders, one at a time.
- * - The turn is also a sale window (R20): a Flawed ceramic may be sold for 2 Coins.
- * - Players with nothing completable and no Flawed ceramic to sell are skipped automatically, at
- *   the start of their turn and after each completion or sale (DELTA §15.9.12).
+ * - One pass, First Player then clockwise; each turn is a free-action window (rev. 5 L170): any
+ *   number of held Orders, one at a time, Flawed sales and Imperial Priority, in any order.
+ * - A turn opens only for a completable held Order, a Finished Flawed ceramic or a usable Imperial
+ *   Priority (R28); otherwise it is skipped, at its start and after each free action.
+ * - Imperial Priority there loads a ceramic that is fired in the next round's firing (never in
+ *   Round 5); the Colour Samples swap is not a free action and is refused.
  * - Face-up Main Orders can never be completed; the display never changes.
  * - The pass hands over through `continueAfter("order_phase_done")`.
  */
@@ -41,7 +43,7 @@ function finished(state: GameState, owner: PlayerId, shape: "bowl" | "plate" | "
 }
 
 /** p2 is First Player: p2 holds two completable Orders, p3 none but a Flawed ceramic to sell
- * (R20), p1 one. */
+ * (a free action, L172), p1 one. */
 interface TableIds {
   p1Vase: string;
   p2Bowl: string;
@@ -95,6 +97,32 @@ describe("openOrderPhase", () => {
     expect(state.phase).toEqual({ type: "orders", turnOrder: ["p3", "p1", "p2"], index: 3 });
   });
 
+  it("opens a turn for a usable Imperial Priority alone, but not for the Colour Samples swap (R28)", () => {
+    // p1: token held, Imperial Kiln empty, a Shaped vessel. p2: Colour Samples ready and a held
+    // Order it cannot complete. p3: a Shaped vessel but no token.
+    const state = buildState({
+      players: [{ recognition: 3 }, { techs: ["T10"], hand: ["O30"] }, {}],
+      ceramics: [
+        { owner: "p1", stage: "shaped", shape: "bowl" },
+        { owner: "p3", stage: "shaped", shape: "bowl" },
+      ],
+    });
+    const ctx = testContext();
+    openOrderPhase(state, ctx);
+    expect(ctx.events).toEqual([{ type: "ORDER_TURN_STARTED", playerId: "p1" }]);
+    const table = new LocalTable(state, { flow: "halt" });
+    expect(table.act("p1", { type: "END_ORDER_TURN" })).toEqual([
+      { type: "ORDER_TURN_ENDED", playerId: "p1", automatic: false },
+      { type: "ORDER_TURN_STARTED", playerId: "p2" },
+      { type: "ORDER_TURN_ENDED", playerId: "p2", automatic: true },
+      { type: "ORDER_TURN_STARTED", playerId: "p3" },
+      { type: "ORDER_TURN_ENDED", playerId: "p3", automatic: true },
+    ]);
+    expect(table.halts).toEqual([{ kind: "continue_after", milestone: "order_phase_done" }]);
+    // The token is kept for a later free-action window.
+    expect(table.player("p1").imperial.priority).toBe("held");
+  });
+
   it("does not depend on the key order of state Records (jsonb round trip)", () => {
     const build = (): GameState => {
       const state = buildState({ players: [{ hand: ["S08"] }, { hand: ["S01"] }, { hand: ["O01"] }], firstPlayerId: "p2" });
@@ -113,7 +141,7 @@ describe("openOrderPhase", () => {
   });
 });
 
-describe("the single pass (L297)", () => {
+describe("the single pass (L318)", () => {
   it("completes any number of held Orders one at a time, auto-ends, skips, and nobody acts twice", () => {
     const { state, ids } = threePlayerTable();
     const table = new LocalTable(state, { flow: "halt" });
@@ -128,11 +156,11 @@ describe("the single pass (L297)", () => {
       { type: "ORDER_TURN_ENDED", playerId: "p2", automatic: true },
       { type: "ORDER_TURN_STARTED", playerId: "p3" },
     ]);
-    // p3 can complete nothing, but holds a Flawed ceramic: the turn opens for the sale (R20).
+    // p3 can complete nothing, but holds a Flawed ceramic: the turn opens for the sale (R28).
     expect(table.prompt().actorIds).toEqual(["p3"]);
     const sale = table.act("p3", { type: "SELL_FLAWED", ceramicId: ids.p3Flawed });
     expect(sale).toEqual([
-      { type: "CERAMIC_SOLD", playerId: "p3", ceramicId: ids.p3Flawed, coins: 2, from: "finished" },
+      { type: "CERAMIC_SOLD", playerId: "p3", ceramicId: ids.p3Flawed, coins: 2, window: "order_phase" },
       { type: "RESOURCES_CHANGED", playerId: "p3", clay: 0, wood: 0, coins: 2, reason: "flawed_sale" },
       { type: "ORDER_TURN_ENDED", playerId: "p3", automatic: true },
       { type: "ORDER_TURN_STARTED", playerId: "p1" },
@@ -168,7 +196,7 @@ describe("the single pass (L297)", () => {
     expect(table.state.ceramics[ids.p3Flawed]).toMatchObject({ stage: "finished", quality: "flawed" });
   });
 
-  it("a sale keeps the turn while something is left to complete or sell (R20)", () => {
+  it("a sale keeps the turn while something is left to complete or sell (R28)", () => {
     const state = buildState({ players: [{ hand: ["S08"] }, {}] });
     const vase = finished(state, "p1", "vase");
     const flawedA = finished(state, "p1", "bowl", "flawed");
@@ -186,7 +214,7 @@ describe("the single pass (L297)", () => {
     expect(table.player("p1").resources.coins).toBe(3 + 4 + (table.player("p1").completedOrders[0]?.coins ?? 0));
   });
 
-  it("only the active player may act, and only during the Order Phase", () => {
+  it("only the active player may act; END_ORDER_TURN only in the Order Phase, a completion in any free-action window (rev. 5 L173)", () => {
     const { state, ids } = threePlayerTable();
     const table = new LocalTable(state, { flow: "halt" });
     table.expectRuleError("p1", { type: "COMPLETE_ORDER", orderId: "S08", ceramicIds: [ids.p1Vase] }, "NOT_YOUR_DECISION");
@@ -194,15 +222,15 @@ describe("the single pass (L297)", () => {
 
     const work = buildState({ players: [{ hand: ["S08"] }, {}] });
     const vase = finished(work, "p1", "vase");
-    const actions: GameAction[] = [{ type: "COMPLETE_ORDER", orderId: "S08", ceramicIds: [vase] }, { type: "END_ORDER_TURN" }];
-    for (const action of actions) {
-      const result = applyAction(work, "p1", action, new SeededRandom(1));
-      expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.error.code).toBe("WRONG_PHASE");
-    }
+    const end = applyAction(work, "p1", { type: "END_ORDER_TURN" }, new SeededRandom(1));
+    expect(end.ok ? null : end.error.code).toBe("WRONG_PHASE");
+    // Before the worker action, the completion is a free action.
+    const completion: GameAction = { type: "COMPLETE_ORDER", orderId: "S08", ceramicIds: [vase] };
+    const done = applyAction(work, "p1", completion, new SeededRandom(1), { checkInvariants: true });
+    expect(done.ok && done.events[0]).toMatchObject({ type: "ORDER_COMPLETED", window: "before_action" });
   });
 
-  it("face-up Main Orders cannot be completed and the display never changes (L297)", () => {
+  it("face-up Main Orders cannot be completed and the display never changes (L318)", () => {
     const state = buildState({ players: [{ hand: ["S01"] }, {}], display: ["O01", "O02", "O03", "O04", "O05", "O06"] });
     const bowl = finished(state, "p1", "bowl");
     openOrderPhase(state, testContext());

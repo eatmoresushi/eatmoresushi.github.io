@@ -18,6 +18,16 @@
  * focused again, and their toasts show. A frame sampler records every frame in which a control
  * with the focus ring in the world lies above the world's top edge: there must be none, and some
  * frames must have shown that focus in view with a toast up.
+ *
+ * A second test checks the split Confirm's keys in a real browser (owner UI decision D21;
+ * `DecisionPane`): Enter sends the command with `endTurn: true` from the heading the pane focuses,
+ * Shift+Enter sends it without the field, a held Enter (the one that pressed Place) confirms nothing,
+ * and Enter on the focused primary button sends one command, not two. A placement that cannot open the
+ * after-action step has no second button.
+ *
+ * A third test plays to an Order Phase turn with something to do and checks a real keyboard there:
+ * Enter on the heading and on an unchosen radio ends nothing, the radio's Enter chooses it, and Done
+ * ends the turn only with its own press.
  */
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
@@ -71,6 +81,142 @@ function sampleFocusFrames(): void {
 async function revisionOf(page: Page): Promise<number> {
   return Number((await page.locator("aside.pane").getAttribute("data-revision")) ?? "0");
 }
+
+/** The game commands this page sends, in order. */
+function recordCommands(page: Page): Array<{ type: string; endTurn?: boolean }> {
+  const sent: Array<{ type: string; endTurn?: boolean }> = [];
+  page.on("request", (request) => {
+    if (!request.url().includes("/test-api-v161") || request.method() !== "POST") return;
+    const body = request.postDataJSON() as { operation?: string; command?: { type: string; endTurn?: boolean } } | null;
+    if (body?.operation === "game_action" && body.command !== undefined) sent.push(body.command);
+  });
+  return sent;
+}
+
+test("the split Confirm: Enter ends the turn, Shift+Enter does not, a held Enter confirms nothing", async ({ page, request }) => {
+  test.setTimeout(240_000);
+  await resetBackend(request, { seed: 720, policy: "canonical" });
+  const errors = collectErrors(page);
+  await page.goto("./");
+  await page.locator('input[name="displayName"]').fill("Lin");
+  await page.locator('[data-action="create-room"]').click();
+  await expect(page.locator("[data-room-code]")).toBeVisible();
+  await page.locator('[data-action="add-computer"]').click();
+  await expect(page.locator("[data-seat-index]")).toHaveCount(2);
+  await page.locator('[data-action="start-game"]').click();
+  await expect(page.locator("aside.pane")).toBeAttached();
+
+  const placing = page.locator('[data-shell][data-pane="hidden"]');
+  const canonical = page.locator('[data-dev="canonical-move"]:not([aria-disabled]):not([aria-busy])');
+  for (let move = 0; move < 10; move += 1) {
+    await expect(placing.or(canonical).first()).toBeAttached({ timeout: 60_000 });
+    if ((await placing.count()) > 0) break;
+    await canonical.first().dispatchEvent("click");
+    await expect(page.locator('[data-dev="canonical-move"][aria-busy]')).toHaveCount(0, { timeout: 60_000 });
+  }
+  await expect(placing).toHaveCount(1);
+
+  const sent = recordCommands(page);
+  const heading = page.locator("aside.pane h2");
+  const primary = page.locator('aside.pane [data-action="confirm"]');
+  const secondary = page.locator('aside.pane [data-action="confirm-stay"]');
+  const place = (worker: "apprentice" | "shifu") => page.locator(`[data-act="place"][data-location-id="canal_wharf"][data-worker="${worker}"]`).first();
+  /** Waits for the command to be answered and the viewer's next work turn. */
+  const answered = async (count: number) => {
+    await expect.poll(() => sent.length, { timeout: 30_000 }).toBe(count);
+    await expect(placing).toHaveCount(1, { timeout: 60_000 });
+  };
+
+  // An Apprentice at Canal Wharf: pressed with a held Enter. The repeat lands on the heading the pane
+  // focused, and confirms nothing. Round 1 holds nothing the after-action step could open on, and this
+  // placement cannot change that: there is one button.
+  await place("apprentice").focus();
+  await page.keyboard.down("Enter");
+  await expect(heading).toBeFocused();
+  await page.keyboard.down("Enter");
+  await page.keyboard.up("Enter");
+  await expect(primary).toHaveText("Place · end turn");
+  await expect(secondary).toHaveCount(0);
+  await page.waitForTimeout(300);
+  expect(sent, "a held Enter sent nothing").toEqual([]);
+  // Enter from the heading: the default, in one command.
+  await page.keyboard.press("Enter");
+  await answered(1);
+  expect(sent[0]).toMatchObject({ type: "PLACE_CANAL_WHARF", endTurn: true });
+
+  // The Shifu at Canal Wharf brings an Order into the hand, but with no Finished ceramic that opens
+  // nothing either: one button. Shift+Enter from the heading still sends no field, and the engine
+  // ends the turn by itself (R27).
+  await place("shifu").focus();
+  await page.keyboard.press("Enter");
+  await expect(heading).toBeFocused();
+  await expect(secondary).toHaveCount(0);
+  await page.keyboard.press("Shift+Enter");
+  await answered(2);
+  expect(sent[1]?.type).toBe("PLACE_CANAL_WHARF");
+  expect(sent[1]?.endTurn, "Shift+Enter omits the field").toBeUndefined();
+
+  // Enter on the focused primary button: its own click, and one command.
+  await place("apprentice").focus();
+  await page.keyboard.press("Enter");
+  await expect(heading).toBeFocused();
+  await primary.focus();
+  await page.keyboard.press("Enter");
+  await answered(3);
+  expect(sent[2]).toMatchObject({ type: "PLACE_CANAL_WHARF", endTurn: true });
+  expect(errors).toEqual([]);
+});
+
+test("the Order Phase: Enter on the heading or a radio never gives up the window; Done takes its own press", async ({ page, request }) => {
+  test.setTimeout(300_000);
+  await resetBackend(request, { seed: 720, policy: "canonical" });
+  const errors = collectErrors(page);
+  await page.goto("./");
+  await page.locator('input[name="displayName"]').fill("Lin");
+  await page.locator('[data-action="create-room"]').click();
+  await expect(page.locator("[data-room-code]")).toBeVisible();
+  await page.locator('[data-action="add-computer"]').click();
+  await expect(page.locator("[data-seat-index]")).toHaveCount(2);
+  await page.locator('[data-action="start-game"]').click();
+  await expect(page.locator("aside.pane")).toBeAttached();
+
+  // The dev button plays the viewer's moves, until an Order Phase turn opens with something to do.
+  const radios = page.locator('aside.pane form[data-window="orders"] input[name="freeAction"]');
+  const canonical = page.locator('[data-dev="canonical-move"]:not([aria-disabled]):not([aria-busy])');
+  await expect(async () => {
+    if ((await radios.count()) > 0) return;
+    if ((await canonical.count()) > 0) await canonical.first().dispatchEvent("click");
+    expect(await radios.count()).toBeGreaterThan(0);
+  }).toPass({ timeout: 240_000, intervals: [100] });
+
+  const sent = recordCommands(page);
+  const heading = page.locator("aside.pane h2");
+  const done = page.locator('aside.pane [data-action="alt"]');
+  // Where focus lands when the window opens, and where a stray Enter goes.
+  await heading.focus();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Shift+Enter");
+  await page.waitForTimeout(300);
+  expect(sent, "Enter on the heading sends nothing").toEqual([]);
+  await expect(done).not.toHaveAttribute("aria-keyshortcuts", "Enter");
+
+  // A real Tab from the heading reaches the list; Enter chooses the entry it is on.
+  const focusedRadio = page.locator('aside.pane input[name="freeAction"]:focus');
+  for (let tab = 0; tab < 12 && (await focusedRadio.count()) === 0; tab += 1) await page.keyboard.press("Tab");
+  await expect(focusedRadio).toHaveCount(1);
+  await expect(focusedRadio).not.toBeChecked();
+  await page.keyboard.press("Enter");
+  await expect(focusedRadio).toBeChecked();
+  await page.waitForTimeout(300);
+  expect(sent, "Enter on an unchosen radio sends nothing").toEqual([]);
+
+  // Done with its own press ends the turn. (The Enter on a chosen radio is the labelled default.)
+  await done.focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(() => sent.length, { timeout: 30_000 }).toBe(1);
+  expect(sent[0]?.type).toBe("END_ORDER_TURN");
+  expect(errors).toEqual([]);
+});
 
 test("the focus ring stays in view while the other players' turn toasts open above the table", async ({ page, request }) => {
   test.setTimeout(240_000);

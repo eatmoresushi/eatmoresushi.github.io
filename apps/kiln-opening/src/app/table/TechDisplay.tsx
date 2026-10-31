@@ -18,7 +18,7 @@
  *   (`data-act="inspect"`); the tiles stay ordinary display tiles with their rules details, and
  *   the private inspection itself is its own window;
  * - **take** (that window, `guild_inspection`): the face-up Techs are toggles again, as in buy
- *   mode, for the Shifu's first take and for the second (v1.6.2 L207: another discipline, at its
+ *   mode, for the Shifu's first take and for the second (v1.6.2 L237: another discipline, at its
  *   printed cost, or stop in the pane). The inspected Techs are private and only in the pane
  *   (B2), and the "is looking at" line is not shown to the looker (the pane addresses them).
  *   Once both takes are made no Tech can be taken: the window offers no chooser and the display
@@ -26,7 +26,7 @@
  * A choice goes back to the pane's draft (`act`); on phones the decision sheet then opens with
  * the chosen placement and Confirm.
  *
- * **A taken Tech's position stays empty** until the taker's turn ends (v1.6.2 L209): a column
+ * **A taken Tech's position stays empty** until the taker's turn ends (v1.6.2 L239): a column
  * showing fewer than its face-up count draws as many empty positions as the refill will fill —
  * as many as its deck holds, counting the inspected Techs an open Guild Hall inspection will put
  * back under it first (`returning`, B2) — as dashed placeholders. It is the table's own fact (an
@@ -95,7 +95,7 @@ export function TechDisplay() {
         {display.map((column) => {
           const inspect = chooser?.disciplines.get(column.discipline);
           const name = disciplineName(column.discipline, t.locale);
-          // The empty positions the end-of-turn refill will fill (v1.6.2 L209, B2).
+          // The empty positions the end-of-turn refill will fill (v1.6.2 L239, B2).
           const refilling = Math.min(Math.max(0, RULE_NUMBERS.techsFaceUp - column.techIds.length), column.deckCount + column.returning);
           return (
             <div key={column.discipline} className="disc" data-discipline={column.discipline} style={{ "--dc": DISCIPLINE_COLOUR[column.discipline] } as CSSProperties}>

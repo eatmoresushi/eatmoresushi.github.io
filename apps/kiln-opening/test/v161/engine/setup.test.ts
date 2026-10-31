@@ -1,6 +1,6 @@
 /**
  * Setup and the Kiln and Main Order choice (P2 `setup.ts`; owner revision 4, change 32, rev. 4
- * L113–126, R1, R23), DESIGN §7 setup draw order (as revised by ENGINE_V1.6.2_DELTA.md §15.9.1),
+ * L122–134, R1, R23), DESIGN §7 setup draw order (as revised by ENGINE_V1.6.2_DELTA.md §15.9.1),
  * §8.2 "Setup for 2/3/4", "2 Clay / 3 Wood / 3 Coins; 1 Shifu + 3 Apprentices" (changes 34, 35:
  * the same for every seat), "secret deal of 2 Starting Orders", "6-card Main display; 2 face-up
  * Techs per discipline", and the public face-up Main Order each player takes with its Kiln.
@@ -57,7 +57,7 @@ function created(seed: number, n: number): { state: GameState; events: GameEvent
   return { state: result.state, events: result.events, rng };
 }
 
-/** `SELECT_KILN` with the face-up Main Order at `slotIndex` (rev. 4 L122, R23). */
+/** `SELECT_KILN` with the face-up Main Order at `slotIndex` (L130, R23). */
 function choose(state: GameState, kilnId: KilnId, slotIndex = 0): GameAction {
   const orderId = state.market.display[slotIndex];
   if (orderId === null || orderId === undefined) throw new Error(`no Order at ${slotIndex}`);
@@ -70,10 +70,10 @@ function countBy<T extends string | number>(items: readonly T[]): Map<T, number>
   return counts;
 }
 
-describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
+describe("createInitialState for 2, 3 and 4 players (L120–134)", () => {
   it.each(COUNTS)("%i players: versions, round, phase and empty boards", (n) => {
     const { state } = created(11, n);
-    expect(state.schemaVersion).toBe(9);
+    expect(state.schemaVersion).toBe(10);
     expect(state.rulesVersion).toBe("1.6.2");
     expect(state.gameId).toBe("g-setup");
     expect(state.playerCount).toBe(n);
@@ -98,7 +98,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     [2, { high: 2, middle: 1, low: 1 }, 1],
     [3, { high: 2, middle: 2, low: 2 }, 1],
     [4, { high: 3, middle: 3, low: 2 }, 2],
-  ] as const)("%i players: Shared Kiln %o and Magistrate's Hall capacity %i (L100)", (n, zones, hall) => {
+  ] as const)("%i players: Shared Kiln %o and Magistrate's Hall capacity %i (L122)", (n, zones, hall) => {
     const { state } = created(3, n);
     const active = KILN_SPACE_IDS.filter((id) => state.sharedKiln.spaces[id].active);
     expect(active).toHaveLength(2 * n);
@@ -109,7 +109,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     expect(centralCapacity(state, "magistrates_hall")).toBe(hall);
   });
 
-  it.each(COUNTS)("%i players: 2 Clay, 3 Wood, 3 Coins at every seat (no seat Coin); 1 Shifu + 3 Apprentices; Cover tokens; Recognition 0 (rev. 4 L121–126)", (n) => {
+  it.each(COUNTS)("%i players: 2 Clay, 3 Wood, 3 Coins at every seat (no seat Coin); 1 Shifu + 3 Apprentices; Cover tokens; Recognition 0 (L129–134)", (n) => {
     const { state } = created(5, n);
     state.playerOrder.forEach((playerId, seatIndex) => {
       const p = state.players[playerId];
@@ -130,7 +130,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
           glaze_load: [{ unlocked: true }, { unlocked: false }],
         },
         techs: [],
-        // Bank, Tend, Stoke (v1.6.2 L260); Fuel Ledger's 2 come only with the tile (change 26).
+        // Bank, Tend, Stoke (v1.6.2 L289); Fuel Ledger's 2 come only with the tile (change 26).
         contributionCards: ["BANK", "TEND", "STOKE"],
         kilnAbilityUsedThisRound: false,
         imperial: { recognition: 0, grantReceived: false, kilnGained: false, priority: "on_track", audienceReceived: false },
@@ -141,7 +141,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     expect(GAME_CONFIG.startingResources).toEqual({ clay: 2, wood: 3, coins: 3 });
   });
 
-  it.each(COUNTS)("%i players: a secret hand of 2 Starting Orders each, nothing Main dealt; the rest of the 8-card Starting deck in the box (rev. 4 L115–116, change 32)", (n) => {
+  it.each(COUNTS)("%i players: a secret hand of 2 Starting Orders each, nothing Main dealt; the rest of the 8-card Starting deck in the box (L123–124, change 32)", (n) => {
     const { state } = created(9, n);
     const dealt: OrderId[] = [];
     for (const playerId of state.playerOrder) {
@@ -151,14 +151,14 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
       dealt.push(...hand);
     }
     expect(new Set(dealt).size).toBe(2 * n);
-    // 8 Starting Orders: a 4-player game deals the whole deck and leaves the box empty (L520).
+    // 8 Starting Orders: a 4-player game deals the whole deck and leaves the box empty (L535).
     expect(STARTING_ORDER_IDS).toHaveLength(8);
     expect(state.hidden.startingBox).toHaveLength(8 - 2 * n);
     if (n === 4) expect(state.hidden.startingBox).toEqual([]);
     expect([...state.hidden.startingBox, ...dealt.filter(isStartingOrderId)].sort()).toEqual([...STARTING_ORDER_IDS]);
   });
 
-  it.each(COUNTS)("%i players: a 6-card Main display, the rest in the deck, an empty discard (rev. 4 L116)", (n) => {
+  it.each(COUNTS)("%i players: a 6-card Main display, the rest in the deck, an empty discard (L124)", (n) => {
     const { state } = created(13, n);
     expect(state.market.display).toHaveLength(6);
     expect(state.market.display.every((id) => id !== null && !isStartingOrderId(id))).toBe(true);
@@ -169,7 +169,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     expect([...zones].sort()).toEqual([...STARTING_ORDER_IDS, ...MAIN_ORDER_IDS].sort());
   });
 
-  it.each(COUNTS)("%i players: three Tech decks of 6, 2 face up each (L103)", (n) => {
+  it.each(COUNTS)("%i players: three Tech decks of 6, 2 face up each (L125)", (n) => {
     const { state } = created(17, n);
     for (const discipline of DISCIPLINES) {
       expect(state.techDisplay[discipline]).toHaveLength(GAME_CONFIG.techs.faceUpPerDiscipline);
@@ -178,7 +178,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     }
   });
 
-  it.each(COUNTS)("%i players: a shuffled 1/3/4/3/1 Fire deck, an empty open discard and 10 Vessel cards per Shape (L104–105)", (n) => {
+  it.each(COUNTS)("%i players: a shuffled 1/3/4/3/1 Fire deck, an empty open discard and 10 Vessel cards per Shape (L126–127)", (n) => {
     const { state } = created(19, n);
     expect(state.hidden.fireDeck).toHaveLength(12);
     expect(Object.fromEntries(countBy<FireModifier>(state.hidden.fireDeck))).toEqual({ "-2": 1, "-1": 3, "0": 4, "1": 3, "2": 1 });
@@ -207,7 +207,7 @@ describe("setup draw order (DESIGN §7)", () => {
       expect(state.hidden.orderHands[playerId]).toEqual([starting[2 * seat], starting[2 * seat + 1]]);
     });
     expect(state.hidden.startingBox).toEqual(starting.slice(2 * n));
-    // Nothing Main was dealt, so the display is the top 6 of the Main deck as shuffled (rev. 4 L116).
+    // Nothing Main was dealt, so the display is the top 6 of the Main deck as shuffled (L124).
     expect(state.market.display).toEqual(main.slice(0, 6));
     expect(state.hidden.mainDeck).toEqual(main.slice(6));
     for (const discipline of DISCIPLINES) {
@@ -306,7 +306,7 @@ describe("invalid setups (INVALID_SETUP)", () => {
   });
 });
 
-describe("Setup step 9: a Kiln and a face-up Main Order in one reverse-order turn (rev. 4 L122, R1, R23)", () => {
+describe("Setup step 9: a Kiln and a face-up Main Order in one reverse-order turn (L130, R1, R23)", () => {
   it.each(COUNTS)("%i players choose in reverse turn order: the First Player chooses last", (n) => {
     for (let seed = 1; seed <= 6; seed += 1) {
       const { state } = created(seed, n);
@@ -386,7 +386,7 @@ describe("Setup step 9: a Kiln and a face-up Main Order in one reverse-order tur
         display: [before[0], before[1], before[3], before[4], before[5], deckTop],
       },
     ]);
-    // Public: everyone has seen which Main Order the player took (rev. 4 L122); no secret.
+    // Public: everyone has seen which Main Order the player took (L130); no secret.
     for (const event of events) expect("secret" in event).toBe(false);
     expect(table.state.hidden.orderHands[chooser]?.slice(-1)).toEqual([taken]);
     expect(table.state.hidden.orderHands[chooser]).toHaveLength(3);

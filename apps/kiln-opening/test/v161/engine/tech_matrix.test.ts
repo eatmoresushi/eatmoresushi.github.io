@@ -19,7 +19,7 @@ describe("tech matrix", () => {
   it.each(ABILITY_CASES.map((c) => [c.ability, c] as const))("%s resolves through a canonical command", (_id, c) => {
     const table = c.table();
     if (c.ability === "T19") {
-      // Game-end scoring only (L620): no command uses it.
+      // Game-end scoring only (L626): no command uses it.
       expect(c.used([], table.state)).toBe(true);
       return;
     }

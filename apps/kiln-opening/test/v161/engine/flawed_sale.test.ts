@@ -1,14 +1,15 @@
 /**
- * Selling a Flawed ceramic (change 30, rev. 4 L282, L284, L729; owner ruling R20; DELTA
- * §15.9.11): 1 Flawed ceramic per `SELL_FLAWED`, for 2 Coins, its Vessel card back to the
- * supply, only during its owner's own turn while the game waits for that player's decision:
- * the before- and after-action windows of their Work turn, their Order Phase turn, their own
- * after-Quality turn (`after_quality.test.ts`) and their pending Cleanup trim. Never during
- * another player's turn, the simultaneous Contribution choice, or the middle of resolving an
- * action. The sale is free and is not a worker action: in a Work turn or a Cleanup trim the
- * player still owes their action or trim; in an after-Quality or Order Phase turn the turn
- * passes automatically after the sale when nothing is left to do there (as after an ability use
- * or a completion), and opens no window by itself. Revision 3's salvage step is gone.
+ * Selling a Flawed ceramic (rev. 5 L172, L300, L302, L748; change 36; DELTA §16.10.3): 1 Finished
+ * Flawed ceramic per `SELL_FLAWED`, for 2 Coins, its Vessel card back to the supply. It is a free
+ * action (L168–176), so only in a free-action window: before or after the worker action of the
+ * owner's own Work turn, and the owner's own Order Phase turn. Never on another player's turn,
+ * never during the firing (the after-Quality step included, also for a ceramic of this firing that
+ * is Flawed now), never at Setup, in the Setter's Mark window or at Cleanup (R26: owner ruling R20's
+ * after-Quality and Cleanup trim windows are withdrawn), and never in the middle of a worker
+ * action (`WORKER_ACTION_IN_PROGRESS`). The sale is not a worker action: before the action the
+ * player still owes it; after it, or in the Order Phase, the window closes when nothing is left.
+ * A Finished Flawed ceramic opens the after-action window and the Order Phase turn by itself
+ * (public facts, R27, R28). Revision 3's salvage step is gone.
  */
 
 import { describe, expect, it } from "vitest";
@@ -40,7 +41,7 @@ function workSpec(extra: Partial<StateSpec> = {}): StateSpec {
   };
 }
 
-describe("the Work turn's windows (R20)", () => {
+describe("the Work turn's free-action windows (rev. 5 L170)", () => {
   it("before the worker action: 2 Coins, the Vessel card back in its supply, and the turn goes on", () => {
     const table = new LocalTable(buildState(workSpec()));
     expect(sellFlawedOptions(table.view("p1"))).toEqual({ ceramicIds: ["c1"], coins: FIRING.flawedSaleCoins });
@@ -50,10 +51,10 @@ describe("the Work turn's windows (R20)", () => {
     const coins = table.player("p1").resources.coins;
     const events = table.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
     expect(events).toEqual([
-      { type: "CERAMIC_SOLD", playerId: "p1", ceramicId: "c1", coins: 2, from: "finished" },
+      { type: "CERAMIC_SOLD", playerId: "p1", ceramicId: "c1", coins: 2, window: "before_action" },
       { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 2, reason: "flawed_sale" },
     ]);
-    // Public: every ceramic and every sale is open information (L508).
+    // Public: every ceramic and every sale is open information (L522).
     expect(events.map(projectEvent)).toEqual(events);
     expect(table.state.ceramics["c1"]).toBeUndefined();
     expect(table.state.vesselSupply.bowl).toContain(card);
@@ -84,36 +85,38 @@ describe("the Work turn's windows (R20)", () => {
     expect(sellFlawedOptions(table.view("p2"))).toBeNull();
   });
 
-  it("after the worker action, in the after-action window; a Flawed ceramic opens no window by itself", () => {
-    // Colour Samples with a held Order opens the after-action window (v1.6.2 L622).
-    const table = new LocalTable(buildState(workSpec({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] })));
+  it("after the worker action: a Finished Flawed ceramic opens the window by itself (R27), which closes after the sale", () => {
+    // p1 holds no Order, so only the Flawed ceramic keeps the window open.
+    const table = new LocalTable(buildState(workSpec({ players: [{}, {}] })));
     table.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
     expect(table.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
-    expect(legalActionFamilies(table.view("p1"))).toContain("SELL_FLAWED");
-    table.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
-    expect(table.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
+    expect(legalActionFamilies(table.view("p1"))).toEqual(["SELL_FLAWED", "END_TURN"]);
+    const events = table.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
+    expect(events[0]).toEqual({ type: "CERAMIC_SOLD", playerId: "p1", ceramicId: "c1", coins: 2, window: "after_action" });
+    expect(events.find((e) => e.type === "WORK_TURN_ENDED")).toEqual({ type: "WORK_TURN_ENDED", playerId: "p1", automatic: true });
+    expect(table.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } });
 
-    // Without a window ability the turn ends at once, Flawed ceramic or not.
-    const plain = new LocalTable(buildState(workSpec()));
-    plain.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
-    expect(plain.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } });
-    expect(plain.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "flawed" });
+    // Keeping it is allowed: END_TURN ends the turn with the Flawed ceramic unsold.
+    const kept = new LocalTable(buildState(workSpec({ players: [{}, {}] })));
+    kept.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
+    kept.act("p1", { type: "END_TURN" });
+    expect(kept.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "flawed" });
   });
 
-  it("never in the middle of a worker action: a Select is open (WRONG_PHASE, \"Finish your worker action first.\")", () => {
+  it("never in the middle of a worker action: a Select is open (WORKER_ACTION_IN_PROGRESS)", () => {
     const table = new LocalTable(buildState(workSpec()));
     table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
     expect(table.state.phase).toMatchObject({ type: "work_turn", step: { kind: "commission_market" } });
-    const error = table.expectRuleError("p1", { type: "SELL_FLAWED", ceramicId: "c1" }, "WRONG_PHASE");
-    expect(error.message).toBe("Finish your worker action first.");
+    const error = table.expectRuleError("p1", { type: "SELL_FLAWED", ceramicId: "c1" }, "WORKER_ACTION_IN_PROGRESS");
     expect(error.details).toEqual({ phase: "work_turn", step: "commission_market", actionType: "SELL_FLAWED" });
     expectDocumentedDetails(error);
+    expect(formatRuleError(error, "en")).toBe("Finish your worker action first: this can be done before or after it, not during it.");
     expect(sellFlawedOptions(table.view("p1"))).toBeNull();
     expect(legalActionFamilies(table.view("p1"))).not.toContain("SELL_FLAWED");
   });
 });
 
-describe("never outside its owner's turns (R20): WRONG_PHASE", () => {
+describe("never outside a free-action window (rev. 5 L176, R26): WRONG_PHASE", () => {
   /** p1 (Test Pieces, the Jun Kiln) fires c1 and p2 (Second Firing) fires c2, Moon White Bowls
    * in Low (Flawed at Fire 0); p1 also holds c3, a Finished Flawed Bowl from an earlier round. */
   function firingSpec(): StateSpec {
@@ -129,7 +132,7 @@ describe("never outside its owner's turns (R20): WRONG_PHASE", () => {
     };
   }
 
-  it("in the simultaneous Contribution choice, Test Pieces, Jun, another player's after-Quality turn and the Second Firing choice", () => {
+  it("in the simultaneous Contribution choice, Test Pieces, Jun, every after-Quality turn (the owner's own too) and the Second Firing choice", () => {
     const table = openFiringTable(firingSpec());
     const refused = (actor: string, ceramicId: string, code: "WRONG_PHASE" | "NOT_YOUR_DECISION" = "WRONG_PHASE"): void => {
       const error = table.expectRuleError(actor, { type: "SELL_FLAWED", ceramicId }, code);
@@ -145,11 +148,12 @@ describe("never outside its owner's turns (R20): WRONG_PHASE", () => {
     expect(table.state.phase.type).toBe("firing_heat_adjustment");
     refused("p1", "c3");
     table.act("p1", { type: "RESOLVE_JUN", adjustment: null });
-    // p2's own after-Quality turn is p2's sale window (its c2 of this firing included), not p1's.
+    // p2's own after-Quality turn is no sale window either (R26), not even for c2 of this firing,
+    // which is Flawed now.
     expect(table.prompt()).toEqual({ phaseType: "firing_after_quality", actorIds: ["p2"], mode: "single" });
-    expect(sellFlawedOptions(table.view("p2"))?.ceramicIds).toEqual(["c2"]);
-    refused("p1", "c3", "NOT_YOUR_DECISION");
-    refused("p1", "c1", "NOT_YOUR_DECISION");
+    refused("p2", "c2");
+    refused("p1", "c3");
+    refused("p1", "c1");
     table.act("p2", { type: "USE_SECOND_FIRING", ceramicId: "c2" });
     expect(table.state.phase.type).toBe("firing_second_firing_choice");
     refused("p2", "c2");
@@ -174,7 +178,7 @@ describe("never outside its owner's turns (R20): WRONG_PHASE", () => {
   });
 });
 
-describe("the Order Phase turn and the Cleanup trim (R20)", () => {
+describe("the Order Phase turn, not the Cleanup trim (rev. 5 L170, R26)", () => {
   it("Round 5: the Order Phase turn is the last sale window before scoring (the trim is skipped)", () => {
     const table = new LocalTable(
       buildState({
@@ -188,13 +192,14 @@ describe("the Order Phase turn and the Cleanup trim (R20)", () => {
     expect(legalActionFamilies(table.view("p1"))).toEqual(["SELL_FLAWED", "END_ORDER_TURN"]);
     const coins = table.player("p1").resources.coins;
     const events = table.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
+    expect(events[0]).toEqual({ type: "CERAMIC_SOLD", playerId: "p1", ceramicId: "c1", coins: 2, window: "order_phase" });
     // Nothing left to complete or sell: the turn ends, p2 is skipped, and the game is scored.
     expect(events.map((e) => e.type)).toContain("FINAL_SCORE_CALCULATED");
     expect(table.state.phase).toEqual({ type: "finished" });
     expect(table.player("p1").resources.coins).toBe(coins + 2);
   });
 
-  it("a pending player sells, stays pending, then trims; a player who is not pending may not sell", () => {
+  it("no sale while trimming: a pending player and anyone else are refused (WRONG_PHASE); the trim is unchanged", () => {
     const table = new LocalTable(
       buildState({
         players: [{ hand: ["S01", "S02", "O01", "O02", "O03"] }, {}],
@@ -202,13 +207,15 @@ describe("the Order Phase turn and the Cleanup trim (R20)", () => {
         ceramics: [FLAWED_BOWL, { owner: "p2", stage: "finished", shape: "plate", glaze: "white", quality: "flawed" }],
       }),
     );
-    expect(legalActionFamilies(table.view("p1"))).toEqual(["SELL_FLAWED", "DISCARD_TO_HAND_LIMIT"]);
-    expectDocumentedDetails(table.expectRuleError("p2", { type: "SELL_FLAWED", ceramicId: "c2" }, "NOT_YOUR_DECISION"));
-    table.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
-    expect(table.state.phase).toMatchObject({ type: "cleanup_hand_limit", pendingPlayerIds: ["p1"] });
-    expect(table.prompt()).toEqual({ phaseType: "cleanup_hand_limit", actorIds: ["p1"], mode: "parallel" });
+    expect(legalActionFamilies(table.view("p1"))).toEqual(["DISCARD_TO_HAND_LIMIT"]);
+    expect(sellFlawedOptions(table.view("p1"))).toBeNull();
+    const pending = table.expectRuleError("p1", { type: "SELL_FLAWED", ceramicId: "c1" }, "WRONG_PHASE");
+    expect(pending.details).toEqual({ phase: "cleanup_hand_limit", actionType: "SELL_FLAWED" });
+    expectDocumentedDetails(pending);
+    expectDocumentedDetails(table.expectRuleError("p2", { type: "SELL_FLAWED", ceramicId: "c2" }, "WRONG_PHASE"));
     table.act("p1", { type: "DISCARD_TO_HAND_LIMIT", orderIds: ["O03"] });
     expect(table.state.phase.type).not.toBe("cleanup_hand_limit");
+    expect(table.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "flawed" });
     expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "flawed" });
   });
 });

@@ -33,6 +33,16 @@ describe("announcementFor", () => {
     expect(say(result?.polite, zh)).toEqual([`轮到你了：派工。你还有${left}名工人。`]);
   });
 
+  it("says what the turn is for when it may hold no Order to complete: the Order Phase (R28) and after the worker action (D21)", () => {
+    for (const id of ["w-order-phase-sell-a-flawed-ceramic", "w-order-phase-imperial-priority", "m6_order_phase_crackle_3p"]) {
+      expect(en.message(yourTurnMessage(modelOf(id))!), id).toBe("Your turn: take free actions.");
+      expect(zh.message(yourTurnMessage(modelOf(id))!), id).toBe("轮到你了：做自由行动。");
+    }
+    const after = modelOf("t-after-action-free-actions");
+    expect(en.message(yourTurnMessage(after)!)).toBe("Your turn: take free actions, or end your turn.");
+    expect(zh.message(yourTurnMessage(after)!)).toBe("轮到你了：做自由行动，或结束回合。");
+  });
+
   it("says nothing new when the same window stays open", () => {
     const model = modelOf("m1_work_phase_r2_3p");
     expect(announcementFor(model, null, model)).toBeNull();
@@ -56,7 +66,7 @@ describe("announcementFor", () => {
     expect(en.message(yourTurnMessage(model)!)).toBe(`Cleanup: discard ${status.mustDiscard} ${status.mustDiscard === 1 ? "Order" : "Orders"} to reach your limit of ${status.limit}.`);
   });
 
-  it("says the Second Firing choice with its number of cards from content (v1.6.2 L631)", () => {
+  it("says the Second Firing choice with its number of cards from content (v1.6.2 L646)", () => {
     const model = modelOf("w-second-firing-choice-with-jun-r7");
     expect(en.message(yourTurnMessage(model)!)).toBe("Your turn: choose one of the 2 Second Firing cards.");
     expect(zh.message(yourTurnMessage(model)!)).toBe("轮到你了：从复烧翻开的2张窑火牌中选一张。");

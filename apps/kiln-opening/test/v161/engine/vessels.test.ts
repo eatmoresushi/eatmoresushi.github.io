@@ -1,5 +1,5 @@
 /**
- * Shape costs (L321–327) and Vessel cards (L80, L329): 10 cards per Shape, not a gameplay
+ * Shape costs (L342–348) and Vessel cards (L102, L350): 10 cards per Shape, not a gameplay
  * limit; a proxy is used when a Shape's cards are all in use; a returned card goes back to its
  * Shape's supply and a proxy simply vanishes.
  */
@@ -11,7 +11,7 @@ import type { CeramicSpec } from "./support/fixtures.ts";
 import type { GameAction, Shape } from "../../../src/game/types.ts";
 import { table, types } from "./workshop_support.ts";
 
-// Wood pays the Glaze & Load fuel (rev. 4 L197).
+// Wood pays the Glaze & Load fuel (L215).
 const RICH = { resources: { clay: 20, wood: 5, coins: 20 } };
 const fd = (workerId: string, shape: Shape, extra: Partial<Extract<GameAction, { type: "PLACE_FORM_DECORATE" }>> = {}): GameAction => ({
   type: "PLACE_FORM_DECORATE",
@@ -20,7 +20,7 @@ const fd = (workerId: string, shape: Shape, extra: Partial<Extract<GameAction, {
   ...extra,
 });
 
-describe("Shape Clay costs (L321–327)", () => {
+describe("Shape Clay costs (L342–348)", () => {
   it.each([
     ["bowl", 1],
     ["plate", 1],
@@ -36,7 +36,7 @@ describe("Shape Clay costs (L321–327)", () => {
   });
 });
 
-describe("Vessel cards are not a limit (L80, L329)", () => {
+describe("Vessel cards are not a limit (L102, L350)", () => {
   it("10 cards per Shape; forming takes the next card in the supply", () => {
     const t = table({ players: [RICH, {}] });
     expect(SHAPES.map((shape) => t.state.vesselSupply[shape].length)).toEqual(SHAPES.map(() => GAME_CONFIG.shapeSupplyEach));
@@ -70,7 +70,7 @@ describe("Vessel cards are not a limit (L80, L329)", () => {
     expect(ceramic(t.state, "c11")).toMatchObject({ shape: "vase", vesselInstanceId: "vase-proxy-1", formedBy: "prepared_clay" });
   });
 
-  it("Reworking Table returns the card to its supply, kept in order, and takes the new Shape's card (L617)", () => {
+  it("Reworking Table returns the card to its supply, kept in order, and takes the new Shape's card (L623)", () => {
     const t = table({
       players: [{ ...RICH, techs: ["T05"] }, {}],
       ceramics: [

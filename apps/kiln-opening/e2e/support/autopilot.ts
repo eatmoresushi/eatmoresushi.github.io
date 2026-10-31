@@ -33,7 +33,7 @@
  * in its swap — the held Order the Colour Samples swap gives up, the Order Phase's Orders and the
  * hand trim, and the Setup pick's face-up Main Order), the Shared Kiln's spaces
  * (`[data-act="kiln-space"]`: a Glaze & Load destination, the Setter's Mark) and the Sell buttons
- * on the viewer's own Flawed Finished ceramics (`[data-act="sell"]`, owner revision 4, R20). A
+ * on the viewer's own Flawed Finished ceramics (`[data-act="sell"]`, a free action, change 36). A
  * target already pressed, unavailable (`aria-disabled`) or a dev tool (`data-dev`) is not. The
  * pane's own navigation buttons (`data-goto`: the Guild Hall's "Go to the Advanced Techs") move
  * nothing in the game and are never picked. On a phone a table target may sit in another section:
@@ -55,19 +55,32 @@
  * **Owner revision 4 (changes 28–35, R20–R25).** Still native radios: the Setup pick
  * (`kilnId` and `mainOrder`, a display slot), Kiln Master's side chosen at loading (`kilnMaster`,
  * at Glaze & Load and with Imperial Priority), the Magistrate's Hall Shifu's optional Crown Order
- * (`crownOrder`), Ge's Crackle on a Fine or Standard ceramic (an `afterQuality` option) and the
- * sale of a Flawed ceramic (`work.sell`, `orders.sell`, `afterQuality.sell`, `trim.sell`, besides
- * the table's Sell buttons). There is no Heat-marker step and no salvage window any more.
+ * (`crownOrder`) and Ge's Crackle (an `afterQuality` option; on any ceramic of the firing since
+ * owner revision 5, change 39). There is no Heat-marker step and no salvage window any more.
+ *
+ * **Owner revision 5 (changes 36–42, R26–R32) and owner UI decision D21.** The free actions are
+ * native radios too: the pane's list after the worker action and in the Order Phase (`freeAction`,
+ * valued `complete-<OrderId>`, `sell_flawed`, `imperial_priority`, `colour_samples_swap`), then the
+ * form of the chosen one: the sale's ceramic (`work.sell`, `orders.sell`), the Order's group and
+ * declarations, Imperial Priority's vessel, Glaze and modifier radios. The table's own buttons are
+ * candidates beside them: the Sell buttons, a completable Order's Deliver badge and Use on the
+ * Imperial Priority token (`[data-act="imperial-priority"]`). None in the after-Quality step or the
+ * hand trim (R26).
+ *
+ * **The split Confirm (D21).** Confirm is `[data-action="confirm"]` whatever it is labelled ("Place ·
+ * end turn": `endTurn: true`). The secondary button (`[data-action="confirm-stay"]`, "Place, then
+ * free actions": no field) is pressed instead with probability `stayChance`, so the after-action
+ * step is still reached. With nothing chosen in the after-action step or the Order Phase the
+ * alternative (End turn, Done) is the only button.
  *
  * **The hidden pane.** During the work turn the pane is hidden until a placement is chosen (owner
  * review, 2026-10-17): its form stays in the page (`data-window`, `data-step`), but inside a
  * `hidden` `<aside>`, so none of its fields is a candidate; the Place shortcuts are, and so are the
- * hidden pane's openers above the world (`[data-pane-opener]`: an ability that may come before the
- * worker action, which brings the pane back with its form). After a Place the pane shows, and its
- * fields are candidates again. With an ability open and nothing placed, the step's radios are the
- * abilities only (none at all when only one may come first: the pane's heading names it), and
- * "Back to placing a worker" (`data-b4="back-to-placing"`) is a pane button like any other: it
- * hides the pane again, leaving the Place shortcuts and the openers.
+ * chips above the world (`[data-pane-opener]`: a free action or the swap, which brings the pane
+ * back with its form). After a Place the pane shows, and its fields are candidates again. With an
+ * action's form open before the worker action, "Back to placing a worker"
+ * (`data-b4="back-to-placing"`) is a pane button like any other: it hides the pane again, leaving
+ * the Place shortcuts and the chips.
  */
 
 export interface AutopilotArgs {
@@ -78,6 +91,11 @@ export interface AutopilotArgs {
   confirmChance: number;
   /** Probability of pressing an enabled alternative button. */
   altChance: number;
+  /**
+   * With a split Confirm (D21), the probability that pressing Confirm presses its secondary button
+   * ("Place, then free actions") instead of the default ("Place · end turn"). Default 0.35.
+   */
+  stayChance?: number;
   /**
    * Only choices inside this element of the form's fields (a CSS selector), for a steered driver
    * that has already made the choices outside it (e.g. `.b4-sub-region`: the chosen location's
@@ -90,7 +108,7 @@ export interface AutopilotArgs {
    * Steering: CSS selectors tried in order before the seeded choice, for a driver that wants the
    * game to reach the optional abilities a random autopilot rarely meets. A form control
    * (`input[name="take"][value="T10"]`) is looked for in the form, a table target or an opener
-   * (`[data-act=…]`, `[data-pane-opener=…]`) anywhere on the page; the first one that is enabled,
+   * (`[data-act=…]`, `[data-target=…] [data-act=…]`, `[data-pane-opener=…]`) anywhere on the page; the first one that is enabled,
    * shown, and not already checked or pressed is the pick, and its selector comes back as
    * `preferred`. Preferences never press Confirm or the alternative, so the seeded choices still
    * complete the form, and the engine still judges every command.
@@ -122,6 +140,7 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
   if (form === null) return { kind: "none", reason: "no decision form", window: null };
   const window = form.getAttribute("data-window") ?? "";
   const confirm = form.querySelector<HTMLElement>('[data-action="confirm"]');
+  const stay = form.querySelector<HTMLElement>('[data-action="confirm-stay"]');
   const alt = form.querySelector<HTMLElement>('[data-action="alt"]');
   if (confirm !== null && confirm.getAttribute("aria-busy") === "true") return { kind: "busy", window };
   const enabled = (element: Element | null): element is HTMLElement =>
@@ -153,7 +172,7 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
   // Steering first: the first preference that can be pressed now.
   for (const selector of args.prefer ?? []) {
     if (args.tried?.includes(selector) === true) continue;
-    const scope: ParentNode = selector.startsWith("[data-act") || selector.startsWith("[data-pane-opener") ? document : form;
+    const scope: ParentNode = selector.startsWith("[data-act") || selector.startsWith("[data-target") || selector.startsWith("[data-pane-opener") ? document : form;
     const element = Array.from(scope.querySelectorAll<HTMLElement>(selector)).find(
       // A chosen table target: a pressed toggle, or a Sell button already chosen (`data-chosen`, not a toggle).
       (candidate) => enabled(candidate) && shown(candidate) && !(candidate instanceof HTMLInputElement && candidate.checked) && candidate.getAttribute("aria-pressed") !== "true" && !candidate.hasAttribute("data-chosen"),
@@ -184,20 +203,22 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
   // Order cards' toggles, the Shared Kiln's spaces, the Sell buttons, and the hidden pane's openers.
   const tableTargets =
     args.within === undefined
-      ? '[data-act="place"], [data-act="tech"], [data-act="inspect"], [data-act="order"], [data-act="kiln-space"], [data-act="sell"], [data-pane-opener]'
+      ? '[data-act="place"], [data-act="tech"], [data-act="inspect"], [data-act="order"], [data-act="kiln-space"], [data-act="sell"], [data-act="imperial-priority"], [data-pane-opener]'
       : '[data-act="tech"], [data-act="inspect"], [data-act="kiln-space"]';
   for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>(tableTargets))) {
     if (form.contains(button) || !enabled(button) || !shown(button)) continue;
     if (button.hasAttribute("data-dev") || button.getAttribute("aria-pressed") === "true" || button.hasAttribute("data-chosen")) continue;
     candidates.push(button);
   }
-  if (enabled(confirm) && random() < args.confirmChance) return mark(confirm, "confirm", "Confirm");
+  // Confirm, or its split's secondary button (D21).
+  const press = (button: HTMLElement) => (enabled(stay) && random() < (args.stayChance ?? 0.35) ? mark(stay, "confirm", "Confirm, then free actions") : mark(button, "confirm", "Confirm"));
+  if (enabled(confirm) && random() < args.confirmChance) return press(confirm);
   if (enabled(alt) && random() < args.altChance) return mark(alt, "alt", alt.textContent?.trim() ?? "alternative");
   if (candidates.length > 0) {
     const choice = candidates[Math.floor(random() * candidates.length)]!;
     return mark(choice, "choice", describeOf(choice));
   }
-  if (enabled(confirm)) return mark(confirm, "confirm", "Confirm");
+  if (enabled(confirm)) return press(confirm);
   if (enabled(alt)) return mark(alt, "alt", alt.textContent?.trim() ?? "alternative");
   return { kind: "none", reason: "nothing to press", window };
 }

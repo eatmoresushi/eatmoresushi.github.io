@@ -1,6 +1,6 @@
 /**
  * SelectStep (UI_V1.6.1_ARCHITECTURE §3.4 `commission`, `colour_samples`, `colour_samples_swap`;
- * keyword Select N, v1.6.2 L64, change 25). Owner: B4.
+ * keyword Select N, v1.6.2 L80, change 25). Owner: B4.
  *
  * Every Select: after placing at the Commission Market (Select 2 for the Apprentice effect,
  * Select 3 reserving up to 2 for the Shifu effect), when Colour Samples is acquired (Select 3) and
@@ -42,7 +42,7 @@ const FORM_ID = {
   colour_samples_swap: "colour-samples-swap-look",
 } as const;
 
-/** The prompt: a plain sentence (v1.6.2 L64 in words), with or without cards looked at. */
+/** The prompt: a plain sentence (v1.6.2 L80 in words), with or without cards looked at. */
 function promptText(options: SelectStepOptions, t: Translator): string {
   const none = options.looked.length === 0;
   switch (options.kind) {

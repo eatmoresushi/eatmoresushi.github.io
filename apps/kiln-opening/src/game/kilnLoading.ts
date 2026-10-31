@@ -1,27 +1,27 @@
 /**
  * Kiln loading: R5 destinations, sequential load validation, loading, Reworking Table,
  * Setter's Mark return, Kiln Furniture, Inverted Firing, kiln fuel and Kiln Master's marker
- * (rev. 4 L189–199, L289–292, L628, L635, L617, L628–630, L647, R5, R8, R11, R22, R24;
+ * (L207–217, L308–310, L647, L654, L636, L647–649, L654, R5, R8, R11, R22, R24;
  * DESIGN §2.4, §11 Q3; ENGINE_V1.6.2_DELTA.md §15.9.4).
  *
  * - **Destinations (R5).** (a) an empty active Shared Kiln space not marked by another
  *   player's Setter's Mark; (b) your own gained, empty Imperial Kiln; (c) with Inverted
  *   Firing (T21) ready, for a Bowl, Plate or Brush Washer, an active space holding exactly 1
  *   of your ceramics, including one loaded earlier by the same action (R8).
- * - **Kiln fuel (rev. 4 L197, change 35, R24).** A Glaze & Load action that loads into the Shared
+ * - **Kiln fuel (L215, change 35, R24).** A Glaze & Load action that loads into the Shared
  *   Kiln costs 1 Wood, whether it loads 1 vessel or 2; loading only into the Imperial Kiln, and
  *   Imperial Priority, cost none. So a Shared destination of a Glaze & Load load needs that
  *   1 Wood in hand (`INSUFFICIENT_RESOURCES`), and the second load of a Shifu action needs no
  *   more. The Wood is paid by `work/glazeLoad.ts` before the loads; Kiln Tending's Wood comes
  *   after them and never pays this action's fuel.
- * - **Kiln Master (T24, rev. 4 L628, L635, R22).** Once per round, when you load a ceramic —
+ * - **Kiln Master (T24, L647, L654, R22).** Once per round, when you load a ceramic —
  *   any loading: a Glaze & Load action or Imperial Priority, into the Shared or the Imperial
  *   Kiln — you may place its +1 or −1 marker on it, face up (`LoadSpec.kilnMaster`).
  * - **Sequential simulation (R8).** `validateLoads` checks the loads in array order against a
  *   simulated kiln, so a later load sees the earlier ones. Per load: the ceramic → the
- *   Reworking Table Shape (L617 "first") → the destination, incl. Inverted Firing's Shape test
+ *   Reworking Table Shape (L623 "first") → the destination, incl. Inverted Firing's Shape test
  *   on the reworked Shape → Kiln Furniture → kiln fuel → Kiln Master (`LoadSpec` JSDoc).
- * - **Placement legality (rev. 4 L198, §11 Q3 default, audit P3).** `hasAnyLegalLoad` looks only
+ * - **Placement legality (L216, §11 Q3 default, audit P3).** `hasAnyLegalLoad` looks only
  *   at each Shaped vessel's current Shape, never at a Shape Reworking Table could produce, and
  *   counts a Shared destination only when the player has the action's Wood.
  * - **Kiln Furniture (R8)** sits on the space: every ceramic in that space uses its modifier.
@@ -38,6 +38,7 @@ import {
   ceramicsOf,
   emit,
   imperialKilnCeramic,
+  kilnMasterCarrier,
   lookup,
   player,
   returnVesselCard,
@@ -71,7 +72,7 @@ const INVERTED_FIRING: TechId = "T21";
 const KILN_MASTER: TechId = "T24";
 
 /**
- * The kiln fuel of one Glaze & Load action that loads into the Shared Kiln (rev. 4 L197,
+ * The kiln fuel of one Glaze & Load action that loads into the Shared Kiln (L215,
  * change 35, R24): 1 Wood, whether it loads 1 vessel or 2, and the same for both workers
  * (content validation checks the two effects agree).
  */
@@ -82,7 +83,7 @@ export function glazeLoadFuel(): number {
 /**
  * The Wood a loading command pays (R24): the Glaze & Load fuel when any of its loads goes into
  * the Shared Kiln, else 0. Imperial Priority never pays (it loads only into the Imperial Kiln,
- * rev. 4 L291).
+ * L309).
  */
 export function actionFuel(loads: readonly LoadSpec[], loadedBy: LoadedCeramic["loadedBy"]): number {
   return loadedBy === "glaze_load" && loads.some((load) => load.destination.kiln === "shared") ? glazeLoadFuel() : 0;
@@ -96,7 +97,7 @@ function stackableShapes(): readonly Shape[] {
 // ── Destination tests (public information only) ──────────────────────────────────────
 
 /**
- * R5a: the space is active, empty, and not held by another player's Setter's Mark (L630).
+ * R5a: the space is active, empty, and not held by another player's Setter's Mark (L636).
  * Your own Setter's Mark leaves the space open to you.
  */
 export function sharedSpaceOpenFor(game: PublicCore, playerId: PlayerId, space: KilnSpaceId): boolean {
@@ -122,14 +123,14 @@ export function invertedFiringTarget(game: PublicCore, playerId: PlayerId, space
   return only !== undefined && lookup(game.ceramics, only)?.ownerId === playerId;
 }
 
-/** R5b: the player has gained the Imperial Kiln (L285) and it holds no ceramic this firing
- * (L184, L287). */
+/** R5b: the player has gained the Imperial Kiln (L306) and it holds no ceramic this firing
+ * (L217, L308). */
 export function imperialKilnEmpty(game: PublicCore, playerId: PlayerId): boolean {
   return player(game, playerId).imperial.kilnGained && imperialKilnCeramic(game, playerId) === null;
 }
 
 /**
- * Glaze & Load placement legality (rev. 4 L198, R5, R24): at least 1 Shaped vessel with a
+ * Glaze & Load placement legality (L216, R5, R24): at least 1 Shaped vessel with a
  * legal destination you can pay for — your own empty Imperial Kiln (free), or, with the
  * action's 1 Wood, (a) an open Shared space or (c) an Inverted Firing target. Current Shapes
  * only (DESIGN §11 Q3 default): a Vase that Reworking Table could turn into a Bowl does not
@@ -248,7 +249,7 @@ function simulateLoad(
     });
   }
 
-  // 2. Reworking Table (T05, L617): the Shape every later check uses.
+  // 2. Reworking Table (T05, L623): the Shape every later check uses.
   let shape: Shape = target.shape;
   if (spec.reworkShape !== undefined) {
     const error = techUseError(p, REWORKING_TABLE, sim.reworkUsed, `${field}.reworkShape`);
@@ -265,7 +266,7 @@ function simulateLoad(
     shape = spec.reworkShape;
   }
 
-  // The Glaze is a free choice at loading (L344); only its value is checked.
+  // The Glaze is a free choice at loading (L358); only its value is checked.
   if (!GLAZES.includes(spec.glaze)) {
     return ruleError("INVALID_CHOICE", "Choose White, Celadon, Grey-Green or Moon White.", {
       value: String(spec.glaze),
@@ -341,7 +342,7 @@ function simulateLoad(
       });
     }
 
-    // 4. Kiln Furniture (T15, L628, L647): Shared Kiln only, beneath this ceramic.
+    // 4. Kiln Furniture (T15, L634, L653): Shared Kiln only, beneath this ceramic.
     if (destination.kilnFurniture !== undefined) {
       const error = techUseError(p, KILN_FURNITURE, sim.furnitureUsed, `${field}.destination.kilnFurniture`);
       if (error !== null) {
@@ -353,7 +354,7 @@ function simulateLoad(
           field: `${field}.destination.kilnFurniture`,
         });
       }
-      // One tile per owner (L83). It is returned after every firing, so a ready tile is
+      // One tile per owner (L105). It is returned after every firing, so a ready tile is
       // normally in hand; refuse rather than move a tile that is still on the kiln.
       const tileOnKiln = KILN_SPACE_IDS.some((id) => lookup(sim.spaces, id)?.kilnFurniture?.ownerId === playerId);
       if (tileOnKiln) {
@@ -366,7 +367,7 @@ function simulateLoad(
       furnitureSpace = space;
     }
 
-    // 5. Kiln fuel (rev. 4 L197, R24): a Glaze & Load action into the Shared Kiln costs 1 Wood,
+    // 5. Kiln fuel (L215, R24): a Glaze & Load action into the Shared Kiln costs 1 Wood,
     // once for the whole action, so every Shared load of the command needs that 1 Wood in hand.
     const fuel = loadedBy === "glaze_load" ? glazeLoadFuel() : 0;
     if (p.resources.wood < fuel) {
@@ -387,11 +388,21 @@ function simulateLoad(
     }
   }
 
-  // 6. Kiln Master (T24, rev. 4 L628, R22): its marker on this load, into either kiln.
+  // 6. Kiln Master (T24, L647, R22): its marker on this load, into either kiln. The tile
+  // has one marker (L105), back only when its ceramic's firing finishes (L683): while it is on a
+  // ceramic loaded by Imperial Priority in an earlier Order Phase, it cannot be placed (R32).
   if (spec.kilnMaster !== undefined) {
     const error = techUseError(p, KILN_MASTER, sim.kilnMasterUsed, `${field}.kilnMaster`);
     if (error !== null) {
       return error;
+    }
+    const carrier = kilnMasterCarrier(game, playerId);
+    if (carrier !== null) {
+      return ruleError("TECH_MARKER_IN_KILN", `${TECHS[KILN_MASTER].name}'s marker is still on a ceramic in a kiln.`, {
+        techId: KILN_MASTER,
+        ceramicId: carrier.id,
+        field: `${field}.kilnMaster`,
+      });
     }
     if (!TECHS.T24.params.values.includes(spec.kilnMaster)) {
       return ruleError("INVALID_CHOICE", "Kiln Master's marker is +1 or −1.", {
@@ -453,7 +464,7 @@ function validateLoadsFor(
  * reworked Shape) → Kiln Furniture → kiln fuel (a Shared destination of a Glaze & Load action
  * needs its 1 Wood, R24) → Kiln Master. Reworking Table, Inverted Firing, Kiln Furniture and
  * Kiln Master may each appear at most once across the loads. `loadedBy: "imperial_priority"`
- * allows only the Imperial Kiln (L293) and pays no Wood. Placement legality
+ * allows only the Imperial Kiln (L314) and pays no Wood. Placement legality
  * (`hasAnyLegalLoad`) is the caller's check.
  */
 export function validateLoads(
@@ -468,8 +479,8 @@ export function validateLoads(
 // ── Resolution ───────────────────────────────────────────────────────────────────────
 
 /**
- * Reworking Table (T05, L617): consumes its once-per-round use (`TECH_USED`), returns the
- * Vessel card (a proxy vanishes), takes one of the new Shape (or a proxy, L329) and changes
+ * Reworking Table (T05, L623): consumes its once-per-round use (`TECH_USED`), returns the
+ * Vessel card (a proxy vanishes), takes one of the new Shape (or a proxy, L350) and changes
  * the Shape. No Clay is paid; the Decoration stays. Emits `CERAMIC_RESHAPED`. Callers validate
  * first (`validateLoads`, or Imperial Priority's validator, §11 Q1).
  */
@@ -489,7 +500,7 @@ export function reworkShape(draft: GameState, ceramicId: CeramicId, shape: Shape
  * Loads one validated vessel and returns it. Events in order: Reworking Table (`TECH_USED`,
  * `CERAMIC_RESHAPED`); Inverted Firing (`TECH_USED`); `CERAMIC_LOADED` (the Imperial modifier
  * is public, R11); the owner's Setter's Mark returned when they load there
- * (`SETTERS_MARK_RETURNED`, L630); Kiln Furniture (`TECH_USED`, `KILN_FURNITURE_PLACED`); Kiln
+ * (`SETTERS_MARK_RETURNED`, L636); Kiln Furniture (`TECH_USED`, `KILN_FURNITURE_PLACED`); Kiln
  * Master (`TECH_USED`, `KILN_MASTER_PLACED`, R22). The kiln fuel is the caller's
  * (`work/glazeLoad.ts`, `actionFuel`).
  */
@@ -574,15 +585,16 @@ export function loadCeramic(
 }
 
 /**
- * Kiln Master (T24) for a player's loading command (rev. 4 L628, R22): null without the tile;
- * otherwise whether it is unused this round (its marker may go on a load) and its faces.
+ * Kiln Master (T24) for a player's loading command (L647, R22): null without the tile;
+ * otherwise whether its marker may go on a load now (unused this round, and the marker not still
+ * on a ceramic waiting in a kiln, R32) and its faces.
  */
 export function kilnMasterOptionFor(game: PublicCore, playerId: PlayerId): { ready: boolean; values: HeatDelta[] } | null {
   const p = lookup(game.players, playerId);
   if (p === undefined || !ownsTech(p, KILN_MASTER)) {
     return null;
   }
-  return { ready: techReady(p, KILN_MASTER), values: [...TECHS.T24.params.values] };
+  return { ready: techReady(p, KILN_MASTER) && kilnMasterCarrier(game, playerId) === null, values: [...TECHS.T24.params.values] };
 }
 
 // ── Options (re-exported by `selectors.ts`, DESIGN §5.4) ─────────────────────────────

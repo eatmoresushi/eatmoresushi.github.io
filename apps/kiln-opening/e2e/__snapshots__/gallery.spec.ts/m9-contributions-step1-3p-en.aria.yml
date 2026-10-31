@@ -10,15 +10,14 @@
       - text: Wood
       - strong: "1"
       - text: Coin
-    - text: 4 Orders in hand Recognition 1/4 6 VP
+    - text: /3 Orders in hand Recognition 0\/4 \d+ VP/
   - form "Choose your Contribution":
     - paragraph: Firing step 1
     - paragraph: Everyone with a ceramic in the Shared Kiln chooses in secret at the same time. All cards are revealed together once everyone has chosen; Wood is paid then.
     - heading "Who has chosen" [level=3]
     - list "Who has chosen":
-      - listitem: "Zhao: chosen"
+      - listitem: "Lin: chosen"
       - listitem: "Wen (you): choosing…"
-      - listitem: "Lin: choosing…"
     - group "Contribution card You have 3 Wood.":
       - text: ""
       - paragraph: Base Heat = Kiln Die 3 + all Contributions, kept within 0–5.

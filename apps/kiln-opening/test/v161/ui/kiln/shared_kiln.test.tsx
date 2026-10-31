@@ -163,15 +163,14 @@ describe("ceramics, markers and tiles", () => {
     }
   });
 
-  it("puts a Sell button on the viewer's Flawed ceramic of this firing in their after-Quality turn, and none otherwise (R20)", () => {
-    const html = render("t-after-quality-sale");
-    const buttons = [...html.matchAll(/<button[^>]*data-act="sell"[^>]*>([^<]*)<\/button>/g)];
-    expect(buttons).toHaveLength(1);
-    expect(buttons[0]![0]).toMatch(/aria-label="Sell \(2 Coins\): [^"]*Flawed[^"]*"/);
-    expect(buttons[0]![1]).toBe("Sell (2 Coins)");
-    expect(render("t-after-quality-sale", "zh-CN")).toMatch(/data-act="sell"[^>]*>卖出（得2铜钱）<\/button>/);
-    // Another moment of a firing (another player's turn, no sale offered): no Sell button.
-    for (const id of ["m22_saggars_upgrade", "m4_after_quality_3p", "m9_contributions_step1_3p"]) expect(render(id), id).not.toContain('data-act="sell"');
+  it("puts no Sell button on a ceramic in the kiln: not even the viewer's Flawed one in their after-Quality turn (owner revision 5, R26)", () => {
+    // No free actions during the firing: the Flawed ceramic of this firing is sold, if at all,
+    // as a Finished ceramic in its owner's Order Phase turn or a later Work turn.
+    const html = render("t-after-quality-no-sale");
+    expect(perceivable(html)).toContain("Flawed");
+    expect(html).not.toContain('data-act="sell"');
+    expect(render("t-after-quality-no-sale", "zh-CN")).not.toMatch(/卖出（得2铜钱）/);
+    for (const id of ["m22_saggars_upgrade", "m4_after_quality_3p", "m9_contributions_step1_3p", "m32_ge_crackle_flawed"]) expect(render(id), id).not.toContain('data-act="sell"');
   });
 
   it("shows the Quality each ceramic recorded in this firing, as a word", () => {
@@ -181,19 +180,11 @@ describe("ceramics, markers and tiles", () => {
     expect(perceivable(render("m22_saggars_upgrade", "zh-CN"))).toMatch(/上品[\s\S]*良品|良品[\s\S]*上品/);
     expect(perceivable(render("m22_saggars_upgrade"))).toContain("Flawed");
     expect(perceivable(render("m22_saggars_upgrade", "zh-CN"))).toContain("瑕品");
-    expect(perceivable(render("t-after-quality-sale"))).toContain("Flawed");
+    expect(perceivable(render("t-after-quality-no-sale"))).toContain("Flawed");
     expect(perceivable(render("m18_jun_second_firing"))).toContain("Standard");
-    // A Masterpiece (no played moment recorded one in its current firing): m22 with c9 at Masterpiece.
-    const masterpiece = (locale: "en" | "zh-CN") =>
-      perceivable(
-        renderEdited("m22_saggars_upgrade", (entry) => {
-          const record = entry.playerView.game.firing?.ceramics["c9"];
-          if (record?.quality !== "fine") throw new Error("fixture changed");
-          record.quality = "masterpiece";
-        }, locale),
-      );
-    expect(masterpiece("en")).toContain("Masterpiece");
-    expect(masterpiece("zh-CN")).toContain("臻品");
+    // A Masterpiece: m31 recorded Masterpieces in its current firing (Ge may crackle one, R30).
+    expect(perceivable(render("m31_ge_crackle_masterpiece"))).toContain("Masterpiece");
+    expect(perceivable(render("m31_ge_crackle_masterpiece", "zh-CN"))).toContain("臻品");
     // Before Quality there is none.
     expect(render("m3_kiln_master_marker_3p")).not.toMatch(/data-quality=/);
   });

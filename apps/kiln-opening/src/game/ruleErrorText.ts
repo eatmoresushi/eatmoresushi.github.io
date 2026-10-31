@@ -122,16 +122,32 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     zh: "此窑口已被其他玩家选走",
     detailKeys: keys("kilnId"),
   },
-  // ── Placement (L140–144) ──────────────────────────────────────────────────────────────
+  // ── Placement (L162–166) ──────────────────────────────────────────────────────────────
   WORKER_UNAVAILABLE: {
     en: "You have no {workerId} available.",
     zh: "你没有可派的{workerId}",
     detailKeys: keys("workerId", "workerKind"),
   },
   WORKER_ACTION_REQUIRED: {
+    // `END_TURN` before the worker action, and (owner UI decision D21) `endTurn: true` on a free
+    // action or a swap's Select there (details `field: "endTurn"`, `actionType`, `step`): ending
+    // the turn before placing is passing, so the same sentence fits both.
     en: "You may not pass in the Work Phase: place 1 worker (the Canal Wharf is always available).",
     zh: "派工阶段不能跳过，请派1名工人（总是可以派往漕运码头）",
     detailKeys: keys(),
+  },
+  WORKER_ACTION_IN_PROGRESS: {
+    // Rev. 5 L170: free actions and the Colour Samples swap come before or after the worker
+    // action, not during it. `techId` is set only while the swap's own Select is open (step
+    // `colour_samples_swap`), which is no worker action: it may be open before the worker is
+    // placed. Every other sub-step is part of the worker action and has no `techId`.
+    en: "Finish the {techId} Select first: this can be done before or after it, not during it.",
+    zh: "先完成{techId}的精选：这一步只能在精选之前或之后进行，不能在中途进行",
+    detailKeys: keys("techId"),
+    fallbacks: [{
+      en: "Finish your worker action first: this can be done before or after it, not during it.",
+      zh: "先完成工人行动：这一步只能在工人行动之前或之后进行，不能在行动中途进行",
+    }],
   },
   WORKER_ACTION_ALREADY_TAKEN: {
     en: "You have already placed a worker this turn.",
@@ -265,7 +281,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   },
   RESERVATION_LIMIT: {
     // Only a Select returns it (work/select.ts): the Commission Market's, or Colour Samples',
-    // which is a Tech effect, not an action (v1.6.2 L646). `requested` is always 2 or more.
+    // which is a Tech effect, not an action (v1.6.2 L656). `requested` is always 2 or more.
     en: "This Select reserves at most {limit}; you chose {requested} Orders.",
     zh: "这次精选至多承接{limit}张，你选了{requested}张",
     detailKeys: keys("limit", "requested"),
@@ -332,6 +348,14 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     en: "{techId} has already been used this round.",
     zh: "{techId}本轮已用",
     detailKeys: keys("techId"),
+  },
+  TECH_MARKER_IN_KILN: {
+    // R32: Kiln Master has one marker (rev. 5 L105); it returns when its ceramic's firing
+    // finishes (L683), so it cannot go on another ceramic while one loaded in an earlier
+    // Order Phase still waits in a kiln.
+    en: "{techId}'s marker is still on a ceramic in a kiln; it returns when that firing finishes.",
+    zh: "{techId}标还在窑中的器物上，要到那次烧窑开窑取器时才收回",
+    detailKeys: keys("techId", "ceramicId"),
   },
   INVALID_BOTTOM_ORDER: {
     en: "Put every untaken inspected Tech on the bottom exactly once, in the order you choose.",
@@ -494,14 +518,14 @@ export const REASON_TEXT: Readonly<Record<string, RuleErrorTemplate>> = {
   already_delivered: { en: "the ceramic has been delivered", zh: "器物已交付" },
   flawed: { en: "a Flawed ceramic cannot complete an Order", zh: "瑕品不能完成委托" },
   not_this_firing: { en: "the ceramic is not in this firing", zh: "器物不在本次烧成中" },
-  // After-Quality targets (rev. 4 L624, L627, L463): Protective Saggars takes a Standard
-  // ceramic, Second Firing a Flawed or Standard one, Ge a Fine or Standard one (change 29).
+  // After-Quality targets (L643, L646): Protective Saggars takes a Standard ceramic,
+  // Second Firing a Flawed or Standard one. Ge takes any of its owner's ceramics of the firing
+  // (rev. 5 L482, change 39), so it has no Quality reason.
   not_standard: { en: "the ceramic is not Standard", zh: "器物不是良品" },
   not_flawed_or_standard: { en: "the ceramic is not Flawed or Standard", zh: "器物不是瑕品或良品" },
-  not_fine_or_standard: { en: "the ceramic is not Fine or Standard", zh: "器物不是上品或良品" },
-  // Only a Flawed ceramic can be sold (rev. 4 L284, R20).
+  // Only a Finished Flawed ceramic can be sold (rev. 5 L172, L302).
   not_flawed: { en: "the ceramic is not Flawed", zh: "器物不是瑕品" },
-  // The Magistrate's Hall Shifu reserves only a face-up Crown Order (rev. 4 L241).
+  // The Magistrate's Hall Shifu reserves only a face-up Crown Order (L259).
   no_crown: { en: "the Order shows no Crown", zh: "委托上没有御令" },
   wrong_count: { en: "the number of ceramics does not match", zh: "器物件数不符" },
   relation_mismatch: { en: "the combined requirements are not met", zh: "组合要求不符" },

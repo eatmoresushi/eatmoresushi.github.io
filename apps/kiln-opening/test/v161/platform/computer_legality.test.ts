@@ -70,7 +70,7 @@ function phaseKey(state: GameState): string {
 }
 
 describe("safe exits", () => {
-  it("Setup takes an available Kiln with the first face-up Main Order in one command (rev. 4 L122, R23)", () => {
+  it("Setup takes an available Kiln with the first face-up Main Order in one command (L130, R23)", () => {
     const scenario = phaseScenarios().find((candidate) => candidate.phase === "setup_kiln_selection");
     if (scenario === undefined) throw new Error("No Setup scenario");
     const view = createComputerObservation(scenario.table.state, scenario.actor, scenario.table.privateState);
@@ -86,7 +86,7 @@ describe("safe exits", () => {
     expect(isGameRuleError(bare) ? bare.code : null).toBe("MALFORMED_ACTION");
   });
 
-  it("a Kiln Master owner's firing turns are plain decisions: there is no Heat-marker step (rev. 4 L628, changes 28, 31)", () => {
+  it("a Kiln Master owner's firing turns are plain decisions: there is no Heat-marker step (L647, changes 28, 31)", () => {
     const table = openFiringTable({
       fireDeck: [0, 1, -1],
       players: [{ techs: [{ id: "T24", usedThisRound: true }] }, {}],
@@ -267,8 +267,8 @@ describe("computer proposals over many seeded engine games", () => {
       "work_turn/before_action",
       "work_turn/after_action",
       "work_turn/commission_market",
-      // V1.6.2 decisions: the Guild Hall Shifu's takes (L207), Colour Samples when acquired and
-      // its swap (L617, change 25), and Second Firing's choice of 1 of 2 cards (L631).
+      // V1.6.2 decisions: the Guild Hall Shifu's takes (L237), Colour Samples when acquired and
+      // its swap (L623, change 25), and Second Firing's choice of 1 of 2 cards (L646).
       "work_turn/guild_inspection",
       "work_turn/colour_samples",
       "work_turn/colour_samples_swap",

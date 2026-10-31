@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { COMMAND_TYPES, parseCommand } from "../../../src/game/actionGuard.ts";
 import { isGameRuleError } from "../../../src/game/errors.ts";
+import { END_TURN_COMMAND_TYPES } from "../../../src/game/freeActionWindow.ts";
 import type { AuthoritativeCommand } from "../../../src/game/types.ts";
 import { expectDocumentedDetails } from "./support/ruleErrors.ts";
 
 /** One well-formed example of every command type (DESIGN §2.5). */
 const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeCommand, { type: K }>> } = {
-  // Setup step 9: the Kiln and a face-up Main Order in one command (rev. 4 L122, R23).
+  // Setup step 9: the Kiln and a face-up Main Order in one command (L130, R23).
   SELECT_KILN: [{ type: "SELECT_KILN", kilnId: "DI", mainOrder: { slotIndex: 3, orderId: "O12" } }],
   PLACE_SETTERS_MARK: [
     { type: "PLACE_SETTERS_MARK", spaceId: "high_1" },
@@ -48,7 +49,7 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
           destination: { kiln: "shared", spaceId: "low_2", invertedFiring: true },
           reworkShape: "plate",
         },
-        // Kiln Master's marker at loading (rev. 4 L628, R22).
+        // Kiln Master's marker at loading (L647, R22).
         { ceramicId: "c3", glaze: "white", destination: { kiln: "imperial", imperialModifier: 1 }, kilnMaster: -1 },
       ],
     },
@@ -64,11 +65,11 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
   PLACE_CANAL_WHARF: [{ type: "PLACE_CANAL_WHARF", workerId: "player-a:apprentice:1" }],
   PLACE_MAGISTRATES_HALL: [
     { type: "PLACE_MAGISTRATES_HALL", workerId: "p2:shifu" },
-    // The Shifu's optional Crown Order (rev. 4 L241, R21).
+    // The Shifu's optional Crown Order (L259, R21).
     { type: "PLACE_MAGISTRATES_HALL", workerId: "p2:shifu", crownOrder: { slotIndex: 0, orderId: "O17" } },
   ],
   // One command for every Select: the Commission Market's and both Colour Samples looks
-  // (v1.6.2 L64, change 25).
+  // (v1.6.2 L80, change 25).
   SELECT_CHOOSE: [
     { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O07" }] },
     { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 5, orderId: "O48" }, { kind: "looked", orderId: "O07" }] },
@@ -87,7 +88,7 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
   ],
   USE_COLOUR_SAMPLES_SWAP: [
     { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O40" },
-    // A Starting Order may be discarded too (to the box, v1.6.2 L649).
+    // A Starting Order may be discarded too (to the box, v1.6.2 L656).
     { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S03" },
   ],
   USE_IMPERIAL_PRIORITY: [
@@ -223,7 +224,7 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
     { type: "PLACE_MATERIALS_YARD", workerId: "p1:apprentice:1", clay: 6, wood: 0, seniorApprentice: "yes" },
     "seniorApprentice",
   ],
-  // V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood option (v1.6.2 L165).
+  // V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood option (v1.6.2 L195).
   ["the retired Materials Yard bonus", { type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: 6, wood: 0, buyShifuBonus: true }, "buyShifuBonus"],
   [
     "an unknown Prepared Clay key",
@@ -262,7 +263,7 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
     "loads[0].destination.kilnFurniture",
   ],
   ["an unknown Glaze", { type: "USE_IMPERIAL_PRIORITY", ceramicId: "c1", glaze: "black", imperialModifier: 0 }, "glaze"],
-  // V1.6.2: the look always comes first, so the placement names no reservation (v1.6.2 L195–196).
+  // V1.6.2: the look always comes first, so the placement names no reservation (v1.6.2 L225–226).
   ["a reservation in the placement", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "blind" } }, "first"],
   // The blind reservation and the resource after each reservation are gone (v1.6.2 L31).
   ["a blind reservation", { type: "SELECT_CHOOSE", reservations: [{ kind: "blind" }] }, "reservations[0].kind"],
@@ -280,7 +281,7 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
   ["the retired Commission resource", { type: "COMMISSION_GAIN", resource: "wood" }, "type"],
   ["the retired Commission stop", { type: "COMMISSION_STOP" }, "type"],
   ["the retired top-3 choice", { type: "COMMISSION_CHOOSE_LOOKED", orderId: "O07" }, "type"],
-  // V1.6.2: Canal Barge no longer completes Orders (v1.6.2 L630); it has no command.
+  // V1.6.2: Canal Barge no longer completes Orders (v1.6.2 L637); it has no command.
   ["the retired Canal Barge completion", { type: "USE_CANAL_BARGE", orderId: "O01", ceramicIds: ["c1"] }, "type"],
   // V1.6.2: Jun during Second Firing is part of SECOND_FIRING_CHOOSE (R7).
   ["a Second Firing card outside the 2 revealed", { type: "SECOND_FIRING_CHOOSE", cardIndex: 2, jun: null }, "cardIndex"],
@@ -355,5 +356,59 @@ describe("parseCommand: MALFORMED_ACTION", () => {
       message: "Malformed command: fuelLedger is not allowed.",
       details: { field: "fuelLedger" },
     });
+  });
+});
+
+describe("parseCommand: the optional endTurn (owner UI decision D21)", () => {
+  const takesEndTurn = new Set<string>(END_TURN_COMMAND_TYPES);
+  const examples = Object.values(VALID)
+    .flat()
+    .map((command) => [command.type, command] as const);
+
+  it("END_TURN_COMMAND_TYPES lists the 10 worker-action commands and the 3 free actions", () => {
+    expect([...END_TURN_COMMAND_TYPES]).toEqual([
+      "PLACE_MATERIALS_YARD",
+      "PLACE_FORM_DECORATE",
+      "PLACE_GLAZE_LOAD",
+      "PLACE_COMMISSION_MARKET",
+      "PLACE_GUILD_HALL",
+      "PLACE_CANAL_WHARF",
+      "PLACE_MAGISTRATES_HALL",
+      "SELECT_CHOOSE",
+      "GUILD_TAKE",
+      "GUILD_FINISH",
+      "USE_IMPERIAL_PRIORITY",
+      "SELL_FLAWED",
+      "COMPLETE_ORDER",
+    ]);
+    // In `GameAction` declaration order, like COMMAND_TYPES.
+    const order = END_TURN_COMMAND_TYPES.map((type) => COMMAND_TYPES.indexOf(type));
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it.each(examples)("%s: endTurn true and false parse exactly on the listed types; anywhere else it is not allowed", (type, command) => {
+    for (const endTurn of [true, false]) {
+      const input = { ...JSON.parse(JSON.stringify(command)), endTurn } as unknown;
+      const parsed = parseCommand(input);
+      if (takesEndTurn.has(type)) {
+        expect(parsed).toEqual({ ...command, endTurn });
+      } else {
+        expectMalformed(input, "endTurn");
+        expect(isGameRuleError(parsed) ? parsed.message : null).toBe("Malformed command: endTurn is not allowed.");
+      }
+    }
+  });
+
+  it.each([...END_TURN_COMMAND_TYPES])("%s: a non-boolean endTurn is a typed shape error; undefined is absent", (type) => {
+    const command = VALID[type][0]!;
+    for (const value of ["yes", 1, 0, null, {}, []]) {
+      const input = { ...JSON.parse(JSON.stringify(command)), endTurn: value } as unknown;
+      expectMalformed(input, "endTurn");
+      const result = parseCommand(input);
+      expect(isGameRuleError(result) ? result.message : null).toBe("Malformed command: endTurn must be a boolean.");
+    }
+    const parsed = parseCommand({ ...command, endTurn: undefined });
+    expect(parsed).toEqual(command);
+    expect(Object.keys(parsed)).not.toContain("endTurn");
   });
 });

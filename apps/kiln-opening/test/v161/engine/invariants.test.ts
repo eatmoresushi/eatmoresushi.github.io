@@ -26,7 +26,7 @@ import { buildState, stageCeramic, testContext } from "./support/fixtures.ts";
 
 function base(): GameState {
   return buildState({
-    players: [{ techs: ["T15", "T24"], hand: ["S01", "O01"] }, { techs: ["T22"], hand: ["S02"] }],
+    players: [{ kilnId: "GE", techs: ["T15", "T24"], hand: ["S01", "O01"] }, { techs: ["T22"], hand: ["S02"] }],
     ceramics: [
       { owner: "p1", stage: "shaped", shape: "bowl" },
       { owner: "p1", stage: "loaded", shape: "plate", glaze: "white", at: "middle_1", kilnFurniture: 1, kilnMaster: 1 },
@@ -84,7 +84,8 @@ describe("structural violations are reported", () => {
     ["a Tech in two zones", (s: GameState) => void s.hidden.techDecks.firing.push("T24"), /Tech T24 is in 2 zones/],
     ["a missing Fire card", (s: GameState) => void s.hidden.fireDeck.pop(), /Fire cards are/],
     ["a duplicated Vessel card", (s: GameState) => void s.vesselSupply.bowl.push(s.ceramics["c1"]!.vesselInstanceId), /Vessel card bowl-01 is in 2 places/],
-    ["a Crackle ceramic that is not Fine", (s: GameState) => void ((s.ceramics["c4"] as { quality: string }).quality = "standard"), /Crackle ceramic c4 is standard/],
+    // Since change 39 a Crackle ceramic keeps any Quality, but only a Ge owner's carries one.
+    ["a Crackle ceramic of a player without the Ge Kiln", (s: GameState) => void (s.players["p1"]!.kilnId = "RU"), /Crackle ceramic c4 belongs to p1, who has no Ge Kiln/],
     ["a loaded ceramic its space does not list", (s: GameState) => void (s.sharedKiln.spaces.high_1.ceramicIds = []), /c3 is (not listed|loaded but no space lists it)/],
     ["a Setter's Mark on an occupied space", (s: GameState) => {
       s.sharedKiln.spaces.low_1.setterMarkOwnerId = null;
@@ -96,7 +97,7 @@ describe("structural violations are reported", () => {
       s.sharedKiln.spaces.middle_1.kilnFurniture = null;
       s.sharedKiln.spaces.high_1.kilnFurniture = { ownerId: "p1", modifier: 0, underCeramicId: "c3" };
     }, /beneath another player's ceramic/],
-    // Kiln Master's marker (rev. 4 L628, R22; DELTA §15.12).
+    // Kiln Master's marker (L647, R22; DELTA §15.12).
     ["two Kiln Master markers", (s: GameState) => void (loaded(s, "c3").kilnMasterMarker = -1), /2 Kiln Master markers in the game/],
     ["a Kiln Master marker without T24", (s: GameState) => {
       loaded(s, "c2").kilnMasterMarker = null;
@@ -149,7 +150,7 @@ describe("structural violations are reported", () => {
   });
 });
 
-describe("Setup step 9 (rev. 4 L122, R23; DELTA §15.12)", () => {
+describe("Setup step 9 (L130, R23; DELTA §15.12)", () => {
   function setupState(): GameState {
     const created = createGame({ gameId: "inv-setup", players: [{ id: "p1", displayName: "A" }, { id: "p2", displayName: "B" }] }, new SeededRandom(3));
     if (!created.ok) throw new Error(created.error.code);
@@ -199,7 +200,7 @@ describe("live violations are reported", () => {
   });
 });
 
-describe("the Commission Market step and its Select (v1.6.2 L64, L201–202, B1, B3)", () => {
+describe("the Commission Market step and its Select (v1.6.2 L80, L225–226, B1, B3)", () => {
   /** p1's Shifu has just placed: the top 3 are in the private look, SELECT_CHOOSE is due. */
   function commissionState(): GameState {
     const start = buildState({ players: [{ hand: ["S01"] }, { hand: ["S02"] }] });
@@ -264,7 +265,7 @@ describe("the Commission Market step and its Select (v1.6.2 L64, L201–202, B1,
   });
 });
 
-describe("the Guild Hall inspection, its takes and the deferred Tech refill (v1.6.2 L207–212, B2)", () => {
+describe("the Guild Hall inspection, its takes and the deferred Tech refill (v1.6.2 L237–242, B2)", () => {
   /** p1's Shifu inspected the Firing deck (T13, T14) and took `takes` in order. */
   function guildState(...takes: GameAction[]): GameState {
     let state = buildState({ players: [{ resources: { coins: 6 } }, {}] });
@@ -340,7 +341,7 @@ describe("the Guild Hall inspection, its takes and the deferred Tech refill (v1.
     expect(invariantViolations(state, { live: true }).join("\n")).toMatch(pattern);
   });
 
-  it("a Tech display left short with cards in its deck is reported outside a worker action (v1.6.2 L209)", () => {
+  it("a Tech display left short with cards in its deck is reported outside a worker action (v1.6.2 L239)", () => {
     const state = guildState({ type: "GUILD_TAKE", take: { kind: "face_up", techId: "T20" } });
     expect(invariantViolations(state, { live: true })).toEqual([]);
     // The same short display at the next player's turn start: the refill was skipped.
@@ -350,7 +351,7 @@ describe("the Guild Hall inspection, its takes and the deferred Tech refill (v1.
   });
 });
 
-describe("Inverted Firing stacks and the sale of a Flawed ceramic (found by the fuzz test; R20)", () => {
+describe("Inverted Firing stacks (found by the fuzz test)", () => {
   function stackState(): GameState {
     return buildState({
       players: [{ techs: ["T21"] }, {}],
@@ -361,27 +362,19 @@ describe("Inverted Firing stacks and the sale of a Flawed ceramic (found by the 
     });
   }
 
-  it("a stacked ceramic left alone after the one beneath it is sold is sound", () => {
-    // Selling the bottom ceramic in its owner's after-Quality turn (R20) leaves the stacked one
-    // alone in its space; `stacked` records how it was loaded, and the kiln empties at step 6.
+  it("a stacked ceramic left alone in its space is reported: nothing leaves a kiln before step 6 (rev. 5 L176)", () => {
+    // Revision 4 let the bottom ceramic of a stack be sold in its owner's after-Quality turn (R20);
+    // revision 5 has no free actions during the firing (R26), so a lone stacked ceramic is a bug.
     const state = stackState();
     expect(invariantViolations(state)).toEqual([]);
     state.sharedKiln.spaces.low_1.ceramicIds = ["c2"];
     state.vesselSupply.plate.push(state.ceramics["c1"]!.vesselInstanceId);
     state.vesselSupply.plate.sort();
     delete state.ceramics["c1"];
-    state.firing = {
-      round: 1, kilnDie: 2, participantIds: ["p1"], firingPlayerIds: ["p1"], contributionWindowId: null, contributions: {}, unclampedBaseHeat: 2,
-      baseHeat: 2, testPieces: [], fireModifier: state.hidden.fireDeck.shift() ?? 0, globalHeat: 2, pendingExtraFire: null,
-      ceramics: {
-        c1: { ceramicId: "c1", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "moon_white", preferredHeat: 4, positionSource: "zone", first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "flawed", history: [], crackle: false, sold: true },
-        c2: { ceramicId: "c2", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "white", preferredHeat: 1, positionSource: "zone", first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "fine", history: [], crackle: false, sold: false },
-      },
-    };
-    expect(invariantViolations(state)).toEqual([]);
+    expect(invariantViolations(state).join("\n")).toMatch(/c2 in low_1 has stacked=true at position 0/);
   });
 
-  it("a stacked ceramic alone in a space without a sale is reported", () => {
+  it("a stacked ceramic below its partner is reported", () => {
     const state = stackState();
     (state.ceramics["c1"] as LoadedCeramic).placement = { kiln: "shared", spaceId: "low_1", stacked: true };
     (state.ceramics["c2"] as LoadedCeramic).placement = { kiln: "shared", spaceId: "low_1", stacked: false };
@@ -411,7 +404,7 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
       ceramics: {
         c1: {
           ceramicId: "c1", ownerId: "p1", kiln: "shared", spaceId: "high_1", glaze: "white", preferredHeat: 1, positionSource: "zone",
-          first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "standard", history: [], crackle: false, sold: false,
+          first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "standard", history: [], crackle: false,
           ...record,
         },
       },
@@ -431,19 +424,47 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
   });
 
   it.each([
-    ["a Protective Saggars owner's Flawed record (v1.6.2 L628)", () => firingWith({ quality: "flawed" }), /c1 of Protective Saggars owner p1 is Flawed/],
+    ["a Protective Saggars owner's Flawed record (v1.6.2 L643)", () => firingWith({ quality: "flawed" }), /c1 of Protective Saggars owner p1 is Flawed/],
     ["the Saggars floor without the Tech", () => firingWith({ saggarsFloor: true }, []), /c1 carries the Saggars floor without Protective Saggars/],
     ["a floored ceramic at Masterpiece", () => firingWith({ saggarsFloor: true, quality: "masterpiece" }), /floored c1 is masterpiece/],
     ["a Second Firing recalculation without its revealed cards", () => firingWith({ second: calculation(1) }, []), /Second Firing record of c1 disagrees/],
     ["a Second Firing card that was not revealed", () => firingWith({ second: calculation(2), secondFiringCards: [-1, 1] }, []), /Second Firing record of c1 disagrees/],
     ["revealed cards without a recalculation", () => firingWith({ secondFiringCards: [0, 0] }, []), /Second Firing record of c1 disagrees/],
-    // R20: only a Flawed ceramic is sold, and a sold one has left the game.
-    ["a sold record that is not Flawed", () => firingWith({ sold: true }, []), /sold c1 is standard/],
   ] as Array<[string, () => GameState, RegExp]>)("%s is reported", (_name, build, pattern) => {
     expect(invariantViolations(build()).join("\n")).toMatch(pattern);
   });
 
-  it("a Finished Flawed ceramic of a Saggars owner is reported only if it was fired after the Tech was gained (L642)", () => {
+  it("Ge's Crackle in a firing record: any Quality, a Ge owner's only, at most 1 per owner per firing (rev. 5 L482, change 39)", () => {
+    const geFiring = (record: Partial<FiringCeramicRecord>, kilnId: "GE" | "RU" = "GE"): GameState => {
+      const state = firingWith(record, []);
+      state.players["p1"]!.kilnId = kilnId;
+      return state;
+    };
+    for (const quality of ["masterpiece", "fine", "standard", "flawed"] as const) {
+      expect(invariantViolations(geFiring({ quality, crackle: true })), quality).toEqual([]);
+    }
+    expect(invariantViolations(geFiring({ crackle: true }, "RU")).join("\n")).toMatch(/firing: Crackle c1 belongs to p1, who has no Ge Kiln/);
+    const two = geFiring({ crackle: true });
+    const vase = stageCeramic(two, { owner: "p1", stage: "loaded", shape: "vase", glaze: "white", at: "high_2" });
+    two.firing!.ceramics[vase.id] = { ...two.firing!.ceramics["c1"]!, ceramicId: vase.id, spaceId: "high_2" };
+    expect(invariantViolations(two).join("\n")).toMatch(/firing: p1 has 2 Crackle ceramics in one firing/);
+  });
+
+  it("a Finished or delivered Crackle ceramic keeps any Quality, but only a Ge owner's carries one", () => {
+    const state = buildState({
+      players: [{ kilnId: "GE" }, { kilnId: "RU" }],
+      ceramics: [
+        { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "masterpiece", crackle: true },
+        { owner: "p1", stage: "finished", shape: "plate", glaze: "white", quality: "flawed", crackle: true },
+        { owner: "p1", stage: "finished", shape: "vase", glaze: "white", quality: "standard", crackle: true },
+      ],
+    });
+    expect(invariantViolations(state)).toEqual([]);
+    stageCeramic(state, { owner: "p2", stage: "finished", shape: "censer", glaze: "white", quality: "fine", crackle: true });
+    expect(invariantViolations(state).join("\n")).toMatch(/Crackle ceramic c4 belongs to p2, who has no Ge Kiln/);
+  });
+
+  it("a Finished Flawed ceramic of a Saggars owner is reported only if it was fired after the Tech was gained (L657)", () => {
     const spec = (acquiredInRound: 1 | 2) => buildState({
       round: 2,
       players: [{ techs: [{ id: "T11", acquiredInRound }] }, {}],
@@ -469,14 +490,14 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
     expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/Second Firing's revealed cards are pending outside its choice/);
   });
 
-  it("Canal Barge's 2 Coins come at most once a round, only to its owner (live tier, v1.6.2 L622)", () => {
+  it("Canal Barge's 2 Coins come at most once a round, only to its owner (live tier, v1.6.2 L637)", () => {
     /** p1 completes O01 and O02 (a Bowl and a Plate each) for real, then the record is edited. */
     const completed = (techs: TechId[]) => {
       const state = buildState({ round: 2, players: [{ techs, hand: ["O01", "O02"] }, {}] });
       const bowl = stageCeramic(state, { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" }).id;
       const plate = stageCeramic(state, { owner: "p1", stage: "finished", shape: "plate", glaze: "white", quality: "standard" }).id;
-      resolveOrderCompletion(state, "p1", { orderId: "O01", ceramicIds: [bowl] }, testContext());
-      resolveOrderCompletion(state, "p1", { orderId: "O02", ceramicIds: [plate] }, testContext());
+      resolveOrderCompletion(state, "p1", { orderId: "O01", ceramicIds: [bowl] }, "order_phase", testContext());
+      resolveOrderCompletion(state, "p1", { orderId: "O02", ceramicIds: [plate] }, "order_phase", testContext());
       return state;
     };
     const sound = completed(["T23"]);
@@ -504,7 +525,7 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
     expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/a Colour Samples swap is open but T10 is ready/);
     state.players["p1"]!.techs[0]!.usedThisRound = true;
     expect(invariantViolations(state, { live: true })).toEqual([]);
-    // The swap Selects 3 with 1 reservation (v1.6.2 L622, change 25).
+    // The swap Selects 3 with 1 reservation (v1.6.2 L632, change 25).
     const step = state.phase.type === "work_turn" && state.phase.step.kind === "colour_samples_swap" ? state.phase.step : null;
     step!.select.n = 2;
     expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/the Colour Samples swap look disagrees with its step/);
@@ -530,5 +551,107 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
     expect(invariantViolations(state)).toEqual([]);
     (state.players["p1"]!.score as unknown as Record<string, number>)["techs"] = 2;
     expect(invariantViolations(state).join("\n")).toMatch(/p1's score ledger has lines/);
+  });
+});
+
+describe("free actions and the Order Phase Imperial load (rev. 5 L168–176; DELTA §16.14)", () => {
+  /** p1 at Recognition 3 with the token spent: c1 waits in p1's Imperial Kiln, loaded by Imperial
+   * Priority in round `loadedInRound`; the state is in round `round`, phase `phase`. */
+  function carried(round: 2 | 3 | 4, loadedInRound: 1 | 2 | 3, phase: GameState["phase"], extra: { kilnMaster?: boolean; loadedBy?: "glaze_load" | "imperial_priority" } = {}): GameState {
+    return buildState({
+      round,
+      phase,
+      players: [{ recognition: 3, imperial: { priority: "spent" }, ...(extra.kilnMaster === true ? { techs: ["T24"] } : {}) }, {}],
+      ceramics: [
+        {
+          owner: "p1",
+          stage: "loaded",
+          shape: "vase",
+          glaze: "celadon",
+          at: "imperial",
+          loadedBy: extra.loadedBy ?? "imperial_priority",
+          loadedInRound,
+          ...(extra.kilnMaster === true ? { kilnMaster: 1 as const } : {}),
+        },
+      ],
+    });
+  }
+  const ORDERS_P2: GameState["phase"] = { type: "orders", turnOrder: ["p1", "p2"], index: 1 };
+  const P2_WORK: GameState["phase"] = { type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } };
+  const MARKS: GameState["phase"] = { type: "round_start_setters_mark", queue: { actorIds: ["p2"], index: 0 } };
+
+  it("an Order Phase Imperial Priority load waits soundly through the Order Phase, Start of Round and the next Work Phase", () => {
+    const orders = carried(2, 2, ORDERS_P2);
+    // p2's Order Phase turn must have something in it: a Flawed ceramic to sell.
+    stageCeramic(orders, { owner: "p2", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" });
+    expect(invariantViolations(orders, { live: true })).toEqual([]);
+    const marks = buildState({
+      round: 3,
+      phase: MARKS,
+      players: [{ recognition: 3, imperial: { priority: "spent" } }, { techs: ["T22"] }],
+      ceramics: [{ owner: "p1", stage: "loaded", shape: "vase", glaze: "celadon", at: "imperial", loadedBy: "imperial_priority", loadedInRound: 2 }],
+    });
+    expect(invariantViolations(marks, { live: true })).toEqual([]);
+    expect(invariantViolations(carried(3, 2, P2_WORK), { live: true })).toEqual([]);
+    // Its Kiln Master marker belongs to round 2's allowance: T24 may be ready again in round 3 (R32).
+    const marked = carried(3, 2, P2_WORK, { kilnMaster: true });
+    marked.players["p1"]!.techs[0]!.usedThisRound = false;
+    expect(invariantViolations(marked, { live: true })).toEqual([]);
+  });
+
+  it("reports a ceramic two rounds old, a Glaze & Load ceramic left after the firing, and a Shared ceramic in the Order Phase", () => {
+    expect(invariantViolations(carried(4, 2, P2_WORK), { live: true }).join("\n")).toMatch(/c1 was loaded in an earlier round/);
+    const glazeLoad = carried(2, 2, ORDERS_P2, { loadedBy: "glaze_load" });
+    stageCeramic(glazeLoad, { owner: "p2", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" });
+    expect(invariantViolations(glazeLoad, { live: true }).join("\n")).toMatch(/c1 is still loaded in orders and is not an Order Phase Imperial Priority load of round 2/);
+    const shared = buildState({
+      round: 2,
+      phase: ORDERS_P2,
+      players: [{}, {}],
+      ceramics: [
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
+        { owner: "p2", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" },
+      ],
+    });
+    expect(invariantViolations(shared, { live: true }).join("\n")).toMatch(/c1 is still loaded in orders/);
+  });
+
+  it("reports an after-action window with nothing to offer and an Order Phase turn with nothing in it (R27, R28)", () => {
+    const after = buildState({ placements: [{ player: "p1", worker: 1, locationId: "canal_wharf" }], phase: { type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } } });
+    expect(invariantViolations(after, { live: true }).join("\n")).toMatch(/p1's after-action window is open with nothing to offer/);
+    stageCeramic(after, { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" });
+    expect(invariantViolations(after, { live: true })).toEqual([]);
+    const orders = buildState({ round: 2, phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 } });
+    expect(invariantViolations(orders, { live: true }).join("\n")).toMatch(/p1's Order Phase turn is open with nothing in it/);
+  });
+
+  it("reports a once-per-round completion effect used twice in a round, or with its flag ready, in any phase (rev. 5 L176)", () => {
+    /** p1 (Guan, Canal Barge, Tribute Ware) completes O18 and O20 for real in a Work turn. */
+    const completed = () => {
+      const state = buildState({ round: 2, players: [{ kilnId: "GU", techs: ["T23", "T25"], hand: ["O18", "O20"] }, { kilnId: "RU" }] });
+      const vase = stageCeramic(state, { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", quality: "fine" }).id;
+      const bowl = stageCeramic(state, { owner: "p1", stage: "finished", shape: "bowl", glaze: "moon_white", decoration: "carved", quality: "fine" }).id;
+      resolveOrderCompletion(state, "p1", { orderId: "O18", ceramicIds: [vase] }, "before_action", testContext());
+      resolveOrderCompletion(state, "p1", { orderId: "O20", ceramicIds: [bowl] }, "before_action", testContext());
+      return state;
+    };
+    const sound = completed();
+    expect(sound.players["p1"]!.completedOrders.map((r) => [r.kilnAbility?.kilnId ?? null, r.canalBargeCoins, r.bonusCrowns])).toEqual([
+      ["GU", 2, 1],
+      [null, 0, 0],
+    ]);
+    expect(invariantViolations(sound, { live: true })).toEqual([]);
+    const bargeReady = completed();
+    bargeReady.players["p1"]!.techs.find((tech) => tech.id === "T23")!.usedThisRound = false;
+    expect(invariantViolations(bargeReady, { live: true }).join("\n")).toMatch(/p1 gained Canal Barge's Coins this round but T23 is ready/);
+    const guanReady = completed();
+    guanReady.players["p1"]!.kilnAbilityUsedThisRound = false;
+    expect(invariantViolations(guanReady, { live: true }).join("\n")).toMatch(/p1 gained Ru or Guan this round but the Kiln ability is ready/);
+    const guanTwice = completed();
+    guanTwice.players["p1"]!.completedOrders[1]!.kilnAbility = { kilnId: "GU", vp: 1, coins: 2 };
+    expect(invariantViolations(guanTwice, { live: true }).join("\n")).toMatch(/p1 gained Ru or Guan twice in one round/);
+    const tributeReady = completed();
+    tributeReady.players["p1"]!.techs.find((tech) => tech.id === "T25")!.usedThisRound = false;
+    expect(invariantViolations(tributeReady, { live: true }).join("\n")).toMatch(/p1 gained Tribute Ware's Crown this round but T25 is ready/);
   });
 });

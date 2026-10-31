@@ -7,6 +7,9 @@
  * and the Imperial modifier chosen when it was loaded (R11; public). Players without one are
  * listed together. The heading opens the Imperial Gift milestone's rules details (D10).
  * Ceramics the open decision would load into the viewer's Imperial Kiln show as pending chips.
+ * A ceramic loaded by Imperial Priority after this round's firing (a free action in the Order
+ * Phase, R28) waits there for the next round's firing, or in the last round is never fired: the
+ * tile says so (`imperialWait`), and says it again in the next round until its firing.
  */
 import { useT } from "../i18n/I18nProvider.tsx";
 import { IMPERIAL_KILN_RECOGNITION, IMPERIAL_MODIFIER_OPTIONS } from "../i18n/content.ts";
@@ -18,6 +21,7 @@ import { RulesDetail } from "../rules/RulesDetail.tsx";
 import { playerLabel } from "./names.ts";
 import { useTableCeramics } from "./tableCeramics.ts";
 import { seatVar } from "./cssVars.ts";
+import { imperialWait } from "./imperialWait.ts";
 import "./ImperialKilns.css";
 
 export function ImperialKilns() {
@@ -40,6 +44,7 @@ export function ImperialKilns() {
         const modifier = ceramic !== null && ceramic.placement.kiln === "imperial" ? ceramic.placement.imperialModifier : null;
         const mine = player.playerId === model.viewerId;
         const pendingHere = mine ? pending : [];
+        const wait = ceramic === null ? null : imperialWait(ceramic, model.round, model.phaseType);
         return (
           <div
             key={player.playerId}
@@ -65,6 +70,11 @@ export function ImperialKilns() {
               ))}
               {ceramic === null && pendingHere.length === 0 ? <span className="imp-empty">{t("kiln.impEmpty")}</span> : null}
             </span>
+            {wait === null ? null : (
+              <span className="imp-wait" data-imperial-wait={wait}>
+                {wait === "never" ? t("kiln.impWaitNever") : wait === "next_round" ? t("kiln.impWaitNext") : t("kiln.impWaitThis")}
+              </span>
+            )}
             <span className="imp-mod-label" aria-hidden="true">{t("kiln.impMod")}</span>
             <span
               className="imp-mods"

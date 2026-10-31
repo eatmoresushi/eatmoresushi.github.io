@@ -6,7 +6,7 @@
     - group "资源":
       - strong: "1"
       - text: 泥
-      - strong: "1"
+      - strong: "2"
       - text: 柴
       - strong: "0"
       - text: 铜钱
@@ -15,7 +15,7 @@
     - paragraph: 烧窑步骤5，按起始玩家顺序
     - paragraph: 「复烧」额外翻开了2张窑火牌，大家都能看到。选一张，用它为你的器物复烧。
     - heading "器物" [level=3]
-    - text: 月白釉瓶 · 素面 · 良品（高温区2）
+    - text: 白釉瓶 · 素面 · 良品（低温区1）
     - group "选一张窑火牌":
       - text: ""
       - paragraph: 新品质取代原来的品质，即使更差也一样。

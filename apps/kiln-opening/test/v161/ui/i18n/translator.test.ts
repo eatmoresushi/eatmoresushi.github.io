@@ -38,9 +38,9 @@ describe("translator", () => {
   });
 
   it("formats stored messages, nested messages and deferred parameters in the current language", () => {
-    const stored = msg("common.ceramic.withQuality", { ceramic: (t) => (t.locale === "en" ? "Celadon Vase, Carved" : "青釉瓶 · 刻花"), quality: msg("common.verb.done") });
-    expect(en.message(stored)).toBe("Celadon Vase, Carved · Done");
-    expect(zh.message(stored)).toBe("青釉瓶 · 刻花 · 完成");
+    const stored = msg("common.ceramic.withQuality", { ceramic: (t) => (t.locale === "en" ? "Celadon Vase, Carved" : "青釉瓶 · 刻花"), quality: msg("common.verb.confirm") });
+    expect(en.message(stored)).toBe("Celadon Vase, Carved · Confirm");
+    expect(zh.message(stored)).toBe("青釉瓶 · 刻花 · 确认");
   });
 
   it("throws in strict mode and falls back to English with a warning otherwise", () => {

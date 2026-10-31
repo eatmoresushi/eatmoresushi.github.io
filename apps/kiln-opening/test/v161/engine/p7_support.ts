@@ -27,6 +27,7 @@ import {
 } from "../../../src/game/content.ts";
 import { applyAction, createGame, submitContribution, validateAction } from "../../../src/game/engine.ts";
 import { validateContribution } from "../../../src/game/firing/contributions.ts";
+import { END_TURN_COMMAND_TYPES } from "../../../src/game/freeActionWindow.ts";
 import { parseCommand } from "../../../src/game/actionGuard.ts";
 import { assertInvariants, hiddenIdsIn, publiclyVisibleIds } from "../../../src/game/invariants.ts";
 import { type SampleOptions, legalActionFamilies, legalActions, legalCommands, sampleLegalAction } from "../../../src/game/legalActions.ts";
@@ -38,6 +39,8 @@ import {
   commissionOptions,
   completableOrders,
   contributionOptions,
+  endTurnOptions,
+  freeActionOptions,
   dingCopyableVesselIndexes,
   guildInspectionOptions,
   guildOptions,
@@ -64,6 +67,7 @@ import { actorViewOf, eventForViewer, projectEvent, projectPublicState } from ".
 import type {
   ActorView,
   AuthoritativeCommand,
+  EndTurnCommandType,
   SelectPick,
   GameAction,
   GameEvent,
@@ -274,16 +278,16 @@ export function richStartState(seed: number, playerCount: PlayerCount): GameStat
     }
     for (let n = 0; n < 3; n += 1) {
       const drawn = pickOf(["standard", "standard", "fine", "masterpiece", "flawed"] as const, rng);
-      // Protective Saggars' owner fires nothing Flawed (v1.6.2 L636): its Finished ceramics of
+      // Protective Saggars' owner fires nothing Flawed (v1.6.2 L643): its Finished ceramics of
       // this round are Standard instead (the same draws, so the seed's other content is kept).
       const quality = drawn === "flawed" && seatTechs.includes("T11") ? "standard" : drawn;
-      // Crackle comes only from the Ge Kiln (rev. 4 L463), which scores 1 VP per delivered
-      // Crackle ceramic (L465); the draw is kept for every seat so the seeds stay stable.
+      // Crackle comes only from the Ge Kiln (L482), which scores 1 VP per delivered
+      // Crackle ceramic (L484); the draw is kept for every seat so the seeds stay stable.
       const crackle = quality === "fine" && rng.nextInt(3) === 0 && kilns[seat] === "GE";
       const shape = pickOf(SHAPES, rng);
       const decoration = pickOf(DECORATIONS, rng);
       const glaze = pickOf(GLAZES, rng);
-      // Ru's owner holds one Ru-triggering ceramic (L460: Masterpiece, Celadon, Plain), so
+      // Ru's owner holds one Ru-triggering ceramic (L474: Masterpiece, Celadon, Plain), so
       // random play reaches Ru (fuzz coverage asserts every Kiln ability fires).
       if (n === 0 && kilns[seat] === "RU") {
         ceramics.push({ owner: id, stage: "finished", shape, decoration: KILNS.RU.params.decoration, glaze: KILNS.RU.params.glaze, quality: KILNS.RU.params.quality });
@@ -402,9 +406,13 @@ export interface FuzzResult {
   loadFeatures: Map<string, number>;
   /** Revision-4 and R25 moments: `setup_take` (the public Setup Main Order take, R23),
    * `looked_discarded` (a Select's unreserved looked cards discarded, R25), `reshuffle_look` (the
-   * Main discard shuffled into a new deck as a look starts, rev. 4 L506, R16), `reshuffle_draw`
+   * Main discard shuffled into a new deck as a look starts, L525, R16), `reshuffle_draw`
    * (the same for a display refill or the Canal Wharf Shifu's draw), `flawed_sale` (R20) and
-   * `crackle_vp` (an Order completed with a Crackle ceramic, change 29). */
+   * `crackle_vp` (an Order completed with a Crackle ceramic, change 29). Revision 5:
+   * `free:<event>:<window>`, `carried_imperial_fired`, `ge_masterpiece` and `ge_flawed` (Ge on a
+   * ceramic that keeps its Quality, change 39), `ding_two_coins` (change 40) and `kit_plain`
+   * (Decorator's Kit on a Plain vessel, change 37). Owner UI decision D21: `end_turn_placed`,
+   * `end_turn_remembered`, `end_turn_after_action`, `end_turn_order_phase`, `end_turn_false`. */
   deckEvents: Map<string, number>;
 }
 
@@ -420,6 +428,8 @@ function pickIndex(length: number, rng: SeededRandom): number {
 export function playFuzzGame(options: FuzzOptions): FuzzResult {
   const where = label(options);
   const chooser = new SeededRandom(options.chooserSeed);
+  // D21's `endTurn` draws from its own stream (`withEndTurnSample`).
+  const endTurnChooser = new SeededRandom(options.chooserSeed * 7 + 3);
   const table =
     options.start === "rich"
       ? FuzzTable.fromState(richStartState(options.seed, options.playerCount), options.seed)
@@ -442,12 +452,29 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
   const loadFeatures = new Map<string, number>();
   const deckEvents = new Map<string, number>();
   const count = <K>(map: Map<K, number>, key: K) => map.set(key, (map.get(key) ?? 0) + 1);
-  const countDeckEvents = (events: readonly GameEvent[]): void => {
+  const countDeckEvents = (events: readonly GameEvent[], before: GameState | null = null): void => {
     events.forEach((event, index) => {
       if (event.type === "ORDER_RESERVED" && event.via === "setup") count(deckEvents, "setup_take");
       else if (event.type === "LOOKED_ORDERS_DISCARDED" && event.count > 0) count(deckEvents, "looked_discarded");
       else if (event.type === "CERAMIC_SOLD") count(deckEvents, "flawed_sale");
       else if (event.type === "ORDER_COMPLETED" && (event.record.crackleVp ?? 0) > 0) count(deckEvents, "crackle_vp");
+      // Free actions by window (rev. 5 L168–176): `free:<event>:<window>`; an Order Phase Imperial
+      // Priority load before Round 5 waits for the next round's firing (R28).
+      if (event.type === "CERAMIC_SOLD" || event.type === "ORDER_COMPLETED" || event.type === "IMPERIAL_PRIORITY_USED") {
+        count(deckEvents, `free:${event.type}:${event.window}`);
+      }
+      // Owner revision 5, changes 39–40: Ge on a Masterpiece or a Flawed ceramic (it keeps its
+      // Quality, rev. 5 L482) and Ding's vessel at 2 Coins (rev. 5 L488).
+      if (event.type === "CRACKLE_APPLIED") {
+        const quality = before?.firing?.ceramics[event.ceramicId]?.quality;
+        if (quality === "masterpiece" || quality === "flawed") count(deckEvents, `ge_${quality}`);
+      }
+      if (event.type === "RESOURCES_CHANGED" && event.reason === "ding_extra" && event.coins === -KILNS.DI.params.coins) {
+        count(deckEvents, "ding_two_coins");
+      }
+      if (event.type === "FIRING_STARTED" && before !== null && Object.values(before.ceramics).some((c) => c.stage === "loaded" && c.loadedInRound < event.round)) {
+        count(deckEvents, "carried_imperial_fired");
+      }
       else if (event.type === "MAIN_DECK_RESHUFFLED") {
         // What needed the card: the next look, refill or unseen draw in the same command.
         const next = events.slice(index + 1).find((later) =>
@@ -492,7 +519,7 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
       }
       command = chosen;
     } else {
-      const sampled = sampleLegalAction(view, chooser, options.weights === undefined ? {} : { weights: options.weights });
+      const sampled = withEndTurnSample(view, sampleLegalAction(view, chooser, options.weights === undefined ? {} : { weights: options.weights }), endTurnChooser);
       const error = validateAction(view, sampled);
       if (error !== null) {
         throw new Error(`${context}: sampled ${sampled.type} does not validate: ${error.code} ${error.message}`);
@@ -576,7 +603,26 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
     if (privacy.length > 0) {
       throw new Error(`${context} after ${command.type}: ${privacy.join("; ")}`);
     }
-    countDeckEvents(events);
+    countDeckEvents(events, before);
+    // Owner UI decision D21: a turn ended by `endTurn` in the same command (`end_turn_placed` by a
+    // worker-action command carrying it, `end_turn_remembered` by a later command of the action,
+    // `end_turn_after_action` by a free action or the swap's Select, `end_turn_order_phase`), each
+    // skipping a step or turn that was still open (`automatic: false`); `end_turn_false`.
+    const requested = (command as { endTurn?: boolean }).endTurn;
+    if (requested === false) count(deckEvents, "end_turn_false");
+    if (phaseNow.type === "work_turn" && command.type !== "END_TURN") {
+      const ended = events.some((event) => event.type === "WORK_TURN_ENDED" && event.playerId === actorId && !event.automatic);
+      const kind = phaseNow.step.kind;
+      if (ended && requested === true) count(deckEvents, kind === "after_action" || kind === "colour_samples_swap" ? "end_turn_after_action" : "end_turn_placed");
+      else if (ended && phaseNow.endTurnAfterAction === true) count(deckEvents, "end_turn_remembered");
+    }
+    if (phaseNow.type === "orders" && requested === true && events.some((event) => event.type === "ORDER_TURN_ENDED" && event.playerId === actorId && !event.automatic)) {
+      count(deckEvents, "end_turn_order_phase");
+    }
+    // Decorator's Kit on a Plain vessel (any vessel since change 37, rev. 5 L622).
+    if (command.type === "PLACE_FORM_DECORATE" && command.decoratorsKitVesselIndex !== undefined && command.vessels[command.decoratorsKitVesselIndex]?.decoration === "plain") {
+      count(deckEvents, "kit_plain");
+    }
     for (const event of events) {
       if (event.type === "TECH_USED") {
         count(techUses, event.techId);
@@ -687,6 +733,27 @@ function codeOf(view: ActorView, action: GameAction): GameRuleErrorCode | null {
   return validateAction(view, action)?.code ?? null;
 }
 
+function isEndTurnType(type: string): type is EndTurnCommandType {
+  return (END_TURN_COMMAND_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * Owner UI decision D21 in random play: sometimes asks to end the turn afterwards where
+ * `endTurnOptions` says the request is accepted (1 in 4), sometimes sends `endTurn: false`
+ * (1 in 8, accepted wherever the command is). Draws from its own chooser, so the field never
+ * perturbs the other choices' stream by itself.
+ */
+function withEndTurnSample(view: ActorView, action: GameAction, chooser: SeededRandom): GameAction {
+  if (!isEndTurnType(action.type)) {
+    return action;
+  }
+  const roll = chooser.nextInt(8);
+  if (roll < 2 && (endTurnOptions(view)?.commandTypes.includes(action.type) ?? false)) {
+    return { ...action, endTurn: true } as GameAction;
+  }
+  return roll === 2 ? ({ ...action, endTurn: false } as GameAction) : action;
+}
+
 /**
  * Every place where a §5.4 selector disagrees with the validators for `actorId` in this state:
  * a listed option or `legal` flag the validator rejects, or an option the validator accepts
@@ -724,7 +791,7 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
     expect(option.legal === option.workers.some((w) => w.legal), `placementOptions ${option.locationId}.legal disagrees with its workers`);
   }
 
-  // Setup (step 9, rev. 4 L122, R23) and Start of Round.
+  // Setup (step 9, L130, R23) and Start of Round.
   if (phase.type === "setup_kiln_selection" && acts) {
     const setup = setupChoiceOptions(view);
     expect(setup !== null, "setupChoiceOptions is null for the player choosing");
@@ -789,7 +856,7 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
           expect(ok, `guildOptions inspect ${option.discipline} is rejected`);
         }
       }
-      // Magistrate's Hall quotes, and the Shifu's optional Crown Order (rev. 4 L241, R21).
+      // Magistrate's Hall quotes, and the Shifu's optional Crown Order (L259, R21).
       for (const worker of options.find((o) => o.locationId === "magistrates_hall")?.workers ?? []) {
         const quote = magistratesHallQuote(view, worker.effect);
         const error = validateAction(view, { type: "PLACE_MAGISTRATES_HALL", workerId: worker.workerId });
@@ -847,7 +914,7 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
     }
     const looked = lookedOrderOptions(view);
     if (step.kind === "commission_market" || step.kind === "colour_samples" || step.kind === "colour_samples_swap") {
-      // Every Select (v1.6.2 L64): every display position and looked card; a single pick
+      // Every Select (v1.6.2 L80): every display position and looked card; a single pick
       // validates iff it is listed.
       expect(looked?.kind === step.kind, "lookedOrderOptions is not the open Select during its step");
       expect(looked?.maxReservations === step.select.maxReservations && looked.n === step.select.n, "lookedOrderOptions disagrees with the step's Select");
@@ -887,12 +954,12 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
           const code = codeOf(view, { type: "GUILD_TAKE", take: { kind: "face_up", techId: option.techId } });
           expect((code === null) === option.legal && (code === null || code === option.reason), `guildInspectionOptions faceUp ${option.techId} legal=${option.legal} (${String(option.reason)}) code=${String(code)}`);
         }
-        // GUILD_FINISH: legal with every untaken inspected Tech exactly once, after at least 1 take (v1.6.2 L207, L142, B2).
+        // GUILD_FINISH: legal with every untaken inspected Tech exactly once, after at least 1 take (v1.6.2 L237, L164, B2).
         expect(inspection.bottomOrderLength === inspected.length, "guildInspectionOptions bottom-order length disagrees");
         const finish = codeOf(view, { type: "GUILD_FINISH", bottomOrder: [...inspected].reverse() });
         expect(finish === (inspection.canFinish ? null : "TECH_TAKE_REQUIRED"), `GUILD_FINISH gave ${String(finish)} with canFinish=${inspection.canFinish}`);
         expect(inspection.canFinish === inspection.takes.length > 0, "guildInspectionOptions canFinish disagrees with its takes");
-        // Placement legality (v1.6.2 L212) guarantees a first take; the step never waits with nothing to decide.
+        // Placement legality (v1.6.2 L242) guarantees a first take; the step never waits with nothing to decide.
         expect(inspection.canFinish || [...inspection.inspected, ...inspection.faceUp].some((o) => o.legal), "the Guild inspection offers no first take");
       }
     }
@@ -900,7 +967,7 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
 
   // The Colour Samples swap and Imperial Priority, in every phase and for every viewer: each
   // option's verdict must be the validator's, and the options must cover what the enumerator
-  // offers (v1.6.2 L625).
+  // offers (v1.6.2 L632).
   const swap = colourSamplesSwapOptions(view);
   for (const discard of swap.discards) {
     const ok = codeOf(view, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }) === null;
@@ -925,8 +992,18 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
     expect(ok === priority.kilnMaster, `imperialPriorityOptions.kilnMaster=${priority.kilnMaster} but Kiln Master on ${ceramicId} ok=${ok}`);
   }
 
-  // Orders.
-  if (phase.type === "orders" && acts) {
+  // Orders: a completion is a free action (rev. 5 L173), so the pickers agree with the validator
+  // in every free-action window, the Work turn's before/after-action steps included.
+  const freeActions = freeActionOptions(view);
+  const inWindow = acts && (phase.type === "orders" || (phase.type === "work_turn" && (phase.step.kind === "before_action" || phase.step.kind === "after_action")));
+  expect((freeActions !== null) === inWindow, `freeActionOptions is ${freeActions === null ? "null" : "set"} in ${phase.type} for ${actorId}`);
+  if (freeActions !== null) {
+    const same = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+    expect(same(freeActions.sellableCeramicIds, sellFlawedOptions(view)?.ceramicIds ?? []), "freeActionOptions and sellFlawedOptions disagree");
+    expect(freeActions.imperialPriority === priority.usable, "freeActionOptions and imperialPriorityOptions disagree");
+    expect(same(freeActions.completableOrderIds, completableOrders(view).map((o) => o.orderId)), "freeActionOptions and completableOrders disagree");
+  }
+  if (inWindow) {
     const listed = completableOrders(view);
     for (const option of listed) {
       for (const match of orderMatchOptions(view, option.orderId, 6)) {
@@ -939,6 +1016,20 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
       const anyMatch = order !== undefined && orderMatchOptions(view, orderId, 1).length > 0;
       expect(anyMatch === listed.some((o) => o.orderId === orderId), `completableOrders and orderMatchOptions disagree on ${orderId}`);
     }
+  }
+
+  // "End the turn afterwards" (owner UI decision D21): `endTurnOptions` lists exactly the types
+  // whose legal commands accept `endTurn: true` now; `endTurn: false` is accepted wherever the
+  // command is.
+  const endTurn = endTurnOptions(view);
+  const ownTurn = acts && (phase.type === "work_turn" || phase.type === "orders");
+  expect((endTurn !== null) === ownTurn, `endTurnOptions is ${endTurn === null ? "null" : "set"} in ${phase.type} for ${actorId}`);
+  for (const action of canonical) {
+    if (!isEndTurnType(action.type)) continue;
+    const listed = endTurn?.commandTypes.includes(action.type) ?? false;
+    const ok = codeOf(view, { ...action, endTurn: true } as GameAction) === null;
+    expect(ok === listed, `endTurnOptions lists ${action.type}=${listed} but endTurn: true ok=${ok} (${phase.type})`);
+    expect(codeOf(view, { ...action, endTurn: false } as GameAction) === null, `${action.type} with endTurn: false is rejected (${phase.type})`);
   }
 
   // Firing.
@@ -981,8 +1072,8 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
       }
     }
   }
-  // R20: the sale of a Flawed ceramic, in every phase, for every ceramic of the viewer (and
-  // one of another player's, which is never listed nor accepted).
+  // The sale of a Flawed ceramic (a free action, rev. 5 L172), in every phase, for every ceramic
+  // of the viewer (and one of another player's, which is never listed nor accepted).
   {
     const listed = sellFlawedOptions(view)?.ceramicIds ?? [];
     const candidates = Object.values(game.ceramics)

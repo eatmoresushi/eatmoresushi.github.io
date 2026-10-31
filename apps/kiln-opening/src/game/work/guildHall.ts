@@ -1,32 +1,37 @@
 /**
  * Guild Hall incl. the private Shifu inspection and Colour Samples when acquired (v1.6.2
- * L202–214, L374–378, L625, L649; R4, B1, B2, B3; DESIGN §3.2 as amended by
+ * L232–244, L389–393, L632, L656; R4, B1, B2, B3; DESIGN §3.2 as amended by
  * ENGINE_V1.6.2_DELTA.md §4.3).
  *
  * - Apprentice: `PLACE_GUILD_HALL{buy_face_up}` pays the printed cost and takes the face-up
- *   Tech, granting it (Cover-token removal, L212; Fuel Ledger's Contribution cards; no VP,
+ *   Tech, granting it (Cover-token removal, L241; Fuel Ledger's Contribution cards; no VP,
  *   change 27).
  * - Shifu: `PLACE_GUILD_HALL{inspect}` privately draws the top 2 Techs of any discipline, even
- *   one already owned, or as many as remain (v1.6.2 L207, B2). Then up to 2 `GUILD_TAKE`s, each 1 Tech
+ *   one already owned, or as many as remain (v1.6.2 L237, B2). Then up to 2 `GUILD_TAKE`s, each 1 Tech
  *   face-up or inspected at its printed cost (no discount), from different disciplines (the
- *   1-per-discipline limit, L211). "Up to 2" is 1 or 2, never 0 (L142). `GUILD_FINISH` puts
+ *   1-per-discipline limit, L240). "Up to 2" is 1 or 2, never 0 (L164). `GUILD_FINISH` puts
  *   the untaken inspected Techs on the bottom in a private chosen order (B2). The step closes
  *   by itself when no decision is left on public facts (`decisionLeft`).
- * - Each gain resolves at once, before the next take (L214): the Cover token, any Contribution
- *   cards and any when-acquired effect. Colour Samples (T10, v1.6.2 L622, change 25) Selects 3
+ * - Each gain resolves at once, before the next take (L243): the Cover token, any Contribution
+ *   cards and any when-acquired effect. Colour Samples (T10, v1.6.2 L632, change 25) Selects 3
  *   (`work/select.ts`): it looks at the top 3 Main Orders (as many as remain, B1) and reserves 1
  *   of them or 1 face-up Main Order, mandatory whenever a reservation is possible (R4 as
  *   extended to the display, INT: Colour Samples Select); the looked cards not reserved are
  *   discarded face down (owner ruling R25); no resource. A face-up reservation
- *   leaves its position empty until the turn ends (v1.6.2 L649). When the Shifu takes it, the
+ *   leaves its position empty until the turn ends (v1.6.2 L656). When the Shifu takes it, the
  *   inspection waits in the Colour Samples look (`inspection`) and resumes after the reservation
  *   (`afterColourSamples`, called by `SELECT_CHOOSE`).
  * - A taken face-up Tech's position stays empty until the taker's turn ends; `work/turn`
- *   then refills each discipline to 2 (v1.6.2 L209), so a Shifu's second Tech is chosen from
+ *   then refills each discipline to 2 (v1.6.2 L239), so a Shifu's second Tech is chosen from
  *   the Techs showing now, and the untaken inspected Techs are at the bottom before the
  *   refill (B2).
- * - Legality (v1.6.2 L212), for the Apprentice and the Shifu alike: an affordable face-up Tech
- *   from a discipline the player does not own, within the 3-total limit (L211).
+ * - Legality (v1.6.2 L242), for the Apprentice and the Shifu alike: an affordable face-up Tech
+ *   from a discipline the player does not own, within the 3-total limit (L240).
+ * - "End the turn afterwards" (owner UI decision D21, DELTA §16.24): `PLACE_GUILD_HALL`,
+ *   `GUILD_TAKE` and `GUILD_FINISH` each record their `endTurn` first
+ *   (`state.noteEndTurnRequest`), so a request made on the placement or a first take carries
+ *   through the inspection and any Colour Samples Select to `completeWorkerAction`, unless a
+ *   later command of the action carries the field.
  *
  * Layer 4 (P4). Imports layers 0–3 only; hands over through `ctx.flow.workerActionDone`.
  */
@@ -35,7 +40,7 @@ import { DISCIPLINES, GAME_CONFIG, LOCATIONS, TECHS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { drawTechsForInspection, returnTechsToBottom, takeFaceUpTech } from "../market.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
-import { emit, phaseAs, player, spend } from "../state.ts";
+import { emit, noteEndTurnRequest, phaseAs, player, spend } from "../state.ts";
 import { acquisitionError, grantTech, techPrice } from "../techs.ts";
 import type {
   ActionHandlerTable,
@@ -76,7 +81,7 @@ function isFaceUp(game: PublicCore, techId: TechId): boolean {
   return game.techDisplay[TECHS[techId].discipline].includes(techId);
 }
 
-/** Ownership limits (L211) and the printed price (v1.6.2 L206–207) for taking `techId`. */
+/** Ownership limits (L240) and the printed price (v1.6.2 L236–237) for taking `techId`. */
 function acquireError(p: PlayerState, techId: TechId): GameRuleError | null {
   const limitError = acquisitionError(p, techId);
   if (limitError !== null) {
@@ -93,8 +98,8 @@ function acquireError(p: PlayerState, techId: TechId): GameRuleError | null {
   return null;
 }
 
-/** v1.6.2 L212: an affordable face-up Tech from a discipline you do not own, within the
- * 3-total limit (L211). The same test for the Apprentice and the Shifu. */
+/** v1.6.2 L242: an affordable face-up Tech from a discipline you do not own, within the
+ * 3-total limit (L240). The same test for the Apprentice and the Shifu. */
 function faceUpTakePossible(p: PlayerState, game: PublicCore): boolean {
   return faceUpTechs(game).some((techId) => acquireError(p, techId) === null);
 }
@@ -181,8 +186,8 @@ function inspectionOf(draft: GameState, playerId: PlayerId): { phase: WorkTurnPh
 /**
  * Pays the printed cost and takes the Tech: `RESOURCES_CHANGED`, `TECH_ACQUIRED` (no VP, v1.6.2
  * change 27), then whatever `grantTech` hands over (Fuel Ledger's `CONTRIBUTION_CARDS_GAINED`,
- * `PERSONAL_SPACE_UNLOCKED`, L212). A face-up Tech's position stays empty until the turn ends
- * (v1.6.2 L209).
+ * `PERSONAL_SPACE_UNLOCKED`, L241). A face-up Tech's position stays empty until the turn ends
+ * (v1.6.2 L239).
  */
 function acquire(draft: GameState, playerId: PlayerId, take: GuildTake, ctx: ResolveContext): void {
   const price = techPrice(take.techId);
@@ -195,7 +200,7 @@ function acquire(draft: GameState, playerId: PlayerId, take: GuildTake, ctx: Res
 }
 
 /**
- * Colour Samples when acquired (v1.6.2 L622, change 25, R4, B1, R16): Select 3, opening the
+ * Colour Samples when acquired (v1.6.2 L632, change 25, R4, B1, R16): Select 3, opening the
  * `colour_samples` step (`SELECT_CHOOSE`: 1 reservation, a looked card or a face-up Main Order;
  * the looked cards not reserved are discarded, owner ruling R25). `resume` is the Shifu's
  * inspection to return to afterwards (its untaken Techs wait in the look). Returns false when no
@@ -221,8 +226,8 @@ function openColourSamples(draft: GameState, playerId: PlayerId, resume: { step:
 
 /**
  * After Colour Samples' when-acquired reservation (`SELECT_CHOOSE`, `work/selectChoose.ts`): the
- * Guild Hall Shifu's inspection resumes, still private, with its untaken Techs (v1.6.2 L207,
- * L213), or, after an Apprentice buy, the worker action ends. No resource (v1.6.2 L622).
+ * Guild Hall Shifu's inspection resumes, still private, with its untaken Techs (v1.6.2 L237,
+ * L243), or, after an Apprentice buy, the worker action ends. No resource (v1.6.2 L632).
  */
 export function afterColourSamples(
   draft: GameState,
@@ -242,7 +247,7 @@ export function afterColourSamples(
 }
 
 /** B2: the untaken inspected Techs go to the bottom in the chosen private order, then the
- * worker action ends (the display refills when the turn ends, v1.6.2 L209). */
+ * worker action ends (the display refills when the turn ends, v1.6.2 L239). */
 function finishInspection(draft: GameState, playerId: PlayerId, bottomOrder: readonly TechId[], ctx: ResolveContext): void {
   const { look } = inspectionOf(draft, playerId);
   draft.hidden.pendingLook = null;
@@ -313,6 +318,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       }
     },
     resolve: (draft, actorId, action, ctx) => {
+      noteEndTurnRequest(draft, actorId, action.endTurn);
       placeWorker(draft, actorId, action.workerId, LOCATION, false, ctx);
       const choice = action.choice;
       if (choice.kind === "buy_face_up") {
@@ -362,11 +368,12 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       if (!available) {
         return techNotAvailable(take.techId);
       }
-      // A second Tech of the first take's discipline fails the 1-per-discipline limit (L211),
-      // which is how "from different disciplines" (v1.6.2 L207) is enforced.
+      // A second Tech of the first take's discipline fails the 1-per-discipline limit (L240),
+      // which is how "from different disciplines" (v1.6.2 L237) is enforced.
       return acquireError(player(view.game, view.viewerId), take.techId);
     },
     resolve: (draft, actorId, action, ctx) => {
+      noteEndTurnRequest(draft, actorId, action.endTurn);
       const inspection = inspectionOf(draft, actorId);
       const take: GuildTake = { kind: action.take.kind, techId: action.take.techId };
       if (take.kind === "inspected") {
@@ -374,7 +381,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       }
       acquire(draft, actorId, take, ctx);
       inspection.step.takes.push(take);
-      // L214: a when-acquired effect resolves now, before any second take.
+      // L243: a when-acquired effect resolves now, before any second take.
       if (take.techId === COLOUR_SAMPLES && openColourSamples(draft, actorId, inspection, ctx)) {
         return;
       }
@@ -409,6 +416,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       return null;
     },
     resolve: (draft, actorId, action, ctx) => {
+      noteEndTurnRequest(draft, actorId, action.endTurn);
       finishInspection(draft, actorId, action.bottomOrder, ctx);
     },
   },

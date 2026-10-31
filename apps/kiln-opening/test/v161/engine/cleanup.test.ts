@@ -1,14 +1,14 @@
 /**
- * Cleanup (P2 `round.ts`): L200, L301–305, L490, L626 (Colour Samples hand limit 5), B3,
+ * Cleanup (P2 `round.ts`): L229, L322–326, L504, L632 (Colour Samples hand limit 5), B3,
  * INT "Cleanup in Round 5"; DESIGN §3.4, §3.6, §4.2, §8.2 "Hand limit 4/5 at Cleanup".
  */
 
 import { describe, expect, it } from "vitest";
 import { KILN_SPACE_IDS } from "../../../src/game/content.ts";
 import { openCleanup } from "../../../src/game/round.ts";
-import type { GameEvent, GamePhase, GameState, OrderId, RoundNumber } from "../../../src/game/types.ts";
+import type { GameAction, GameEvent, GamePhase, GameState, OrderId, RoundNumber } from "../../../src/game/types.ts";
 import { eventForViewer, projectEvent, projectPublicState } from "../../../src/game/view.ts";
-import { type PlacementSpec, type PlayerSpec, buildState, cardZones, testContext } from "./support/fixtures.ts";
+import { type PlacementSpec, type PlayerSpec, buildState, cardZones, stageCeramic, testContext } from "./support/fixtures.ts";
 import { type FlowHalt, haltingFlow } from "./support/flow.ts";
 import { LocalTable } from "./support/localTable.ts";
 import { expectDocumentedDetails } from "./support/ruleErrors.ts";
@@ -52,7 +52,7 @@ function open(state: GameState): { events: GameEvent[]; halts: ReturnType<typeof
   return { events: ctx.events, halts: ctx.halts };
 }
 
-describe("Cleanup step 1: return workers and Setter's Marks (L303)", () => {
+describe("Cleanup step 1: return workers and Setter's Marks (L324)", () => {
   it("returns every worker, resets the placement order and returns the Setter's Mark", () => {
     const state = cleanupState();
     expect(state.placementSequence).toBe(4);
@@ -69,7 +69,7 @@ describe("Cleanup step 1: return workers and Setter's Marks (L303)", () => {
   });
 });
 
-describe("Cleanup step 2: hand limit 4, or 5 with Colour Samples (L200, L304, L626)", () => {
+describe("Cleanup step 2: hand limit 4, or 5 with Colour Samples (L229, L325, L632)", () => {
   it("opens a trim window only for players above their limit, with the opening revision", () => {
     const state = cleanupState();
     const { halts } = open(state);
@@ -176,13 +176,36 @@ describe("Cleanup step 2: hand limit 4, or 5 with Colour Samples (L200, L304, L6
     expect(state.round).toBe(3);
   });
 
+  it("is no free-action window: a pending player may not sell, complete or spend Imperial Priority (rev. 5 L176, R26)", () => {
+    const state = cleanupState({ players: [{ hand: ["S01", "S02", "O10", "O11", "O12"], recognition: 3 }, {}] });
+    const flawed = stageCeramic(state, { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" }).id;
+    const white = stageCeramic(state, { owner: "p1", stage: "finished", shape: "plate", glaze: "white", quality: "standard" }).id;
+    const shaped = stageCeramic(state, { owner: "p1", stage: "shaped", shape: "vase" }).id;
+    open(state);
+    expect(state.phase).toMatchObject({ type: "cleanup_hand_limit", pendingPlayerIds: ["p1"] });
+    const table = new LocalTable(state, { flow: "halt" });
+    const actions: GameAction[] = [
+      { type: "SELL_FLAWED", ceramicId: flawed },
+      { type: "COMPLETE_ORDER", orderId: "S01", ceramicIds: [white] },
+      { type: "USE_IMPERIAL_PRIORITY", ceramicId: shaped, glaze: "white", imperialModifier: 0 },
+    ];
+    for (const action of actions) {
+      const error = table.expectRuleError("p1", action, "WRONG_PHASE");
+      expect(error.details).toEqual({ phase: "cleanup_hand_limit", actionType: action.type });
+      expectDocumentedDetails(error);
+    }
+    // The trim itself is unchanged.
+    table.act("p1", { type: "DISCARD_TO_HAND_LIMIT", orderIds: ["O12"] });
+    expect(table.state.ceramics[flawed]).toMatchObject({ stage: "finished", quality: "flawed" });
+  });
+
   it("is only a Cleanup decision (WRONG_PHASE elsewhere)", () => {
     const table = new LocalTable(buildState({ players: [{ hand: ["S01", "S02", "O10", "O11", "O12"] }, {}] }), { flow: "halt" });
     table.expectRuleError("p1", { type: "DISCARD_TO_HAND_LIMIT", orderIds: ["S01"] }, "WRONG_PHASE");
   });
 });
 
-describe("Cleanup step 3: First Player and round (L305, L490)", () => {
+describe("Cleanup step 3: First Player and round (L326, L504)", () => {
   it.each([1, 2, 3, 4] as RoundNumber[])("Round %i passes the First Player clockwise and advances", (round) => {
     const state = cleanupState({ round, firstPlayerId: "p3", players: [{ hand: [] }, { hand: [] }, { hand: [] }] });
     const { events, halts } = open(state);
@@ -228,7 +251,7 @@ describe("Cleanup step 3: First Player and round (L305, L490)", () => {
   });
 });
 
-describe("hidden information (L201, B3, DESIGN §4.2)", () => {
+describe("hidden information (L230, B3, DESIGN §4.2)", () => {
   it("HAND_TRIMMED shows the count to everyone and the Orders only to their owner", () => {
     const state = cleanupState();
     open(state);

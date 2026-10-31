@@ -38,8 +38,8 @@ import type {
 
 const SEAT_COLOURS = ["cinnabar", "celadon", "ink", "moon-white"] as const;
 
-/** The SQL gates: `rules_version = '1.6.2'`, `content_version = '1.6.2'`, `^r32-…`. */
-export const CURRENT_ROOM_FINGERPRINT_PATTERN = /^r32-[0-9a-f]{16}$/;
+/** The SQL gates: `rules_version = '1.6.2'`, `content_version = '1.6.2'`, `^r33-…`. */
+export const CURRENT_ROOM_FINGERPRINT_PATTERN = /^r33-[0-9a-f]{16}$/;
 /** `room_ai_seats_policy_version_check` for V1.6.2 seats. */
 export const COMPUTER_POLICY_VERSION_PATTERN = /^rules-v1\.6\.2-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** The V1.6.2 Contribution cards the SQL card check accepts (v1.6.2 change 26). */
@@ -75,8 +75,9 @@ function currentRoom(room: StoredRoom): boolean {
   );
 }
 
+/** The SQL commit gates' state check: schema 10 under V1.6.2 (202610300001_v162_rev5_rules.sql). */
 function currentStateVersion(value: { schemaVersion?: unknown; rulesVersion?: unknown }): boolean {
-  return value.schemaVersion === 9 && value.rulesVersion === "1.6.2";
+  return value.schemaVersion === 10 && value.rulesVersion === "1.6.2";
 }
 
 interface FullEventRecord {

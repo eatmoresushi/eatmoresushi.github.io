@@ -6,11 +6,11 @@
     - group "Resources":
       - strong: "4"
       - text: Clay
-      - strong: "2"
-      - text: Wood
       - strong: "3"
-      - text: Coins
-    - text: 4 Orders in hand Recognition 0/4 3 VP
+      - text: Wood
+      - strong: "1"
+      - text: Coin
+    - text: 3 Orders in hand Recognition 0/4 3 VP
   - form "Jun Kiln · Kiln Transformation":
     - paragraph: Firing step 3
     - paragraph:
@@ -21,8 +21,8 @@
       - listitem: "Zhao (you): deciding"
     - group "Ceramic":
       - text: ""
-      - radio "White Brush Washer, Painted (in High 1), Kiln Master marker +1" [checked]
-      - text: White Brush Washer, Painted (in High 1), Kiln Master marker +1
+      - radio "White Plate, Carved (in Middle 1), Kiln Master marker +1" [checked]
+      - text: White Plate, Carved (in Middle 1), Kiln Master marker +1
     - 'group "Adjustment Cost: 1 Wood"':
       - text: ""
       - paragraph: Added to that ceramic’s Actual Heat before its Quality is assigned.

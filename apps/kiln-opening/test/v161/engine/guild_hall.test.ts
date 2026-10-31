@@ -1,15 +1,15 @@
 /**
- * Guild Hall (v1.6.2 L202–214, L373–378, L625, L649, R4, B1, B2; owner revision 2026-10-17;
+ * Guild Hall (v1.6.2 L232–244, L389–394, L632, L656, R4, B1, B2; owner revision 2026-10-17;
  * DESIGN §3.2 as amended by ENGINE_V1.6.2_DELTA.md §4.3):
  * - the Apprentice buys 1 face-up Tech at its printed cost;
  * - the Shifu privately inspects any discipline's top 2 (or as many as remain), then takes up
  *   to 2 Techs from different disciplines, face-up or inspected, each at its printed cost (no
  *   discount), and puts the untaken inspected Techs on the bottom in a chosen order (B2);
  * - a taken Tech's position stays empty until the taker's turn ends, then each discipline
- *   refills to 2 (v1.6.2 L209), so a Shifu's second Tech is chosen from what shows now;
- * - each gain resolves at once, before a second take: VP (A1), Cover token (L212), and
- *   Colour Samples' mandatory when-acquired reservation (L214, L625, R4), with no resource and
- *   no Main display refill; 3 total / 1 per discipline (L211).
+ *   refills to 2 (v1.6.2 L239), so a Shifu's second Tech is chosen from what shows now;
+ * - each gain resolves at once, before a second take: VP (A1), Cover token (L241), and
+ *   Colour Samples' mandatory when-acquired reservation (L243, L632, R4), with no resource and
+ *   no Main display refill; 3 total / 1 per discipline (L240).
  */
 
 import { describe, expect, it } from "vitest";
@@ -64,13 +64,13 @@ function coins(n: number): StateSpec {
 }
 
 /** p1 at Recognition 3 with a Shaped vessel: Imperial Priority keeps the after-action window
- * open, so the end of the turn can be observed separately (L293). */
+ * open, so the end of the turn can be observed separately (L314). */
 function withWindow(extra: StateSpec = {}): StateSpec {
   return { players: [{ recognition: 3 }, {}], ceramics: [{ owner: "p1", shape: "vase", stage: "shaped", decoration: "carved" }], ...extra };
 }
 
-describe("Apprentice (v1.6.2 L206): pay the printed cost and take 1 face-up Advanced Tech", () => {
-  it("pays the printed cost and removes the Cover token at once; the position stays empty until the turn ends (v1.6.2 L209, L212)", () => {
+describe("Apprentice (v1.6.2 L236): pay the printed cost and take 1 face-up Advanced Tech", () => {
+  it("pays the printed cost and removes the Cover token at once; the position stays empty until the turn ends (v1.6.2 L239, L241)", () => {
     const t = table(withWindow());
     expect(t.state.techDisplay.workshop).toEqual(["T01", "T16"]);
     const events = t.act("p1", buy("p1:apprentice:1", "T01"));
@@ -108,17 +108,17 @@ describe("Apprentice (v1.6.2 L206): pay the printed cost and take 1 face-up Adva
     expect(t.state.techDisplay.workshop).toEqual(["T16", "T05"]);
   });
 
-  it("a Firing Tech removes no Cover token (L212); Protective Saggars costs 3 (v1.6.2 L636)", () => {
+  it("a Firing Tech removes no Cover token (L241); Protective Saggars costs 2 (rev. 5 L643, change 38)", () => {
     const t = table();
     const events = t.act("p1", buy("p1:apprentice:1", "T11"));
-    expect(only(events, "TECH_ACQUIRED")).toMatchObject({ techId: "T11", cost: 3 });
-    expect(t.player("p1").resources.coins).toBe(0);
+    expect(only(events, "TECH_ACQUIRED")).toMatchObject({ techId: "T11", cost: 2 });
+    expect(t.player("p1").resources.coins).toBe(1);
     expect(types(events)).not.toContain("PERSONAL_SPACE_UNLOCKED");
     expect(t.player("p1").personalSpaces.form_decorate[1].unlocked).toBe(false);
     expect(t.player("p1").personalSpaces.glaze_load[1].unlocked).toBe(false);
   });
 
-  it("a space whose Cover token is removed may be used later the same round (L212)", () => {
+  it("a space whose Cover token is removed may be used later the same round (L241)", () => {
     const t = table({ placements: [{ player: "p1", worker: 2, locationId: "form_decorate" }] });
     expect(validatePlacement(t.actorView("p1"), "p1:shifu", "form_decorate", false)?.code).toBe("PERSONAL_SPACE_LOCKED");
     t.act("p1", buy("p1:apprentice:1", "T16"));
@@ -136,10 +136,13 @@ describe("Apprentice (v1.6.2 L206): pay the printed cost and take 1 face-up Adva
     expect(t.state.techDisplay.workshop).toEqual(["T01", "T16"]);
 
     const poor = table(coins(2));
-    const error = poor.expectRuleError("p1", buy("p1:apprentice:1", "T11"), "INSUFFICIENT_RESOURCES");
+    // Kiln Tending costs 3 (v1.6.2 L32); Colour Samples 3 since change 38 (rev. 5 L632).
+    const error = poor.expectRuleError("p1", buy("p1:apprentice:1", "T20"), "INSUFFICIENT_RESOURCES");
     expect(error.details).toMatchObject({ resource: "coins", needed: 3, have: 2 });
+    const samples = poor.expectRuleError("p1", buy("p1:apprentice:1", "T10"), "INSUFFICIENT_RESOURCES");
+    expect(samples.details).toMatchObject({ resource: "coins", needed: 3, have: 2 });
     expectDocumentedDetails(error);
-    // Fuel Ledger costs 4 (rev. 4 L625, change 30): 2 Coins do not cover it; a 2-Coin Tech they do.
+    // Fuel Ledger costs 4 (L644, change 30): 2 Coins do not cover it; a 2-Coin Tech they do.
     const ledger = poor.expectRuleError("p1", buy("p1:apprentice:1", "T12"), "INSUFFICIENT_RESOURCES");
     expect(ledger.details).toMatchObject({ resource: "coins", needed: 4, have: 2 });
     poor.act("p1", buy("p1:apprentice:1", "T01"));
@@ -147,7 +150,7 @@ describe("Apprentice (v1.6.2 L206): pay the printed cost and take 1 face-up Adva
   });
 });
 
-describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from different disciplines at printed cost", () => {
+describe("Shifu (v1.6.2 L237, B2): private inspection, then up to 2 Techs from different disciplines at printed cost", () => {
   it("takes 1 inspected Tech at its printed cost; with no second take possible the step closes by itself", () => {
     const t = table();
     expect(t.state.hidden.techDecks.firing).toEqual(["T13", "T14", "T24", "T25"]);
@@ -180,7 +183,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     const t = table(coins(5));
     t.act("p1", inspect("firing"));
     const first = t.act("p1", take("face_up", "T01"));
-    // The Cover token comes off at once, before the second take (L212, L214).
+    // The Cover token comes off at once, before the second take (L241, L243).
     expect(types(first)).toEqual(["RESOURCES_CHANGED", "TECH_ACQUIRED", "PERSONAL_SPACE_UNLOCKED"]);
     expect(t.player("p1").resources.coins).toBe(3);
     expect(t.player("p1").score).toEqual({ orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 });
@@ -215,7 +218,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     expect(t.state.hidden.pendingLook).toMatchObject({ techIds: ["T05", "T17"] });
     t.act("p1", take("face_up", "T20"));
     t.act("p1", take("face_up", "T12"));
-    // Kiln Tending 3 + Fuel Ledger 4 (rev. 4 L625).
+    // Kiln Tending 3 + Fuel Ledger 4 (L644).
     expect(t.player("p1").resources.coins).toBe(1);
     // Two inspected Techs are still untaken, so the bottom order is the Shifu's to choose.
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection", takes: [{ techId: "T20" }, { techId: "T12" }] } });
@@ -292,7 +295,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     expect(t.state.hidden.techDecks.firing).toEqual(["T24", "T25", "T13"]);
   });
 
-  it("the 3-total limit applies to both takes (L211)", () => {
+  it("the 3-total limit applies to both takes (L240)", () => {
     // Owning 2 Techs, the first take makes 3: the second is refused (TECH_LIMIT).
     const t = table({ players: [{ techs: ["T01", "T20"], resources: { coins: 6 } }, {}] });
     t.act("p1", inspect("firing"));
@@ -324,7 +327,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     expect(t.state.phase).toMatchObject({ activePlayerId: "p2" });
   });
 
-  it("sees as many as remain when fewer than 2 are left (v1.6.2 L207), and pays the printed 4 for Tribute Ware", () => {
+  it("sees as many as remain when fewer than 2 are left (v1.6.2 L237), and pays the printed 4 for Tribute Ware", () => {
     const t = table({ players: [{ resources: { coins: 4 } }, { techs: ["T13"] }, { techs: ["T14"] }, { techs: ["T24"] }] });
     expect(t.state.hidden.techDecks.firing).toEqual(["T25"]);
     t.act("p1", inspect("firing"));
@@ -343,13 +346,14 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     expectDocumentedDetails(t.expectRuleError("p1", take("face_up", "T13"), "TECH_NOT_AVAILABLE"));
     expectDocumentedDetails(t.expectRuleError("p1", take("inspected", "T17"), "TECH_DISCIPLINE_OWNED"));
     expectDocumentedDetails(t.expectRuleError("p1", take("face_up", "T05"), "TECH_DISCIPLINE_OWNED"));
-    // No Shifu discount: Fuel Ledger costs the Shifu the printed 4 (rev. 4 L625).
+    // No Shifu discount: Fuel Ledger costs the Shifu the printed 4 (L644).
     const error = t.expectRuleError("p1", take("face_up", "T12"), "INSUFFICIENT_RESOURCES");
     expect(error.details).toMatchObject({ resource: "coins", needed: 4, have: 3 });
     expectDocumentedDetails(error);
+    // Protective Saggars costs 2 since change 38 (rev. 5 L643).
     const paid = t.act("p1", take("face_up", "T11"));
-    expect(only(paid, "TECH_ACQUIRED")).toMatchObject({ techId: "T11", cost: 3 });
-    expect(t.player("p1").resources.coins).toBe(0);
+    expect(only(paid, "TECH_ACQUIRED")).toMatchObject({ techId: "T11", cost: 2 });
+    expect(t.player("p1").resources.coins).toBe(1);
   });
 
   it("the bottom order must list every untaken inspected Tech exactly once (INVALID_BOTTOM_ORDER)", () => {
@@ -385,7 +389,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
   });
 });
 
-describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, change 25, R4, B1)", () => {
+describe("Colour Samples when acquired: Select 3 (v1.6.2 L80, L243, L632, L656, change 25, R4, B1)", () => {
   it("an Apprentice buy looks at the top 3 Main Orders and reserves 1 of them — no resource, no Main display refill; hand limit 5", () => {
     const t = table();
     const [a, b, c] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId];
@@ -415,7 +419,7 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
     const resources = { ...t.player("p1").resources };
     const chosen = t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: c }] });
     expect(t.state.hidden.orderHands["p1"]).toEqual([c]);
-    // The swap is usable the round Colour Samples is acquired (v1.6.2 L213, L625): with an Order
+    // The swap is usable the round Colour Samples is acquired (v1.6.2 L243, L632): with an Order
     // now held, the after-action window opens, and the Tech display refills only at END_TURN.
     expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED"]);
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
@@ -503,7 +507,7 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
     expect(none.state.hidden.orderHands["p1"]).toEqual([]);
   });
 
-  it("looks at the deck, reshuffling the discard when the deck is empty as the look starts (L516, R16)", () => {
+  it("looks at the deck, reshuffling the discard when the deck is empty as the look starts (L526, R16)", () => {
     const keep: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06", "O07", "O08"];
     const t = table({
       players: [{}, { hand: MAIN_ORDER_IDS.filter((id) => !keep.includes(id)) }],
@@ -518,12 +522,13 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
   });
 
   it("a Shifu's first take: the reservation resolves before the second take, while the inspection waits privately", () => {
-    const t = table(coins(5));
+    // Colour Samples 3 (rev. 5 L632) + Test Pieces 3.
+    const t = table(coins(6));
     const [a, b, c] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId];
     t.act("p1", inspect("firing"));
     const events = t.act("p1", take("face_up", "T10"));
     expect(types(events)).toEqual(["RESOURCES_CHANGED", "TECH_ACQUIRED", "PERSONAL_SPACE_UNLOCKED", "PRIVATE_LOOK_OPENED"]);
-    expect(only(events, "TECH_ACQUIRED")).toMatchObject({ techId: "T10", cost: 2 });
+    expect(only(events, "TECH_ACQUIRED")).toMatchObject({ techId: "T10", cost: 3 });
     expect(t.state.phase).toEqual({
       type: "work_turn",
       activePlayerId: "p1",
@@ -534,7 +539,7 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
       },
     });
     expect(t.state.hidden.pendingLook).toEqual({ kind: "colour_samples", playerId: "p1", orderIds: [a, b, c], inspection: { discipline: "firing", techIds: ["T13", "T14"] } });
-    // L214: the reservation comes first.
+    // L243: the reservation comes first.
     t.expectRuleError("p1", take("inspected", "T13"), "WRONG_PHASE");
     t.expectRuleError("p1", finish(["T13", "T14"]), "WRONG_PHASE");
 
@@ -556,7 +561,7 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
   });
 
   it("a Shifu's first take with a face-up reservation: the inspection resumes, and both displays refill when the turn ends", () => {
-    const t = table(coins(5));
+    const t = table(coins(6));
     t.act("p1", inspect("firing"));
     t.act("p1", take("face_up", "T10"));
     t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 5, orderId: "O06" }] });
@@ -571,7 +576,8 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
   });
 
   it("a Shifu's second take: after the reservation the Shifu still chooses the bottom order", () => {
-    const t = table(coins(6));
+    // Fuel Ledger 4 + Colour Samples 3 (rev. 5 L632).
+    const t = table(coins(7));
     t.act("p1", inspect("workshop"));
     t.act("p1", take("face_up", "T12"));
     t.act("p1", take("face_up", "T10"));

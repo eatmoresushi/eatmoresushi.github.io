@@ -5,17 +5,17 @@ import { defineNamespace } from "../defineNamespace.ts";
  * (UI_V1.6.1_ARCHITECTURE §4.2).
  *
  * Wireframe sources: `decOrders`, `decTrim`, `decFinal`, and owner decision D10 (rules details).
+ * Since owner revision 5 the Order Phase is the post-firing free-action window (R28), and an Order
+ * is also completed as a free action in a Work turn (`work.work.mode.completeOrder`).
  * Every rule number is a placeholder (§5 gap 19). Glossary §1.5: 交货 only in 交货阶段; Orders are
  * 完成 and ceramics 交付.
  */
 export const orders = defineNamespace({
   en: {
     // Order Phase (single pass, First Player order).
-    "title.orders": "Complete held Orders",
-    "turn.lead": "In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.",
+    "title.orders": "Order Phase: free actions",
+    "turn.lead": "In First Player order, after the firing. Take any number of free actions, one at a time: complete held Orders, sell a Flawed ceramic, use Imperial Priority. The choices are checked again after each one.",
     "turn.order": "Order",
-    "turn.completable": "{n} of {total} can be completed",
-    "turn.notCompletable": "No matching ceramics",
     "turn.ceramics": "Ceramics",
     "turn.option": "Option {n}",
     "turn.rewards": "Rewards",
@@ -26,14 +26,16 @@ export const orders = defineNamespace({
     "turn.crackleVp": "Crackle: +{n} VP",
     "turn.sum": "Complete <b>{order}</b> with {ceramics}",
     "turn.sumEnd": "End your Order turn",
-    "turn.pick": "Choose an Order to complete, or end your turn.",
+    "turn.pick": "Choose a free action, or end your turn.",
+    "turn.done": "Done",
+    "turn.pickOrder": "Choose an Order to complete.",
     "turn.pickGroup": "Choose which ceramics to deliver.",
     "turn.faceUpNote": "Only held Orders can be completed; Orders on the display cannot.",
     "turn.crownNote": "Crowns advance Imperial Recognition one at a time, resolving every milestone crossed; beyond Recognition {max}, each Crown scores {vp} VP immediately.",
     "ceramicAs": "{ceramic} (as {decoration})",
     "requirementLine": "{requirements} · {quality}",
 
-    // Crackle declarations (L470, L485; `crackleDeclarationChecks`).
+    // Crackle declarations (L484, L499; `crackleDeclarationChecks`).
     "decl.legend": "Crackle declaration",
     "decl.auto": "Find a declaration for me",
     "decl.autoDesc": "The game picks Decorations for your Crackle ceramics that complete the Order, and records them.",
@@ -71,11 +73,9 @@ export const orders = defineNamespace({
     "rules.kilnName": "{kiln} · {ability}",
   },
   zh: {
-    "title.orders": "完成在手委托",
-    "turn.lead": "按起始玩家顺序。你可以逐张完成任意数量的在手委托；每完成一张，列表都会重新核验。",
+    "title.orders": "交货阶段：自由行动",
+    "turn.lead": "烧窑之后，按起始玩家顺序。你可以逐项进行任意数量的自由行动：完成在手委托、卖出瑕品、用御烧优先；每做一项，选项都会重新核验。",
     "turn.order": "委托",
-    "turn.completable": "{total}张中{n}张可完成",
-    "turn.notCompletable": "无可用器物",
     "turn.ceramics": "器物",
     "turn.option": "方案{n}",
     "turn.rewards": "报酬",
@@ -86,7 +86,9 @@ export const orders = defineNamespace({
     "turn.crackleVp": "开片器+{n}分",
     "turn.sum": "用{ceramics}完成<b>{order}</b>",
     "turn.sumEnd": "结束你的交货阶段回合",
-    "turn.pick": "请选择要完成的委托，或结束回合。",
+    "turn.pick": "请选择一项自由行动，或结束回合。",
+    "turn.done": "结束回合",
+    "turn.pickOrder": "请选择要完成的委托。",
     "turn.pickGroup": "请选择要交付的器物。",
     "turn.faceUpNote": "只能完成在手委托；委托榜上的委托不能完成。",
     "turn.crownNote": "御令逐个推进御府声望，逐格结算途经的每项声望奖励；声望满{max}后，每个御令立即得{vp}分。",

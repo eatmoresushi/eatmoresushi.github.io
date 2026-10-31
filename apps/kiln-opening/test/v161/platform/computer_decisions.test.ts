@@ -1,18 +1,21 @@
 /**
  * The strategic computer player makes sensible choices in clear-cut situations (DESIGN §9.2
  * P9): Glazes aimed at the expected heat, Contributions that steer Base Heat toward its own
- * loads (Fuel Ledger's free Bank and Stoke included), Kiln Master's marker, Jun, Ge (on a Fine
- * or Standard ceramic, rev. 4 L463), Protective Saggars and Second Firing (the better of its 2
- * cards) used when they pay, a Flawed ceramic sold in the seat's own turn (R20), Orders
- * completed greedily by value and only in the Order Phase, vessels formed for held Orders
- * (S07's Decoration choice included), reservations that fit its pipeline, the Colour Samples
- * swap, the Guild Hall Shifu's 2 takes, and hand-limit discards of the least achievable
- * Orders. Every choice is also checked against the engine.
+ * loads (Fuel Ledger's free Bank and Stoke included), Kiln Master's marker, Jun, Ge (on any of
+ * its ceramics of the firing, never a Flawed one, rev. 5 L482), Protective Saggars and Second
+ * Firing (the better of its 2 cards) used when they pay, the free actions (rev. 5 L168–176: a
+ * Flawed ceramic sold first in every free-action window, Orders completed greedily by value in
+ * the Order Phase and in a Work turn when no other held Order plans their ceramics, Imperial
+ * Priority in the Order Phase only when the next roll could not change its load and never in
+ * Round 5), vessels formed for held Orders (S07's Decoration choice included), reservations
+ * that fit its pipeline, the Colour Samples swap, the Guild Hall Shifu's 2 takes, and
+ * hand-limit discards of the least achievable Orders. Every choice is also checked against the
+ * engine.
  */
 
 import { describe, expect, it } from "vitest";
 import { SeededRandom, TECHS, createGame, preferredHeat, validateAction, zoneModifier } from "../../../src/game/index.ts";
-import type { AuthoritativeCommand, Glaze, KilnSpaceId, PlayerId, TechId } from "../../../src/game/index.ts";
+import type { AuthoritativeCommand, Glaze, KilnSpaceId, OrderId, PlayerId, TechId } from "../../../src/game/index.ts";
 import { chooseStrategicCommand } from "../../../src/multiplayer/index.ts";
 import { buildState, type StateSpec } from "../engine/support/fixtures.ts";
 import { openFiringTable, tendAll } from "../engine/support/firing.ts";
@@ -48,7 +51,7 @@ function fired(spec: StateSpec, fireDeck: Array<-2 | -1 | 0 | 1 | 2>): LocalTabl
 }
 
 describe("strategic computer choices", () => {
-  it("chooses Jun first among the five Kiln boards, with a face-up Main Order in the same turn (rev. 4 L122, R23)", () => {
+  it("chooses Jun first among the five Kiln boards, with a face-up Main Order in the same turn (L130, R23)", () => {
     const created = createGame({ gameId: "kiln-pick", players: [{ id: "p1", displayName: "A" }, { id: "p2", displayName: "B" }] }, new SeededRandom(4));
     if (!created.ok) throw new Error("createGame failed");
     const table = new LocalTable(created.state, { seed: 4 });
@@ -89,7 +92,7 @@ describe("strategic computer choices", () => {
     expect(choice.loads.every((load) => load.kilnMaster === undefined)).toBe(true);
   });
 
-  it("puts Kiln Master's marker on a load when it moves the heat toward the Preferred Heat (rev. 4 L628, R22)", () => {
+  it("puts Kiln Master's marker on a load when it moves the heat toward the Preferred Heat (L647, R22)", () => {
     // Kiln Die 1 and only Low space free: heat 0 there, below every Preferred Heat (White 1).
     const table = work({
       round: 5,
@@ -118,7 +121,7 @@ describe("strategic computer choices", () => {
     expect(Math.abs(preferredHeat(load.glaze) - (heat + 1))).toBeLessThan(Math.abs(preferredHeat(load.glaze) - heat));
   });
 
-  it("with no Wood for the kiln fuel, loads into its empty Imperial Kiln, which burns none (rev. 4 L197–198, L291, R24)", () => {
+  it("with no Wood for the kiln fuel, loads into its empty Imperial Kiln, which burns none (L215–216, L309, R24)", () => {
     // Round 5, the Shifu left: the Shared Kiln would cost 1 Wood the seat does not have.
     const table = work({
       round: 5,
@@ -139,7 +142,7 @@ describe("strategic computer choices", () => {
     expect(table.player("p1").resources.wood).toBe(0);
   });
 
-  it("takes Wood for the kiln fuel at the Materials Yard when it has none (rev. 4 L176, L197)", () => {
+  it("takes Wood for the kiln fuel at the Materials Yard when it has none (L194, L215)", () => {
     const table = work({ round: 2, players: [{ kilnId: "GE", resources: { clay: 0, wood: 0, coins: 3 }, hand: ["S01", "S05"] }, { kilnId: "DI" }] });
     const choice = decide(table);
     expect(choice.type).toBe("PLACE_MATERIALS_YARD");
@@ -148,7 +151,7 @@ describe("strategic computer choices", () => {
     expect(choice.wood).toBeGreaterThanOrEqual(1);
   });
 
-  it("reserves a face-up Crown Order its finished ceramic completes with its Magistrate's Hall Shifu (rev. 4 L241, L245, R21)", () => {
+  it("reserves a face-up Crown Order its finished ceramic completes with its Magistrate's Hall Shifu (L259, L263, R21)", () => {
     // The Commission Market is full; a Fine Celadon Vase completes O18 (1 Crown) at once.
     const table = work({
       round: 2,
@@ -234,7 +237,7 @@ describe("strategic computer choices", () => {
     expect(decide(table)).toMatchObject({ type: "USE_GE_CRACKLE" });
   });
 
-  it("crackles a Fine ceramic with Ge for its Crackle VP when delivered (rev. 4 L463, L465)", () => {
+  it("crackles a Fine ceramic with Ge for its Crackle VP when delivered (L482, L484)", () => {
     // Celadon (2) in a High space with Fire 0: heat 3, Fine.
     const table = fired(
       {
@@ -247,13 +250,110 @@ describe("strategic computer choices", () => {
     expect(decide(table)).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c1" });
   });
 
-  it("sells a Finished Flawed ceramic first in its Work turn, Order Phase turn and Cleanup trim, never in the after-Quality turn (R20)", () => {
+  it("crackles a Masterpiece with Ge for its Crackle VP; it stays a Masterpiece (rev. 5 L482, change 39)", () => {
+    // Celadon (2) in a Middle space with Fire 0: heat 2, Masterpiece.
+    const table = fired(
+      {
+        players: [{ kilnId: "GE", hand: ["S08"] }, { kilnId: "DI" }],
+        ceramics: [{ owner: "p1", stage: "loaded", shape: "vase", glaze: "celadon", at: "middle_1" }],
+      },
+      [0, 0, -1],
+    );
+    expect(table.state.firing?.ceramics["c1"]?.quality).toBe("masterpiece");
+    const choice = decide(table);
+    expect(choice).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c1" });
+    play(table, choice);
+    expect(table.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "masterpiece", crackle: true });
+
+    // Two targets no held Order plans, a Fine and a Masterpiece: the better ceramic is crackled.
+    const two = fired(
+      {
+        players: [{ kilnId: "GE" }, { kilnId: "DI" }],
+        ceramics: [
+          { owner: "p1", stage: "loaded", shape: "plate", glaze: "celadon", at: "high_1" },
+          { owner: "p1", stage: "loaded", shape: "vase", glaze: "celadon", at: "middle_1" },
+        ],
+      },
+      [0, 0, -1],
+    );
+    expect(two.state.firing?.ceramics["c1"]?.quality).toBe("fine");
+    expect(two.state.firing?.ceramics["c2"]?.quality).toBe("masterpiece");
+    expect(decide(two)).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c2" });
+  });
+
+  it("never crackles a Flawed ceramic, which gains nothing: it ends the after-Quality turn (rev. 5 L49, L482)", () => {
+    // Celadon (2) in a Low space with Fire −2: heat −1, Flawed. Ge may target it, but declines.
+    const table = fired(
+      {
+        players: [{ kilnId: "GE", hand: ["S08"] }, { kilnId: "DI" }],
+        ceramics: [{ owner: "p1", stage: "loaded", shape: "vase", glaze: "celadon", at: "low_1" }],
+      },
+      [-2, 0, -1],
+    );
+    expect(table.state.firing?.ceramics["c1"]?.quality).toBe("flawed");
+    expect(table.state.phase.type).toBe("firing_after_quality");
+    expect(decide(table)).toEqual({ type: "END_AFTER_QUALITY" });
+  });
+
+  it("puts Decorator's Kit on a Plain vessel (any vessel since change 37, rev. 5 L622)", () => {
+    // Only an Apprentice is left and every central location it could use is full; S01 needs
+    // any White ceramic, so a Plain vessel is a fine choice, and 3 Coins form it only with the Kit.
+    const table = work({
+      players: [{ kilnId: "RU", techs: ["T16"], resources: { clay: 3, wood: 3, coins: 1 }, hand: ["S01"] }, { kilnId: "DI" }],
+      placements: [
+        { player: "p2", worker: "shifu", locationId: "materials_yard" },
+        { player: "p2", worker: 1, locationId: "materials_yard" },
+        { player: "p2", worker: 2, locationId: "commission_market" },
+        { player: "p2", worker: 3, locationId: "commission_market" },
+        { player: "p1", worker: "shifu", locationId: "canal_wharf" },
+        { player: "p1", worker: 1, locationId: "canal_wharf" },
+        { player: "p1", worker: 2, locationId: "canal_wharf" },
+      ],
+    });
+    const choice = decide(table);
+    expect(choice).toMatchObject({ type: "PLACE_FORM_DECORATE", decoratorsKitVesselIndex: 0 });
+    if (choice.type !== "PLACE_FORM_DECORATE") return;
+    expect(choice.vessels).toHaveLength(1);
+    play(table, choice);
+    expect(table.state.players["p1"]?.resources.coins).toBe(0);
+  });
+
+  it("pays Ding's extra vessel at 1 Clay + 2 Coins (rev. 5 L488, change 40)", () => {
+    const table = work({
+      round: 2,
+      players: [{ kilnId: "DI", resources: { clay: 9, wood: 3, coins: 9 }, hand: ["S05", "O14"] }, { kilnId: "GE" }],
+      placements: [
+        { player: "p2", worker: "shifu", locationId: "materials_yard" },
+        { player: "p2", worker: 1, locationId: "materials_yard" },
+        { player: "p2", worker: 2, locationId: "commission_market" },
+        { player: "p2", worker: 3, locationId: "commission_market" },
+        { player: "p1", worker: "shifu", locationId: "canal_wharf" },
+        { player: "p1", worker: 1, locationId: "canal_wharf" },
+        { player: "p1", worker: 2, locationId: "canal_wharf" },
+      ],
+    });
+    const choice = decide(table);
+    expect(choice).toMatchObject({ type: "PLACE_FORM_DECORATE" });
+    if (choice.type !== "PLACE_FORM_DECORATE" || choice.dingExtra === undefined) throw new Error(`no Ding vessel: ${JSON.stringify(choice)}`);
+    const before = { ...table.state.players["p1"]!.resources };
+    play(table, choice);
+    const after = table.state.players["p1"]!.resources;
+    const vesselCoins = choice.vessels.length * 2;
+    expect(before.coins - after.coins).toBe(vesselCoins + 2);
+  });
+
+  it("sells a Finished Flawed ceramic first in every free-action window, never during the firing or at Cleanup (rev. 5 L172, L176, R26)", () => {
     const flawed = { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" } as const;
     // Before the worker action.
     expect(decide(work({ players: [{ kilnId: "GE", resources: RICH, hand: ["S08"] }, { kilnId: "DI" }], ceramics: [flawed] }))).toEqual({
       type: "SELL_FLAWED",
       ceramicId: "c1",
     });
+    // After the worker action: the Flawed ceramic opens the window (R27), and the seat sells it.
+    const after = work({ players: [{ kilnId: "GE" }, { kilnId: "DI" }], ceramics: [flawed] });
+    after.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
+    expect(after.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
+    expect(decide(after)).toEqual({ type: "SELL_FLAWED", ceramicId: "c1" });
     // The Order Phase turn, before completing anything.
     const orders = work({
       players: [{ kilnId: "GE", hand: ["S08"] }, { kilnId: "DI" }],
@@ -263,14 +363,12 @@ describe("strategic computer choices", () => {
     expect(decide(orders)).toEqual({ type: "SELL_FLAWED", ceramicId: "c1" });
     orders.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
     expect(decide(orders)).toMatchObject({ type: "COMPLETE_ORDER", orderId: "S08" });
-    // A pending Cleanup trim.
+    // A pending Cleanup trim is no free-action window: the seat only trims.
     const cleanup = work({
       players: [{ kilnId: "GE", hand: ["S08", "O01", "O47", "S07", "S01"] }, { kilnId: "DI" }],
       phase: { type: "cleanup_hand_limit", pendingPlayerIds: ["p1"], openedAtRevision: 0 },
       ceramics: [flawed],
     });
-    expect(decide(cleanup)).toEqual({ type: "SELL_FLAWED", ceramicId: "c1" });
-    cleanup.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
     expect(decide(cleanup)).toMatchObject({ type: "DISCARD_TO_HAND_LIMIT" });
     // The after-Quality turn: Second Firing may still use this firing's Flawed ceramic, and the
     // Finished one waits for the Order Phase turn.
@@ -284,7 +382,7 @@ describe("strategic computer choices", () => {
     expect(decide(refire)).toEqual({ type: "USE_SECOND_FIRING", ceramicId: "c1" });
   });
 
-  it("lifts a Standard ceramic with Protective Saggars, which costs no Wood (v1.6.2 L628)", () => {
+  it("lifts a Standard ceramic with Protective Saggars, which costs no Wood (v1.6.2 L643)", () => {
     const table = fired(
       {
         players: [{ kilnId: "DI", techs: ["T11"], resources: { wood: 0 } }, { kilnId: "RU" }],
@@ -299,7 +397,7 @@ describe("strategic computer choices", () => {
     ["high_1", "celadon", "BANK"],
     ["high_1", "moon_white", "STOKE"],
   ] as Array<[KilnSpaceId, Glaze, "BANK" | "STOKE"]>)(
-    "spends Fuel Ledger's free Wood card with no Wood at all (%s, %s → %s; v1.6.2 L634)",
+    "spends Fuel Ledger's free Wood card with no Wood at all (%s, %s → %s; v1.6.2 L644)",
     (at, glaze, card) => {
       const spec = (techs: TechId[]): StateSpec => ({
         players: [{ kilnId: "GE", techs, resources: { wood: 0 } }, { kilnId: "DI" }],
@@ -310,12 +408,12 @@ describe("strategic computer choices", () => {
       });
       // Fuel Ledger's Bank and Stoke cost no Wood, so the owner steers without any.
       expect(decide(openFiringTable(spec(["T12"])))).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card });
-      // Without it, a seat with no Wood can only Tend (v1.6.2 L266).
+      // Without it, a seat with no Wood can only Tend (v1.6.2 L289).
       expect(decide(openFiringTable(spec([])))).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card: "TEND" });
     },
   );
 
-  it("plays Fuel Ledger Stoke (+2 for 1 Wood) when its load needs two steps, a plain Stoke without the tile (v1.6.2 L266, change 26)", () => {
+  it("plays Fuel Ledger Stoke (+2 for 1 Wood) when its load needs two steps, a plain Stoke without the tile (v1.6.2 L289, change 26)", () => {
     // Moon White (4) in a Middle space: the die's 2 needs +2 to be exact.
     const spec = (techs: TechId[]): StateSpec => ({
       players: [{ kilnId: "GE", techs, resources: { wood: 1 } }, { kilnId: "DI" }],
@@ -342,7 +440,7 @@ describe("strategic computer choices", () => {
     );
     expect(decide(refire)).toEqual({ type: "USE_SECOND_FIRING", ceramicId: "c1" });
     // With only −2 and −1 unseen, refiring cannot help: it ends the step, and the ceramic
-    // finishes Flawed (no salvage step, change 30), to be sold in a later own turn (R20).
+    // finishes Flawed (no salvage step, change 30), to be sold in a later free-action window (L172).
     const hopeless = fired(
       {
         players: [{ kilnId: "DI", techs: ["T14"] }, { kilnId: "RU" }],
@@ -356,7 +454,7 @@ describe("strategic computer choices", () => {
     expect(hopeless.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "flawed" });
   });
 
-  it("chooses the better of Second Firing's 2 cards, with Jun's step when it pays (v1.6.2 L631, R7)", () => {
+  it("chooses the better of Second Firing's 2 cards, with Jun's step when it pays (v1.6.2 L646, R7)", () => {
     // A White Bowl in a High space: Base 2 + Fire 0 + 1 = 3, Heat Difference 2, Standard. The
     // 2 extra cards are +1 (heat 4, Flawed) and −1 (heat 2, Fine).
     const spec = (kilnId: "DI" | "JU"): StateSpec => ({
@@ -467,7 +565,7 @@ describe("strategic computer choices", () => {
       round: 5,
       players: [{ kilnId: "GE", resources: RICH, hand: ["S08"] }, { kilnId: "DI" }],
       ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
-      // The display offers only Orders that need several new vessels (v1.6.2 L196: the Shifu
+      // The display offers only Orders that need several new vessels (v1.6.2 L226: the Shifu
       // chooses from the display and the 3 looked cards).
       display: ["O41", "O42", "O43", "O44", "O45", "O46"],
       mainDeck: ["O47", "O02", "O48"],
@@ -492,7 +590,7 @@ describe("strategic computer choices", () => {
     expect(decide(table)).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 2, orderId: "O02" }] });
   });
 
-  it("swaps an Order it cannot complete with Colour Samples, keeps the looked card it can, and discards the other 2 (v1.6.2 L622, change 25, R25)", () => {
+  it("swaps an Order it cannot complete with Colour Samples, keeps the looked card it can, and discards the other 2 (v1.6.2 L632, change 25, R25)", () => {
     // O47 needs three new vessels with two Masterpieces; O02 takes the Fine Celadon Plate now.
     // Round 5: the display's big Orders would need vessels fired this very round, so the looked
     // O02 beats them (the Select 3 may take a face-up Order too, change 25).
@@ -514,7 +612,11 @@ describe("strategic computer choices", () => {
     // The other 2 looked cards were discarded above the swapped-out O47 (R25).
     expect(table.state.hidden.mainDeck).toEqual([]);
     expect(table.state.hidden.mainDiscard.slice(0, 3)).toEqual(["O40", "O48", "O47"]);
-    // Once per round: the next decision is a worker placement.
+    // The reserved O02 is completed at once (a free action, rev. 5 L173); the swap is once per
+    // round, so the next decision is a worker placement.
+    const complete = decide(table);
+    expect(complete).toMatchObject({ type: "COMPLETE_ORDER", orderId: "O02", ceramicIds: ["c1"] });
+    play(table, complete);
     expect(decide(table).type).toMatch(/^PLACE_/);
   });
 
@@ -542,12 +644,17 @@ describe("strategic computer choices", () => {
     expect(table.state.hidden.mainDiscard.slice(0, 3)).toEqual(["O40", "O43", "O48"]);
   });
 
-  it("keeps its Colour Samples swap when its only held Order is already complete", () => {
+  it("keeps its Colour Samples swap when its only held Order is already complete: it completes the Order instead (rev. 5 L173)", () => {
     const table = work({
       round: 3,
       players: [{ kilnId: "GE", techs: ["T10"], resources: RICH, hand: ["O02"] }, { kilnId: "DI" }],
       ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
+      // No face-up Order the Plate would complete for more.
+      display: ["O03", "O04", "O05", "O06", "O08", "O09"],
     });
+    const complete = decide(table);
+    expect(complete).toMatchObject({ type: "COMPLETE_ORDER", orderId: "O02" });
+    play(table, complete);
     expect(decide(table).type).toMatch(/^PLACE_/);
   });
 
@@ -573,7 +680,7 @@ describe("strategic computer choices", () => {
     }
   });
 
-  it("takes 2 Techs from different disciplines at printed cost at the Guild Hall, then returns the inspected Techs in look order (v1.6.2 L207, B2)", () => {
+  it("takes 2 Techs from different disciplines at printed cost at the Guild Hall, then returns the inspected Techs in look order (v1.6.2 L237, B2)", () => {
     const table = work({ round: 1, players: [{ kilnId: "GE", resources: { clay: 3, wood: 3, coins: 9 } }, { kilnId: "DI" }] });
     table.act("p1", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "firing" } });
     const inspected = table.state.hidden.pendingLook?.kind === "guild_inspection" ? [...table.state.hidden.pendingLook.techIds] : [];
@@ -598,16 +705,23 @@ describe("strategic computer choices", () => {
     expect(table.state.hidden.techDecks.firing.slice(-untaken.length)).toEqual(untaken);
   });
 
-  it("has no Canal Barge decision in the Work Phase and completes the Order in the Order Phase, for its 2 Coins (v1.6.2 L622)", () => {
-    // A completable Order in hand opens no after-action window for Canal Barge: the turn passes.
+  it("has no Canal Barge decision of its own: it completes the Order after its worker action or in the Order Phase, for its 2 Coins (rev. 5 L172–176, L637)", () => {
+    // A held Order and a Finished ceramic open the after-action window on public facts (R27); the
+    // seat completes there (a free action), gains the Order's Coins and Canal Barge's 2, and the
+    // window closes by itself once nothing is left in it.
     const table = work({
       round: 3,
-      players: [{ kilnId: "GE", techs: ["T23"], resources: RICH, hand: ["O02"] }, { kilnId: "DI" }],
+      players: [{ kilnId: "GE", techs: ["T23"], resources: { ...RICH, coins: 1 }, hand: ["O02"] }, { kilnId: "DI" }],
       ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
     });
     table.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
+    expect(table.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
+    const after = decide(table);
+    expect(after).toMatchObject({ type: "COMPLETE_ORDER", orderId: "O02", ceramicIds: ["c1"] });
+    play(table, after);
+    expect(table.state.players["p1"]?.resources.coins).toBe(1 + 2 + 3 + 2);
+    expect(table.state.players["p1"]?.completedOrders.map((record) => record.orderId)).toEqual(["O02"]);
     expect(table.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } });
-    expect(table.state.players["p1"]?.completedOrders).toEqual([]);
 
     const orders = new LocalTable(
       buildState({
@@ -622,6 +736,74 @@ describe("strategic computer choices", () => {
     expect(complete).toMatchObject({ type: "COMPLETE_ORDER", orderId: "O02" });
     play(orders, complete);
     expect(orders.state.players["p1"]?.resources.coins).toBe(1 + 3 + 2);
+  });
+
+  it("completes a held Order before its worker action, unless the hand plan keeps the ceramic for another held Order (rev. 5 L170, L176)", () => {
+    // S02 (any Celadon) and a Fine Celadon Bowl: completed at once, so the 4 Coins count for the
+    // placement that follows. No face-up Order would take the Bowl.
+    const display: OrderId[] = ["O03", "O04", "O05", "O06", "O08", "O09"];
+    const alone = work({
+      round: 3,
+      players: [{ kilnId: "GE", resources: { clay: 2, wood: 3, coins: 0 }, hand: ["S02"] }, { kilnId: "DI" }],
+      ceramics: [{ owner: "p1", stage: "finished", shape: "bowl", glaze: "celadon", quality: "fine" }],
+      display,
+    });
+    const first = decide(alone);
+    expect(first).toEqual({ type: "COMPLETE_ORDER", orderId: "S02", ceramicIds: ["c1"] });
+    play(alone, first);
+    expect(alone.state.players["p1"]?.resources.coins).toBe(4);
+    expect(alone.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } });
+    expect(decide(alone).type).toMatch(/^PLACE_/);
+
+    // O07 (any Celadon, 5 VP) shows face up: the Bowl may complete it this turn if the placement
+    // reserves it, so the seat waits until after its worker action.
+    const showing = work({
+      round: 3,
+      players: [{ kilnId: "GE", resources: { clay: 2, wood: 3, coins: 0 }, hand: ["S02"] }, { kilnId: "DI" }],
+      ceramics: [{ owner: "p1", stage: "finished", shape: "bowl", glaze: "celadon", quality: "fine" }],
+      display: ["O03", "O04", "O05", "O06", "O07", "O09"],
+    });
+    expect(decide(showing).type).toMatch(/^PLACE_/);
+
+    // O35 (a Celadon Bowl and Plate, 11 VP) plans the same Bowl with the Plate in the kiln: the
+    // seat keeps it in the Work turn and leaves the choice to the Order Phase, after the firing.
+    const planned = work({
+      round: 3,
+      players: [{ kilnId: "GE", resources: RICH, hand: ["S02", "O35"] }, { kilnId: "DI" }],
+      ceramics: [
+        { owner: "p1", stage: "finished", shape: "bowl", glaze: "celadon", quality: "fine" },
+        { owner: "p1", stage: "loaded", shape: "plate", glaze: "celadon", at: "middle_1" },
+      ],
+      display,
+    });
+    expect(decide(planned).type).toMatch(/^PLACE_/);
+  });
+
+  it("spends Imperial Priority in the Order Phase only when the next roll could not change its load, and never in Round 5 (rev. 5 L174, L314, R28)", () => {
+    const orderTurn = (round: 2 | 4 | 5, hand: OrderId[], techs: TechId[] = []) =>
+      new LocalTable(
+        buildState({
+          round,
+          players: [{ kilnId: "GE", recognition: 3, techs, hand }, { kilnId: "DI" }],
+          phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+          ceramics: [{ owner: "p1", stage: "shaped", shape: "vase" }],
+        }),
+        { flow: "halt", pass: ["worker_action_done"] },
+      );
+    // S04 needs Moon White (Preferred Heat 4): +1 is the best modifier whatever the next Kiln
+    // Die shows, so nothing is learnt by waiting. No Kiln Master marker (R32: it would stay on
+    // the ceramic until next round's firing finishes).
+    for (const round of [2, 4] as const) {
+      const table = orderTurn(round, ["S04"], ["T24"]);
+      const choice = decide(table);
+      expect(choice).toEqual({ type: "USE_IMPERIAL_PRIORITY", ceramicId: "c1", glaze: "moon_white", imperialModifier: 1 });
+      play(table, choice);
+      expect(table.state.ceramics["c1"]).toMatchObject({ stage: "loaded", loadedBy: "imperial_priority", loadedInRound: round });
+    }
+    // S01 needs White (Preferred Heat 1): the best modifier depends on the roll, so it waits.
+    expect(decide(orderTurn(2, ["S01"]))).toEqual({ type: "END_ORDER_TURN" });
+    // Round 5: the ceramic would never be fired.
+    expect(decide(orderTurn(5, ["S04"]))).toEqual({ type: "END_ORDER_TURN" });
   });
 
   it("discards its least achievable Order at the hand limit", () => {

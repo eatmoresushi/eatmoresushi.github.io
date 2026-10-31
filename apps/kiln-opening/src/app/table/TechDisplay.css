@@ -126,7 +126,7 @@
     font-size: var(--fs-meta);
   }
 
-  /* A taken Tech's position, empty until the taker's turn ends (v1.6.2 L209): drawn as an empty
+  /* A taken Tech's position, empty until the taker's turn ends (v1.6.2 L239): drawn as an empty
      spot the size of a short tile, so the column reads as one position short, not as a note. */
   .disc-empty {
     display: grid;

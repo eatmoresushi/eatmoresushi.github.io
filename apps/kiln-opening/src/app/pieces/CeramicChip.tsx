@@ -35,7 +35,7 @@ export interface CeramicChipProps {
   /** Used for the default label (owner name, "Your …", disambiguation). */
   view?: CeramicLabelView;
   labelOptions?: Omit<CeramicLabelOptions, "locale">;
-  /** Kiln Master's face-up marker on this loaded ceramic (T24, rev. 4 L628), or null. */
+  /** Kiln Master's face-up marker on this loaded ceramic (T24, L647), or null. */
   marker?: HeatDelta | null;
   /** Show the Quality badge when the ceramic has one (default true). */
   showQuality?: boolean;

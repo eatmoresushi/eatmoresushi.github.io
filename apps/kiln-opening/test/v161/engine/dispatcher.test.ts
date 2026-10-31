@@ -53,15 +53,19 @@ describe("handler table", () => {
     for (const [type, handler] of Object.entries(HANDLERS)) {
       expect(handler.phases.length, type).toBeGreaterThan(0);
     }
-    // Jun during Second Firing (R7) is part of SECOND_FIRING_CHOOSE (v1.6.2 L639).
+    // Jun during Second Firing (R7) is part of SECOND_FIRING_CHOOSE (v1.6.2 L646).
     expect(HANDLERS.RESOLVE_JUN.phases).toEqual(["firing_heat_adjustment"]);
     expect(HANDLERS.SECOND_FIRING_CHOOSE.phases).toEqual(["firing_second_firing_choice"]);
     expect(HANDLERS.USE_COLOUR_SAMPLES_SWAP.phases).toEqual(["work_turn"]);
-    // One SELECT_CHOOSE for every Select (v1.6.2 L64, change 25).
+    // One SELECT_CHOOSE for every Select (v1.6.2 L80, change 25).
     expect(HANDLERS.SELECT_CHOOSE.phases).toEqual(["work_turn"]);
     expect(HANDLERS.SELECT_KILN.phases).toEqual(["setup_kiln_selection"]);
-    // R20: a sale only in its owner's turns (the salvage step is gone, change 30).
-    expect(HANDLERS.SELL_FLAWED.phases).toEqual(["work_turn", "orders", "firing_after_quality", "cleanup_hand_limit"]);
+    // Free actions (rev. 5 L168–176): a Work turn's before/after-action windows and the Order
+    // Phase turn only; no sale during the firing or at Cleanup (R26; the salvage step is gone).
+    expect(HANDLERS.SELL_FLAWED.phases).toEqual(["work_turn", "orders"]);
+    expect(HANDLERS.COMPLETE_ORDER.phases).toEqual(["work_turn", "orders"]);
+    expect(HANDLERS.USE_IMPERIAL_PRIORITY.phases).toEqual(["work_turn", "orders"]);
+    expect(HANDLERS.END_ORDER_TURN.phases).toEqual(["orders"]);
     expect(Object.keys(HANDLERS)).not.toContain("SALVAGE_FLAWED");
   });
 });
@@ -98,10 +102,16 @@ describe("validateAction", () => {
     [{ type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O01" }, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
     [{ type: "PLACE_SETTERS_MARK", spaceId: null }, { type: "setup_kiln_selection", selectionOrder: ["p2", "p1"], index: 1 }],
     [{ type: "DISCARD_TO_HAND_LIMIT", orderIds: [] }, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
-    // R20: never in the simultaneous Contribution choice, nor in any step but the owner's turns.
+    // Free actions (rev. 5 L170, L176): never during the firing, at Setup or at Cleanup (R26).
     [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "firing_contributions", windowId: "w", eligiblePlayerIds: ["p1"], submittedPlayerIds: [] }],
     [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "firing_heat_adjustment", queue: { actorIds: ["p1"], index: 0 } }],
+    [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } }],
     [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "setup_kiln_selection", selectionOrder: ["p2", "p1"], index: 1 }],
+    [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "cleanup_hand_limit", pendingPlayerIds: ["p1"], openedAtRevision: 0 }],
+    [{ type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"] }, { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } }],
+    [{ type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"] }, { type: "cleanup_hand_limit", pendingPlayerIds: ["p1"], openedAtRevision: 0 }],
+    [{ type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"] }, { type: "round_start_setters_mark", queue: { actorIds: ["p1"], index: 0 } }],
+    [{ type: "USE_IMPERIAL_PRIORITY", ceramicId: "c1", glaze: "white", imperialModifier: 0 }, { type: "firing_test_pieces", queue: { actorIds: ["p1"], index: 0 }, awaiting: "decision" }],
   ];
 
   it.each(wrongPhase.map(([action, phase]) => [action.type, phase.type, action, phase] as const))(
@@ -119,7 +129,10 @@ describe("validateAction", () => {
     expectRejected(work, "p2", { type: "END_TURN" }, "NOT_YOUR_DECISION");
 
     const cleanup = buildState({ players: 3, phase: { type: "cleanup_hand_limit", pendingPlayerIds: ["p1", "p3"], openedAtRevision: 0 } });
-    expect(codeOf(actorViewOf(cleanup, "p2"), { type: "SELL_FLAWED", ceramicId: "c1" })).toBe("NOT_YOUR_DECISION");
+    expect(codeOf(actorViewOf(cleanup, "p2"), { type: "DISCARD_TO_HAND_LIMIT", orderIds: [] })).toBe("NOT_YOUR_DECISION");
+    // A free action on another player's turn (rev. 5 L176).
+    expect(codeOf(actorViewOf(work, "p2"), { type: "SELL_FLAWED", ceramicId: "c1" })).toBe("NOT_YOUR_DECISION");
+    expect(codeOf(actorViewOf(work, "p2"), { type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"] })).toBe("NOT_YOUR_DECISION");
 
     const queue = buildState({ phase: { type: "firing_after_quality", queue: { actorIds: ["p1", "p2"], index: 1 } } });
     expect(codeOf(actorViewOf(queue, "p1"), { type: "END_AFTER_QUALITY" })).toBe("NOT_YOUR_DECISION");

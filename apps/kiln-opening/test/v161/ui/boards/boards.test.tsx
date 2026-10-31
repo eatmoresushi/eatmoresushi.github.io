@@ -70,11 +70,12 @@ describe("D7: personal spaces are added by learning a Tech (m1)", () => {
   it("marks the next free space when the draft chooses a personal location, with Place shortcuts", () => {
     const viewer = fixture(M1).viewerId;
     const plain = render(M1, <PersonalSpaces playerId={viewer} />);
-    expect(plain).toContain('aria-label="Place Shifu at Glaze &amp; Load"');
+    // m1's viewer (Zhao) has one Apprentice left.
+    expect(plain).toContain('aria-label="Place Apprentice at Glaze &amp; Load"');
     expect(plain).not.toContain("psp-slot--pending");
-    const seeded = render(M1, <PersonalSpaces playerId={viewer} />, { draft: { locationId: "glaze_load", workerKey: "shifu" } });
+    const seeded = render(M1, <PersonalSpaces playerId={viewer} />, { draft: { locationId: "glaze_load", workerKey: "apprentice" } });
     expect(seeded).toContain("psp-slot--pending");
-    expect(seeded).toMatch(/aria-pressed="true"[^>]*aria-label="Place Shifu at Glaze &amp; Load"/);
+    expect(seeded).toMatch(/aria-pressed="true"[^>]*aria-label="Place Apprentice at Glaze &amp; Load"/);
     // Another player's board never offers the viewer's shortcuts.
     const other = render(M1, <PersonalSpaces playerId="p1" />);
     expect(other).not.toContain('data-act="place"');
@@ -167,9 +168,9 @@ describe("KilnTradition and the marker line", () => {
     const marked = Object.values(game.ceramics).find((ceramic) => ceramic.stage === "loaded" && ceramic.kilnMasterMarker !== null);
     expect(marked).toBeDefined();
     const html = render(id, <MarkerLine playerId={marked!.ownerId} />);
-    expect(textOf(html)).toMatch(/^Kiln Master marker \+1 on White Brush Washer, Painted \(in High 1\) · Imperial Kiln: /);
+    expect(textOf(html)).toMatch(/^Kiln Master marker \+1 on White Plate, Carved \(in Middle 1\) · Imperial Kiln: /);
     expect(textOf(html)).not.toMatch(/\bc\d+\b/);
-    expect(textOf(render(id, <MarkerLine playerId={marked!.ownerId} />, { locale: "zh-CN" }))).toBe("窑工标+1在白釉笔洗 · 画花（高温区1）上 · 御窑：尚未获得");
+    expect(textOf(render(id, <MarkerLine playerId={marked!.ownerId} />, { locale: "zh-CN" }))).toBe("窑工标+1在白釉盘 · 刻花（中温区1）上 · 御窑：尚未获得");
   });
 });
 
@@ -223,34 +224,34 @@ describe("TechSlots, WorkersRow and CeramicsRow", () => {
   });
 
   it("names placed workers with where they stand (m5)", () => {
-    // m5's viewer is Zhao (p2): the Shifu at Glaze & Load, Apprentices at the Materials Yard and Form & Decorate, one free.
+    // m5's viewer is Zhao (p2): Apprentices at the Materials Yard, the Canal Wharf and Form & Decorate; the Shifu free.
     const html = render("m5_two_player_board_2p", <WorkersRow playerId="p2" />);
-    expect(html).toContain('aria-label="Your Shifu at Glaze &amp; Load"');
+    expect(html).toContain('aria-label="Your Shifu"');
     expect(html).toContain('aria-label="Your Apprentice at Form &amp; Decorate"');
     expect(html).toContain('aria-label="Your Apprentice at Materials Yard"');
-    expect(html).toContain('aria-label="Your Apprentice"');
+    expect(html).toContain('aria-label="Your Apprentice at Canal Wharf"');
     expect((html.match(/wk--dim/g) ?? []).length).toBe(3);
     const other = render("m5_two_player_board_2p", <WorkersRow playerId="p1" />);
-    expect(other).toContain('aria-label="Lin’s Shifu at Canal Wharf"');
-    expect(other).toContain('aria-label="Lin’s Apprentice at Magistrate&#x27;s Hall"');
-    expect(other).toContain('aria-label="Lin’s Apprentice at Materials Yard"');
+    expect(other).toContain('aria-label="Lin’s Shifu at Magistrate&#x27;s Hall"');
+    expect(other).toContain('aria-label="Lin’s Apprentice at Commission Market"');
     expect(other).toContain('aria-label="Lin’s Apprentice at Form &amp; Decorate"');
+    expect(other).toContain('aria-label="Lin’s Apprentice at Glaze &amp; Load"');
     expect(other).not.toMatch(/\bp\d:(shifu|apprentice)/);
   });
 
   it("draws Shaped and Finished ceramics in words from model.ceramics (CR B2-1)", () => {
     expect(textOf(render(M1, <CeramicsRow playerId="p1" />))).not.toContain("Shaped 3 ceramics");
     const html = renderComponent(withModelCeramics(fixtureSource(M1)), <CeramicsRow playerId="p1" />, { registry: TABLE_WINDOWS });
-    // m1's Lin: a Shaped Brush Washer, Censer and Vase, and a Finished White Brush Washer of Fine Quality.
-    expect((html.match(/data-motion="ceramic"/g) ?? []).length).toBe(4);
-    expect(textOf(html)).toContain("Shaped Brush Washer, Plain");
-    expect(textOf(html)).toContain("Censer, Impressed");
-    expect(textOf(html)).toContain("Finished White Brush Washer, Plain · Fine");
+    // m1's Lin: a Shaped Bowl and Censer, and a White Brush Washer in the kiln.
+    expect((html.match(/data-motion="ceramic"/g) ?? []).length).toBe(3);
+    expect(textOf(html)).toContain("Shaped Bowl, Plain");
+    expect(textOf(html)).toContain("Censer, Plain");
+    expect(textOf(html)).toContain("White Brush Washer, Carved");
     expect(textOf(html)).not.toMatch(/\bc\d+\b/);
     // Another player's board never offers the viewer a sale.
     expect(html).not.toContain('data-act="sell"');
     const zh = renderComponent(withModelCeramics(fixtureSource(M1)), <CeramicsRow playerId="p1" />, { registry: TABLE_WINDOWS, locale: "zh-CN" });
-    expect(textOf(zh)).toContain("笔洗 · 素面");
-    expect(textOf(zh)).toContain("白釉笔洗 · 素面 · 上品");
+    expect(textOf(zh)).toContain("香炉 · 素面");
+    expect(textOf(zh)).toContain("白釉笔洗 · 刻花");
   });
 });

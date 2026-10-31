@@ -5,7 +5,7 @@
  * real lobby, store, client and local backend (`/test-api-v161`). A steered driver gives both
  * players a Shared Kiln ceramic (Form & Decorate, then Glaze & Load) so both are eligible to
  * contribute, and sends Lin's Shifu to the Commission Market, whose placement always opens its
- * Select 3 first: a private look at the top 3 Main Orders (v1.6.2 L64, L202, change 25). Everything
+ * Select 3 first: a private look at the top 3 Main Orders (v1.6.2 L80, L226, change 25). Everything
  * else is chosen by the shared autopilot
  * (`e2e/support/autopilot.ts`).
  *
@@ -26,7 +26,7 @@
  *   card until both have submitted; then both cards are revealed on both pages.
  *
  * A second game (seed 1) checks the other private looks of AGENTS.md "Hidden information",
- * over two rounds, and the Guild Hall Shifu's two takes (v1.6.2 L207, owner revision
+ * over two rounds, and the Guild Hall Shifu's two takes (v1.6.2 L237, owner revision
  * 2026-10-17). Lin's Shifu inspects the Glazing & Loading Tech deck at the Guild Hall and takes
  * the face-up Colour Samples (one `GUILD_TAKE`); Colour Samples, when gained, Selects 3 (the top 3
  * Main Orders, or a face-up one instead, `SELECT_CHOOSE`); back in the inspection, Lin's second take is the face-up Test Pieces (another
@@ -42,13 +42,22 @@
  * - in both games, no payload Zhao's client receives carries a secret addressed to Lin
  *   (`"visibleTo":"<Lin>"`), while Lin's own client does receive them.
  *
+ * A third game checks free actions at one table (owner revision 5, owner UI decision D21): in
+ * Round 2 both players hold an Order and a Finished ceramic. The free-action controls show only on
+ * the page of the player whose turn it is. Lin's "Place · end turn" is one command and one revision,
+ * and no payload Zhao receives shows an after-action step; Lin's "Place, then free actions" opens the
+ * after-action step for both to see (public facts, R27), which End turn closes. In the Order Phase
+ * both press Done, so the ceramics stay for Round 2.
+ *
  * The Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master's
- * marker at loading, the Magistrate's Hall Shifu's Crown Order, a Flawed ceramic's sale and Fuel
- * Ledger's own Contribution cards are sent from their real forms in the steered
+ * marker at loading, the Magistrate's Hall Shifu's Crown Order, the free actions (a Flawed
+ * ceramic's sale, a held Order completed in a Work turn, Imperial Priority in the Order Phase) and
+ * Fuel Ledger's own Contribution cards are sent from their real forms in the steered
  * `form_driver_games` games (happy-dom, the real `DecisionPane` over the engine), and in
  * `full_game.spec`'s steered case in a real browser.
  *
- * Owner revision 4 has no salvage window (a Flawed ceramic is sold in its owner's own turn, R20);
+ * There is no salvage window (a Flawed ceramic is sold as a free action in its owner's own Work or
+ * Order Phase turn, never during the firing or at Cleanup, R26);
  * hand-trim races are not steered through the browser: platform `parallel_windows.test.ts` and the
  * session tests cover them (§9.6, E15).
  */
@@ -342,7 +351,7 @@ test("the secret Contribution and the private Commission look stay with their ow
       if (window === "contributions") {
         // Lin submits first; Zhao's page waits for that.
         if (player === guest) continue;
-        // Both players have a Shared Kiln ceramic, so both are eligible (L239).
+        // Both players have a Shared Kiln ceramic, so both are eligible (L289).
         await expect(other.page.locator('form.pane-form[data-window="contributions"]')).toBeAttached({ timeout: 15_000 });
         await host.page.locator(ENABLED_CARD).first().click();
         const card = await host.page.locator('form.pane-form input[name="card"]:checked').getAttribute("value");
@@ -409,9 +418,9 @@ test("the secret Contribution and the private Commission look stay with their ow
 
 /**
  * Seed 36 (two players, owner revision 4's setup): the Glazing & Loading display shows Colour
- * Samples (T10, 2 Coins), the Firing display Test Pieces (T13, 3 Coins), and the Glazing & Loading
- * deck has two other Techs on top for the inspection. Lin's first Apprentice earns the 2 Coins that
- * make both takes affordable (3 + 2 = 2 + 3). In Round 2 Glaze & Load burns 1 Wood (kiln fuel,
+ * Samples (T10, 3 Coins since change 38), the Firing display Test Pieces (T13, 3 Coins), and the
+ * Glazing & Loading deck has two other Techs on top for the inspection. Lin's first two Apprentices
+ * earn the Coins that make both takes affordable (3 + 2 + 2 ≥ 3 + 3). In Round 2 Glaze & Load burns 1 Wood (kiln fuel,
  * change 35) and Lin still has the Wood Test Pieces costs.
  */
 const LOOKS_SEED = 36;
@@ -419,8 +428,8 @@ const LOOKS_PLANS: Plans = {
   host: [
     // Round 1: Coins first, then the Shifu's two takes at the Guild Hall (Colour Samples, then Test Pieces).
     { worker: "apprentice", location: "canal_wharf" },
-    { worker: "shifu", location: "guild_hall", picks: [["discipline", "glazing_loading"]] },
     { worker: "apprentice", location: "canal_wharf" },
+    { worker: "shifu", location: "guild_hall", picks: [["discipline", "glazing_loading"]] },
     { worker: "apprentice", location: "canal_wharf" },
     // Round 2: a Shared Kiln ceramic, so Lin contributes and may use Test Pieces.
     { worker: "apprentice", location: "form_decorate" },
@@ -564,5 +573,120 @@ test("the Guild Hall inspection and its two takes, the Colour Samples look and t
   await expectHiddenFrom(guest, inspected.filter((id) => oracle.includes(id)), inspectedFrom, null, "inspection, at the end");
   await expectHiddenFrom(guest, looked, lookedFrom, oracle, "Colour Samples, at the end");
   expectSecretsAddressed(guest, host, hostId);
+  expect([...host.errors, ...guest.errors]).toEqual([]);
+});
+
+/** The controls of a free action (D21), which only the player whose turn it is may see. */
+const FREE_ACTION_CONTROLS = '[data-act="sell"], [data-act="imperial-priority"], [data-pane-opener], [data-target="completable"]';
+/** The after-action step in a payload (the public `work_turn` step, R27). */
+const AFTER_ACTION_STEP = /"kind":"after_action"/;
+const FREE_ACTION_PLANS: Plans = {
+  host: [
+    { worker: "apprentice", location: "form_decorate" },
+    { worker: "apprentice", location: "glaze_load" },
+    { worker: "shifu", location: "canal_wharf" },
+    { worker: "apprentice", location: "canal_wharf" },
+    // Round 2: the two presses this test is about, then the rest.
+    { worker: "apprentice", location: "canal_wharf" },
+    { worker: "shifu", location: "canal_wharf" },
+    { worker: "apprentice", location: "canal_wharf" },
+    { worker: "apprentice", location: "canal_wharf" },
+  ],
+  guest: PLANS.guest.concat(PLANS.guest.slice(2), PLANS.guest.slice(2)),
+};
+
+test("free actions: only on your own turn, and Place · end turn is one change for the other player", async ({ browser, request }, testInfo) => {
+  test.setTimeout(300_000);
+  await resetBackend(request, { seed: SEED, policy: "canonical" });
+  const host = await newPlayer(browser, testInfo, "host", "Lin");
+  const guest = await newPlayer(browser, testInfo, "guest", "Zhao");
+  await startRoom(host, guest);
+  const commands: Array<{ type: string; endTurn?: boolean }> = [];
+  host.page.on("request", (sent) => {
+    if (!sent.url().includes("/test-api-v161") || sent.method() !== "POST") return;
+    const body = sent.postDataJSON() as { operation?: string; command?: { type: string; endTurn?: boolean } } | null;
+    if (body?.operation === "game_action" && body.command !== undefined) commands.push(body.command);
+  });
+  const lastCommand = () => commands.at(-1);
+
+  let endedInOne = false;
+  let stayed = false;
+  for (let step = 0; step < 400 && !stayed; step += 1) {
+    let acted = false;
+    for (const player of [host, guest]) {
+      const other = player === host ? guest : host;
+      const window = await windowOf(player.page);
+      if (window === null || window === "waiting" || window === "final") continue;
+      // The other player sees no free-action control on this player's turn.
+      if (window === "work" || window === "orders") await expect(other.page.locator(FREE_ACTION_CONTROLS)).toHaveCount(0);
+
+      if (window === "work" && (await player.page.locator('[data-act="place"]').count()) > 0) {
+        if (player === host && host.placements === 4) {
+          // Lin's plain turn: Place, then the one Confirm, which ends the turn in one command.
+          const plan = FREE_ACTION_PLANS.host[4]!;
+          await press(host.page, `[data-act="place"][data-location-id="${plan.location}"][data-worker="${plan.worker}"]`, "Canal Wharf");
+          await expect(host.page.locator('form.pane-form [data-action="confirm"]')).toHaveText("Place · end turn");
+          const before = await revisionOf(host.page);
+          const from = guest.received.length;
+          await send(host, "confirm");
+          host.placements += 1;
+          expect(lastCommand(), "the primary button asks to end the turn").toMatchObject({ type: "PLACE_CANAL_WHARF", endTurn: true });
+          await expect.poll(() => revisionOf(guest.page), { timeout: 15_000 }).toBeGreaterThan(before);
+          expect(await revisionOf(host.page), "one command, one revision").toBe(before + 1);
+          await guest.page.waitForTimeout(1_000);
+          for (const text of guest.received.slice(from)) expect(text, "an after-action step reached Zhao").not.toMatch(AFTER_ACTION_STEP);
+          endedInOne = true;
+          acted = true;
+          continue;
+        }
+        if (player === host && host.placements === 5) {
+          // Lin's second button: the after-action step opens on public facts, for both to see.
+          const plan = FREE_ACTION_PLANS.host[5]!;
+          await press(host.page, `[data-act="place"][data-location-id="${plan.location}"][data-worker="${plan.worker}"]`, "Canal Wharf");
+          const stay = host.page.locator('form.pane-form [data-action="confirm-stay"]');
+          await expect(stay).toHaveText("Place, then free actions");
+          const from = guest.received.length;
+          const before = await revisionOf(host.page);
+          await stay.click();
+          await expect.poll(() => revisionOf(host.page), { timeout: 30_000 }).toBeGreaterThan(before);
+          host.placements += 1;
+          expect(lastCommand()?.type).toBe("PLACE_CANAL_WHARF");
+          expect(lastCommand()?.endTurn, "the second button omits the field").toBeUndefined();
+          await expect(host.page.locator('form.pane-form[data-window="work"][data-step="after_action"]')).toBeAttached();
+          await expect(host.page.locator('form.pane-form [data-action="alt"]')).toHaveText("End turn");
+          await expect.poll(() => guest.received.slice(from).some((text) => AFTER_ACTION_STEP.test(text)), { timeout: 15_000, message: "Zhao sees the after-action step" }).toBe(true);
+          await expect(guest.page.locator(FREE_ACTION_CONTROLS)).toHaveCount(0);
+          await send(host, "alt");
+          expect(lastCommand()?.type).toBe("END_TURN");
+          stayed = true;
+          acted = true;
+          break;
+        }
+        await place(player, FREE_ACTION_PLANS);
+        acted = true;
+        continue;
+      }
+
+      if (window === "contributions") {
+        if ((await player.page.locator("[data-sealed-contribution]").count()) > 0) continue;
+        await player.page.locator(ENABLED_CARD).first().click();
+        await send(player, "confirm");
+        acted = true;
+        continue;
+      }
+
+      // Done, so the Finished ceramic and the Orders are still there in Round 2.
+      if (window === "orders") {
+        await send(player, "alt");
+        acted = true;
+        continue;
+      }
+
+      if (await autopilot(player)) acted = true;
+    }
+    if (!acted) await host.page.waitForTimeout(200);
+  }
+  expect(endedInOne, "Lin ended a turn in one Confirm").toBe(true);
+  expect(stayed, "Lin went on to the after-action step").toBe(true);
   expect([...host.errors, ...guest.errors]).toEqual([]);
 });

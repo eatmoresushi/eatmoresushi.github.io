@@ -6,7 +6,7 @@
  * For a view and its window it takes the legal commands (`canonical`, the engine's default
  * per-family cap of 64; or `exhaustive`, capped with a seeded reservoir sample) and routes each
  * to the draft model of the form that must express it: the open window's (V1.6.2 has no Canal
- * Barge completion form: Canal Barge pays Coins on an Order-Phase completion, v1.6.2 L622; the
+ * Barge completion form: Canal Barge pays Coins when an Order is completed, v1.6.2 L637; the
  * Colour Samples swap is part of the work window's draft). For each command it checks that
  * 1. `fromCommand(cmd)` gives a draft;
  * 2. every value in that draft appears in `options(draft)` — checked through the contract of

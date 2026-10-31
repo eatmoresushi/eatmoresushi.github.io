@@ -85,6 +85,8 @@ export function yourTurnMessage(model: GameModel): RichMessage | null {
   if (!model.viewerActs || !isActingWindow(window)) return null;
   switch (window.kind) {
     case "work":
+      // After the worker action nothing is left to place: free actions, or End turn (D21).
+      if (window.step === "after_action") return msg("shell.announce.turn.afterAction");
       return msg("shell.announce.turn.work", { n: model.me?.availableWorkerIds.length ?? 0 });
     case "hand_limit": {
       const status = model.viewerId === null ? undefined : model.handLimits[model.viewerId];
@@ -147,7 +149,9 @@ function batchMessage(model: GameModel, batch: EventBatch, log: readonly LogEntr
   const shown = events.slice(-MAX_ANNOUNCED_LINES);
   const hidden = events.length - shown.length;
   const lines = (t: Translator): string => {
-    const context = { t, view, viewerId: model.viewerId };
+    // The batch that starts the last round closes the round before it.
+    const lastRound = model.round >= RULE_NUMBERS.rounds && !batch.events.some((event) => event.type === "ROUND_STARTED");
+    const context = { t, view, viewerId: model.viewerId, lastRound };
     const text = shown.map((event) => publicEventText(event, context));
     if (hidden > 0) text.unshift(t("shell.announce.more", { n: hidden }));
     return text.join(t("shell.sentenceSep"));

@@ -1,15 +1,18 @@
 /**
  * The shared model of completing one held Order (UI_V1.6.1_ARCHITECTURE §3.4, §3.5; wireframe
- * `decOrders`). Owner: B5. Used by the Order Phase (`orderDraft`, `COMPLETE_ORDER`): Orders are
- * completed only there (v1.6.2 L296; Canal Barge no longer completes one, it pays 2 Coins on
- * your first completion each round, an automatic trigger shown with the others).
+ * `decOrders`). Owner: B5. Completing a held Order is a free action (owner revision 5, change 36,
+ * rev. 5 L168–176, L417, L422): before or after the worker action of the player's own Work turn
+ * (the work draft's `complete_order` mode) and in their Order Phase turn (`orderDraft`), both
+ * building `COMPLETE_ORDER` through this model over `completableOrders`. Canal Barge completes no
+ * Order: it pays 2 Coins on your first completion each round, whichever window (rev. 5 L637), an
+ * automatic trigger shown with the others.
  *
  * The draft is: an Order, one ceramic group, the Crackle declaration mode, and the optional
  * Ru/Guan and Tribute Ware decline flags (R4). Nothing here re-implements an Order rule:
  * - which held Orders are completable: `completableOrders`;
  * - the ceramic groups: `orderMatchOptions` (the validator's matcher);
  * - Crackle verdicts: `crackleDeclarationChecks`, with an explicit "auto" mode in which the
- *   command omits `crackleDeclarations` and the engine searches (L470, L485, §9.4);
+ *   command omits `crackleDeclarations` and the engine searches (L484, L499, §9.4);
  * - the selection's verdict and the triggered optional abilities: `orderSelectionCheck`.
  */
 import { crackleDeclarationChecks, orderMatchOptions } from "../../../game/index.ts";
@@ -197,7 +200,7 @@ export function completionFromCommand(type: CompletionCommandType, command: Auth
 
 /**
  * The Decoration each Crackle ceramic of the chosen group counts as for this Order, where it is
- * not its own (L470). For words only: the auto command still omits declarations.
+ * not its own (L484). For words only: the auto command still omits declarations.
  * - Explicit mode: the declarations as given, except one naming the ceramic's own Decoration.
  * - Auto mode: only the ceramics that need their wildcard. The engine's search records a
  *   Decoration for every Crackle ceramic, trying Plain first (Plain on an Order without a

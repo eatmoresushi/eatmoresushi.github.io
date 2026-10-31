@@ -1,17 +1,22 @@
 /**
- * Imperial Priority (L293, L288, L434, v1.6.2 L645, R10, R11; DESIGN §11 Q1 / audit P1): once per
- * game, before or after your worker action, spend the token — free — to give 1 of your Shaped
- * vessels a Glaze and load it into your empty Imperial Kiln with a chosen public modifier. It
- * is a token effect, not a Glaze & Load action, and burns no kiln fuel (rev. 4 L291). Reworking
- * Table may change the Shape first; Kiln Master's marker may go on the load (R22,
- * `kiln_master.test.ts`).
+ * Imperial Priority (rev. 5 L174, L314, L448, R10, R11; DESIGN §11 Q1 / audit P1; change 36, R28,
+ * R32): once per game, as a free action, spend the token — free — to give 1 of your Shaped vessels
+ * a Glaze and load it into your empty Imperial Kiln with a chosen public modifier. Any free-action
+ * window: before or after your worker action, or your Order Phase turn, whose ceramic waits for
+ * the next round's firing (in Round 5 it is never fired). It is a token effect, not a Glaze &
+ * Load action, and burns no kiln fuel. Reworking Table may change the Shape first; Kiln Master's
+ * marker may go on the load (R22, `kiln_master.test.ts`), and while it waits on an Order Phase
+ * load it cannot be placed again (R32).
  */
 
 import { describe, expect, it } from "vitest";
+import { freeActionOptions, imperialPriorityOptions, kilnMasterOption } from "../../../src/game/selectors.ts";
+import { legalActionFamilies } from "../../../src/game/legalActions.ts";
+import { formatRuleError } from "../../../src/game/ruleErrorText.ts";
 import { projectPublicState } from "../../../src/game/view.ts";
-import type { GameAction, GameEvent } from "../../../src/game/types.ts";
+import type { GameAction, GameEvent, LoadedCeramic, RoundNumber } from "../../../src/game/types.ts";
 import { imperialPriorityUsable } from "../../../src/game/work/turn.ts";
-import { type StateSpec, buildState } from "./support/fixtures.ts";
+import { type PlayerSpec, type StateSpec, buildState, stageCeramic } from "./support/fixtures.ts";
 import { LocalTable } from "./support/localTable.ts";
 import { expectDocumentedDetails } from "./support/ruleErrors.ts";
 
@@ -27,7 +32,7 @@ function priority(ceramicId: string, extra: Partial<Extract<GameAction, { type: 
   return { type: "USE_IMPERIAL_PRIORITY", ceramicId, glaze: "celadon", imperialModifier: 1, ...extra };
 }
 
-/** A whole Commission Market action reserving the face-up Order at position 0 (v1.6.2 L195):
+/** A whole Commission Market action reserving the face-up Order at position 0 (v1.6.2 L225):
  * the placement opens the look, then `SELECT_CHOOSE`. Returns the reservation's events. */
 function reserveFaceUp(t: LocalTable, workerId: string): GameEvent[] {
   const orderId = t.state.market.display[0];
@@ -37,7 +42,7 @@ function reserveFaceUp(t: LocalTable, workerId: string): GameEvent[] {
   return t.act(playerId, { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId }] });
 }
 
-/** p1 at Recognition 3: Imperial Kiln gained, token held (L285, L293). */
+/** p1 at Recognition 3: Imperial Kiln gained, token held (L306, L314). */
 function holder(extra: StateSpec = {}): StateSpec {
   return {
     players: [{ recognition: 3 }, {}],
@@ -53,7 +58,7 @@ describe("using the token", () => {
     const events = t.act("p1", priority("c1"));
 
     expect(types(events)).toEqual(["IMPERIAL_PRIORITY_USED", "CERAMIC_LOADED"]);
-    expect(events[0]).toEqual({ type: "IMPERIAL_PRIORITY_USED", playerId: "p1", ceramicId: "c1" });
+    expect(events[0]).toEqual({ type: "IMPERIAL_PRIORITY_USED", playerId: "p1", ceramicId: "c1", window: "before_action" });
     expect(events[1]).toMatchObject({
       ceramicId: "c1",
       glaze: "celadon",
@@ -80,7 +85,7 @@ describe("using the token", () => {
     expect(placed.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ automatic: true });
   });
 
-  it("burns no kiln fuel: usable with no Wood, unlike a Shared Kiln load (rev. 4 L291, change 34)", () => {
+  it("burns no kiln fuel: usable with no Wood, unlike a Shared Kiln load (L309, change 34)", () => {
     const t = table(holder({ players: [{ recognition: 3, resources: { clay: 0, wood: 0, coins: 0 } }, {}] }));
     const events = t.act("p1", priority("c1"));
     expect(types(events)).toEqual(["IMPERIAL_PRIORITY_USED", "CERAMIC_LOADED"]);
@@ -105,13 +110,13 @@ describe("using the token", () => {
     expect(ended.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ automatic: false });
   });
 
-  it("Canal Barge no longer opens the window (v1.6.2 L630): with only it owned the turn ends by itself", () => {
+  it("Canal Barge does not open the window by itself: with held Orders but no Finished ceramic the turn ends (R27)", () => {
     const t = table({ players: [{ techs: ["T23"], hand: ["S01"] }, {}] });
     const placed = reserveFaceUp(t, "p1:apprentice:1");
     expect(placed.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ playerId: "p1", automatic: true });
   });
 
-  it("is not a Glaze & Load action (L646): no personal space is used and Kiln Tending does not trigger", () => {
+  it("is not a Glaze & Load action (L652): no personal space is used and Kiln Tending does not trigger", () => {
     const t = table(holder({ players: [{ recognition: 3, techs: ["T20"] }, {}] }));
     const events = t.act("p1", priority("c1"));
     expect(events.filter((event) => event.type === "RESOURCES_CHANGED")).toEqual([]);
@@ -120,7 +125,7 @@ describe("using the token", () => {
   });
 });
 
-describe("a token gained during the worker action (L293, L434)", () => {
+describe("a token gained during the worker action (L314, L448)", () => {
   it("reaching Recognition 3 at the Magistrate's Hall opens the after-action window for it", () => {
     const t = table(holder({ players: [{ recognition: 2, resources: { coins: 4 } }, {}] }));
     expect(imperialPriorityUsable(t.state, "p1")).toBe(false);
@@ -166,7 +171,7 @@ describe("when the token cannot be used", () => {
     t.expectRuleError("p1", priority("c1"), "IMPERIAL_PRIORITY_UNAVAILABLE");
   });
 
-  it("needs an empty Imperial Kiln (1 ceramic per firing, L287)", () => {
+  it("needs an empty Imperial Kiln (1 ceramic per firing, L308)", () => {
     const t = table(
       holder({
         ceramics: [
@@ -198,7 +203,10 @@ describe("when the token cannot be used", () => {
   it("is not usable in the middle of a worker action or on another player's turn", () => {
     const t = table(holder());
     t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
-    const error = t.expectRuleError("p1", priority("c1"), "WRONG_PHASE");
+    const error = t.expectRuleError("p1", priority("c1"), "WORKER_ACTION_IN_PROGRESS");
+    expect(error.details).toEqual({ phase: "work_turn", actionType: "USE_IMPERIAL_PRIORITY", step: "commission_market" });
+    expect(formatRuleError(error, "en")).toBe("Finish your worker action first: this can be done before or after it, not during it.");
+    expect(formatRuleError(error, "zh")).toBe("先完成工人行动：这一步只能在工人行动之前或之后进行，不能在行动中途进行");
     expectDocumentedDetails(error);
     const other = table(holder({ firstPlayerId: "p2" }));
     other.expectRuleError("p1", priority("c1"), "NOT_YOUR_DECISION");
@@ -215,5 +223,139 @@ describe("when the token cannot be used", () => {
       reserveFaceUp(t, "p1:apprentice:1");
       expect(t.state.phase).toMatchObject({ activePlayerId: "p2", step: { kind: "before_action" } });
     }
+  });
+});
+
+// ── The Order Phase (rev. 5 L174, L314, L318; R28) ────────────────────────────────────────
+
+/** p1 holds the token (Recognition 3) and a Shaped Vase in round `round`'s Order Phase, First
+ * Player p1; nothing else is loaded, nobody holds an Order or a Finished ceramic. */
+function orderPhaseHolder(round: RoundNumber, p1: PlayerSpec = {}): LocalTable {
+  return new LocalTable(
+    buildState({
+      round,
+      players: [{ recognition: 3, ...p1 }, {}],
+      phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+      ceramics: [{ owner: "p1", shape: "vase", stage: "shaped", decoration: "carved" }],
+    }),
+  );
+}
+
+/** Every player places every remaining worker at the Canal Wharf, until the Work Phase ends. */
+function placeEveryWorker(t: LocalTable): void {
+  while (t.state.phase.type === "work_turn") {
+    const phase = t.state.phase;
+    const actor = phase.activePlayerId;
+    if (phase.step.kind === "after_action") {
+      t.act(actor, { type: "END_TURN" });
+      continue;
+    }
+    const worker = Object.values(t.player(actor).workers).find((w) => w.placement === null);
+    if (worker === undefined) throw new Error(`${actor} has no worker`);
+    t.act(actor, { type: "PLACE_CANAL_WHARF", workerId: worker.id });
+  }
+}
+
+describe("Imperial Priority in the Order Phase (rev. 5 L174, L314; R28)", () => {
+  it("opens the Order Phase turn by itself, is legal there with no Wood, and the turn ends once it is spent", () => {
+    const t = orderPhaseHolder(2, { resources: { clay: 0, wood: 0, coins: 0 } });
+    expect(t.prompt()).toEqual({ phaseType: "orders", actorIds: ["p1"], mode: "single" });
+    expect(freeActionOptions(t.view("p1"))).toEqual({ window: "order_phase", completableOrderIds: [], sellableCeramicIds: [], imperialPriority: true });
+    expect(imperialPriorityOptions(t.view("p1")).usable).toBe(true);
+    expect(legalActionFamilies(t.view("p1"))).toEqual(["USE_IMPERIAL_PRIORITY", "END_ORDER_TURN"]);
+    // The Colour Samples swap is not a free action: never in the Order Phase.
+    const swapTable = orderPhaseHolder(2, { techs: ["T10"], hand: ["S01"] });
+    expectDocumentedDetails(swapTable.expectRuleError("p1", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S01" }, "WRONG_PHASE"));
+
+    const events = t.act("p1", priority("c1", { imperialModifier: -1 }));
+    expect(events.slice(0, 2)).toEqual([
+      { type: "IMPERIAL_PRIORITY_USED", playerId: "p1", ceramicId: "c1", window: "order_phase" },
+      expect.objectContaining({ type: "CERAMIC_LOADED", ceramicId: "c1", loadedBy: "imperial_priority" }),
+    ]);
+    expect(events[2]).toEqual({ type: "ORDER_TURN_ENDED", playerId: "p1", automatic: true });
+    expect(t.player("p1").resources).toEqual({ clay: 0, wood: 0, coins: 0 });
+    expect(t.player("p1").imperial.priority).toBe("spent");
+  });
+
+  it("waits loaded through Cleanup and Start of Round, blocks the Imperial Kiln, and is fired in the next round with that round's Kiln Die", () => {
+    const t = orderPhaseHolder(2, { techs: ["T13"], resources: { wood: 5 } });
+    t.act("p1", priority("c1"));
+    // The command ran through Cleanup and Round 3's Start of Round into its Work Phase.
+    expect(t.state.round).toBe(3);
+    expect(t.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p2" });
+    expect(t.state.ceramics["c1"]).toMatchObject({ stage: "loaded", loadedInRound: 2, loadedBy: "imperial_priority", placement: { kiln: "imperial" } });
+    // R5 (b): the Imperial Kiln holds a ceramic, so no Glaze & Load may load into it this round.
+    t.act("p2", { type: "PLACE_CANAL_WHARF", workerId: "p2:apprentice:1" });
+    const bowl = stageCeramic(t.state, { owner: "p1", stage: "shaped", shape: "bowl" }).id;
+    const blocked = t.expectRuleError(
+      "p1",
+      { type: "PLACE_GLAZE_LOAD", workerId: "p1:apprentice:1", loads: [{ ceramicId: bowl, glaze: "white", destination: { kiln: "imperial", imperialModifier: 0 } }] },
+      "IMPERIAL_KILN_UNAVAILABLE",
+    );
+    expectDocumentedDetails(blocked);
+    placeEveryWorker(t);
+    // Round 3's firing happens for the waiting ceramic alone: no Contribution participant (it is
+    // not in the Shared Kiln), and it makes p1 eligible for Test Pieces (L267, L314).
+    const started = t.events.filter((e) => e.type === "FIRING_STARTED").at(-1);
+    expect(started).toEqual({ type: "FIRING_STARTED", round: 3, participantIds: [], firingPlayerIds: ["p1"] });
+    expect(t.state.phase).toMatchObject({ type: "firing_test_pieces", queue: { actorIds: ["p1"] } });
+    t.act("p1", { type: "TEST_PIECES_DECIDE", peek: false });
+    const record = t.state.lastFiring?.ceramics["c1"];
+    const roundThreeDie = t.events.find((e) => e.type === "KILN_DIE_ROLLED" && e.round === 3);
+    expect(roundThreeDie?.type === "KILN_DIE_ROLLED" ? roundThreeDie.value : null).toBe(t.state.lastFiring?.kilnDie);
+    expect(record?.first?.heatSource).toBe((t.state.lastFiring?.kilnDie ?? 0) + (record?.first?.fireModifier ?? 0));
+    expect(t.state.lastFiring?.round).toBe(3);
+    expect(t.state.ceramics["c1"]).toMatchObject({ stage: "finished", firedInRound: 3 });
+  });
+
+  it("is legal in Round 5 too, but its ceramic is never fired and scores nothing", () => {
+    const t = orderPhaseHolder(5);
+    t.act("p1", priority("c1"));
+    expect(t.state.phase).toEqual({ type: "finished" });
+    expect(t.state.ceramics["c1"]).toMatchObject({ stage: "loaded", loadedInRound: 5 });
+    expect(t.state.finalResult?.scores["p1"]?.exhibition.ceramicIds).toEqual([]);
+  });
+
+  it("uses that round's Reworking Table allowance at loading", () => {
+    const t = orderPhaseHolder(2, { techs: ["T05"] });
+    const events = t.act("p1", priority("c1", { reworkShape: "bowl" }));
+    expect(events.map((e) => e.type).slice(0, 4)).toEqual(["IMPERIAL_PRIORITY_USED", "TECH_USED", "CERAMIC_RESHAPED", "CERAMIC_LOADED"]);
+    expect(t.state.ceramics["c1"]).toMatchObject({ stage: "loaded", shape: "bowl" });
+    // Readied at the next Start of Round: Reworking Table is free again in round 3.
+    expect(t.player("p1").techs).toEqual([{ id: "T05", acquiredInRound: 2, usedThisRound: false }]);
+  });
+});
+
+describe("Kiln Master's one marker on an Order Phase load (R32)", () => {
+  it("stays on the waiting ceramic until the next round's firing finishes; meanwhile it cannot be placed (TECH_MARKER_IN_KILN)", () => {
+    const t = orderPhaseHolder(2, { techs: ["T24"], resources: { wood: 5 } });
+    expect(imperialPriorityOptions(t.view("p1")).kilnMaster).toBe(true);
+    const events = t.act("p1", priority("c1", { kilnMaster: 1 }));
+    expect(events.map((e) => e.type)).toContain("KILN_MASTER_PLACED");
+    // Round 3: T24 is readied, but its marker is still on c1.
+    expect(t.state.round).toBe(3);
+    expect(t.player("p1").techs).toEqual([{ id: "T24", acquiredInRound: 2, usedThisRound: false }]);
+    expect((t.state.ceramics["c1"] as LoadedCeramic).kilnMasterMarker).toBe(1);
+    expect(kilnMasterOption(t.view("p1"), "p1")).toEqual({ ready: false, values: [1, -1] });
+    // p2 places, then p1 tries to put the marker on a new Shared Kiln load.
+    t.act("p2", { type: "PLACE_CANAL_WHARF", workerId: "p2:apprentice:1" });
+    const bowl = stageCeramic(t.state, { owner: "p1", stage: "shaped", shape: "bowl" }).id;
+    const refused = t.expectRuleError(
+      "p1",
+      { type: "PLACE_GLAZE_LOAD", workerId: "p1:apprentice:1", loads: [{ ceramicId: bowl, glaze: "white", destination: { kiln: "shared", spaceId: "high_1" }, kilnMaster: -1 }] },
+      "TECH_MARKER_IN_KILN",
+    );
+    expect(refused.details).toEqual({ techId: "T24", ceramicId: "c1", field: "loads[0].kilnMaster" });
+    expectDocumentedDetails(refused);
+    expect(formatRuleError(refused, "zh")).toBe("窑工标还在窑中的器物上，要到那次烧窑开窑取器时才收回");
+    // The same load without the marker is fine.
+    t.act("p1", { type: "PLACE_GLAZE_LOAD", workerId: "p1:apprentice:1", loads: [{ ceramicId: bowl, glaze: "white", destination: { kiln: "shared", spaceId: "high_1" } }] });
+    placeEveryWorker(t);
+    // Contributions (p1 has a Shared ceramic now), then the firing finishes and the marker returns.
+    for (const actor of [...t.prompt().actorIds]) t.contribute(actor, "TEND");
+    while (t.state.phase.type === "firing_after_quality") t.act(t.prompt().actorIds[0] as string, { type: "END_AFTER_QUALITY" });
+    expect(t.state.lastFiring?.ceramics["c1"]?.first?.kilnMasterMarker).toBe(1);
+    expect(t.state.ceramics["c1"]).toMatchObject({ stage: "finished" });
+    expect(kilnMasterOption(t.view("p1"), "p1")?.ready).toBe(true);
   });
 });

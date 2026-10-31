@@ -10,7 +10,7 @@
  * - **As the Guild Hall chooser** (`choice`, owner review 2026-10-17) the tile is a toggle button
  *   (`data-act="tech"`, `aria-pressed`) that chooses it for the pane's Guild Hall placement (an
  *   Apprentice's purchase) or for the Shifu's next take after inspecting, and opens no rules
- *   details. Its price is the printed cost (v1.6.2 L206–207: no discount). A Tech this worker
+ *   details. Its price is the printed cost (v1.6.2 L236–237: no discount). A Tech this worker
  *   cannot take (`legal: false`: its cost, a discipline already owned, the Tech limit — whatever
  *   the engine says) is greyed out, stays focusable with `aria-disabled`, ignores activation and
  *   shows the engine's reason (`aria-describedby`).

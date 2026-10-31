@@ -11,13 +11,13 @@
  * chosen, complete or not. The second load is offered only while some other Shaped vessel can
  * still be loaded after the first.
  *
- * Kiln fuel (rev. 4 L197, changes 34–35, R24): the action costs 1 Wood when any of its loads goes
+ * Kiln fuel (L215, changes 34–35, R24): the action costs 1 Wood when any of its loads goes
  * into the Shared Kiln, whether it loads 1 vessel or 2; loading only into the Imperial Kiln is
  * free. The engine's quote (`quoteGlazeLoad`, its `kiln_fuel` line) prices the draft; without the
  * Wood the engine offers no Shared Kiln destination (`loadDestinationOptions`). There is no Heat
  * marker since revision 4 (changes 28, 31).
  *
- * Kiln Master (T24, rev. 4 L628, R22): once per round, as a ceramic is loaded, its owner may place
+ * Kiln Master (T24, L647, R22): once per round, as a ceramic is loaded, its owner may place
  * the +1 or −1 marker on it, face up (`kilnMasterOption`: owned and ready, its faces). At most one
  * load of the action carries it; declining is choosing none (R4).
  *

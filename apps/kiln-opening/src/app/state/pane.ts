@@ -9,16 +9,17 @@
  *   (`GameShell`, `data-pane="hidden"`; `DecisionPane` keeps its markup, `hidden`);
  * - a slim bar above the world (`decision/PaneOpeners`) always says whose turn it is and what to
  *   do (the spec's `lead`: "Your turn: place a worker · 3 left"), followed by the window's openers,
- *   if any, after the words that name them ("Or first:" — the abilities that may come before the
- *   worker action); an opener dispatches its draft action, which brings the pane back, open on
- *   phones.
+ *   if any, after the words that name them (the "Free actions" chips, owner UI decision D21); an
+ *   opener dispatches its draft action, which brings the pane back, open on phones.
  *
  * `usePane()` reads the draft the way `useTableSelection()` does, so the shell, the pane and the
  * bar agree in the same render. `focusTable()` is the "back to the table" focus move: the pane
  * uses it when it hides with focus inside, and the skip link while the pane is hidden. Its
  * preferred target is the placement control the player last used (`PANE_RETURN_CONTROL`: a
- * Place shortcut, a Sell button or an opener, never a prompt the code focused on the way, such as the Tech
- * display's Guild Hall chooser), found again by its data attributes when a re-render replaced it.
+ * Place shortcut, a Sell button, a chip, a held Order's toggle or the Imperial Priority token's Use
+ * button, never a prompt the code focused
+ * on the way, such as the Tech display's Guild Hall chooser), found again by its data attributes
+ * when a re-render replaced it.
  */
 
 import { useMemo, useSyncExternalStore } from "react";
@@ -40,7 +41,7 @@ export interface PaneState {
   hidden: boolean;
   /** The hidden pane's bar cue ("Your turn: place a worker · 3 left"); null when the pane shows. */
   lead: WindowText | null;
-  /** The words that name the openers' group ("Or first:"); null without openers. */
+  /** The words that name the openers' group ("Free actions"); null without openers. */
   openersLabel: WindowText | null;
   /** The ways to bring the pane back while it is hidden; empty when it shows. */
   openers: readonly PaneOpenerItem[];
@@ -90,10 +91,17 @@ export function usePane(): PaneState {
  * The controls focus returns to when the pane hides: the table's Place shortcuts
  * (`LocationCard`'s `PlaceButtons`, `data-act="place"` with `data-location-id` and `data-worker`),
  * the Sell buttons on the viewer's Flawed ceramics (`SellButton`, `data-act="sell"` with
- * `data-ceramic-id`) and the hidden pane's openers (`data-pane-opener`). `DecisionPane` records the last one the
- * player focused or clicked (a click: WebKit does not focus a clicked button).
+ * `data-ceramic-id`), the toggles of the viewer's held Orders (a completable one opens the
+ * completion, owner revision 5; `.ord--own[data-order-id]`), the Imperial Priority token's Use
+ * button (`data-act="imperial-priority"`, D21) and the hidden pane's chips (`data-pane-opener`). `DecisionPane` records the last one the player focused or clicked (a
+ * click: WebKit does not focus a clicked button).
  */
-export const PANE_RETURN_CONTROL = '[data-act="place"], [data-act="sell"], [data-pane-opener]';
+export const PANE_RETURN_CONTROL = '[data-act="place"], [data-act="sell"], [data-act="imperial-priority"], .ord--own [data-act="order"], [data-pane-opener]';
+
+/** The phone section showing now has a Place shortcut (`LocationCard`, the personal spaces). */
+export function placeControlShown(document: Document): boolean {
+  return document.querySelector('[data-section][data-current] [data-act="place"]') !== null;
+}
 
 function isRendered(element: Element | null | undefined): element is HTMLElement {
   return element instanceof HTMLElement && element.isConnected && element.getClientRects().length > 0;
@@ -126,6 +134,9 @@ function sameControls(document: Document, preferred: Element): Element[] {
   if (opener !== null) found.push(document.querySelector(`[data-pane-opener="${opener}"]`));
   const sold = preferred.getAttribute("data-act") === "sell" ? keyOf(preferred, "data-ceramic-id") : null;
   if (sold !== null) found.push(document.querySelector(`[data-act="sell"][data-ceramic-id="${sold}"]`));
+  const held = preferred.getAttribute("data-act") === "order" ? preferred.closest(".ord--own")?.getAttribute("data-order-id") : null;
+  if (typeof held === "string" && /^[\w-]+$/.test(held)) found.push(document.querySelector(`.ord--own[data-order-id="${held}"] [data-act="order"]`));
+  if (preferred.getAttribute("data-act") === "imperial-priority") found.push(document.querySelector('[data-act="imperial-priority"]'));
   const location = preferred.getAttribute("data-act") === "place" ? keyOf(preferred, "data-location-id") : null;
   if (location !== null) {
     const worker = keyOf(preferred, "data-worker");

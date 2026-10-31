@@ -1,0 +1,42 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "After your worker action" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 2 Orders in hand Recognition 3/4 0 VP
+  - form "After your worker action":
+    - group "Free actions":
+      - text: ""
+      - radio "Deliver S05 3 VP 4 Coins Bowl, Plate or Brush Washer · any Glaze · any Decoration · Standard+" [checked]
+      - text: Deliver S05 3 VP 4 Coins Bowl, Plate or Brush Washer · any Glaze · any Decoration · Standard+
+      - 'button "Full rules: Order S05"'
+      - radio "Sell Flawed (+2 Coins)"
+      - text: Sell Flawed (+2 Coins)
+      - radio "Imperial Priority"
+      - text: Imperial Priority
+      - 'radio "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"'
+      - text: "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"
+    - group "Ceramics":
+      - text: ""
+      - radio "Option 1 White Bowl, Plain · Standard" [checked]
+      - text: Option 1 White Bowl, Plain · Standard
+    - heading "Rewards" [level=3]
+    - text: +3 VP +4 Coins
+    - paragraph:
+      - text: Complete
+      - strong: S05
+      - text: with White Bowl, Plain · Standard
+    - button "Deliver · end turn"
+    - button "Deliver"
+    - button "End turn"

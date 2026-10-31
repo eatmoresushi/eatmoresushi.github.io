@@ -1,10 +1,10 @@
 /**
- * Kiln Master (T24, rev. 4 L628, L635; changes 28, 31; owner ruling R22): once per round, when
+ * Kiln Master (T24, L647, L654; changes 28, 31; owner ruling R22): once per round, when
  * you load a ceramic — at any loading, a Glaze & Load action or Imperial Priority, into the Shared
  * or the Imperial Kiln — you may place a +1 or −1 marker on it, face up. It adds its value to that
- * ceramic's Actual Heat (rev. 4 L78, L255, L661), Jun's adjustment applies on top of it, and it
- * stays in place through a Second Firing recalculation (rev. 4 L627). It is open information and
- * returns when the firing finishes (rev. 4 L664). There is no player Heat marker and no
+ * ceramic's Actual Heat (L86, L273, L680), Jun's adjustment applies on top of it, and it
+ * stays in place through a Second Firing recalculation (L646). It is open information and
+ * returns when the firing finishes (L683). There is no player Heat marker and no
  * Heat-marker step since revision 4. Replaces revision 3's `heat_markers.test.ts`.
  */
 
@@ -49,7 +49,7 @@ function kilnMasterUsed(t: LocalTable): boolean | undefined {
   return t.player("p1").techs.find((tech) => tech.id === "T24")?.usedThisRound;
 }
 
-describe("the marker is chosen when the ceramic is loaded (rev. 4 L628, R22)", () => {
+describe("the marker is chosen when the ceramic is loaded (L647, R22)", () => {
   it("at a Glaze & Load Apprentice load into the Shared Kiln: face up, public, once per round", () => {
     const t = table(spec());
     expect(kilnMasterOption(t.view("p1"), "p1")).toEqual({ ready: true, values: [1, -1] });
@@ -81,7 +81,7 @@ describe("the marker is chosen when the ceramic is loaded (rev. 4 L628, R22)", (
   it("into the Imperial Kiln, by a Glaze & Load action or by Imperial Priority (R22)", () => {
     const viaAction = table(spec({ recognition: 2 }));
     const events = viaAction.act("p1", gl("p1:apprentice:1", [imperial("c3", 1)]));
-    // The Imperial Kiln costs no Wood (rev. 4 L291).
+    // The Imperial Kiln costs no Wood (L309).
     expect(types(events)).toEqual(["WORKER_PLACED", "CERAMIC_LOADED", "TECH_USED", "KILN_MASTER_PLACED"]);
     expect(ceramic(viaAction.state, "c3")).toMatchObject({ placement: { kiln: "imperial" }, kilnMasterMarker: 1 });
 
@@ -130,7 +130,7 @@ function firingSpec(ceramics: CeramicSpec[], p1: PlayerSpec = {}, fire: StateSpe
   return { players: [{ techs: ["T24" as TechId], recognition: 2, ...p1 }, {}], fireDeck: fire, ceramics };
 }
 
-describe("the marker in the firing (rev. 4 L255, L627, L635, L655–664)", () => {
+describe("the marker in the firing (L273, L646, L654, L674–683)", () => {
   it("adds to Actual Heat: Shared (zone), Shared under Kiln Furniture, and Imperial (with its modifier); there is no Heat-marker step", () => {
     const zone = openFiringTable(
       firingSpec([
@@ -162,7 +162,7 @@ describe("the marker in the firing (rev. 4 L255, L627, L635, L655–664)", () =>
       firingSpec([{ owner: "p1", stage: "loaded", shape: "vase", glaze: "celadon", at: "imperial", imperialModifier: 1, kilnMaster: 1 }]),
     );
     const imperialResults = eventsOfType(imperialTable.events, "ACTUAL_HEAT_CALCULATED")[0]?.results ?? [];
-    // Court-fired: Kiln Die 2 + Fire 0 + modifier 1 + marker 1 = 4 (rev. 4 L292).
+    // Court-fired: Kiln Die 2 + Fire 0 + modifier 1 + marker 1 = 4 (L310).
     expect(imperialResults[0]?.calculation).toMatchObject({ heatSource: 2, positionModifier: 1, kilnMasterMarker: 1, actualHeat: 4 });
   });
 
@@ -183,7 +183,7 @@ describe("the marker in the firing (rev. 4 L255, L627, L635, L655–664)", () =>
     expect("kilnMasterMarker" in (t.state.ceramics["c1"] ?? {})).toBe(false);
   });
 
-  it("Jun's ±1 applies on top of it (rev. 4 L478, L635)", () => {
+  it("Jun's ±1 applies on top of it (L497, L654)", () => {
     const t = openFiringTable(
       firingSpec([{ owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1", kilnMaster: -1 }], { kilnId: "JU" }),
     );
@@ -195,8 +195,8 @@ describe("the marker in the firing (rev. 4 L255, L627, L635, L655–664)", () =>
     expect(t.state.lastFiring?.ceramics["c1"]?.first).toMatchObject({ kilnMasterMarker: -1, actualHeat: 1, junAdjustment: -1, finalActualHeat: 0 });
   });
 
-  it("stays in place through a Second Firing recalculation (rev. 4 L627)", () => {
-    // Kiln Master and Second Firing are both Firing Techs, so no player owns both (L211) and the
+  it("stays in place through a Second Firing recalculation (L646)", () => {
+    // Kiln Master and Second Firing are both Firing Techs, so no player owns both (L240) and the
     // combination is unreachable in play; the engine still keeps the marker in the
     // recalculation. The marker is set on the state directly, and the commands run without the
     // invariant hook (which would refuse a marker without T24).

@@ -1,27 +1,27 @@
 - complementary "Your decision":
   - paragraph: Final scoring
   - heading "Game over" [level=2]
-  - region "Zhao (you)":
-    - heading "Zhao (you)" [level=3]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
     - group "Resources":
-      - strong: "5"
+      - strong: "8"
       - text: Clay
-      - strong: "2"
+      - strong: "1"
       - text: Wood
-      - strong: /\d+/
+      - strong: "7"
       - text: Coins
     - img "Your Shifu"
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: /1 Order in hand Recognition 3\/4 \d+ VP/
+    - text: /5 Orders in hand Recognition 1\/4 \d+ VP/
   - form "Game over":
     - group "Game over":
-      - paragraph: /Zhao wins with \d+ VP\./
-      - paragraph: Decided by Imperial Recognition.
+      - paragraph: /Lin wins with \d+ VP\./
+      - paragraph: Decided by Masterpieces delivered or exhibited.
       - heading "Standings" [level=3]
       - list:
-        - listitem: /#1 Zhao \(you\) \d+ VP/
-        - listitem: /#2 Lin \d+ VP/
-        - listitem: /#3 Wen \d+ VP/
+        - listitem: /#1 Lin \(you\) \d+ VP/
+        - listitem: /#2 Wen \d+ VP/
+        - listitem: /#3 Zhao \d+ VP/
       - paragraph: The full score table is in Results.

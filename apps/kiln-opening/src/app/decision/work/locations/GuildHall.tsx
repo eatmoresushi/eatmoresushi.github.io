@@ -29,7 +29,7 @@ export function DisciplineSwatch({ discipline }: { discipline: TechDiscipline })
   return <span className="b4-disc" data-discipline={discipline} aria-hidden="true" />;
 }
 
-/** "3 Coins": the printed cost, which every Guild Hall take pays (v1.6.2 L206–207). */
+/** "3 Coins": the printed cost, which every Guild Hall take pays (v1.6.2 L236–237). */
 export function techPriceText(option: Pick<GuildTechOption, "cost">, t: Translator): string {
   return amountText(t, "coins", option.cost);
 }

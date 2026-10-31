@@ -1,8 +1,8 @@
 /**
  * Pins the Order data to the documented relation semantics (types.ts
  * `OrderRelationDefinition`): `different_*` means every listed slot is pairwise different,
- * so "3 different Decorations" (O45, O47; L602, L604) is `different_decoration` over all 3
- * slots, and "at least 2 different Decorations" (O48, L605) is
+ * so "3 different Decorations" (O45, O47; L608, L610) is `different_decoration` over all 3
+ * slots, and "at least 2 different Decorations" (O48, L611) is
  * `at_least_n_distinct_decorations` with count 2. The matcher's behaviour on these Orders
  * is tested with P6's `orders/matching.ts`.
  */

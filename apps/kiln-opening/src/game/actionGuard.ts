@@ -11,6 +11,10 @@
  *   for in-process callers) is treated as absent, so the result is always JSON-safe.
  * - The result is a fresh object: nothing of the input object is aliased.
  * - Rule legality (costs, counts, duplicates, ownership) is not checked here.
+ * - `endTurn` (owner UI decision D21, `EndTurnRequest`) is an optional boolean on exactly the
+ *   command types of `EndTurnCommandType` (`END_TURN_KEY`); anywhere else it is an unknown key,
+ *   and a non-boolean is `MALFORMED_ACTION` with `field: "endTurn"`. Where `endTurn: true` is
+ *   refused (before the worker action) is a rule check (`endTurnRequestError`).
  *
  * Every failure is `MALFORMED_ACTION` with `details.field` naming the offending path.
  *
@@ -32,6 +36,7 @@ import { ruleError } from "./errors.ts";
 import type {
   AuthoritativeCommand,
   CrackleDeclaration,
+  EndTurnRequest,
   FormVesselSpec,
   GameRuleError,
   HeatDelta,
@@ -47,9 +52,9 @@ import type {
 
 const IMPERIAL_MODIFIERS = [-1, 0, 1] as const satisfies readonly ImperialModifier[];
 const KILN_FURNITURE_MODIFIERS = [-1, 0, 1] as const satisfies readonly KilnFurnitureModifier[];
-/** Jun's adjustment and Kiln Master's marker (rev. 4 L628). */
+/** Jun's adjustment and Kiln Master's marker (L647). */
 const HEAT_DELTAS = [1, -1] as const satisfies readonly HeatDelta[];
-/** Second Firing's 2 revealed cards (v1.6.2 L639). */
+/** Second Firing's 2 revealed cards (v1.6.2 L646). */
 const SECOND_FIRING_CARD_INDEXES = [0, 1] as const;
 
 /** Compile-time proof that each literal list names every member of its union. */
@@ -192,8 +197,8 @@ const glazeOf = (value: unknown, field: string) => oneOf(value, GLAZES, field);
 const decorationOf = (value: unknown, field: string) => oneOf(value, DECORATIONS, field);
 const heatDelta = (value: unknown, field: string) => oneOf(value, HEAT_DELTAS, field);
 
-/** A face-up display pick: the Setup Main Order (rev. 4 L122) or the Magistrate's Hall Shifu's
- * Crown Order (rev. 4 L241). Whether the position still shows that Order is a rule check. */
+/** A face-up display pick: the Setup Main Order (L130) or the Magistrate's Hall Shifu's
+ * Crown Order (L259). Whether the position still shows that Order is a rule check. */
 function displayPick(value: unknown, field: string): { slotIndex: number; orderId: OrderId } {
   const o = objectAt(value, field);
   shape(o, field, ["slotIndex", "orderId"]);
@@ -243,7 +248,7 @@ function loadSpec(value: unknown, field: string): LoadSpec {
   };
 }
 
-/** One reservation of a Select (v1.6.2 L64). The count (0, or more than the Select allows) is a
+/** One reservation of a Select (v1.6.2 L80). The count (0, or more than the Select allows) is a
  * rule error of the validator (`RESERVATION_REQUIRED`, `RESERVATION_LIMIT`), not a shape error. */
 function selectPick(value: unknown, field: string): SelectPick {
   const o = objectAt(value, field);
@@ -271,8 +276,17 @@ function crackleDeclaration(value: unknown, field: string): CrackleDeclaration {
 
 const COMPLETION_OPTIONAL = ["crackleDeclarations", "declineKilnAbility", "declineTributeWare"] as const;
 
+/** The optional "end the turn afterwards" key (owner UI decision D21) of every
+ * `EndTurnCommandType` parser. */
+const END_TURN_KEY = "endTurn";
+
+/** `{ endTurn }` when present (a boolean), else `{}` (D21, `EndTurnRequest`). */
+function endTurnOf(o: Fields): EndTurnRequest {
+  return maybe(END_TURN_KEY, optional(o, END_TURN_KEY, "", bool));
+}
+
 function completionSpec(o: Fields): OrderCompletionSpec {
-  shape(o, "", ["type", "orderId", "ceramicIds"], COMPLETION_OPTIONAL);
+  shape(o, "", ["type", "orderId", "ceramicIds"], [...COMPLETION_OPTIONAL, END_TURN_KEY]);
   return {
     orderId: orderId(get(o, "orderId"), "orderId"),
     ceramicIds: list(get(o, "ceramicIds"), "ceramicIds", ceramicId),
@@ -286,14 +300,9 @@ function onlyType(o: Fields): void {
   shape(o, "", ["type"]);
 }
 
-function ceramicOnly(o: Fields): string {
-  shape(o, "", ["type", "ceramicId"]);
+function ceramicOnly(o: Fields, optionalKeys: readonly string[] = []): string {
+  shape(o, "", ["type", "ceramicId"], optionalKeys);
   return ceramicId(get(o, "ceramicId"), "ceramicId");
-}
-
-function workerOnly(o: Fields): string {
-  shape(o, "", ["type", "workerId"]);
-  return workerId(get(o, "workerId"), "workerId");
 }
 
 // ── One parser per command type ──────────────────────────────────────────────────────
@@ -316,7 +325,7 @@ const PARSERS: Parsers = {
     return { type: "PLACE_SETTERS_MARK", spaceId: spaceId === null ? null : oneOf(spaceId, KILN_SPACE_IDS, "spaceId") };
   },
   PLACE_MATERIALS_YARD: (o) => {
-    shape(o, "", ["type", "workerId", "clay", "wood"], ["seniorApprentice", "preparedClay"]);
+    shape(o, "", ["type", "workerId", "clay", "wood"], ["seniorApprentice", "preparedClay", END_TURN_KEY]);
     return {
       type: "PLACE_MATERIALS_YARD",
       workerId: workerId(get(o, "workerId"), "workerId"),
@@ -335,10 +344,11 @@ const PARSERS: Parsers = {
           };
         }),
       ),
+      ...endTurnOf(o),
     };
   },
   PLACE_FORM_DECORATE: (o) => {
-    shape(o, "", ["type", "workerId", "vessels"], ["dingExtra", "useLargeThrowingWheel", "decoratorsKitVesselIndex"]);
+    shape(o, "", ["type", "workerId", "vessels"], ["dingExtra", "useLargeThrowingWheel", "decoratorsKitVesselIndex", END_TURN_KEY]);
     return {
       type: "PLACE_FORM_DECORATE",
       workerId: workerId(get(o, "workerId"), "workerId"),
@@ -356,26 +366,29 @@ const PARSERS: Parsers = {
       ),
       ...maybe("useLargeThrowingWheel", optional(o, "useLargeThrowingWheel", "", bool)),
       ...maybe("decoratorsKitVesselIndex", optional(o, "decoratorsKitVesselIndex", "", count)),
+      ...endTurnOf(o),
     };
   },
   PLACE_GLAZE_LOAD: (o) => {
-    shape(o, "", ["type", "workerId", "loads"]);
+    shape(o, "", ["type", "workerId", "loads"], [END_TURN_KEY]);
     return {
       type: "PLACE_GLAZE_LOAD",
       workerId: workerId(get(o, "workerId"), "workerId"),
       loads: list(get(o, "loads"), "loads", loadSpec),
+      ...endTurnOf(o),
     };
   },
   PLACE_COMMISSION_MARKET: (o) => {
-    shape(o, "", ["type", "workerId"], ["seniorApprentice"]);
+    shape(o, "", ["type", "workerId"], ["seniorApprentice", END_TURN_KEY]);
     return {
       type: "PLACE_COMMISSION_MARKET",
       workerId: workerId(get(o, "workerId"), "workerId"),
       ...maybe("seniorApprentice", optional(o, "seniorApprentice", "", bool)),
+      ...endTurnOf(o),
     };
   },
   PLACE_GUILD_HALL: (o) => {
-    shape(o, "", ["type", "workerId", "choice"]);
+    shape(o, "", ["type", "workerId", "choice"], [END_TURN_KEY]);
     const c = objectAt(get(o, "choice"), "choice");
     const kind = oneOf(get(c, "kind"), ["buy_face_up", "inspect"] as const, "choice.kind");
     let choice: Extract<AuthoritativeCommand, { type: "PLACE_GUILD_HALL" }>["choice"];
@@ -386,23 +399,27 @@ const PARSERS: Parsers = {
       shape(c, "choice", ["kind", "discipline"]);
       choice = { kind, discipline: oneOf(get(c, "discipline"), DISCIPLINES, "choice.discipline") };
     }
-    return { type: "PLACE_GUILD_HALL", workerId: workerId(get(o, "workerId"), "workerId"), choice };
+    return { type: "PLACE_GUILD_HALL", workerId: workerId(get(o, "workerId"), "workerId"), choice, ...endTurnOf(o) };
   },
-  PLACE_CANAL_WHARF: (o) => ({ type: "PLACE_CANAL_WHARF", workerId: workerOnly(o) }),
+  PLACE_CANAL_WHARF: (o) => {
+    shape(o, "", ["type", "workerId"], [END_TURN_KEY]);
+    return { type: "PLACE_CANAL_WHARF", workerId: workerId(get(o, "workerId"), "workerId"), ...endTurnOf(o) };
+  },
   PLACE_MAGISTRATES_HALL: (o) => {
-    shape(o, "", ["type", "workerId"], ["crownOrder"]);
+    shape(o, "", ["type", "workerId"], ["crownOrder", END_TURN_KEY]);
     return {
       type: "PLACE_MAGISTRATES_HALL",
       workerId: workerId(get(o, "workerId"), "workerId"),
       ...maybe("crownOrder", optional(o, "crownOrder", "", displayPick)),
+      ...endTurnOf(o),
     };
   },
   SELECT_CHOOSE: (o) => {
-    shape(o, "", ["type", "reservations"]);
-    return { type: "SELECT_CHOOSE", reservations: list(get(o, "reservations"), "reservations", selectPick) };
+    shape(o, "", ["type", "reservations"], [END_TURN_KEY]);
+    return { type: "SELECT_CHOOSE", reservations: list(get(o, "reservations"), "reservations", selectPick), ...endTurnOf(o) };
   },
   GUILD_TAKE: (o) => {
-    shape(o, "", ["type", "take"]);
+    shape(o, "", ["type", "take"], [END_TURN_KEY]);
     const t = objectAt(get(o, "take"), "take");
     shape(t, "take", ["kind", "techId"]);
     return {
@@ -411,18 +428,19 @@ const PARSERS: Parsers = {
         kind: oneOf(get(t, "kind"), ["face_up", "inspected"] as const, "take.kind"),
         techId: techId(get(t, "techId"), "take.techId"),
       },
+      ...endTurnOf(o),
     };
   },
   GUILD_FINISH: (o) => {
-    shape(o, "", ["type", "bottomOrder"]);
-    return { type: "GUILD_FINISH", bottomOrder: list(get(o, "bottomOrder"), "bottomOrder", techId) };
+    shape(o, "", ["type", "bottomOrder"], [END_TURN_KEY]);
+    return { type: "GUILD_FINISH", bottomOrder: list(get(o, "bottomOrder"), "bottomOrder", techId), ...endTurnOf(o) };
   },
   USE_COLOUR_SAMPLES_SWAP: (o) => {
     shape(o, "", ["type", "discardOrderId"]);
     return { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: orderId(get(o, "discardOrderId"), "discardOrderId") };
   },
   USE_IMPERIAL_PRIORITY: (o) => {
-    shape(o, "", ["type", "ceramicId", "glaze", "imperialModifier"], ["reworkShape", "kilnMaster"]);
+    shape(o, "", ["type", "ceramicId", "glaze", "imperialModifier"], ["reworkShape", "kilnMaster", END_TURN_KEY]);
     return {
       type: "USE_IMPERIAL_PRIORITY",
       ceramicId: ceramicId(get(o, "ceramicId"), "ceramicId"),
@@ -430,6 +448,7 @@ const PARSERS: Parsers = {
       imperialModifier: oneOf(get(o, "imperialModifier"), IMPERIAL_MODIFIERS, "imperialModifier"),
       ...maybe("reworkShape", optional(o, "reworkShape", "", shapeOf)),
       ...maybe("kilnMaster", optional(o, "kilnMaster", "", heatDelta)),
+      ...endTurnOf(o),
     };
   },
   END_TURN: (o) => {
@@ -478,8 +497,8 @@ const PARSERS: Parsers = {
     onlyType(o);
     return { type: "END_AFTER_QUALITY" };
   },
-  SELL_FLAWED: (o) => ({ type: "SELL_FLAWED", ceramicId: ceramicOnly(o) }),
-  COMPLETE_ORDER: (o) => ({ type: "COMPLETE_ORDER", ...completionSpec(o) }),
+  SELL_FLAWED: (o) => ({ type: "SELL_FLAWED", ceramicId: ceramicOnly(o, [END_TURN_KEY]), ...endTurnOf(o) }),
+  COMPLETE_ORDER: (o) => ({ type: "COMPLETE_ORDER", ...completionSpec(o), ...endTurnOf(o) }),
   END_ORDER_TURN: (o) => {
     onlyType(o);
     return { type: "END_ORDER_TURN" };

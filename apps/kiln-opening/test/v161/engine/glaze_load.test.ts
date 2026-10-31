@@ -1,8 +1,8 @@
 /**
- * Glaze & Load (rev. 4 L189–199, changes 31, 34, 35): Apprentice 1 load, Shifu up to 2 loads
+ * Glaze & Load (L207–217, changes 31, 34, 35): Apprentice 1 load, Shifu up to 2 loads
  * (no Heat marker since revision 4), the kiln fuel (1 Wood per action into the Shared Kiln,
  * whether it loads 1 vessel or 2; the Imperial Kiln free; R24), the Imperial modifier (R10, R11),
- * Kiln Tending (T20, L627, INT) and the loading Techs through the command (Setter's Mark,
+ * Kiln Tending (T20, L633, INT) and the loading Techs through the command (Setter's Mark,
  * Inverted Firing, Kiln Furniture, Reworking Table). Kiln Master's marker at loading is
  * `kiln_master.test.ts`.
  */
@@ -55,7 +55,7 @@ function spec(p1: PlayerSpec = {}, ceramics: CeramicSpec[] = [shaped("p1"), shap
 
 const FUEL = { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: -1, coins: 0, reason: "kiln_fuel" } as const;
 
-describe("Apprentice effect: 1 Shaped vessel, a Glaze, loaded (rev. 4 L193)", () => {
+describe("Apprentice effect: 1 Shaped vessel, a Glaze, loaded (L211)", () => {
   it("loads into an empty active Shared Kiln space for 1 Wood, then hands over", () => {
     const t = table(spec());
     const events = t.act("p1", gl("p1:apprentice:1", [load("c2", "high_2", { glaze: "celadon" })]));
@@ -88,7 +88,7 @@ describe("Apprentice effect: 1 Shaped vessel, a Glaze, loaded (rev. 4 L193)", ()
     expectPublicEvents(events);
   });
 
-  it.each(GLAZES)("may choose %s at loading, at no cost beyond the fuel (L344)", (glaze) => {
+  it.each(GLAZES)("may choose %s at loading, at no cost beyond the fuel (L358)", (glaze) => {
     const t = table(spec());
     t.act("p1", gl("p1:apprentice:1", [load("c1", "low_1", { glaze })]));
     expect(ceramic(t.state, "c1")).toMatchObject({ glaze });
@@ -102,7 +102,7 @@ describe("Apprentice effect: 1 Shaped vessel, a Glaze, loaded (rev. 4 L193)", ()
   });
 });
 
-describe("Shifu effect: simply loads up to 2 (rev. 4 L194, changes 28, 31)", () => {
+describe("Shifu effect: simply loads up to 2 (L212, changes 28, 31)", () => {
   it("loads 2 in order and pays 1 Wood for the action, not per vessel (R24)", () => {
     const t = table(spec());
     const events = t.act("p1", gl("p1:shifu", [load("c1", "high_1"), load("c2", "low_1")]));
@@ -126,7 +126,7 @@ describe("Shifu effect: simply loads up to 2 (rev. 4 L194, changes 28, 31)", () 
   });
 });
 
-describe("the kiln burns fuel (rev. 4 L197–198, changes 34, 35, R24)", () => {
+describe("the kiln burns fuel (L215–216, changes 34, 35, R24)", () => {
   it("a Shared and an Imperial load together cost 1 Wood; an Imperial load alone is free", () => {
     const mixed = table(spec({ recognition: 2 }));
     const events = mixed.act("p1", gl("p1:shifu", [imperial("c2", 1), load("c1", "high_1")]));
@@ -156,7 +156,7 @@ describe("the kiln burns fuel (rev. 4 L197–198, changes 34, 35, R24)", () => {
     expect(loadDestinationOptions(view, "p1", "c1", []).every((option) => option.destination.kiln === "imperial")).toBe(true);
   });
 
-  it("the placement is illegal without Wood and without an empty Imperial Kiln (rev. 4 L198)", () => {
+  it("the placement is illegal without Wood and without an empty Imperial Kiln (L216)", () => {
     const poor = spec({ resources: { wood: 0 } });
     const error = reject(table(poor), "p1", gl("p1:apprentice:1", [load("c1", "high_1")]), "NO_MAIN_ACTION_POSSIBLE");
     expect(error.details).toMatchObject({ locationId: "glaze_load" });
@@ -188,7 +188,7 @@ describe("the kiln burns fuel (rev. 4 L197–198, changes 34, 35, R24)", () => {
   });
 });
 
-describe("the Imperial Kiln (rev. 4 L289–292, R10, R11)", () => {
+describe("the Imperial Kiln (L308–310, R10, R11)", () => {
   it.each([-1, 0, 1] as const)("records the public modifier %i on the ceramic", (modifier) => {
     const t = table(spec({ recognition: 2 }));
     const events = t.act("p1", gl("p1:apprentice:1", [imperial("c2", modifier)]));
@@ -205,7 +205,7 @@ describe("the Imperial Kiln (rev. 4 L289–292, R10, R11)", () => {
   });
 });
 
-describe("Kiln Tending (T20, L627): +1 Clay +1 Wood after the first qualifying action each round (INT)", () => {
+describe("Kiln Tending (T20, L633): +1 Clay +1 Wood after the first qualifying action each round (INT)", () => {
   it("resolves automatically once, after the fuel and the loads", () => {
     const t = table(spec({ techs: ["T20"] }));
     const events = t.act("p1", gl("p1:shifu", [load("c1", "high_1")]));
@@ -228,8 +228,8 @@ describe("Kiln Tending (T20, L627): +1 Clay +1 Wood after the first qualifying a
 });
 
 describe("loading Techs through the command", () => {
-  it("returns the owner's Setter's Mark; another player's Mark holds the space (L630)", () => {
-    // One Setter's Mark tile exists (L83), so "own Mark" and "another player's Mark" are two
+  it("returns the owner's Setter's Mark; another player's Mark holds the space (L636)", () => {
+    // One Setter's Mark tile exists (L105), so "own Mark" and "another player's Mark" are two
     // scenarios: a state where both players own T22 breaks Tech card conservation (§8.3).
     const own = { players: [{ techs: ["T22" as const] }, {}], ceramics: [shaped("p1")], settersMarks: { low_1: "p1" } as const };
     const t = table(own);
@@ -247,14 +247,14 @@ describe("loading Techs through the command", () => {
     expect(ceramic(t.state, "c3")).toMatchObject({ placement: { kiln: "shared", spaceId: "low_1", stacked: true } });
   });
 
-  it("Kiln Furniture goes beneath the ceramic with the chosen modifier (L628)", () => {
+  it("Kiln Furniture goes beneath the ceramic with the chosen modifier (L634)", () => {
     const t = table(spec({ techs: ["T15"] }));
     const events = t.act("p1", gl("p1:apprentice:1", [load("c1", "high_1", { kilnFurniture: -1 })]));
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "CERAMIC_LOADED", "TECH_USED", "KILN_FURNITURE_PLACED"]);
     expect(t.state.sharedKiln.spaces.high_1.kilnFurniture).toEqual({ ownerId: "p1", modifier: -1, underCeramicId: "c1" });
   });
 
-  it("Reworking Table changes the Shape first, then Inverted Firing tests the new Shape (L617, R8)", () => {
+  it("Reworking Table changes the Shape first, then Inverted Firing tests the new Shape (L623, R8)", () => {
     const t = table(spec({ techs: ["T05", "T21"] }, [shaped("p1", "censer"), { owner: "p1", shape: "vase", stage: "loaded", glaze: "white", at: "middle_1" }]));
     const events = t.act("p1", gl("p1:apprentice:1", [load("c1", "middle_1", { invertedFiring: true, reworkShape: "plate" })]));
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "TECH_USED", "CERAMIC_RESHAPED", "TECH_USED", "CERAMIC_LOADED"]);

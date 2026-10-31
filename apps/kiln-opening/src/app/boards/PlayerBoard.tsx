@@ -7,7 +7,8 @@
  * count, never a card. Score is the score-track value `recordedVp` (Orders, Kiln abilities with Ge's
  * Crackle VP, Crowns and Imperial Audience; a Tech scores nothing, v1.6.2 change 27), never a
  * projection. A completed Order shows its printed VP, and Ge's Crackle VP when it delivered a
- * Crackle ceramic (rev. 4 L465).
+ * Crackle ceramic (L484). A player who holds the Imperial Priority token shows it, and on the
+ * viewer's own board it carries Use while they may spend it (`ImperialPriorityToken`, D21).
  */
 import { useId } from "react";
 import type { CSSProperties } from "react";
@@ -21,6 +22,7 @@ import { useGame } from "../state/hooks.ts";
 import { RulesDetail } from "../rules/RulesDetail.tsx";
 import { summaryOf } from "../table/tableData.ts";
 import { CeramicsRow } from "./CeramicsRow.tsx";
+import { ImperialPriorityToken } from "./ImperialPriorityToken.tsx";
 import { KilnTradition, MarkerLine } from "./KilnTradition.tsx";
 import { PersonalSpaces } from "./PersonalSpaces.tsx";
 import { TechSlots } from "./TechSlots.tsx";
@@ -93,6 +95,7 @@ export function PlayerBoard({ playerId }: PlayerBoardProps) {
       </div>
       <CeramicsRow playerId={playerId} />
       <p className="kpb-markers"><MarkerLine playerId={playerId} /></p>
+      <ImperialPriorityToken playerId={playerId} />
       <div className="prow">
         <span className="prow-lab">{t("boards.board.completed")}</span>
         {summary.completedOrders.length === 0 ? (
@@ -106,7 +109,7 @@ export function PlayerBoard({ playerId }: PlayerBoardProps) {
                   className="kpb-order"
                   trigger={
                     <span className="kpb-order-face">
-                      {/* Ge's Crackle VP for the Crackle ceramics delivered with it (rev. 4 L465); a record without it means 0. */}
+                      {/* Ge's Crackle VP for the Crackle ceramics delivered with it (L484); a record without it means 0. */}
                       {(record.crackleVp ?? 0) > 0
                         ? t("boards.board.completedOrderCrackle", { order: record.orderId, vp: t("common.vpN", { n: record.vp }), n: record.crackleVp ?? 0 })
                         : t("boards.board.completedOrder", { order: record.orderId, vp: t("common.vpN", { n: record.vp }) })}

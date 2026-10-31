@@ -53,5 +53,5 @@
     - strong: 他人所见
     - text: Player 1正在查看3张委托
     - paragraph: 请选择要承接的委托（至多2张）。
+    - button "承接并结束回合" [disabled]
     - button "取消"
-    - button "确认" [disabled]

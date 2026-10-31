@@ -76,19 +76,25 @@
     text-overflow: ellipsis;
   }
 
-  /* Short landscape (844×390 … 932×430; kit/Sheet's side panel, §7.3): the eyebrow, heading and
-     OwnSummary would leave `.pane-scroll` about 80px between them and the ConfirmBar. There the
-     whole pane body scrolls instead: the header scrolls away with the fields, and the ConfirmBar
-     stays pinned at the bottom (its own background). The scroll padding keeps a focused field
-     clear of the pinned bar. Elsewhere only `.pane-scroll` scrolls. */
-  @media (orientation: landscape) and (max-height: 500px) {
+  /* Short landscape (844×390 … 932×430; kit/Sheet's side panel, §7.3) and small phones (320×568 …
+     375×667, with a split Confirm's taller bar, D21): the eyebrow, heading and OwnSummary would
+     leave `.pane-scroll` about 80px between them and the ConfirmBar. There the whole pane body
+     scrolls instead: the header scrolls away with the fields, and the ConfirmBar stays pinned at
+     the bottom (its own background). The form has no box of its own here, or sticky could not lift
+     the bar above the form's top: the bar is pinned from the moment the pane opens, over the header
+     if it must. The scroll padding keeps a focused field clear of the pinned bar. Elsewhere only
+     `.pane-scroll` scrolls. */
+  @media (orientation: landscape) and (max-height: 500px), (max-width: 899.98px) and (max-height: 667px) and (orientation: portrait) {
     .pane .kit-sheet-body {
       overflow-y: auto;
       overscroll-behavior: contain;
-      scroll-padding-block-end: calc(var(--target-min) * 2 + var(--sp-6));
+      scroll-padding-block-end: calc(var(--target-min) * 3 + var(--sp-6));
     }
 
-    .pane .pane-form,
+    .pane .pane-form {
+      display: contents;
+    }
+
     .pane .pane-scroll {
       flex: none;
       min-height: auto;
@@ -102,6 +108,39 @@
       position: sticky;
       bottom: 0;
       z-index: 1;
+    }
+  }
+
+  /* Short landscape narrower than about 800px: the pane is 40% of the width, so the summary wraps
+     to three lines and the whole bar would leave the fields almost nothing (under 100px at 667×375).
+     Only the error, the hint and the buttons stay pinned; the summary sentence scrolls with the
+     fields, at their end, and the keys' line follows it for whoever has a keyboard. */
+  @media (orientation: landscape) and (max-height: 500px) and (max-width: 799.98px) {
+    .pane .confirm {
+      display: contents;
+    }
+
+    .pane .confirm-summary,
+    .pane .confirm-keys {
+      padding: var(--sp-4) var(--sp-6);
+    }
+
+    .pane .confirm-pin {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      display: grid;
+      flex: none;
+      gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-6);
+      border-block-start: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    /* The second button shares its row with Clear or End turn, wrapping at word boundaries, so the
+       pinned part stays two rows. */
+    .pane .confirm-buttons--split > [data-action="confirm-stay"] {
+      flex: 1 1 0;
     }
   }
 }

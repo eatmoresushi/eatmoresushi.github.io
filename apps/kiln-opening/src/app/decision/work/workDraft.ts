@@ -4,11 +4,21 @@
  *
  * One draft serves the `work` window's two steps:
  * - **before the worker action:** place a worker (worker entry × location × that location's
- *   sub-draft), or first use Imperial Priority or the Colour Samples swap (§3.4, R10, v1.6.2
- *   L622);
- * - **after the worker action:** Imperial Priority, the Colour Samples swap, or End turn.
- * In both steps the viewer may also sell a Flawed ceramic (change 30, R20: `sell_flawed`, from
- * `sellFlawedOptions`), which is never a worker action: the step stays as it was afterwards.
+ *   sub-draft), or first take a free action or use the Colour Samples swap;
+ * - **after the worker action:** a free action, the Colour Samples swap, or End turn.
+ * The free actions (owner revision 5, change 36, rev. 5 L168–176; owner ruling R26) are open in
+ * both steps, any number, one per Confirm, and are never worker actions, so the step stays as it
+ * was afterwards: complete a held Order (`complete_order`, the shared completion model of
+ * `orders/orderCompletion.ts` over `completableOrders`), sell a Flawed ceramic (`sell_flawed`,
+ * from `sellFlawedOptions`) and spend Imperial Priority (`imperial_priority`). Rewards gained
+ * before the placement count for it (the engine's placement options are re-read). The Colour
+ * Samples swap (v1.6.2 L632) is not a free action but shares the same before/after timing.
+ *
+ * **Owner UI decision D21:** free actions are never a step of their own. Before placing they are
+ * the turn line's chips and the pieces' own buttons, each choosing its form (`freeAction`, in
+ * `freeActionItems`' order), and placing is how the turn moves on: nothing has to be dismissed.
+ * After the worker action the same list is the pane's choice, with nothing chosen at first: every
+ * entry spends something for good, so it takes the player's own press, and End turn is the default.
  *
  * The worker and the location are chosen on the table (owner review, 2026-10-17): the work
  * window's table adapter turns a Place shortcut into the `place` action, and a Guild Hall Tech or
@@ -19,8 +29,10 @@
  * per view), Imperial Priority from `imperialPriorityOptions`, the Colour Samples swap from
  * `colourSamplesSwapOptions` (both composed here as sub-drafts, `imperialPriority` and `swap`).
  *
- * `initial` pre-selects nothing unless only one choice exists. `reduce(revalidate)` drops any
- * choice the new options no longer offer and keeps the very same draft when nothing changed.
+ * `initial` pre-selects nothing unless only one choice exists: the only placement left opens by
+ * itself, unless a free action or the swap could come first (its chips must stay up, D21).
+ * `reduce(revalidate)` drops any choice the new options no longer offer and keeps the very same
+ * draft when nothing changed.
  */
 import { imperialPriorityOptions } from "../../../game/index.ts";
 import type {
@@ -44,6 +56,11 @@ import { imperialPriorityDraft } from "./ImperialPriority.draft.ts";
 import type { ImperialPriorityAction, ImperialPriorityDraft, ImperialPriorityOptions } from "./ImperialPriority.draft.ts";
 import { colourSamplesSwapDraft, swapUsable } from "./ColourSamplesSwap.draft.ts";
 import { saleCommand, saleOf, saleOffered, saleOptions, saleSummary } from "../sale/sellFlawed.ts";
+import { EMPTY_COMPLETION, buildCompletion, completionFromCommand, completionOptions, reduceCompletion, settleCompletion } from "../orders/orderCompletion.ts";
+import type { CompletionAction, CompletionDraft, CompletionOptions } from "../orders/orderCompletion.ts";
+import { COMPLETABLE, completionSummary } from "../orders/orderDraft.ts";
+import { deliverKey, freeActionItems } from "../freeActions.ts";
+import type { FreeActionItem, FreeActionKey } from "../freeActions.ts";
 import type { ColourSamplesSwapAction, ColourSamplesSwapDraft, ColourSamplesSwapOptions } from "./ColourSamplesSwap.draft.ts";
 import { keepIfSame, placementOf, placements, viewMemo, workContext, workerEntry } from "./context.ts";
 import type { WorkContext } from "./context.ts";
@@ -101,7 +118,7 @@ export type SubAction = { [L in LocationId]: { readonly type: "sub"; readonly lo
 
 // ── The work draft ────────────────────────────────────────────────────────────────────────
 
-export type WorkMode = "place" | "imperial_priority" | "colour_samples_swap" | "sell_flawed" | "end_turn";
+export type WorkMode = "place" | "imperial_priority" | "colour_samples_swap" | "sell_flawed" | "complete_order" | "end_turn";
 export type WorkStep = "before_action" | "after_action";
 
 export interface WorkDraft {
@@ -112,10 +129,12 @@ export interface WorkDraft {
   readonly locationId: LocationId | null;
   readonly perLocation: PerLocation;
   readonly imperialPriority: ImperialPriorityDraft;
-  /** The Colour Samples swap's held Order to discard (v1.6.2 L622). */
+  /** The Colour Samples swap's held Order to discard (v1.6.2 L632). */
   readonly swap: ColourSamplesSwapDraft;
-  /** The Flawed ceramic to sell (`sell_flawed`, R20), or null. */
+  /** The Flawed ceramic to sell (`sell_flawed`, a free action), or null. */
   readonly sell: CeramicId | null;
+  /** The held Order to complete and its ceramics (`complete_order`, a free action). */
+  readonly completion: CompletionDraft;
 }
 
 export type WorkAction =
@@ -126,19 +145,23 @@ export type WorkAction =
   | SubAction
   | { readonly type: "imperialPriority"; readonly action: ImperialPriorityAction }
   | { readonly type: "swap"; readonly action: ColourSamplesSwapAction }
+  /** One entry of the free-action list: a chip, the after-action choice, a piece's button (D21). */
+  | { readonly type: "freeAction"; readonly key: FreeActionKey }
   /** Sell this Flawed ceramic (the pane's choice, or a Sell button on the table). */
-  | { readonly type: "sell"; readonly ceramicId: CeramicId };
+  | { readonly type: "sell"; readonly ceramicId: CeramicId }
+  /** Complete a held Order (its ceramics, or a completable Order in the hand). */
+  | { readonly type: "complete"; readonly action: CompletionAction };
 
 export interface WorkModeOption {
   mode: WorkMode;
 }
 
 /**
- * What the pane's heading names (owner review, 2026-10-17), after what the pane shows: placing a
- * worker; an ability's form before the worker action (`before_action` when the step's choice
- * names the ability, the ability itself when it is open alone); the after-action window.
+ * What the pane's heading names (owner review, 2026-10-17; D21), after what the pane shows: placing
+ * a worker; an ability's own name while its form is open before the worker action; the after-action
+ * window.
  */
-export type WorkHeading = "place" | "before_action" | "after_action" | Exclude<WorkMode, "place" | "end_turn">;
+export type WorkHeading = "place" | "after_action" | Exclude<WorkMode, "place" | "end_turn">;
 
 export interface WorkerChoice {
   /** `placementWorkerKey`: the input value (never a worker ID, D9). */
@@ -165,21 +188,13 @@ export interface LocationChoice {
 export interface WorkOptions {
   step: WorkStep;
   modes: readonly WorkModeOption[];
-  /**
-   * Before the worker action, the "This step" choice (owner review, 2026-10-17): the abilities that
-   * may come first, and Place a worker only while a placement is chosen, so moving through the
-   * choice never empties (and so hides) the pane. Empty when it would offer fewer than two (no
-   * ability may come first, or one ability opened with nothing placed: a lone radio is no choice,
-   * and the heading names that ability); always empty after the action, where `ActionWindow`
-   * lists `modes`.
-   */
-  stepChoices: readonly WorkModeOption[];
+  /** What the viewer can do right now (D21): the chips before placing, the pane's list after. */
+  freeActions: readonly FreeActionItem[];
+  /** The list's entry the draft has chosen, or null. */
+  freeAction: FreeActionKey | null;
   /** What the pane's heading and the phone sheet strip name now (the window spec's `title`). */
   heading: WorkHeading;
-  /**
-   * An ability that may come first is open with no placement chosen: the way back to placing on
-   * the table is a separate control (which hides the pane), not a choice of the step.
-   */
+  /** An ability's form is open before the worker action: its way back to placing (D14). */
   backToPlacing: boolean;
   workers: readonly WorkerChoice[];
   locations: readonly LocationChoice[];
@@ -187,8 +202,10 @@ export interface WorkOptions {
   imperialPriority: ImperialPriorityOptions | null;
   /** The Colour Samples swap's discard choices while it may be used, else null. */
   swap: ColourSamplesSwapOptions | null;
-  /** The Flawed ceramics the viewer may sell now (R20), else null. */
+  /** The Flawed ceramics the viewer may sell now, else null. */
   sale: SellFlawedOptions | null;
+  /** The completion's lists while a held Order can be completed now, else null. */
+  completion: CompletionOptions | null;
   workersLeft: number;
 }
 
@@ -212,13 +229,19 @@ function imperialUsable(engine: EngineView): boolean {
   return viewMemo(engine.view, "imperialPriorityOptions", () => imperialPriorityOptions(engine.view)).usable;
 }
 
+/** The held Orders the viewer may complete now, a free action (`freeActionOptions`), in hand order. */
+export function completableNow(engine: EngineView): readonly string[] {
+  return freeActionItems(engine).flatMap((item) => (item.kind === "deliver" ? [item.orderId] : []));
+}
 
+/** The draft's modes, in D21's order (Deliver, Sell, Imperial Priority, the swap). */
 function modesOf(model: GameModel, engine: EngineView): WorkMode[] {
   const step = stepOf(model);
   const modes: WorkMode[] = step === "before_action" ? ["place"] : [];
+  if (completableNow(engine).length > 0) modes.push("complete_order");
+  if (saleOptions(engine) !== null) modes.push("sell_flawed");
   if (imperialUsable(engine)) modes.push("imperial_priority");
   if (swapUsable(engine)) modes.push("colour_samples_swap");
-  if (saleOptions(engine) !== null) modes.push("sell_flawed");
   if (step === "after_action") modes.push("end_turn");
   return modes;
 }
@@ -306,7 +329,7 @@ function revalidate(draft: WorkDraft, model: GameModel, engine: EngineView): Wor
   const modes = modesOf(model, engine);
   const step = stepOf(model);
   let mode = draft.mode;
-  if (mode !== null && !modes.includes(mode)) mode = step === "before_action" ? "place" : modes.length === 1 ? (modes[0] ?? null) : null;
+  if (mode !== null && !modes.includes(mode)) mode = step === "before_action" ? "place" : null;
   const workerKey = draft.workerKey !== null && workerChoices(context).some((choice) => choice.key === draft.workerKey) ? draft.workerKey : null;
   const locationId = draft.locationId !== null && locationValid(context, draft.locationId, workerKey) ? draft.locationId : null;
   let next: WorkDraft = { ...draft, mode, workerKey, locationId };
@@ -314,7 +337,43 @@ function revalidate(draft: WorkDraft, model: GameModel, engine: EngineView): Wor
   if (mode === "imperial_priority") next = { ...next, imperialPriority: imperialPriorityDraft.reduce(next.imperialPriority, REVALIDATE, model, engine) };
   if (mode === "colour_samples_swap") next = { ...next, swap: colourSamplesSwapDraft.reduce(next.swap, REVALIDATE, model, engine) };
   if (next.sell !== null && (mode !== "sell_flawed" || !saleOffered(engine, next.sell))) next = { ...next, sell: null };
+  // A draft seeded without `completion` (tests, the gallery) has none chosen.
+  const completion = next.completion ?? EMPTY_COMPLETION;
+  const settled = mode === "complete_order" ? settleCompletion(completion, engine, COMPLETABLE) : EMPTY_COMPLETION;
+  if (settled !== next.completion) next = { ...next, completion: settled };
   return keepIfSame(draft, next);
+}
+
+/** The draft with this list entry chosen: its form open, its only choice made (§3.5). */
+function chooseFreeAction(draft: WorkDraft, item: FreeActionItem, engine: EngineView): WorkDraft {
+  switch (item.kind) {
+    case "deliver":
+      return { ...draft, mode: "complete_order", completion: reduceCompletion(EMPTY_COMPLETION, { type: "order", orderId: item.orderId }, engine, COMPLETABLE) };
+    case "sell": {
+      const ids = saleOptions(engine)?.ceramicIds ?? [];
+      return { ...draft, mode: "sell_flawed", sell: ids.length === 1 ? (ids[0] ?? null) : draft.sell };
+    }
+    case "imperial_priority":
+      return { ...draft, mode: "imperial_priority" };
+    case "swap":
+      return { ...draft, mode: "colour_samples_swap" };
+  }
+}
+
+/** The list's entry the draft has chosen, or null. */
+function chosenFreeAction(draft: WorkDraft): FreeActionKey | null {
+  switch (draft.mode) {
+    case "complete_order":
+      return draft.completion?.orderId == null ? null : deliverKey(draft.completion.orderId);
+    case "sell_flawed":
+      return "sell_flawed";
+    case "imperial_priority":
+      return "imperial_priority";
+    case "colour_samples_swap":
+      return "colour_samples_swap";
+    default:
+      return null;
+  }
 }
 
 /** A location chosen by the player: also takes its only legal worker when none is chosen yet. */
@@ -339,6 +398,7 @@ function blankDraft(model: GameModel, engine: EngineView): WorkDraft {
     imperialPriority: imperialPriorityDraft.initial(model, engine),
     swap: colourSamplesSwapDraft.initial(model, engine),
     sell: null,
+    completion: EMPTY_COMPLETION,
   };
 }
 
@@ -362,13 +422,15 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     const blank = blankDraft(model, engine);
     const context = workContext(model, engine);
     if (context === null) return blank;
-    const modes = modesOf(model, engine);
-    if (stepOf(model) === "after_action") return { ...blank, mode: modes.length === 1 ? (modes[0] ?? null) : null };
+    // After the worker action nothing is chosen: End turn is the choice beside every entry (D21).
+    if (stepOf(model) === "after_action") return blank;
     let draft: WorkDraft = { ...blank, mode: "place" };
     const workers = workerChoices(context);
     const only = workers.length === 1 ? workers[0] : undefined;
     if (only === undefined) return draft;
     draft = { ...draft, workerKey: only.key };
+    // Something could come first: the pane stays hidden, so the turn line keeps its chips (D21).
+    if (freeActionItems(engine).length > 0) return draft;
     const legal = locationChoices(context, only.key).filter((choice) => choice.legal);
     const single = legal.length === 1 ? legal[0] : undefined;
     return single === undefined ? draft : chooseLocation(draft, context, single.locationId, only.key);
@@ -382,6 +444,10 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       case "mode": {
         if (!modesOf(model, engine).includes(action.mode)) return draft;
         return revalidate({ ...draft, mode: action.mode }, model, engine);
+      }
+      case "freeAction": {
+        const item = freeActionItems(engine).find((candidate) => candidate.key === action.key);
+        return item === undefined ? draft : chooseFreeAction(draft, item, engine);
       }
       case "worker": {
         if (!workerChoices(context).some((choice) => choice.key === action.workerKey)) return draft;
@@ -406,6 +472,11 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       case "sell":
         if (!saleOffered(engine, action.ceramicId)) return draft;
         return { ...draft, mode: "sell_flawed", sell: action.ceramicId };
+      case "complete": {
+        if (!modesOf(model, engine).includes("complete_order")) return draft;
+        const from = draft.mode === "complete_order" ? (draft.completion ?? EMPTY_COMPLETION) : EMPTY_COMPLETION;
+        return { ...draft, mode: "complete_order", completion: reduceCompletion(from, action.action, engine, COMPLETABLE) };
+      }
     }
   },
 
@@ -415,18 +486,14 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     const modes = modesOf(model, engine).map((mode) => ({ mode }));
     if (context === null) {
       const heading: WorkHeading = step === "after_action" ? "after_action" : "place";
-      return { step, modes, stepChoices: [], heading, backToPlacing: false, workers: [], locations: [], active: null, imperialPriority: null, swap: null, sale: null, workersLeft: 0 };
+      return { step, modes, freeActions: [], freeAction: null, heading, backToPlacing: false, workers: [], locations: [], active: null, imperialPriority: null, swap: null, sale: null, completion: null, workersLeft: 0 };
     }
     const placement = draft.mode === "place" ? placementContext(context, draft.locationId, draft.workerKey) : null;
-    // A placement kept while an ability is open (the draft keeps the worker and the location).
-    const placementChosen = placementContext(context, draft.locationId, draft.workerKey) !== null;
-    const abilities = step === "before_action" && modes.some(({ mode }) => mode !== "place");
-    const candidates = abilities ? modes.filter(({ mode }) => mode !== "place" || placementChosen) : [];
-    // One ability opened with nothing placed: a lone radio is no choice (the heading names it).
-    const stepChoices = candidates.length > 1 ? candidates : [];
-    const ability = step === "before_action" && (draft.mode === "imperial_priority" || draft.mode === "colour_samples_swap" || draft.mode === "sell_flawed") ? draft.mode : null;
-    const heading: WorkHeading = step === "after_action" ? "after_action" : ability === null ? "place" : stepChoices.length === 0 ? ability : "before_action";
-    const backToPlacing = step === "before_action" && draft.mode !== null && draft.mode !== "place" && !placementChosen;
+    const ability =
+      step === "before_action" && (draft.mode === "imperial_priority" || draft.mode === "colour_samples_swap" || draft.mode === "sell_flawed" || draft.mode === "complete_order") ? draft.mode : null;
+    const heading: WorkHeading = step === "after_action" ? "after_action" : (ability ?? "place");
+    // The draft keeps a worker and a location while an ability is open: going back returns to them.
+    const backToPlacing = ability !== null;
     const active: ActiveLocation | null =
       placement === null || draft.locationId === null
         ? null
@@ -436,7 +503,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     return {
       step,
       modes,
-      stepChoices,
+      freeActions: freeActionItems(engine),
+      freeAction: chosenFreeAction(draft),
       heading,
       backToPlacing,
       workers: step === "before_action" ? workerChoices(context) : [],
@@ -445,6 +513,7 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       imperialPriority: usable ? imperialPriorityDraft.options(draft.imperialPriority, model, engine) : null,
       swap: swap ? colourSamplesSwapDraft.options(draft.swap, model, engine) : null,
       sale: saleOptions(engine),
+      completion: completableNow(engine).length > 0 ? completionOptions(draft.mode === "complete_order" ? (draft.completion ?? EMPTY_COMPLETION) : EMPTY_COMPLETION, engine, COMPLETABLE) : null,
       workersLeft: context.me.availableWorkerIds.length,
     };
   },
@@ -461,6 +530,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
         return colourSamplesSwapDraft.build(draft.swap, model, engine);
       case "sell_flawed":
         return saleCommand(engine, draft.sell);
+      case "complete_order":
+        return buildCompletion("COMPLETE_ORDER", draft.completion ?? EMPTY_COMPLETION, engine, COMPLETABLE);
       case "end_turn":
         return stepOf(model) === "after_action" ? { type: "END_TURN" } : null;
       case null:
@@ -483,6 +554,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     }
     const sale = saleOf(command);
     if (sale !== null) return { ...blank, mode: "sell_flawed", sell: sale };
+    const completion = completionFromCommand("COMPLETE_ORDER", command);
+    if (completion !== null) return { ...blank, mode: "complete_order", completion };
     const locationId = placementLocationOf(command);
     if (locationId === null || stepOf(model) !== "before_action" || !("workerId" in command)) return null;
     const senior = "seniorApprentice" in command && command.seniorApprentice === true;
@@ -502,7 +575,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     if (context === null) return null;
     switch (draft.mode) {
       case null:
-        return msg("work.summary.chooseMode");
+        // After the worker action: End turn is the only button until a free action is chosen.
+        return freeActionItems(engine).length === 0 ? null : msg("orders.turn.pick");
       case "end_turn":
         return msg("work.summary.endTurn");
       case "imperial_priority":
@@ -511,6 +585,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
         return colourSamplesSwapDraft.summary(draft.swap, model, engine);
       case "sell_flawed":
         return draft.sell === null ? msg("common.sale.pick") : saleSummary(model, engine, draft.sell);
+      case "complete_order":
+        return completionSummary(draft.completion ?? EMPTY_COMPLETION, model, engine, COMPLETABLE);
       case "place": {
         if (draft.workerKey === null && draft.locationId === null) return msg("work.summary.incomplete");
         if (draft.workerKey === null) return msg("work.summary.chooseWorker");

@@ -12,11 +12,11 @@ import {
 } from "../../../src/game/rulesFingerprint.ts";
 
 /**
- * The V1.6.2 rules fingerprint (DESIGN §6.9, ENGINE_V1.6.2_DELTA.md §3.6, §15.2): behaviour
- * revision 32 (owner revision 4, changes 28–35, rulings R20–R25), a content digest of the seven
- * mechanical data files that ignores display prose, and the `r32-<16 hex>` shape the V1.6.2
- * Supabase gate accepts (DESIGN §4.6). V1.6.2 rooms from before revision 4 (`r31`, `r30`) and
- * V1.6.1 rooms (`r29`) are refused.
+ * The V1.6.2 rules fingerprint (DESIGN §6.9, ENGINE_V1.6.2_DELTA.md §3.6, §15.2, §16.3):
+ * behaviour revision 33 (owner revision 5, changes 36–42), a content digest of the seven
+ * mechanical data files that ignores display prose, and the `r33-<16 hex>` shape the V1.6.2
+ * Supabase gate accepts (DESIGN §4.6). V1.6.2 rooms from before revision 5 (`r32`, `r31`, `r30`)
+ * and V1.6.1 rooms (`r29`) are refused.
  */
 
 const ROOT = join(import.meta.dirname, "../../..");
@@ -39,14 +39,40 @@ function entries(sources: Sources, name: string, key: string): Array<Record<stri
 }
 
 describe("V1.6.2 rules fingerprint", () => {
-  it("is behaviour revision 32", () => {
-    expect(RULES_BEHAVIOUR_REVISION).toBe(32);
+  it("is behaviour revision 33", () => {
+    expect(RULES_BEHAVIOUR_REVISION).toBe(33);
   });
 
-  it("has the r32-<16 hex> shape the V1.6.2 room gate requires, never an r31, r30 or a V1.6.1 r29 one", () => {
-    expect(rulesFingerprint()).toMatch(/^r32-[0-9a-f]{16}$/);
-    expect(rulesFingerprint()).toBe(`r32-${contentDigest()}`);
-    expect(rulesFingerprint()).not.toMatch(/^r(?:29|30|31)-/);
+  it("has the r33-<16 hex> shape the V1.6.2 room gate requires, never an r32, r31, r30 or a V1.6.1 r29 one", () => {
+    expect(rulesFingerprint()).toMatch(/^r33-[0-9a-f]{16}$/);
+    expect(rulesFingerprint()).toBe(`r33-${contentDigest()}`);
+    expect(rulesFingerprint()).not.toMatch(/^r(?:29|30|31|32)-/);
+  });
+
+  it("moves with owner revision 5's data (changes 37–40)", () => {
+    const edits: Array<(s: Sources) => void> = [
+      // The four revision-4 prices (change 38).
+      ...([["T23", 2], ["T17", 3], ["T10", 2], ["T11", 3]] as const).map(([id, cost]) => (s: Sources) => {
+        entries(s, "techniques", "advanced").find((tech) => tech["id"] === id)!["cost"] = cost;
+      }),
+      // Decorator's Kit limited to Carved, Impressed or Painted before change 37.
+      (s) => {
+        (entries(s, "techniques", "advanced").find((tech) => tech["id"] === "T16")!["params"] as Record<string, unknown>)["decorations"] = ["carved", "impressed", "painted"];
+      },
+      // Ge on a Fine or Standard ceramic only before change 39.
+      (s) => {
+        entries(s, "kilns", "kilns").find((kiln) => kiln["id"] === "GE")!["params"] = { fromQualities: ["fine", "standard"], toQuality: "fine", vpPerDeliveredCrackle: 1 };
+      },
+      // Ding's vessel at 1 Clay + 1 Coin before change 40.
+      (s) => {
+        (entries(s, "kilns", "kilns").find((kiln) => kiln["id"] === "DI")!["params"] as Record<string, unknown>)["coins"] = 1;
+      },
+    ];
+    for (const edit of edits) {
+      const sources = copySources();
+      edit(sources);
+      expect(contentDigestOf(sources)).not.toBe(contentDigest());
+    }
   });
 
   it("moves with owner revision 4's data (changes 28–35)", () => {

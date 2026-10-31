@@ -1,5 +1,5 @@
 /**
- * The Commission Market sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L195–206, change 25).
+ * The Commission Market sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L219–230, change 25).
  * Owner: B4.
  *
  * Nothing to choose at placement: the worker always looks first (INT Commission Market looks).

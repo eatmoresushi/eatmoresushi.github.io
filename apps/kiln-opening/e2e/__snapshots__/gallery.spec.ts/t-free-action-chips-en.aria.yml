@@ -1,0 +1,8 @@
+- region "Your decision":
+  - paragraph: "Your turn: place a worker · 4 left"
+  - group "Free actions":
+    - text: ""
+    - button "Deliver S05"
+    - button "Sell Flawed (+2 Coins)"
+    - button "Imperial Priority"
+    - button "Colour Samples swap"

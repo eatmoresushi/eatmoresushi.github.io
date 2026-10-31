@@ -6,10 +6,9 @@
  * the ceramic in words (`ceramicLabel`, D9). Wrapped in `PieceDetail` (§7.4, §8.1), it opens a
  * panel with the full description, its place, Kiln Master's marker, Quality (and, when Protective Saggars kept
  * it Standard, that fact, as the game log records it) and Second Firing card. Inside a
- * kiln target button it renders as a plain chip (no nested controls). In its owner's own turn
- * (the after-Quality turn, R20), a Flawed ceramic of this firing the open window may sell carries
- * a Sell button under it (`SellButton`, `useTableSelection().sellTargets`), as on the owner's
- * board, since the firing stage takes over the column (D3).
+ * kiln target button it renders as a plain chip (no nested controls). A ceramic in a kiln is never
+ * sold (owner revision 5, owner ruling R26: only a Finished Flawed ceramic, in a free-action
+ * window).
  *
  * A ceramic the model holds no attributes for (see `tableCeramics.ts`) is shown in words only:
  * "Lin's ceramic · Fine".
@@ -27,7 +26,6 @@ import { FireCard } from "../pieces/FireCard.tsx";
 import { kilnMasterMarkerWords } from "../pieces/KilnMasterMarker.tsx";
 import { QualityChip } from "../pieces/QualityChip.tsx";
 import { useTableSelection } from "../state/hooks.ts";
-import { SellButton } from "../table/SellButton.tsx";
 import { useTableCeramics } from "./tableCeramics.ts";
 import type { TableCeramics } from "./tableCeramics.ts";
 import { seatVar } from "./cssVars.ts";
@@ -37,14 +35,14 @@ export interface KilnCeramicProps {
   id: CeramicId;
   /** Shown when the model holds no attributes for the ceramic. */
   ownerId: PlayerId;
-  /** Kiln Master's face-up marker on the ceramic while it is loaded (T24, rev. 4 L628). */
+  /** Kiln Master's face-up marker on the ceramic while it is loaded (T24, L647). */
   marker?: HeatDelta | null;
   /** A Quality to show when the model holds none (a recap or results record). */
   quality?: Quality | null;
   crackle?: boolean;
   /** Second Firing's Fire cards for this ceramic: both while its owner chooses, then the chosen one. */
   extraFire?: readonly FireModifier[] | null;
-  /** Protective Saggars kept it Standard this firing instead of Flawed (v1.6.2 L636). */
+  /** Protective Saggars kept it Standard this firing instead of Flawed (v1.6.2 L643). */
   saggarsFloor?: boolean;
   size?: number;
   /** Letters instead of Quality words (narrow kiln spaces). */
@@ -157,9 +155,6 @@ export function KilnCeramic({
         </ul>
       </PieceDetail>
       {fire}
-      {facts === null || !selection.sellTargets.has(id) ? null : (
-        <SellButton ceramicId={id} label={ceramicLabel(facts, ceramics.view, { locale: t, withOwner: false, withPlace: true })} selection={selection} />
-      )}
     </span>
   );
 }

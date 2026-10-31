@@ -92,11 +92,13 @@ export const WINDOW_UI_DEFAULTS: Readonly<Record<Exclude<DecisionWindowKind, "wa
 });
 
 /**
- * The work turn's after-action step: the sheet collapses to show the table, on the section the
- * worker action was shown on (the Orders tab after a Commission reservation, with the hand and
- * the emptied display position), never a jump to the Workshop.
+ * The work turn's after-action step, on the section the worker action was shown on (the Orders tab
+ * after a Commission reservation, with the hand and the emptied display position), never a jump to
+ * the Workshop. The sheet is open: since owner UI decision D21 the step opens because the player
+ * asked for it ("then free actions"), so its list and End turn are what they want to see, with no
+ * "Decide" press in between. Collapsing it still shows the table.
  */
-export const AFTER_ACTION_UI_DEFAULTS: WindowUiDefaults = Object.freeze({ ...WINDOW_UI_DEFAULTS.work, keepSection: true });
+export const AFTER_ACTION_UI_DEFAULTS: WindowUiDefaults = Object.freeze({ ...WINDOW_UI_DEFAULTS.work, sheet: "open", keepSection: true });
 
 /** The defaults for a window. A waiting viewer watches the part of the table that is moving. */
 export function windowUiDefaults(window: DecisionWindow | null, phase: RoundPhaseId | "final" | null): WindowUiDefaults {

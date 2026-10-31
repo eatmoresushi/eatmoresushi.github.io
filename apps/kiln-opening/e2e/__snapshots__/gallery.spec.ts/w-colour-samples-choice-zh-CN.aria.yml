@@ -8,7 +8,7 @@
       - text: 泥
       - strong: "9"
       - text: 柴
-      - strong: "7"
+      - strong: "6"
       - text: 铜钱
     - img "你的师傅"
     - img "你的学徒"
@@ -53,5 +53,6 @@
     - strong: 他人所见
     - text: Player 1正在查看3张委托
     - paragraph: 请选择要承接的委托。
+    - button "承接并结束回合" [disabled]
+    - button "承接后做自由行动" [disabled]
     - button "取消"
-    - button "确认" [disabled]

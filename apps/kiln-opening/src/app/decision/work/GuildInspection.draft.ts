@@ -1,6 +1,6 @@
 /**
  * The draft model of the Guild Hall Shifu inspection (UI_V1.6.1_ARCHITECTURE §3.4
- * `guild_inspection`, §8.1; v1.6.2 L206–213, B2, owner revision 2026-10-17). Owner: B4.
+ * `guild_inspection`, §8.1; v1.6.2 L236–243, B2, owner revision 2026-10-17). Owner: B4.
  *
  * After inspecting a discipline (B2, private), the Shifu takes up to 2 Techs from different
  * disciplines, inspected or face up, each at its printed cost, one per command (`GUILD_TAKE`).
@@ -23,6 +23,11 @@
  * only while 2 inspected Techs are untaken: their bottom order is the one decision left. Stopping
  * is then pre-selected, the table offers no Tech (`inspectionTechChooser` is null) and the window
  * asks only for that order.
+ *
+ * Whether a decision is left after a take (`guildDecisionLeftAfterTake`) or after Colour Samples'
+ * Select (`guildDecisionLeftOnResume`) says where the split Confirm belongs (owner UI decision D21:
+ * on the action's last step). Those selectors ask the engine's own `decisionLeft`, so
+ * `windows.work.ts` reads them and nothing here repeats the rule.
  */
 import { guildInspectionOptions } from "../../../game/index.ts";
 import type { GuildInspectionOptions, GuildTechOption, TechId } from "../../../game/index.ts";
@@ -81,7 +86,7 @@ function bottomFor(options: GuildInspectionOptions, current: readonly TechId[]):
 }
 
 /**
- * Both takes are made (v1.6.2 L207: up to 2): only the untaken inspected Techs' bottom order is
+ * Both takes are made (v1.6.2 L237: up to 2): only the untaken inspected Techs' bottom order is
  * left to decide (B2).
  */
 export function inspectionReturnOnly(options: GuildInspectionOptions): boolean {
@@ -112,7 +117,7 @@ export function inspectionReason(option: GuildTechOption, options: GuildInspecti
 }
 
 /**
- * The Tech display's chooser during the inspection (owner review, 2026-10-17; v1.6.2 L207): every
+ * The Tech display's chooser during the inspection (owner review, 2026-10-17; v1.6.2 L237): every
  * face-up Tech showing now, legal or not, pressed when the draft takes it. The inspected Techs are
  * private and stay in the pane (B2). Null when the viewer has no open inspection, and after the
  * second take, when no Tech can be taken any more (`inspectionReturnOnly`).

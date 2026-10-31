@@ -1,7 +1,7 @@
 /**
- * Absolute capacity by player count (L140, L148–156): Materials Yard, Commission Market and
+ * Absolute capacity by player count (L162, L180–188): Materials Yard, Commission Market and
  * Guild Hall 2/3/4; Magistrate's Hall 1/1/2; Canal Wharf uncapped. No worker, the Shifu
- * included, may overfill a location (L140–141). Personal locations are per player.
+ * included, may overfill a location (L162–163). Personal locations are per player.
  *
  * P3's locations go through the full validator (`validateAction`); the Commission Market and
  * Guild Hall belong to P4, so their capacity is checked through the shared placement check
@@ -73,7 +73,7 @@ describe.each([2, 3, 4] as const)("%i players", (n) => {
     expect(verdict(state, "p1", PLACE.canal_wharf("p1:apprentice:3"))).toBeNull();
   });
 
-  it("your own workers count toward capacity like anyone's (L140)", () => {
+  it("your own workers count toward capacity like anyone's (L162)", () => {
     const capacity = CAPACITY.materials_yard[n] ?? 0;
     const own: PlacementSpec[] = ([1, 2, 3] as const).slice(0, capacity).map((worker) => ({ player: "p1", worker, locationId: "materials_yard" }));
     const state = buildState({ players: n, placements: [...own, ...others(n, "materials_yard", capacity - own.length)] });
@@ -81,7 +81,7 @@ describe.each([2, 3, 4] as const)("%i players", (n) => {
   });
 });
 
-describe("no Shifu overfill (L140–141; the V1.4 over-capacity rule is gone)", () => {
+describe("no Shifu overfill (L162–163; the V1.4 over-capacity rule is gone)", () => {
   it("multiple Shifu fill the Materials Yard like any worker, and then nobody fits", () => {
     const spec: StateSpec = {
       players: 4,
@@ -108,7 +108,7 @@ describe("no Shifu overfill (L140–141; the V1.4 over-capacity rule is gone)", 
   });
 });
 
-describe("personal locations are per player (L144, L155–156)", () => {
+describe("personal locations are per player (L166, L187–188)", () => {
   it("another player's Form & Decorate or Glaze & Load use never blocks yours", () => {
     const state = buildState({
       ceramics: [{ owner: "p1", shape: "bowl", stage: "shaped" }],

@@ -1,39 +1,43 @@
 /**
  * Protective Saggars, Second Firing (+ Jun), Ge and finishing the firing (Appendix D steps 5–6,
- * rev. 4 L663–664; L624, L627, L463–465, L641).
+ * L682–683; L643, L646, L660; Ge rev. 5 L482–484, L660).
  *
- * Step 5 (`firing_after_quality`, rev. 4 L663): players act in First Player order. The head of
+ * Step 5 (`firing_after_quality`, L682): players act in First Player order. The head of
  * the queue uses its after-Quality abilities in any order; eligibility is rechecked after each
  * use, and a player with nothing eligible left is advanced automatically (DESIGN §3.3, §3.7).
  * One player's turn holds at most one of Protective Saggars / Second Firing (both Firing
- * Techs, L210) plus Ge if they own the Ge Kiln, so the order matters only between Ge and that
- * Tech. The queue head may also sell a Flawed ceramic (R20; `flawedSale.ts`), one of this
- * firing included; `continueAfterSale` then lets the turn pass when no ability is left.
+ * Techs, L240) plus Ge if they own the Ge Kiln, so the order matters only between Ge and that
+ * Tech. There are no free actions during the firing (rev. 5 L176, R26): nothing is sold here, and
+ * a Flawed ceramic of this firing becomes a Finished one, sellable from its owner's Order Phase
+ * turn on.
  *
- * Protective Saggars (T11, rev. 4 L624): its floor (never Flawed) is applied when Quality is
+ * Protective Saggars (T11, L643): its floor (never Flawed) is applied when Quality is
  * assigned (`pipeline.assignQuality`) and on any recalculation. Its optional once-per-round step
  * here turns 1 of the owner's Standard ceramics from this firing Fine, without Wood, never into
  * a Masterpiece (R4: declining keeps the use).
  *
- * Ge (rev. 4 L463, L641, change 29): once per round, 1 of the owner's Fine or Standard ceramics
- * from this firing develops Crackle and is Fine (a Standard one becomes Fine, a Fine one stays
- * Fine). Saggars' Standard → Fine step and then Crackle may both apply to one ceramic; Crackle
- * first leaves no Standard for Saggars' step. A Crackle ceramic stays Fine: nothing raises it
- * afterwards. Its 1 VP per delivered Crackle ceramic is scored at Order completion
- * (`orders/completion.ts`, rev. 4 L465).
+ * Ge (rev. 5 L482, L660, change 39): once per round, 1 of the owner's ceramics from this firing,
+ * of any Quality, develops Crackle; a Standard one becomes Fine, a Masterpiece, Fine or Flawed
+ * one keeps its Quality (R30: nothing printed excludes a Masterpiece or a Flawed target; a
+ * Flawed one gains nothing). Saggars' Standard → Fine step and then Crackle may both apply to
+ * one ceramic; Crackle on a Standard one first leaves no Standard for Saggars' step. A Second
+ * Firing may still recalculate a crackled Flawed ceramic afterwards (a crackled Standard one is
+ * Fine already): the new Quality stands and the ceramic keeps its marker, with no further
+ * Standard → Fine (R30; INT Ge Crackle revision 5). Its 1 VP per delivered Crackle ceramic is scored at Order completion
+ * (`orders/completion.ts`, rev. 5 L484).
  *
- * Second Firing (T14, rev. 4 L627): `USE_SECOND_FIRING` reveals 2 extra Fire cards
+ * Second Firing (T14, L646): `USE_SECOND_FIRING` reveals 2 extra Fire cards
  * (reshuffling the discard when the deck runs out, R15) and opens `firing_second_firing_choice`
  * with them in `firing.pendingExtraFire`. `SECOND_FIRING_CHOOSE` picks 1 and recalculates with
  * the same Base Heat (the Kiln Die for the Imperial Kiln), position modifier and Kiln Master
- * marker, no carried-over Jun; then an unused Jun adjustment, if chosen (rev. 4 L627, formerly
+ * marker, no carried-over Jun; then an unused Jun adjustment, if chosen (L646, formerly
  * R7); then the new Quality, which replaces the old even if worse; then both cards go face up to
  * the discard in reveal order.
  *
- * Step 6 (`finishFiring`, rev. 4 L664): ceramics become Finished, kilns empty, Kiln Furniture and
+ * Step 6 (`finishFiring`, L683): ceramics become Finished, kilns empty, Kiln Furniture and
  * the Kiln Master marker return, the Fire card goes face up to the discard, `lastFiring` records
  * the firing, Test Pieces peeks are forgotten, then `continueAfter("firing_done")`. Revision 3's
- * salvage step is gone (change 30): a Flawed ceramic is sold during its owner's turn instead.
+ * salvage step is gone (change 30): a Flawed ceramic is sold as a free action (rev. 5 L172).
  *
  * Layer 4: imports layers 0–3 (DESIGN §2.2).
  */
@@ -77,14 +81,14 @@ import {
 const PROTECTIVE_SAGGARS: TechId = "T11";
 const SECOND_FIRING: TechId = "T14";
 
-/** Second Firing targets only Flawed or Standard ceramics (rev. 4 L627). */
+/** Second Firing targets only Flawed or Standard ceramics (L646). */
 const SECOND_FIRING_TARGETS: readonly Quality[] = ["flawed", "standard"];
 
 // ── Shared firing helpers (also used by `firing/pipeline.ts`) ─────────────────────────
 
 /**
- * Validates "1 of your ceramics from this firing" (rev. 4 L463, L478, L624, L627) on a view: it
- * exists, it is the viewer's, and it is a loaded ceramic of the current firing (not sold, R20).
+ * Validates "1 of your ceramics from this firing" (L482, L497, L643, L646) on a view: it
+ * exists, it is the viewer's, and it is a loaded ceramic of the current firing.
  * Returns the firing record or a rule error.
  */
 export function ownFiringCeramic(
@@ -100,7 +104,7 @@ export function ownFiringCeramic(
     return { record: null, error: ruleError("CERAMIC_NOT_OWNED", "That ceramic is not yours.", { ceramicId }) };
   }
   const record = game.firing === null ? null : firingRecord(game.firing, ceramicId);
-  if (record === null || found.stage !== "loaded" || record.sold) {
+  if (record === null || found.stage !== "loaded") {
     return {
       record: null,
       error: ruleError("INVALID_TARGET", "That ceramic is not in this firing.", { ceramicId, reason: "not_this_firing" }),
@@ -136,19 +140,18 @@ function ownRecords(game: PublicCore, playerId: PlayerId): FiringCeramicRecord[]
   return firingRecordsInOrder(firing).filter(
     (record) =>
       record.ownerId === playerId &&
-      !record.sold &&
       record.quality !== null &&
       lookup(game.ceramics, record.ceramicId)?.stage === "loaded",
   );
 }
 
-/** Every after-Quality ability `playerId` could use now, with its eligible ceramics (rev. 4 L663). */
+/** Every after-Quality ability `playerId` could use now, with its eligible ceramics (L682). */
 function optionsFor(game: PublicCore, playerId: PlayerId): AfterQualityOption[] {
   const p = player(game, playerId);
   const records = ownRecords(game, playerId);
   const options: AfterQualityOption[] = [];
   if (techReady(p, PROTECTIVE_SAGGARS)) {
-    // Rev. 4 L624: 1 of your Standard ceramics from this firing becomes Fine; no Wood.
+    // Rev. 5 L643: 1 of your Standard ceramics from this firing becomes Fine; no Wood.
     const ceramicIds = records.filter((r) => r.quality === TECHS.T11.params.upgradeFrom).map((r) => r.ceramicId);
     if (ceramicIds.length > 0) {
       options.push({ ability: "protective_saggars", ceramicIds, cost: { ...ZERO_COST } });
@@ -161,8 +164,8 @@ function optionsFor(game: PublicCore, playerId: PlayerId): AfterQualityOption[] 
     }
   }
   if (kilnAbilityReady(p, "GE")) {
-    // Rev. 4 L463: 1 of your Fine or Standard ceramics from this firing.
-    const ceramicIds = records.filter((r) => r.quality !== null && geTargets().includes(r.quality)).map((r) => r.ceramicId);
+    // Rev. 5 L482 (change 39): 1 of your ceramics from this firing, any Quality.
+    const ceramicIds = records.map((r) => r.ceramicId);
     if (ceramicIds.length > 0) {
       options.push({ ability: "ge_crackle", ceramicIds, cost: { ...ZERO_COST } });
     }
@@ -184,10 +187,10 @@ export function afterQualityOptions(view: PlayerView): AfterQualityOption[] {
   return optionsFor(game, viewerId);
 }
 
-// ── Step 5 queue (Appendix D, rev. 4 L663) ─────────────────────────────────────────────
+// ── Step 5 queue (Appendix D, L682) ─────────────────────────────────────────────
 
 /** Opens step 5 for every player with an eligible after-Quality ability, in First Player
- * order (rev. 4 L663); with none, the firing finishes (step 6). */
+ * order (L682); with none, the firing finishes (step 6). */
 export function openAfterQuality(draft: GameState, ctx: ResolveContext): void {
   requireFiring(draft);
   const actorIds = turnOrder(draft).filter((pid) => optionsFor(draft, pid).length > 0);
@@ -222,23 +225,13 @@ function afterAbilityUsed(draft: GameState, actorId: PlayerId, ctx: ResolveConte
   advanceAfterQuality(draft, ctx);
 }
 
-/**
- * After the queue head sold a Flawed ceramic (R20, `SELL_FLAWED`): as after an ability use, the
- * turn continues while an after-Quality ability is still eligible and otherwise passes. A sale
- * alone never keeps the turn open: a Flawed ceramic of this firing left unsold becomes a
- * Finished one, sellable in its owner's Order Phase turn.
- */
-export function continueAfterSale(draft: GameState, actorId: PlayerId, ctx: ResolveContext): void {
-  const phase = phaseAs(draft, "firing_after_quality");
-  invariant(phase.queue.actorIds[phase.queue.index] === actorId, `${actorId} is not the after-Quality actor`);
-  afterAbilityUsed(draft, actorId, ctx);
-}
-
 // ── Step 5 abilities ─────────────────────────────────────────────────────────────────
 
-/** Ge's targets (rev. 4 L463): the qualities in `KILNS.GE.params.fromQualities`. */
-function geTargets(): readonly Quality[] {
-  return KILNS.GE.params.fromQualities;
+/** Ge's Quality after Crackle (rev. 5 L482): a Standard (`upgradeFrom`) ceramic becomes Fine
+ * (`upgradeTo`); every other Quality is kept. */
+function geQualityAfterCrackle(from: Quality): Quality {
+  const { upgradeFrom, upgradeTo } = KILNS.GE.params;
+  return from === upgradeFrom ? upgradeTo : from;
 }
 
 function setQuality(record: FiringCeramicRecord, to: Quality, cause: FiringCeramicRecord["history"][number]["cause"]): Quality {
@@ -255,7 +248,7 @@ function draftRecord(draft: GameState, ceramicId: CeramicId): FiringCeramicRecor
   return record;
 }
 
-/** Rev. 4 L627 (formerly R7): an unused Jun adjustment may apply to the Second Firing
+/** Rev. 5 L646 (formerly R7): an unused Jun adjustment may apply to the Second Firing
  * recalculation, if affordable. */
 function secondFiringJunAvailable(game: PublicCore, playerId: PlayerId): boolean {
   const p = player(game, playerId);
@@ -278,7 +271,7 @@ export function secondFiringChoiceOptions(view: PlayerView): SecondFiringChoiceO
   };
 }
 
-/** Second Firing reveals 2 extra cards and uses 1 (rev. 4 L627; T14 params). */
+/** Second Firing reveals 2 extra cards and uses 1 (L646; T14 params). */
 function secondFiringCardCounts(): { extra: 2; chosen: 1 } {
   const { extraCards, chosenCards } = TECHS.T14.params;
   invariant(extraCards === 2 && chosenCards === 1, `Second Firing reveals 2 cards and uses 1, not ${extraCards}/${chosenCards}`);
@@ -286,8 +279,8 @@ function secondFiringCardCounts(): { extra: 2; chosen: 1 } {
 }
 
 /**
- * `SECOND_FIRING_CHOOSE` (rev. 4 L627): the chosen card recalculates the ceramic; then Jun if
- * given; then the new Quality (Protective Saggars' floor applies to its owner, L650), which
+ * `SECOND_FIRING_CHOOSE` (L646): the chosen card recalculates the ceramic; then Jun if
+ * given; then the new Quality (Protective Saggars' floor applies to its owner, L660), which
  * replaces the old one even if worse; both cards go face up to the discard in reveal order;
  * and the actor's step-5 turn continues.
  */
@@ -311,7 +304,7 @@ function resolveSecondFiringChoice(
   const [revealedA, revealedB] = pending.modifiers;
   const chosen = action.cardIndex === 0 ? revealedA : revealedB;
   // Same Base Heat (the Kiln Die for the Imperial Kiln), position modifier and Kiln Master
-  // marker; Jun from the first calculation does not carry over (rev. 4 L627, L289).
+  // marker; Jun from the first calculation does not carry over (L646, L310).
   const source = record.kiln === "imperial" ? firing.kilnDie : firing.baseHeat;
   let second = heatCalculation({
     fireModifier: chosen,
@@ -331,7 +324,7 @@ function resolveSecondFiringChoice(
     calculation: { ...second },
   });
   if (action.jun !== null) {
-    // Rev. 4 L627 (formerly R7): an unused Jun on the recalculated heat, before the new Quality.
+    // Rev. 5 L646 (formerly R7): an unused Jun on the recalculated heat, before the new Quality.
     spend(draft, actorId, { wood: KILNS.JU.params.wood }, "jun", ctx);
     markKilnAbilityUsed(draft, actorId, ctx);
     second = withJunAdjustment(second, action.jun.delta, record.preferredHeat);
@@ -345,6 +338,8 @@ function resolveSecondFiringChoice(
     });
   }
   record.second = second;
+  // A crackled ceramic keeps `record.crackle` (R30): only its Quality is replaced, and Ge's
+  // Standard → Fine does not apply again to the new Quality.
   const neverFlawed = saggarsProtects(player(draft, record.ownerId));
   const quality = qualityFor(second.heatDifference, neverFlawed);
   const saggarsFloor = saggarsFloored(second.heatDifference, neverFlawed);
@@ -358,7 +353,7 @@ function resolveSecondFiringChoice(
     cause: "second_firing",
     saggarsFloor,
   });
-  // "Discard both extra Fire cards after resolving" (rev. 4 L627), in reveal order.
+  // "Discard both extra Fire cards after resolving" (L646), in reveal order.
   firing.pendingExtraFire = null;
   discardFire(draft, revealedA);
   discardFire(draft, revealedB);
@@ -396,11 +391,11 @@ function validateSaggarsTarget(view: ActorView, ceramicId: CeramicId): GameRuleE
 // ── Step 6: finish ───────────────────────────────────────────────────────────────────
 
 /**
- * Appendix D step 6 (rev. 4 L664): loaded ceramics become Finished with their Quality and
+ * Appendix D step 6 (L683): loaded ceramics become Finished with their Quality and
  * Crackle; every kiln space is emptied and Kiln Furniture returned (the Kiln Master marker
  * vanishes with the loaded state); the round's Fire card goes face up to the discard;
  * `lastFiring` records the firing; Test Pieces peeks are forgotten; then
- * `continueAfter("firing_done")`. A ceramic sold during the firing (R20) is already gone.
+ * `continueAfter("firing_done")`.
  */
 export function finishFiring(draft: GameState, ctx: ResolveContext): void {
   const firing = requireFiring(draft);
@@ -421,15 +416,8 @@ export function finishFiring(draft: GameState, ctx: ResolveContext): void {
       firedInRound: firing.round,
       stage: "finished" as const,
     };
-    let finished: FinishedCeramic;
-    if (record.crackle) {
-      if (record.quality !== "fine") {
-        throw new InvariantError(`Crackle ceramic ${loaded.id} must be Fine, not ${record.quality}`);
-      }
-      finished = { ...core, crackle: true, quality: "fine" };
-    } else {
-      finished = { ...core, crackle: false, quality: record.quality };
-    }
+    // A Crackle ceramic keeps its own Quality (rev. 5 L482, change 39; R30).
+    const finished: FinishedCeramic = { ...core, crackle: record.crackle, quality: record.quality };
     draft.ceramics[loaded.id] = finished;
     finishedCeramicIds.push(loaded.id);
   }
@@ -454,7 +442,7 @@ function useAbilityAndContinue(draft: GameState, actorId: PlayerId, ability: Aft
   const record = draftRecord(draft, ceramicId);
   switch (ability) {
     case "protective_saggars": {
-      // Rev. 4 L624: Standard → Fine, no Wood; never a Masterpiece.
+      // Rev. 5 L643: Standard → Fine, no Wood; never a Masterpiece.
       invariant(record.quality === TECHS.T11.params.upgradeFrom, `${ceramicId} is not Standard`);
       markTechUsed(draft, actorId, PROTECTIVE_SAGGARS, ctx);
       const to = TECHS.T11.params.upgradeTo;
@@ -463,11 +451,12 @@ function useAbilityAndContinue(draft: GameState, actorId: PlayerId, ability: Aft
       break;
     }
     case "ge_crackle": {
-      // Rev. 4 L463: a Fine or Standard ceramic develops Crackle and is Fine; only a Standard one
-      // changes Quality (QUALITY_IMPROVED). The history records Fine → Fine too.
-      invariant(record.quality !== null && geTargets().includes(record.quality), `${ceramicId} is not Fine or Standard`);
+      // Rev. 5 L482 (change 39): any ceramic of this firing develops Crackle; only a Standard one
+      // changes Quality, to Fine (QUALITY_IMPROVED). The history records the unchanged Quality
+      // too (Masterpiece → Masterpiece, Fine → Fine, Flawed → Flawed).
+      invariant(record.quality !== null, `${ceramicId} has no Quality yet`);
       markKilnAbilityUsed(draft, actorId, ctx);
-      const to = KILNS.GE.params.toQuality;
+      const to = geQualityAfterCrackle(record.quality);
       const from = setQuality(record, to, "ge_crackle");
       record.crackle = true;
       if (from !== to) {
@@ -477,7 +466,7 @@ function useAbilityAndContinue(draft: GameState, actorId: PlayerId, ability: Aft
       break;
     }
     case "second_firing": {
-      // Rev. 4 L627: reveal 2 extra Fire cards face up (each draw reshuffles the discard when the
+      // Rev. 5 L646: reveal 2 extra Fire cards face up (each draw reshuffles the discard when the
       // deck runs out, R15), then the owner chooses 1 in `firing_second_firing_choice`.
       markTechUsed(draft, actorId, SECOND_FIRING, ctx);
       const firing = requireFiring(draft);
@@ -558,18 +547,8 @@ export const handlers: Pick<
       if (!kilnAbilityReady(p, "GE")) {
         return ruleError("ABILITY_ALREADY_USED", "Ge's Crackle has already been used this round.", { kilnId: "GE" });
       }
-      const target = ownFiringCeramic(view.game, view.viewerId, action.ceramicId);
-      if (target.error !== null) {
-        return target.error;
-      }
-      const quality = target.record.quality;
-      if (quality === null || !geTargets().includes(quality)) {
-        return ruleError("INVALID_TARGET", "Crackle needs one of your Fine or Standard ceramics from this firing.", {
-          ceramicId: action.ceramicId,
-          reason: "not_fine_or_standard",
-        });
-      }
-      return null;
+      // Rev. 5 L482 (change 39): any of your ceramics from this firing, whatever its Quality.
+      return ownFiringCeramic(view.game, view.viewerId, action.ceramicId).error;
     },
     resolve(draft, actorId, action, ctx) {
       useAbilityAndContinue(draft, actorId, "ge_crackle", action.ceramicId, ctx);

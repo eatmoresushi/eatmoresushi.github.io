@@ -1,14 +1,16 @@
 /**
  * OrderCompletionPicker (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `decOrders`). Owner: B5.
  *
- * The steps of completing one held Order in the Order Phase (v1.6.2 L296):
- * 1. the held Orders (completable ones choosable, the rest with the engine's reason), each with
- *    its rules details (D10);
+ * Completing one held Order, a free action (owner revision 5, change 36: in the Order Phase turn and
+ * before or after the worker action of a Work turn; `namePrefix` keeps the work window's radio names
+ * apart). Which Order comes first, from a Deliver chip, a Deliver badge in the hand or the pane's
+ * free-action list (owner UI decision D21; `FreeActionList`):
+ * 1. the chosen Order, when no list above shows it (`showOrder`), with its rules details (D10);
  * 2. the ceramic groups that complete it (`orderMatchOptions`), described in words (D9);
  * 3. Crackle declarations, when the group holds a Crackle ceramic;
  * 4. the printed rewards (a Crown reward with the Imperial Recognition rules details, D10),
- *    Canal Barge's automatic 2 Coins on your first completion this round (v1.6.2 L622, never
- *    declined), Ge's automatic 1 VP per Crackle ceramic delivered (rev. 4 L465; the engine's
+ *    Canal Barge's automatic 2 Coins on your first completion this round (v1.6.2 L637, never
+ *    declined), Ge's automatic 1 VP per Crackle ceramic delivered (L484; the engine's
  *    `triggers.crackleVp`), and the optional abilities this completion would trigger (Ru/Guan, Tribute Ware;
  *    declining keeps their once-per-round use, R4).
  *
@@ -61,44 +63,30 @@ export interface OrderCompletionPickerProps {
   dispatch: (action: CompletionAction) => void;
   /** Input-name prefix (none in the Order Phase window). */
   namePrefix?: string;
+  /** Show the chosen Order itself: no list above it does (a form opened by a chip or a badge). */
+  showOrder?: boolean;
 }
 
-export function OrderCompletionPicker({ model, engine, draft, options, dispatch, namePrefix = "" }: OrderCompletionPickerProps) {
+export function OrderCompletionPicker({ model, engine, draft, options, dispatch, namePrefix = "", showOrder = false }: OrderCompletionPickerProps) {
   const t = useT();
-  const completable = options.orders.filter((order) => order.completable).length;
   const mine = model.me?.finishedCeramicIds ?? [];
   const match = options.match;
   const kilnId = match === null ? null : match.triggers.ru ? B5_KILNS.ru : match.triggers.guan ? B5_KILNS.guan : null;
   return (
     <>
-      <OptionGroup
-        legend={t("orders.turn.order")}
-        step={1}
-        aside={t("orders.turn.completable", { n: completable, total: options.orders.length })}
-        name={`${namePrefix}orderId`}
-        value={draft.orderId}
-        onChange={(value) => dispatch({ type: "order", orderId: value as OrderId })}
-      >
-        {options.orders.map((order) => (
-          <OptionCard
-            key={order.orderId}
-            value={order.orderId}
-            title={order.orderId}
-            meta={<OrderReward orderId={order.orderId} />}
-            description={t("orders.requirementLine", { requirements: orderRequirements(order.orderId, t.locale), quality: orderQualityLine(order.orderId, t) })}
-            disabled={!order.completable}
-            reason={order.completable ? undefined : t("orders.turn.notCompletable")}
-            className={ORDER_OPTION_CLASS}
-          >
-            <OrderDetails orderId={order.orderId} />
-          </OptionCard>
-        ))}
-      </OptionGroup>
+      {!showOrder || draft.orderId === null ? null : (
+        <Section heading={draft.orderId}>
+          <span className="dw-row">
+            <OrderReward orderId={draft.orderId} />
+            <OrderDetails orderId={draft.orderId} />
+          </span>
+          <span className="dw-note">{t("orders.requirementLine", { requirements: orderRequirements(draft.orderId, t.locale), quality: orderQualityLine(draft.orderId, t) })}</span>
+        </Section>
+      )}
 
       {draft.orderId === null ? null : (
         <OptionGroup
           legend={t("orders.turn.ceramics")}
-          step={2}
           name={`${namePrefix}ceramicIds`}
           value={draft.ceramicIds === null ? null : groupKey(draft.ceramicIds)}
           onChange={(value) => dispatch({ type: "group", key: value })}
@@ -122,7 +110,7 @@ export function OrderCompletionPicker({ model, engine, draft, options, dispatch,
         </OptionGroup>
       )}
 
-      <CrackleDeclarations model={model} engine={engine} draft={draft} options={options} dispatch={dispatch} namePrefix={namePrefix} step={3} />
+      <CrackleDeclarations model={model} engine={engine} draft={draft} options={options} dispatch={dispatch} namePrefix={namePrefix} />
 
       {match === null ? null : (
         <Section heading={t("orders.turn.rewards")}>

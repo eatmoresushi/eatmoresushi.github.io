@@ -95,13 +95,13 @@ export interface ContentFiles {
 
 export const RULES_VERSION: RulesVersion = "1.6.2";
 
-/** Shapes in Clay-cost order (L321–327). */
+/** Shapes in Clay-cost order (L342–348). */
 export const SHAPES: readonly Shape[] = Object.freeze(["bowl", "plate", "washer", "vase", "censer"] as const);
-/** Glazes coolest to hottest (L346–351). */
+/** Glazes coolest to hottest (L360–365). */
 export const GLAZES: readonly Glaze[] = Object.freeze(["white", "celadon", "grey_green", "moon_white"] as const);
-/** Decorations (L335–340). Painted replaced Crackle (change 19). */
+/** Decorations (L354). Painted replaced Crackle (change 19). */
 export const DECORATIONS: readonly Decoration[] = Object.freeze(["plain", "carved", "impressed", "painted"] as const);
-/** Disciplines in rulebook order (L374); also the setup shuffle order (DESIGN §7). */
+/** Disciplines in rulebook order (L389); also the setup shuffle order (DESIGN §7). */
 export const DISCIPLINES: readonly TechDiscipline[] = Object.freeze(["workshop", "glazing_loading", "firing"] as const);
 /** Qualities lowest to highest. */
 export const QUALITIES: readonly Quality[] = Object.freeze(["flawed", "standard", "fine", "masterpiece"] as const);
@@ -113,7 +113,7 @@ export const QUALITY_RANK: Readonly<Record<Quality, number>> = Object.freeze({
   masterpiece: 3,
 });
 
-/** Kiln Player Boards in rulebook order (L73). All five are selectable (R1). */
+/** Kiln Player Boards in rulebook order (L96). All five are selectable (R1). */
 export const KILN_IDS: readonly KilnId[] = Object.freeze(["RU", "GU", "GE", "DI", "JU"] as const);
 
 /** The 18 Advanced Techs in Appendix B order (Form & Decorate, Glazing & Loading, Firing). */
@@ -123,7 +123,7 @@ export const TECH_IDS: readonly TechId[] = Object.freeze([
   "T11", "T12", "T13", "T14", "T24", "T25",
 ] as const);
 
-/** Central locations (L49, L71). */
+/** Central locations (L71, L94). */
 export const CENTRAL_LOCATION_IDS: readonly CentralLocationId[] = Object.freeze([
   "materials_yard",
   "commission_market",
@@ -132,10 +132,10 @@ export const CENTRAL_LOCATION_IDS: readonly CentralLocationId[] = Object.freeze(
   "magistrates_hall",
 ] as const);
 
-/** Personal locations on each Kiln Player Board (L50). */
+/** Personal locations on each Kiln Player Board (L72). */
 export const PERSONAL_LOCATION_IDS: readonly PersonalLocationId[] = Object.freeze(["form_decorate", "glaze_load"] as const);
 
-/** All seven locations in rulebook section order (L158–233; Appendix E action summary). */
+/** All seven locations in rulebook section order (L190–262; Appendix E action summary). */
 export const LOCATION_IDS: readonly LocationId[] = Object.freeze([
   "materials_yard",
   "form_decorate",
@@ -146,19 +146,19 @@ export const LOCATION_IDS: readonly LocationId[] = Object.freeze([
   "magistrates_hall",
 ] as const);
 
-/** Shared Kiln spaces: 3 High, 3 Middle, 2 Low (L72). Iterate this, never `sharedKiln.spaces`. */
+/** Shared Kiln spaces: 3 High, 3 Middle, 2 Low (L95). Iterate this, never `sharedKiln.spaces`. */
 export const KILN_SPACE_IDS: readonly KilnSpaceId[] = Object.freeze([
   "high_1", "high_2", "high_3",
   "middle_1", "middle_2", "middle_3",
   "low_1", "low_2",
 ] as const);
 
-/** The 8 Starting Orders (A0, v1.6.2 L518–531, change 23). */
+/** The 8 Starting Orders (A0, v1.6.2 L533–546, change 23). */
 export const STARTING_ORDER_IDS: readonly StartingOrderId[] = Object.freeze(
   Array.from({ length: 8 }, (_, index) => `S${String(index + 1).padStart(2, "0")}` as StartingOrderId),
 );
 
-/** The 48 Main Orders (A1–A3, L542–605). */
+/** The 48 Main Orders (A1–A3, L548–611). */
 export const MAIN_ORDER_IDS: readonly MainOrderId[] = Object.freeze(
   Array.from({ length: 48 }, (_, index) => `O${String(index + 1).padStart(2, "0")}` as MainOrderId),
 );
@@ -167,27 +167,27 @@ export const MAIN_ORDER_IDS: readonly MainOrderId[] = Object.freeze(
 export const ORDER_IDS: readonly OrderId[] = Object.freeze([...STARTING_ORDER_IDS, ...MAIN_ORDER_IDS]);
 
 /**
- * Every Contribution card (v1.6.2 L93, L260–266, change 26): the 3 every player holds, then
- * Fuel Ledger's 2 (T12, v1.6.2 L634), in `firing.json` order.
+ * Every Contribution card (v1.6.2 L107, L283–289, change 26): the 3 every player holds, then
+ * Fuel Ledger's 2 (T12, v1.6.2 L644), in `firing.json` order.
  */
 export const CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] = Object.freeze([
   "BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE",
 ] as const);
 
-/** The Contribution cards every player holds from setup: Bank, Tend, Stoke (v1.6.2 L260). */
+/** The Contribution cards every player holds from setup: Bank, Tend, Stoke (v1.6.2 L289). */
 export const BASE_CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] = Object.freeze(["BANK", "TEND", "STOKE"] as const);
 
 const PLAYER_COUNT_KEYS = ["2", "3", "4"] as const;
 type PlayerCountKey = (typeof PLAYER_COUNT_KEYS)[number];
 
-/** Expected unlock per discipline (L212, L376). */
+/** Expected unlock per discipline (L241, L391). */
 const DISCIPLINE_UNLOCKS: Readonly<Record<TechDiscipline, PersonalLocationId | null>> = {
   workshop: "form_decorate",
   glazing_loading: "glaze_load",
   firing: null,
 };
 
-/** Shared Kiln zone layout by player count: High-Middle-Low (L100). */
+/** Shared Kiln zone layout by player count: High-Middle-Low (L122). */
 const ACTIVE_ZONE_COUNTS: Readonly<Record<PlayerCountKey, Record<KilnZone, number>>> = {
   "2": { high: 2, middle: 1, low: 1 },
   "3": { high: 2, middle: 2, low: 2 },
@@ -224,7 +224,7 @@ function collectTextProblems(value: unknown, path: string, problems: string[]): 
   for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
     const itemPath = `${path}.${key}`;
     if (TEXT_KEY.test(key)) {
-      // An empty reward, and the plain Contribution cards' absent short text (v1.6.2 L262–264).
+      // An empty reward, and the plain Contribution cards' absent short text (v1.6.2 L291–293).
       const nullable = key === "rewardText" || key === "rewardTextZh"
         || (path.startsWith("firing.contributionCards") && (key === "shortText" || key === "shortTextZh"));
       if (item === null && nullable) continue;
@@ -239,18 +239,20 @@ function collectTextProblems(value: unknown, path: string, problems: string[]): 
 
 /**
  * One source tag of a clarification (`docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md`, "Source
- * tags"): `L124` line of the V1.6.2 rulebook, `A1` amendment, `R1`–`R25` and `B1`–`B3` owner
+ * tags"): `L124` line of the V1.6.2 rulebook, `A1` amendment, `R1`–`R32` and `B1`–`B3` owner
  * rulings (`docs/RULEBOOK_AUDIT_V1.6.2.md`), `ED L124` editorial correction, `INT <name>`
- * recorded interpretation, `P1`–`P3` provisional ruling, `D7` owner UI decision. A `source`
+ * recorded interpretation, `P1`–`P3` provisional ruling (P4 and P5 were never cited; P6 became
+ * owner ruling R29 on 2026-10-30 and P7 owner ruling R32 on 2026-10-31), `D7` owner UI decision.
+ * A `source`
  * joins one or more tags with " · ". Which rulings are still in force is the content
  * contract's check, not this pattern's.
  */
-export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-9]|2[0-5])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
+export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|[12][0-9]|3[0-2])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
 
 /** The kind of a source tag, which the UI labels (Rulebook, Owner amendment, Owner ruling, …). */
 export type ClarificationSourceKind = "rulebook" | "amendment" | "ruling" | "editorial" | "interpretation" | "provisional" | "wording";
 
-/** The tags of a clarification `source`, in order ("L376 · D7" → ["L376", "D7"]). */
+/** The tags of a clarification `source`, in order ("L174 · L314 · R28" → ["L174", "L314", "R28"]). */
 export function clarificationTags(source: string): string[] {
   return source.split(" · ");
 }
@@ -398,8 +400,8 @@ function validateOrder(order: OrderDefinition, deck: "starting" | "main", proble
   if (!isNonNegativeInteger(order.coins)) problems.push(`${where}: coins must be a non-negative integer`);
   if (![0, 1, 2, 3].includes(order.crowns)) problems.push(`${where}: crowns must be 0–3`);
   if (deck === "starting") {
-    if (order.crowns !== 0) problems.push(`${where}: Starting Orders have no Crowns (L521)`);
-    if (order.minQuality !== "standard") problems.push(`${where}: every Starting Order accepts Standard (L521)`);
+    if (order.crowns !== 0) problems.push(`${where}: Starting Orders have no Crowns (L535)`);
+    if (order.minQuality !== "standard") problems.push(`${where}: every Starting Order accepts Standard (L535)`);
   }
 }
 
@@ -431,16 +433,16 @@ export function validateContentFiles(files: ContentFiles): string[] {
   for (const value of Object.values(gameConfig.startingResources)) {
     if (!isNonNegativeInteger(value)) problems.push("game_config: startingResources must be non-negative integers");
   }
-  // rev. 4 L115, L122 (change 32): Starting Orders are dealt; the Main Order is taken face up.
+  // L123, L130 (change 32): Starting Orders are dealt; the Main Order is taken face up.
   if (!isNonNegativeInteger(gameConfig.setupDeal?.startingOrders) || !sameMembers(Object.keys(gameConfig.setupDeal ?? {}), ["startingOrders"])) {
-    problems.push("game_config: setupDeal must be {startingOrders} (nothing Main is dealt, rev. 4 L115)");
+    problems.push("game_config: setupDeal must be {startingOrders} (nothing Main is dealt, L123)");
   }
   if (!isNonNegativeInteger(gameConfig.setupFaceUpMainOrders) || gameConfig.setupFaceUpMainOrders < 1) {
-    problems.push("game_config: setupFaceUpMainOrders must be a positive integer (rev. 4 L122)");
+    problems.push("game_config: setupFaceUpMainOrders must be a positive integer (L130)");
   }
   if (!sameMembers(Object.keys(gameConfig.shapes), SHAPES)) problems.push("game_config: shapes must list the five Shapes");
   if (!sameMembers(Object.keys(gameConfig.glazes), GLAZES)) problems.push("game_config: glazes must list the four Glazes");
-  // rev. 4 L336 (change 30): any Decoration; a vessel costs its Clay + `formingCoins`.
+  // L354 (change 30): any Decoration; a vessel costs its Clay + `formingCoins`.
   if (!Array.isArray(gameConfig.decorations) || !sameSequence(gameConfig.decorations, DECORATIONS)) {
     problems.push("game_config: decorations must list the four Decorations in order");
   }
@@ -459,7 +461,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
     for (const id of active) zones[zoneOfId(id)] += 1;
     const expected = ACTIVE_ZONE_COUNTS[key];
     if (zones.high !== expected.high || zones.middle !== expected.middle || zones.low !== expected.low) {
-      problems.push(`game_config: ${key} players must use ${expected.high}-${expected.middle}-${expected.low} active spaces (L100)`);
+      problems.push(`game_config: ${key} players must use ${expected.high}-${expected.middle}-${expected.low} active spaces (L122)`);
     }
   }
 
@@ -469,14 +471,14 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (space.zone !== zoneOfId(space.id)) problems.push(`firing: ${space.id} zone mismatch`);
     if (space.modifier !== ZONE_MODIFIERS[space.zone]) problems.push(`firing: ${space.id} modifier must be ${ZONE_MODIFIERS[space.zone]}`);
   }
-  if (!sameSequence(firing.kilnDie.faces, [1, 1, 2, 2, 3, 3])) problems.push("firing: Kiln Die faces must be 1,1,2,2,3,3 (L93)");
-  if (firing.baseHeat.minimum !== 0 || firing.baseHeat.maximum !== 5) problems.push("firing: Base Heat clamps to 0–5 (L249)");
+  if (!sameSequence(firing.kilnDie.faces, [1, 1, 2, 2, 3, 3])) problems.push("firing: Kiln Die faces must be 1,1,2,2,3,3 (L115)");
+  if (firing.baseHeat.minimum !== 0 || firing.baseHeat.maximum !== 5) problems.push("firing: Base Heat clamps to 0–5 (L277)");
   const fireCounts = [-2, -1, 0, 1, 2].map((modifier) => firing.fireDeck.filter((card) => card === modifier).length);
-  if (firing.fireDeck.length !== 12 || !sameSequence(fireCounts, [1, 3, 4, 3, 1])) problems.push("firing: Fire deck must be −2×1, −1×3, 0×4, +1×3, +2×1 (L660–666)");
+  if (firing.fireDeck.length !== 12 || !sameSequence(fireCounts, [1, 3, 4, 3, 1])) problems.push("firing: Fire deck must be −2×1, −1×3, 0×4, +1×3, +2×1 (L666–672)");
   const qualities = firing.qualityByHeatDifference;
   if (!sameSequence(qualities.map((row) => row.quality), ["masterpiece", "fine", "standard", "flawed"])
     || !sameSequence(qualities.map((row) => row.maxDifference), [0, 1, 2, null])) {
-    problems.push("firing: Quality table must be 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed (L274–279)");
+    problems.push("firing: Quality table must be 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed (L295–300)");
   }
   if (!sameSequence(firing.contributionCards.map((card) => card.id), CONTRIBUTION_CARD_IDS)) {
     problems.push("firing: contribution cards must be BANK, TEND, STOKE, FUEL_LEDGER_BANK, FUEL_LEDGER_STOKE");
@@ -492,7 +494,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (!isNonNegativeInteger(card.woodCost) || !Number.isInteger(card.heat) || Math.abs(card.heat) > 2) problems.push(`firing: ${card.id} needs a Wood cost and a Heat of −2 to +2`);
   }
   if (!sameSequence(firing.imperialModifiers, [-1, 0, 1])) problems.push("firing: Imperial modifiers must be −1, 0, +1");
-  // Rev. 4 L284 (change 30, R20): a Flawed ceramic sells for 2 Coins.
+  // Rev. 5 L172, L302 (a free action): a Flawed ceramic sells for 2 Coins.
   if (!isNonNegativeInteger(firing.flawedSaleCoins)) problems.push("firing: flawedSaleCoins must be a non-negative integer");
 
   // Locations.
@@ -504,7 +506,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (personal) {
       if (location.capacity !== null) problems.push(`action_locations: ${location.id} has no central capacity`);
       if (location.personalSpaces === null || location.personalSpaces.total !== 2 || location.personalSpaces.unlockedAtStart !== 1) {
-        problems.push(`action_locations: ${location.id} must have 2 spaces with 1 unlocked at start (L73)`);
+        problems.push(`action_locations: ${location.id} must have 2 spaces with 1 unlocked at start (L96)`);
       }
     } else {
       if (location.capacity === null || !PLAYER_COUNT_KEYS.every((key) => key in (location.capacity ?? {}))) {
@@ -522,7 +524,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
     }
   }
   // Effect shapes the engine reads (DELTA §3.2): whole numbers, and a Commission look at least
-  // as large as its reservations, which are at least 1 (v1.6.2 L195–198).
+  // as large as its reservations, which are at least 1 (v1.6.2 L225–228).
   const effectsOf = (id: LocationId): Record<WorkerEffect, Record<string, unknown>> | null => {
     const found = actionLocations.locations.find((location) => location.id === id);
     return found === undefined ? null : (found.effects as unknown as Record<WorkerEffect, Record<string, unknown>>);
@@ -545,20 +547,20 @@ export function validateContentFiles(files: ContentFiles): string[] {
       }
     }
   }
-  // Guild Hall (v1.6.2 L206–207): the Apprentice takes 1 Tech, the Shifu at least 1.
+  // Guild Hall (v1.6.2 L236–237): the Apprentice takes 1 Tech, the Shifu at least 1.
   const guild = effectsOf("guild_hall");
   if (guild?.apprentice?.["maxTechs"] !== 1 || typeof guild.shifu?.["maxTechs"] !== "number" || guild.shifu["maxTechs"] < 1) {
     problems.push("action_locations: guild_hall takes exactly 1 Tech with an Apprentice and at least 1 with the Shifu");
   }
-  // Kiln fuel (rev. 4 L197, change 35, R24): one price per Glaze & Load action, whichever worker.
+  // Kiln fuel (L215, change 35, R24): one price per Glaze & Load action, whichever worker.
   const glazeLoad = effectsOf("glaze_load");
   if (glazeLoad?.apprentice?.["sharedKilnWood"] !== glazeLoad?.shifu?.["sharedKilnWood"]) {
-    problems.push("action_locations: glaze_load sharedKilnWood must be the same for both workers (rev. 4 L197)");
+    problems.push("action_locations: glaze_load sharedKilnWood must be the same for both workers (L215)");
   }
-  // Magistrate's Hall (rev. 4 L240–241, change 33): only the Shifu reserves a Crown Order.
+  // Magistrate's Hall (L258–259, change 33): only the Shifu reserves a Crown Order.
   const magistrates = effectsOf("magistrates_hall");
   if (magistrates?.shifu?.["crownOrders"] !== 1) {
-    problems.push("action_locations: the magistrates_hall Shifu reserves 1 face-up Crown Order (rev. 4 L241)");
+    problems.push("action_locations: the magistrates_hall Shifu reserves 1 face-up Crown Order (L259)");
   }
   const commission = effectsOf("commission_market");
   for (const effect of ["apprentice", "shifu"] as const) {
@@ -576,21 +578,33 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (kiln.oncePerRound !== true) problems.push(`kilns: ${kiln.id} is once per round`);
     if (kiln.params === null || typeof kiln.params !== "object") problems.push(`kilns: ${kiln.id} needs params`);
   }
-  // Ge (rev. 4 L463, L465, change 29): Crackle on a Fine or Standard ceramic, which is then Fine
-  // (so a Crackle ceramic is always Fine), and a VP per delivered Crackle ceramic.
+  // Ge (rev. 5 L482, L484, change 39): Crackle on 1 of your ceramics of the firing, any
+  // Quality; a Standard one becomes Fine, the others keep their Quality; a VP per delivered
+  // Crackle ceramic.
   const ge = kilns.kilns.find((kiln) => kiln.id === "GE")?.params as Record<string, unknown> | undefined;
-  const geFrom = ge?.["fromQualities"];
   if (
     ge === undefined ||
-    !sameMembers(Object.keys(ge), ["fromQualities", "toQuality", "vpPerDeliveredCrackle"]) ||
-    !Array.isArray(geFrom) ||
-    geFrom.length === 0 ||
-    !geFrom.every((quality) => quality === "fine" || quality === "standard") ||
-    new Set(geFrom).size !== geFrom.length ||
-    ge["toQuality"] !== "fine" ||
+    !sameMembers(Object.keys(ge), ["upgradeFrom", "upgradeTo", "vpPerDeliveredCrackle"]) ||
+    ge["upgradeFrom"] !== "standard" ||
+    ge["upgradeTo"] !== "fine" ||
     !isNonNegativeInteger(ge["vpPerDeliveredCrackle"])
   ) {
-    problems.push("kilns: GE needs {fromQualities ⊆ [fine, standard], toQuality: fine, vpPerDeliveredCrackle}");
+    problems.push("kilns: GE needs {upgradeFrom: standard, upgradeTo: fine, vpPerDeliveredCrackle}");
+  }
+  // Ding (rev. 5 L488, change 40): after a Bowl, Plate or Brush Washer, 1 more of the same
+  // Shape for whole-number Clay and Coins (1 + 2).
+  const ding = kilns.kilns.find((kiln) => kiln.id === "DI")?.params as Record<string, unknown> | undefined;
+  const dingShapes = ding?.["shapes"];
+  if (
+    ding === undefined ||
+    !sameMembers(Object.keys(ding), ["shapes", "clay", "coins"]) ||
+    !Array.isArray(dingShapes) ||
+    dingShapes.length === 0 ||
+    !dingShapes.every((shape) => SHAPES.includes(shape as Shape)) ||
+    !isNonNegativeInteger(ding["clay"]) ||
+    !isNonNegativeInteger(ding["coins"])
+  ) {
+    problems.push("kilns: DI needs {shapes ⊆ Shapes, clay, coins} with whole-number costs");
   }
 
   // Techs.
@@ -601,18 +615,23 @@ export function validateContentFiles(files: ContentFiles): string[] {
   }
   for (const tech of techniques.advanced) {
     if (!DISCIPLINES.includes(tech.discipline)) problems.push(`techniques: ${tech.id} unknown discipline`);
-    else if (tech.unlocks !== DISCIPLINE_UNLOCKS[tech.discipline]) problems.push(`techniques: ${tech.id} unlocks must follow its discipline (L212)`);
+    else if (tech.unlocks !== DISCIPLINE_UNLOCKS[tech.discipline]) problems.push(`techniques: ${tech.id} unlocks must follow its discipline (L241)`);
     if (!isNonNegativeInteger(tech.cost) || tech.cost < 1) problems.push(`techniques: ${tech.id} cost must be a positive integer`);
     if (typeof tech.oncePerRound !== "boolean") problems.push(`techniques: ${tech.id} oncePerRound must be boolean`);
     if (tech.params === null || typeof tech.params !== "object") problems.push(`techniques: ${tech.id} needs params`);
   }
-  // Fuel Ledger (v1.6.2 L634, change 26): its free cards are Bank and Stoke, and the cards it
+  // Fuel Ledger (v1.6.2 L644, change 26): its free cards are Bank and Stoke, and the cards it
   // brings are exactly the `firing.json` cards that name it.
   const fuelLedger = techniques.advanced.find((tech) => tech.id === "T12")?.params as { freeCards?: unknown; cards?: unknown } | undefined;
   const ledgerCards = firing.contributionCards.filter((card) => card.techId === "T12").map((card) => card.id);
   if (!Array.isArray(fuelLedger?.freeCards) || !sameMembers(fuelLedger.freeCards, ["BANK", "STOKE"])) problems.push("techniques: T12 makes Bank and Stoke free");
   if (!Array.isArray(fuelLedger?.cards) || !sameSequence(fuelLedger.cards, ledgerCards)) problems.push("techniques: T12 brings exactly the Fuel Ledger Contribution cards of firing.json");
-  // Colour Samples (v1.6.2 L622, change 25): Select N both when acquired and in the swap.
+  // Decorator's Kit (rev. 5 L622, change 37): 1 Coin off any one vessel; no Decoration list.
+  const kit = techniques.advanced.find((tech) => tech.id === "T16")?.params as Record<string, unknown> | undefined;
+  if (kit === undefined || !sameMembers(Object.keys(kit), ["coinReduction"]) || !isNonNegativeInteger(kit["coinReduction"]) || kit["coinReduction"] < 1) {
+    problems.push("techniques: T16 needs exactly {coinReduction} with a positive whole number (rev. 5 L622)");
+  }
+  // Colour Samples (v1.6.2 L632, change 25): Select N both when acquired and in the swap.
   const colourSamples = techniques.advanced.find((tech) => tech.id === "T10")?.params as Record<string, unknown> | undefined;
   if (colourSamples === undefined || !sameMembers(Object.keys(colourSamples), ["select", "handLimit", "swapDiscard", "swapSelect"])
     || !["select", "handLimit", "swapDiscard", "swapSelect"].every((key) => isNonNegativeInteger(colourSamples[key]))
@@ -633,10 +652,10 @@ export function validateContentFiles(files: ContentFiles): string[] {
     problems.push("imperial_progress: track milestone IDs out of order");
   }
   if (!sameSequence(track.map((space) => space.reward?.kind ?? null), [null, "resources", "imperial_kiln", "imperial_priority", "vp"])) {
-    problems.push("imperial_progress: rewards must be none, resources, Imperial Kiln, Imperial Priority, VP (L429–436)");
+    problems.push("imperial_progress: rewards must be none, resources, Imperial Kiln, Imperial Priority, VP (L443–450)");
   }
   if (!isNonNegativeInteger(imperialProgress.overflowVpPerCrown)) problems.push("imperial_progress: overflowVpPerCrown must be a non-negative integer");
-  if (imperialProgress.exhibition.minimumQuality !== "standard") problems.push("imperial_progress: Exhibition accepts Standard or better (L444)");
+  if (imperialProgress.exhibition.minimumQuality !== "standard") problems.push("imperial_progress: Exhibition accepts Standard or better (L458)");
 
   // Clarifications (D10): prose, outside the rules fingerprint; only their shape is checked here.
   for (const location of actionLocations.locations) validateClarifications(location.clarifications, `action_locations: ${location.id}`, problems);
@@ -748,41 +767,41 @@ function playerCountKey(playerCount: PlayerCount): PlayerCountKey {
 
 // ── Derived lookups ─────────────────────────────────────────────────────────────────────────
 
-/** Preferred Heat of a Glaze: White 1, Celadon 2, Grey-Green 3, Moon White 4 (L60, L346–351). */
+/** Preferred Heat of a Glaze: White 1, Celadon 2, Grey-Green 3, Moon White 4 (L83, L360–365). */
 export function preferredHeat(glaze: Glaze): number {
   return GAME_CONFIG.glazes[glaze];
 }
 
-/** Clay cost to form a Shape (L321–327). */
+/** Clay cost to form a Shape (L342–348). */
 export function shapeClay(shape: Shape): number {
   return GAME_CONFIG.shapes[shape];
 }
 
 /**
  * The Coins a vessel costs on top of its Shape's Clay, whatever its Decoration, before any
- * reduction (rev. 4 L183, L336, change 30: 2). Replaces revision 3's per-Decoration cost table.
+ * reduction (L201, L354, change 30: 2). Replaces revision 3's per-Decoration cost table.
  */
 export function vesselCoins(): number {
   return GAME_CONFIG.formingCoins;
 }
 
-/** The zone of a Shared Kiln space (L72). */
+/** The zone of a Shared Kiln space (L95). */
 export function zoneOf(space: KilnSpaceId): KilnZone {
   return KILN_SPACES[space].zone;
 }
 
-/** The printed zone modifier of a Shared Kiln space: High +1, Middle 0, Low −1 (L72, L245). */
+/** The printed zone modifier of a Shared Kiln space: High +1, Middle 0, Low −1 (L95, L274). */
 export function zoneModifier(space: KilnSpaceId): ZoneModifier {
   return KILN_SPACES[space].modifier;
 }
 
-/** Active (uncovered) Shared Kiln spaces for a player count, in `KILN_SPACE_IDS` order (L100). */
+/** Active (uncovered) Shared Kiln spaces for a player count, in `KILN_SPACE_IDS` order (L122). */
 export function activeKilnSpaces(playerCount: PlayerCount): readonly KilnSpaceId[] {
   return ACTIVE_KILN_SPACES[playerCountKey(playerCount)];
 }
 
 /**
- * Absolute capacity of a central location for a player count (L146–156): a number, or `null`
+ * Absolute capacity of a central location for a player count (L178–188): a number, or `null`
  * for the uncapped Canal Wharf. Personal locations have no shared capacity — their spaces are
  * per player (`PlayerState.personalSpaces`) — so asking for one is an engine bug and throws.
  */
@@ -793,8 +812,8 @@ export function locationCapacity(locationId: LocationId, playerCount: PlayerCoun
 }
 
 /**
- * Quality for a Heat Difference (L274–279): 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed.
- * The difference is absolute (L64); a signed value is taken by its absolute value.
+ * Quality for a Heat Difference (L295–300): 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed.
+ * The difference is absolute (L87); a signed value is taken by its absolute value.
  */
 export function qualityForDifference(difference: number): Quality {
   if (!Number.isInteger(difference)) throw new Error(`Heat Difference must be an integer, got ${difference}`);
@@ -805,23 +824,23 @@ export function qualityForDifference(difference: number): Quality {
   throw new Error("Quality table has no open-ended row");
 }
 
-/** Printed Wood cost and Heat of a Contribution card (v1.6.2 L262–266); Fuel Ledger's free Bank
+/** Printed Wood cost and Heat of a Contribution card (v1.6.2 L285–289); Fuel Ledger's free Bank
  * and Stoke are T12's `freeCards`. */
 export function contributionCard(id: ContributionCardId): ContributionCardDefinition {
   return CONTRIBUTION_CARDS[id];
 }
 
-/** The Contribution cards a Tech brings with it (Fuel Ledger's 2, v1.6.2 L634); [] for others. */
+/** The Contribution cards a Tech brings with it (Fuel Ledger's 2, v1.6.2 L644); [] for others. */
 export function contributionCardsOfTech(techId: TechId): readonly ContributionCardId[] {
   return CONTRIBUTION_CARD_IDS.filter((id) => CONTRIBUTION_CARDS[id].techId === techId);
 }
 
-/** The six Techs of a discipline, in `TECH_IDS` order (L374). */
+/** The six Techs of a discipline, in `TECH_IDS` order (L389). */
 export function techsOfDiscipline(discipline: TechDiscipline): readonly TechId[] {
   return TECHS_BY_DISCIPLINE[discipline];
 }
 
-/** True for S01–S08. Discarded Starting Orders return to the box, never the Main discard (L304). */
+/** True for S01–S08. Discarded Starting Orders return to the box, never the Main discard (L325). */
 export function isStartingOrderId(orderId: OrderId): orderId is StartingOrderId {
   return ORDERS[orderId].deck === "starting";
 }

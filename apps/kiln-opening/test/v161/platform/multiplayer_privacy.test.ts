@@ -21,7 +21,7 @@ import {
 } from "./support.ts";
 
 /** Only the 2 Starting Orders are dealt; the Main Order is taken face up with the Kiln (rev. 4
- * L122, R23), so it is public. */
+ * L130, R23), so it is public. */
 const DEALT = GAME_CONFIG.setupDeal.startingOrders;
 
 function quoted(ids: readonly string[]): string[] {
@@ -87,7 +87,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     }
   });
 
-  it("publishes every ceramic attribute to every seat (L508)", async () => {
+  it("publishes every ceramic attribute to every seat (L522)", async () => {
     const { harness } = await started();
     const seeded = await seedState(harness, (gameId) =>
       seatState(2, {
@@ -107,7 +107,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     }
   });
 
-  it("keeps the Commission Market look, a looked reservation and the looked card discarded private (rev. 4 L203, owner ruling R25, B3)", async () => {
+  it("keeps the Commission Market look, a looked reservation and the looked card discarded private (L221, owner ruling R25, B3)", async () => {
     const { harness } = await started();
     let top: OrderId[] = [];
     await seedState(harness, (gameId) => {
@@ -149,7 +149,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     expect(other.game?.counts.mainDeck).toBe(opened.game.counts.mainDeck);
   });
 
-  it("publishes the Setup Main Order take to every seat while the Starting Orders stay secret (rev. 4 L122, R23)", async () => {
+  it("publishes the Setup Main Order take to every seat while the Starting Orders stay secret (L130, R23)", async () => {
     const { harness } = await started();
     const head = await headState(harness);
     if (head.phase.type !== "setup_kiln_selection") throw new Error(`expected Setup, found ${head.phase.type}`);
@@ -173,7 +173,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     expectAbsent(rows, starting);
   });
 
-  it("publishes Kiln Master's marker and the Magistrate's Hall Shifu's Crown Order to every seat (rev. 4 L635, L241, R21, R22)", async () => {
+  it("publishes Kiln Master's marker and the Magistrate's Hall Shifu's Crown Order to every seat (L654, L259, R21, R22)", async () => {
     const { harness } = await started();
     await seedState(harness, (gameId) =>
       seatState(2, {
@@ -208,7 +208,58 @@ describe("V1.6.2 multiplayer privacy", () => {
     expect(other.ownPrivateView?.orderHand).toEqual([]);
   });
 
-  it("keeps the Canal Wharf Shifu's unseen Main Order private to its owner (v1.6.2 L220, B3)", async () => {
+  it("opens the after-action window from public facts only, and publishes a Work-turn completion to every seat (rev. 5 L168–176, L424, R27)", async () => {
+    // Two rooms that differ only in what P1's one held Order is: O02 is completable with the
+    // Fine Celadon Plate, O40 is not. Everything every seat sees is the same in both.
+    const rooms = await Promise.all(
+      (["O02", "O40"] as const).map(async (held) => {
+        const { harness } = await started();
+        await seedState(harness, (gameId) =>
+          seatState(2, {
+            gameId,
+            round: 2,
+            players: [
+              { id: "P1", displayName: "Seat 1", hand: [held] },
+              { id: "P2", displayName: "Seat 2" },
+            ],
+            ceramics: [{ owner: "P1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
+          }),
+        );
+        const placed = await command(harness, "P1", { type: "PLACE_CANAL_WHARF", workerId: "P1:apprentice:1" });
+        const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
+        return { harness, held, placed, other };
+      }),
+    );
+    for (const room of rooms) {
+      expect(room.placed.game.phase).toEqual({ type: "work_turn", activePlayerId: "P1", step: { kind: "after_action" } });
+      expectAbsent(room.placed.game, [room.held]);
+      expectAbsent(room.placed.events, [room.held]);
+      expectAbsent(room.other, [room.held]);
+    }
+    const [completable, notCompletable] = rooms;
+    if (completable === undefined || notCompletable === undefined) throw new Error("two rooms expected");
+    expect(notCompletable.placed.events.map((event) => event.type)).toEqual(completable.placed.events.map((event) => event.type));
+    expect(notCompletable.other.game?.phase).toEqual(completable.other.game?.phase);
+    expect(notCompletable.other.game?.counts).toEqual(completable.other.game?.counts);
+
+    // The completion reveals the Order and its ceramic to every seat (L424), with its window.
+    const done = await command(completable.harness, "P1", { type: "COMPLETE_ORDER", orderId: "O02", ceramicIds: ["c1"] });
+    const event = done.events.find((candidate) => candidate.type === "ORDER_COMPLETED");
+    expect(event).toMatchObject({ type: "ORDER_COMPLETED", playerId: "P1", window: "after_action", record: { orderId: "O02" } });
+    const other = valueOf(
+      await completable.harness.service.reconnect({ roomCode: completable.harness.roomCode, seatToken: connectionFor(completable.harness, "P2").seatToken }),
+    );
+    expect(other.game?.players["P1"]?.completedOrders.map((record) => record.orderId)).toEqual(["O02"]);
+    expect(other.game?.counts.orderHands["P1"]).toBe(0);
+    // Nothing is left in the window, so P1's turn ended by itself.
+    expect(other.game?.phase).toEqual({ type: "work_turn", activePlayerId: "P2", step: { kind: "before_action" } });
+    // The other room's P1 ends the turn with END_TURN, its Order still secret.
+    const ended = await command(notCompletable.harness, "P1", { type: "END_TURN" });
+    expectAbsent(ended.game, ["O40"]);
+    expectAbsent(ended.events, ["O40"]);
+  });
+
+  it("keeps the Canal Wharf Shifu's unseen Main Order private to its owner (v1.6.2 L250, B3)", async () => {
     const { harness } = await started();
     let deckTop: OrderId | undefined;
     await seedState(harness, (gameId) => {
@@ -256,7 +307,7 @@ describe("V1.6.2 multiplayer privacy", () => {
 
     const [taken, returned] = inspected as [TechId, TechId];
     await command(harness, "P1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: taken } });
-    // 10 Coins leave a second take possible (v1.6.2 L207), so the inspection stays open: a
+    // 10 Coins leave a second take possible (v1.6.2 L237), so the inspection stays open: a
     // reconnect gives the untaken Tech back to P1 only.
     const otherMid = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
     expect(otherMid.ownPrivateView?.pendingLook).toBeNull();
@@ -298,15 +349,18 @@ describe("V1.6.2 multiplayer privacy", () => {
     expect(await headState(harness)).toEqual(before);
   });
 
-  it("refuses to project any save that is not schema 9 under V1.6.2", () => {
+  it("refuses to project any save that is not schema 10 under V1.6.2", () => {
     const legacy = { schemaVersion: 5, rulesVersion: "1.4" } as unknown as GameState;
-    expect(() => projectPublicGameState(legacy)).toThrow("Only schema-9 V1.6.2 games");
+    expect(() => projectPublicGameState(legacy)).toThrow("Only schema-10 V1.6.2 games");
     const v161 = { schemaVersion: 6, rulesVersion: "1.6.1" } as unknown as GameState;
-    expect(() => projectPublicGameState(v161)).toThrow("Only schema-9 V1.6.2 games");
-    // V1.6.2 saves from before owner revision 3 (changes 25–27) and 4 (changes 28–35) are refused too.
+    expect(() => projectPublicGameState(v161)).toThrow("Only schema-10 V1.6.2 games");
+    // V1.6.2 saves from before owner revision 3 (changes 25–27), 4 (changes 28–35) and 5
+    // (changes 36–42) are refused too.
     const revision2 = { schemaVersion: 7, rulesVersion: "1.6.2" } as unknown as GameState;
-    expect(() => projectPublicGameState(revision2)).toThrow("Only schema-9 V1.6.2 games");
+    expect(() => projectPublicGameState(revision2)).toThrow("Only schema-10 V1.6.2 games");
     const revision3 = { schemaVersion: 8, rulesVersion: "1.6.2" } as unknown as GameState;
-    expect(() => projectPublicGameState(revision3)).toThrow("Only schema-9 V1.6.2 games");
+    expect(() => projectPublicGameState(revision3)).toThrow("Only schema-10 V1.6.2 games");
+    const revision4 = { schemaVersion: 9, rulesVersion: "1.6.2" } as unknown as GameState;
+    expect(() => projectPublicGameState(revision4)).toThrow("Only schema-10 V1.6.2 games");
   });
 });

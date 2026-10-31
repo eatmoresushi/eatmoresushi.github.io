@@ -47,7 +47,7 @@ export interface TechTarget {
   legal: boolean;
   /** The engine's reason when it is not legal, with the details its message needs. */
   reason: (Pick<GameRuleError, "code"> & { details: Readonly<Record<string, string | number>> }) | null;
-  /** The printed cost, which every Guild Hall take pays (v1.6.2 L206–207: no discount). */
+  /** The printed cost, which every Guild Hall take pays (v1.6.2 L236–237: no discount). */
   cost: number;
 }
 
@@ -55,7 +55,7 @@ export interface TechTarget {
  * The Guild Hall chooser on the Tech display (owner review, 2026-10-17): with a worker chosen at
  * the Guild Hall, the face-up Techs (Apprentice: buy one) or the disciplines (Shifu: inspect one)
  * become table targets; during the Shifu's inspection (the `guild_inspection` window) the face-up
- * Techs are targets again, for the first take and the second (v1.6.2 L207). Everything comes from
+ * Techs are targets again, for the first take and the second (v1.6.2 L237). Everything comes from
  * `guildOptions` / `guildInspectionOptions` through the drafts.
  */
 export interface TechChooser {
@@ -97,12 +97,18 @@ export interface TableSelectionData {
    * or the viewer's Shifu takes a Tech after inspecting. */
   techChooser: TechChooser | null;
   /**
-   * The viewer's own Flawed ceramics they may sell now (change 30, R20: `sellFlawedOptions`, only
-   * in their own turn), each with whether the open draft has chosen it. The viewer's board, the
-   * Finished ceramics strip and (in the after-Quality turn) the kiln drawing draw a Sell button on
-   * each (`data-act="sell"`).
+   * The viewer's own Finished Flawed ceramics they may sell now (a free action: `sellFlawedOptions`,
+   * only in their own free-action windows, change 36, R26), each with whether the open draft has
+   * chosen it. The viewer's board and the Finished ceramics strip draw a Sell button on each
+   * (`data-act="sell"`).
    */
   sellTargets: ReadonlyMap<CeramicId, { pressed: boolean }>;
+  /**
+   * The viewer's own Imperial Priority token while they may spend it now (a free action, owner UI
+   * decision D21: "Use" on the token, `data-act="imperial-priority"`), with whether the open draft
+   * has chosen it; null otherwise.
+   */
+  imperialPriority: { pressed: boolean } | null;
 }
 
 /** A click on a table target. */
@@ -115,7 +121,9 @@ export type TableAction =
   /** A discipline's deck on the Tech display (the Guild Hall chooser, inspect mode). */
   | { type: "inspect"; discipline: TechDiscipline }
   /** A Sell button on one of the viewer's Flawed ceramics (`sellTargets`). */
-  | { type: "sell"; ceramicId: CeramicId };
+  | { type: "sell"; ceramicId: CeramicId }
+  /** "Use" on the viewer's Imperial Priority token (`imperialPriority`). */
+  | { type: "imperial_priority" };
 
 /** A window spec's table adapter. Both members are pure. */
 export interface TableAdapter<D, A extends DraftActionBase = never> {
@@ -144,6 +152,7 @@ export const INERT_SELECTION: TableSelectionData = Object.freeze({
   highlightedCeramicIds: EMPTY_SET,
   techChooser: null,
   sellTargets: EMPTY_MAP,
+  imperialPriority: null,
 });
 
 /** A selection with only the fields an adapter sets; the rest stay inert. */

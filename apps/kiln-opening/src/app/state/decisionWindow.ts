@@ -80,7 +80,7 @@ export type DecisionWindow =
       /** The placement's effect (Senior Apprentice gives an Apprentice the Shifu effect, R12). */
       effect: WorkerEffect;
       /**
-       * The Select (v1.6.2 L64, L201–202, change 25): Select 2 with 1 reservation (Apprentice
+       * The Select (v1.6.2 L80, L225–226, change 25): Select 2 with 1 reservation (Apprentice
        * effect) or Select 3 with up to 2 (Shifu effect); `lookedCount` cards shown (up to N,
        * possibly 0, B1); a face-up Order may be reserved instead.
        */
@@ -88,17 +88,17 @@ export type DecisionWindow =
     })
   | (WindowBase<"guild_inspection"> & {
       discipline: TechDiscipline;
-      /** Techs the Shifu has taken in this action so far (0 or 1; v1.6.2 L207). */
+      /** Techs the Shifu has taken in this action so far (0 or 1; v1.6.2 L237). */
       takes: number;
     })
   | (WindowBase<"colour_samples"> & {
-      /** Colour Samples when acquired: Select 3, 1 reservation (v1.6.2 L622, change 25). */
+      /** Colour Samples when acquired: Select 3, 1 reservation (v1.6.2 L632, change 25). */
       select: SelectSpec;
     })
   | (WindowBase<"colour_samples_swap"> & {
-      /** The work step the swap was used in, and returns to (v1.6.2 L622). */
+      /** The work step the swap was used in, and returns to (v1.6.2 L632). */
       returnTo: "before_action" | "after_action";
-      /** The swap's Select 3, 1 reservation, after its held Order was discarded (v1.6.2 L622, R17). */
+      /** The swap's Select 3, 1 reservation, after its held Order was discarded (v1.6.2 L632, R17). */
       select: SelectSpec;
     })
   | (WindowBase<"contributions"> & { windowId: string })
@@ -106,7 +106,7 @@ export type DecisionWindow =
   | (WindowBase<"jun"> & { queueIndex: number })
   | (WindowBase<"after_quality"> & { queueIndex: number })
   | (WindowBase<"second_firing"> & {
-      /** The ceramic Second Firing recalculates with the chosen card (rev. 4 L627). */
+      /** The ceramic Second Firing recalculates with the chosen card (L646). */
       ceramicId: CeramicId;
     })
   | (WindowBase<"orders"> & { index: number })

@@ -1,7 +1,7 @@
 /**
- * Materials Yard placement legality (L140–142, rev. 4 L176–177, L606, R12). Gaining resources
+ * Materials Yard placement legality (L162–164, L194–195, L625, R12). Gaining resources
  * is always possible, so the only limits are the shared placement checks; an optional Tech
- * (Prepared Clay) never makes a placement illegal (L142 "Optional bonuses may still be
+ * (Prepared Clay) never makes a placement illegal (L164 "Optional bonuses may still be
  * declined"). The V1.6.1 1-Coin Shifu option is gone; the effects gain 4 and 8 (change 34).
  */
 
@@ -19,7 +19,7 @@ const my = (workerId: string, clay: number, extra: Partial<Extract<GameAction, {
   ...extra,
 });
 
-describe("at least 1 instance of the main action (L142)", () => {
+describe("at least 1 instance of the main action (L164)", () => {
   it("is always possible: legal with no resources at all, for either worker", () => {
     const state = buildState({ players: [{ resources: { clay: 0, wood: 0, coins: 0 } }, {}] });
     expect(verdict(state, "p1", my("p1:apprentice:1", 4))).toBeNull();
@@ -52,7 +52,7 @@ describe("shared placement checks through the Materials Yard validator", () => {
   });
 });
 
-describe("Senior Apprentice placement (rev. 4 L606, R12)", () => {
+describe("Senior Apprentice placement (L625, R12)", () => {
   it("needs an Apprentice, a ready T18, and the Materials Yard or Commission Market", () => {
     const ready = buildState({ players: [{ techs: ["T18"] }, {}] });
     expect(verdict(ready, "p1", my("p1:apprentice:1", 8, { seniorApprentice: true }))).toBeNull();

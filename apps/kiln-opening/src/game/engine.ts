@@ -16,7 +16,7 @@ import { fail, ruleError } from "./errors.ts";
 import { handlers as afterQualityHandlers } from "./firing/afterQuality.ts";
 import { applyContribution, openFiringPhase, validateContribution } from "./firing/contributions.ts";
 import { handlers as pipelineHandlers } from "./firing/pipeline.ts";
-import { handlers as flawedSaleHandlers } from "./flawedSaleHandler.ts";
+import { handlers as freeActionHandlers } from "./freeActions.ts";
 import { assertInvariants } from "./invariants.ts";
 import { handlers as orderPhaseHandlers, openOrderPhase } from "./orders/phase.ts";
 import { handlers as roundHandlers, openCleanup, startRound } from "./round.ts";
@@ -73,7 +73,7 @@ const HANDLER_PARTS = [
   pipelineHandlers,
   afterQualityHandlers,
   orderPhaseHandlers,
-  flawedSaleHandlers,
+  freeActionHandlers,
 ] as const;
 
 /** The action types that more than one module claims; must be `never`. */
@@ -100,7 +100,7 @@ export const HANDLERS: ActionHandlerTable = {
   ...pipelineHandlers,
   ...afterQualityHandlers,
   ...orderPhaseHandlers,
-  ...flawedSaleHandlers,
+  ...freeActionHandlers,
 };
 
 function handlerFor(type: string): ActionHandler<GameAction> | null {

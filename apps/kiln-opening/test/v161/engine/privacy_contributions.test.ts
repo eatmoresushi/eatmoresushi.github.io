@@ -1,5 +1,5 @@
 /**
- * Hidden information in the Contribution window (DESIGN §4.2, v1.6.2 L93, L246, L508, L668–669,
+ * Hidden information in the Contribution window (DESIGN §4.2, v1.6.2 L107, L271, L518, L678–679,
  * change 26): sealed cards, Fuel Ledger Bank and Fuel Ledger Stoke included, live only in
  * `PrivateFiringState` until every participant has submitted; nothing public, no other seat's
  * view and no event carries them. Each player's public card list (`contributionCards`) names
@@ -73,9 +73,9 @@ describe("sealed choices stay out of the public state (DESIGN §4.2)", () => {
     expect(projected.players["p2"]?.contributionCards).toEqual(["BANK", "TEND", "STOKE"]);
   });
 
-  it("no Wood is set aside before the reveal: the public totals are unchanged (v1.6.2 L508)", () => {
+  it("no Wood is set aside before the reveal: the public totals are unchanged (v1.6.2 L518)", () => {
     const { table } = sealedTable();
-    // Every seat starts with 3 Wood (rev. 4 L125).
+    // Every seat starts with 3 Wood (L133).
     expect(projectPublicState(table.state).players["p1"]?.resources.wood).toBe(3);
     expect(projectPublicState(table.state).players["p2"]?.resources.wood).toBe(3);
   });
@@ -144,7 +144,7 @@ describe("legality never depends on another seat's sealed choice (DESIGN §1.3)"
   });
 });
 
-describe("the reveal (L673)", () => {
+describe("the reveal (L679)", () => {
   it("reveals every sealed choice in one public event, then clears the private state", () => {
     const { table } = sealedTable();
     const events = table.contribute("p3", "TEND");
@@ -153,7 +153,7 @@ describe("the reveal (L673)", () => {
       type: "CONTRIBUTIONS_REVEALED",
       windowId: WINDOW,
       contributions: {
-        // Fuel Ledger Stoke (v1.6.2 L266, L634): +2 for its printed 1 Wood, paid now.
+        // Fuel Ledger Stoke (v1.6.2 L289, L644): +2 for its printed 1 Wood, paid now.
         p1: { card: "FUEL_LEDGER_STOKE", heat: 2, woodPaid: 1 },
         p2: { card: "BANK", heat: -1, woodPaid: 1 },
         p3: { card: "TEND", heat: 0, woodPaid: 0 },

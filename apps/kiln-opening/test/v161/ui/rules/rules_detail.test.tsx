@@ -121,17 +121,17 @@ describe("Tech tiles (TechCard, Tech slots)", () => {
 
 describe("Kiln Player Board, locations, Orders and milestones", () => {
   it("the Kiln Tradition opens the Kiln's rules details", () => {
-    // m1's viewer (p3) took the Jun Kiln.
-    const html = render(M1, <KilnTradition playerId="p3" />);
+    // m1's viewer (Zhao, p2) took the Jun Kiln.
+    const html = render(M1, <KilnTradition playerId="p2" />);
     const text = kilnText("JU", "en");
     const body = panel(html, `Full rules: ${text.name} · ${text.abilityName}`);
     expect(textOf(body)).toContain(decode(text.ability));
     expectClarifications(body, KILNS.JU.clarifications, "en");
     expectOnlyRuleAndClarifications(body);
-    const zh = render(M1, <KilnTradition playerId="p3" />, "zh-CN");
+    const zh = render(M1, <KilnTradition playerId="p2" />, "zh-CN");
     expectClarifications(panel(zh, `完整规则：${kilnText("JU", "zh-CN").name} · ${kilnText("JU", "zh-CN").abilityName}`), KILNS.JU.clarifications, "zh-CN");
-    // Another Kiln (p2's Ge) opens its own rules.
-    const ge = render(M1, <KilnTradition playerId="p2" />);
+    // Another Kiln (Lin's Ge) opens its own rules.
+    const ge = render(M1, <KilnTradition playerId="p1" />);
     expectClarifications(panel(ge, `Full rules: ${kilnText("GE", "en").name} · ${kilnText("GE", "en").abilityName}`), KILNS.GE.clarifications, "en");
   });
 

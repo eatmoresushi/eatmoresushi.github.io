@@ -45,7 +45,7 @@ describe("buildState", () => {
     [2, ["high_1", "high_2", "middle_1", "low_1"]],
     [3, ["high_1", "high_2", "middle_1", "middle_2", "low_1", "low_2"]],
     [4, ["high_1", "high_2", "high_3", "middle_1", "middle_2", "middle_3", "low_1", "low_2"]],
-  ] as const)("covers Shared Kiln spaces for %i players (L100)", (players, active) => {
+  ] as const)("covers Shared Kiln spaces for %i players (L122)", (players, active) => {
     const state = buildState({ players });
     const activeIds = Object.entries(state.sharedKiln.spaces)
       .filter(([, space]) => space.active)
@@ -92,13 +92,13 @@ describe("buildState", () => {
     expect(() => buildState({ display: ["S01"] })).toThrow(/Starting Orders/);
   });
 
-  it("refuses Tech sets the 3-total / 1-per-discipline limit excludes (L211)", () => {
+  it("refuses Tech sets the 3-total / 1-per-discipline limit excludes (L240)", () => {
     expect(() => buildState({ players: [{ techs: ["T01", "T16"] }, {}] })).toThrow(/TECH_DISCIPLINE_OWNED/);
     const state = buildState({ players: [{ techs: ["T01", "T10", "T11"] }, {}] });
     expect(() => giveTech(state, "p1", "T25")).toThrow(/TECH_LIMIT/);
   });
 
-  it("unlocks personal spaces exactly for owned Techs (L212)", () => {
+  it("unlocks personal spaces exactly for owned Techs (L241)", () => {
     const state = buildState({ players: [{ techs: ["T05", { id: "T21", usedThisRound: true }, "T14"] }, {}] });
     const p1 = state.players["p1"]!;
     expect(p1.personalSpaces.form_decorate[1].unlocked).toBe(true);
@@ -212,7 +212,7 @@ describe("buildState refuses states the §8.3 invariants forbid", () => {
     ).toThrow(/already in high_1/);
   });
 
-  it("Kiln Master's marker: 1 in the game, on a T24 owner's loaded ceramic (rev. 4 L628)", () => {
+  it("Kiln Master's marker: 1 in the game, on a T24 owner's loaded ceramic (L647)", () => {
     expect(
       buildState({
         players: [{ techs: [{ id: "T24", usedThisRound: true }] }, {}],
@@ -340,8 +340,8 @@ describe("mutation helpers", () => {
     expect(state.players["p2"]?.resources).toEqual({ clay: 2, wood: 3, coins: 0 });
     const staged = stageCeramic(state, { owner: "p2", stage: "finished", shape: "bowl", glaze: "white", quality: "masterpiece" });
     expect(staged).toMatchObject({ id: "c1", stage: "finished", crackle: false, quality: "masterpiece" });
-    expect(() =>
-      stageCeramic(state, { owner: "p2", stage: "finished", shape: "bowl", glaze: "white", quality: "masterpiece", crackle: true }),
-    ).toThrow(/exactly Fine/);
+    // Since change 39 a Crackle ceramic keeps any Quality (rev. 5 L482): a crackled Masterpiece.
+    expect(stageCeramic(state, { owner: "p2", stage: "finished", shape: "bowl", glaze: "white", quality: "masterpiece", crackle: true }))
+      .toMatchObject({ id: "c2", stage: "finished", crackle: true, quality: "masterpiece" });
   });
 });

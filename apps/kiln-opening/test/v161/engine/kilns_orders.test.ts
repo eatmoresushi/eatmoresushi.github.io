@@ -1,10 +1,12 @@
 /**
- * P6 `orders/completion.ts`: the completion procedure (L410–419) and the completion
- * abilities Ru (L460), Guan (L464) and Tribute Ware (T25, L642), each optional and once per
+ * P6 `orders/completion.ts`: the completion procedure (L424–433) and the completion
+ * abilities Ru (L474), Guan (L478) and Tribute Ware (T25, L648), each optional and once per
  * round (R4), with Tribute Ware's Crown never printed (R13), Canal Barge's automatic 2
- * Coins (T23, v1.6.2 L630) and Ge's automatic 1 VP per delivered Crackle ceramic (rev. 4 L465,
- * change 29). Orders are completed only in the Order Phase (v1.6.2 L296, L484), so these
- * trigger only there. DESIGN §8.2 "Ru, Guan", "Tribute Ware bonus Crown (R13)".
+ * Coins (T23, v1.6.2 L637) and Ge's automatic 1 VP per delivered Crackle ceramic (L484,
+ * change 29). Orders are completed as free actions, before or after a worker action or in the
+ * Order Phase (L170, L318, L499); each once-per-round effect has one use per round across those
+ * windows (L176; `free_actions.test.ts` covers the Work-turn windows). DESIGN §8.2 "Ru, Guan",
+ * "Tribute Ware bonus Crown (R13)".
  */
 
 import { describe, expect, it } from "vitest";
@@ -55,11 +57,11 @@ function complete(state: GameState, playerId: PlayerId, spec: OrderCompletionSpe
   // Every completion here is first accepted by the shared validator.
   expect(validateOrderCompletion(actorViewOf(state, playerId), spec)).toBeNull();
   const ctx = testContext();
-  const record = resolveOrderCompletion(state, playerId, spec, ctx);
+  const record = resolveOrderCompletion(state, playerId, spec, "order_phase", ctx);
   return { record, events: ctx.events };
 }
 
-describe("the completion procedure (L410–419)", () => {
+describe("the completion procedure (L424–433)", () => {
   it("reveals, delivers beneath the Order, records VP, gains Coins and keeps the record", () => {
     const state = table({ kilnId: "GE", hand: ["O04", "S08"] });
     const vase = fin(state, "p1", "vase moon_white carved fine");
@@ -85,12 +87,12 @@ describe("the completion procedure (L410–419)", () => {
     expect(state.hidden.orderHands["p1"]).toEqual(["S08"]);
     expect(ceramic(state, vase)).toMatchObject({ stage: "delivered", orderId: "O04", deliveredInRound: 3, quality: "fine", crackle: false });
     expect(events).toEqual([
-      { type: "ORDER_COMPLETED", playerId: "p1", record: expected },
+      { type: "ORDER_COMPLETED", playerId: "p1", record: expected, window: "order_phase" },
       { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 3, reason: "order_reward" },
     ]);
   });
 
-  it("a delivered Crackle ceramic keeps its Crackle marker and printed Decoration (L94, L470)", () => {
+  it("a delivered Crackle ceramic keeps its Crackle marker and printed Decoration (L116, L484)", () => {
     // S07 asks for Carved, Impressed or Painted (change 23); the wildcard fills it with the first
     // Decoration that works, in DECORATIONS order.
     const state = table({ kilnId: "GE", hand: ["S07"] });
@@ -107,7 +109,7 @@ describe("the completion procedure (L410–419)", () => {
     expect(complete(state, "p1", spec).record.crackleDeclarations).toEqual(spec.crackleDeclarations);
   });
 
-  it("a ceramic satisfies only one Order (L419)", () => {
+  it("a ceramic satisfies only one Order (L433)", () => {
     const state = table({ kilnId: "GE", hand: ["S08", "S01"] });
     const bowl = fin(state, "p1", "bowl white plain std");
     complete(state, "p1", { orderId: "S08", ceramicIds: [bowl] });
@@ -144,7 +146,7 @@ describe("the completion procedure (L410–419)", () => {
   });
 });
 
-describe("Ru Kiln (L460)", () => {
+describe("Ru Kiln (L474)", () => {
   it("delivering an actual Celadon Plain Masterpiece scores 4 VP, even for an Order that asks for none of it", () => {
     const state = table({ kilnId: "RU", hand: ["S08"] });
     const vase = fin(state, "p1", "vase celadon plain mp");
@@ -175,7 +177,7 @@ describe("Ru Kiln (L460)", () => {
     const id = fin(state, "p1", spec);
     const { record, events } = complete(state, "p1", { orderId: "S08", ceramicIds: [id] });
     expect(record.kilnAbility).toBeNull();
-    // Never Ru's 4 VP; a (synthetic) Crackle ceramic scores only its Crackle VP (rev. 4 L465).
+    // Never Ru's 4 VP; a (synthetic) Crackle ceramic scores only its Crackle VP (L484).
     expect(player(state, "p1").score.kilnAbilities).toBe(record.crackleVp);
     expect(player(state, "p1").kilnAbilityUsedThisRound).toBe(false);
     expect(events.some((e) => e.type === "KILN_ABILITY_USED")).toBe(false);
@@ -201,7 +203,7 @@ describe("Ru Kiln (L460)", () => {
     expect(complete(state, "p1", { orderId: "S08", ceramicIds: [vase] }).record.kilnAbility).toBeNull();
   });
 
-  it("triggers with Canal Barge's 2 Coins on the same completion (v1.6.2 L630)", () => {
+  it("triggers with Canal Barge's 2 Coins on the same completion (v1.6.2 L637)", () => {
     const state = table({ kilnId: "RU", techs: ["T23"], hand: ["S08"] });
     const vase = fin(state, "p1", "vase celadon plain mp");
     const { record } = complete(state, "p1", { orderId: "S08", ceramicIds: [vase] });
@@ -211,7 +213,7 @@ describe("Ru Kiln (L460)", () => {
   });
 });
 
-describe("Guan Kiln (L464)", () => {
+describe("Guan Kiln (L478)", () => {
   it("an Order showing at least 1 printed Crown gains 2 Coins and 1 VP", () => {
     const state = table({ kilnId: "GU", hand: ["O18"] });
     const vase = fin(state, "p1", "vase celadon carved fine");
@@ -252,7 +254,7 @@ describe("Guan Kiln (L464)", () => {
     expect(player(state, "p1").score.kilnAbilities).toBe(1);
   });
 
-  it("with Canal Barge: Guan's 2 Coins, then Canal Barge's 2 Coins (v1.6.2 L630)", () => {
+  it("with Canal Barge: Guan's 2 Coins, then Canal Barge's 2 Coins (v1.6.2 L637)", () => {
     const state = table({ kilnId: "GU", techs: ["T23"], hand: ["O18"] });
     const vase = fin(state, "p1", "vase celadon carved fine");
     const { record, events } = complete(state, "p1", { orderId: "O18", ceramicIds: [vase] });
@@ -267,7 +269,7 @@ describe("Guan Kiln (L464)", () => {
   });
 });
 
-describe("Tribute Ware (T25, L642, R13)", () => {
+describe("Tribute Ware (T25, L648, R13)", () => {
   it("an Order showing at least 1 Crown gains 1 bonus Crown, recorded apart from the printed Crowns", () => {
     const state = table({ kilnId: "GE", techs: ["T25"], hand: ["O18"] });
     const vase = fin(state, "p1", "vase celadon carved fine");
@@ -350,14 +352,14 @@ describe("Tribute Ware (T25, L642, R13)", () => {
     });
   });
 
-  it("only in the Order Phase now: there is no completion through Canal Barge (v1.6.2 L32, R6 obsolete)", () => {
+  it("Canal Barge completes no Order and pays nothing without the tile (v1.6.2 L32, R6 obsolete)", () => {
     const state = table({ kilnId: "GE", techs: ["T25"], hand: ["O18"] });
     const vase = fin(state, "p1", "vase celadon carved fine");
     expect(complete(state, "p1", { orderId: "O18", ceramicIds: [vase] }).record).toMatchObject({ bonusCrowns: 1, canalBargeCoins: 0 });
   });
 });
 
-describe("Ge: 1 VP per delivered Crackle ceramic (rev. 4 L465, L480, L487; change 29)", () => {
+describe("Ge: 1 VP per delivered Crackle ceramic (L484, L499, L506; change 29)", () => {
   it("scores 1 VP for a Crackle ceramic delivered to complete an Order, recorded with the Order as Kiln Tradition VP", () => {
     const state = table({ kilnId: "GE", hand: ["S07"] });
     const bowl = fin(state, "p1", "bowl white plain fine crackle");
@@ -416,11 +418,11 @@ describe("completionTriggers", () => {
     const ru = table({ kilnId: "RU" });
     const mp = ceramic(ru, fin(ru, "p1", "vase celadon plain mp")) as FinishedCeramic;
     expect(completionTriggers(player(ru, "p1"), ORDERS.S08, [mp])).toEqual({ ru: true, guan: false, tributeWare: false, canalBarge: false, crackleVp: 0 });
-    // Ge's Crackle VP: 1 per delivered Crackle ceramic (rev. 4 L465).
+    // Ge's Crackle VP: 1 per delivered Crackle ceramic (L484).
     const ge = table({ kilnId: "GE" });
     const crackled = [fin(ge, "p1", "bowl white plain fine crackle"), fin(ge, "p1", "plate white plain fine crackle")].map((id) => ceramic(ge, id) as FinishedCeramic);
     expect(completionTriggers(player(ge, "p1"), ORDERS.O26, crackled).crackleVp).toBe(2);
-    // Canal Barge, ready, triggers on any Order (v1.6.2 L630); once used, no longer.
+    // Canal Barge, ready, triggers on any Order (v1.6.2 L637); once used, no longer.
     const barge = table({ kilnId: "DI", techs: ["T23"] });
     expect(completionTriggers(player(barge, "p1"), ORDERS.S08, [mp]).canalBarge).toBe(true);
     player(barge, "p1").techs[0]!.usedThisRound = true;

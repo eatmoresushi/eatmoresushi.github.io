@@ -1,35 +1,29 @@
 /**
- * ActionWindow (UI_V1.6.1_ARCHITECTURE §3.4, §4.3 rule 3). Owner: B4.
+ * ActionWindow (UI_V1.6.1_ARCHITECTURE §3.4, §4.3 rule 3; owner UI decision D21). Owner: B4.
  *
- * The before- and after-action window of a Work turn: Imperial Priority, the Colour Samples swap
- * (v1.6.2 L622) and selling a Flawed ceramic (change 30, R20; not a worker action), plus End turn
- * after the action. Before the action, `WorkTurn` shows the choice of step and this component
- * shows the chosen ability's form; after the action it shows the choice too. Their drafts live in
- * the work draft.
+ * A free action's form in a Work turn (owner revision 5, change 36, rev. 5 L168–176: complete a held
+ * Order, sell a Flawed ceramic, spend Imperial Priority; never worker actions) or the Colour Samples
+ * swap's (rev. 5 L632; not a free action, same timing). Before the worker action the form was opened
+ * from a chip or a piece, so only the form shows, under its own heading. After the worker action the
+ * pane is the free-action list with the chosen entry's form below it, and End turn is the
+ * ConfirmBar's alternative (its only button until something is chosen). Their drafts live in the
+ * work draft.
  */
-import { RULE_NUMBERS } from "../../i18n/content.ts";
 import { useT } from "../../i18n/I18nProvider.tsx";
-import { OptionCard } from "../../kit/OptionCard.tsx";
-import { OptionGroup } from "../../kit/OptionGroup.tsx";
 import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
+import { FreeActionList } from "../FreeActionList.tsx";
+import { OrderCompletionPicker } from "../orders/OrderCompletionPicker.tsx";
 import { SellFlawed } from "../sale/SellFlawed.tsx";
 import { ColourSamplesSwap } from "./ColourSamplesSwap.tsx";
 import { ImperialPriority } from "./ImperialPriority.tsx";
+import { FormNote } from "./pieces.tsx";
 import { workDraft } from "./workDraft.ts";
-import type { WorkAction, WorkDraft, WorkMode } from "./workDraft.ts";
+import type { WorkAction, WorkDraft } from "./workDraft.ts";
 import "./pieces.css";
 
 export interface ActionWindowProps {
   source: "before_action" | "after_action";
 }
-
-const TITLES = {
-  place: "work.work.mode.place",
-  imperial_priority: "work.work.mode.imperialPriority",
-  colour_samples_swap: "work.work.mode.colourSamplesSwap",
-  sell_flawed: "work.work.mode.sellFlawed",
-  end_turn: "work.work.mode.endTurn",
-} as const satisfies Record<WorkMode, string>;
 
 export function ActionWindow({ source }: ActionWindowProps) {
   const t = useT();
@@ -37,50 +31,28 @@ export function ActionWindow({ source }: ActionWindowProps) {
   const engine = useEngineView();
   const [draft, dispatch] = useDraft<WorkDraft, WorkAction>();
   const options = workDraft.options(draft, model, engine);
-  const choice =
-    source === "after_action" ? (
-      <OptionGroup
-        legend={t("work.work.step.mode")}
-        name="mode"
-        value={draft.mode}
-        onChange={(value) => {
-          const mode = options.modes.find((candidate) => candidate.mode === value)?.mode;
-          if (mode !== undefined) dispatch({ type: "mode", mode });
-        }}
-      >
-        {options.modes.map(({ mode }) => (
-          <OptionCard
-            key={mode}
-            value={mode}
-            title={t(TITLES[mode])}
-            description={
-              mode === "end_turn"
-                ? t("work.work.mode.endTurnHint")
-                : mode === "colour_samples_swap"
-                  ? t("work.work.mode.swapHint", { n: RULE_NUMBERS.swapSelect })
-                  : mode === "sell_flawed"
-                    ? t("work.work.mode.sellHint")
-                    : t("work.work.mode.after")
-            }
-          />
-        ))}
-      </OptionGroup>
-    ) : null;
+  const after = source === "after_action";
   return (
     <div className="b4-form" data-b4="action-window" data-source={source}>
-      {choice}
+      {!after ? null : options.freeActions.length === 0 ? (
+        <FormNote>{t("work.work.noFreeAction")}</FormNote>
+      ) : (
+        <FreeActionList items={options.freeActions} value={options.freeAction} onChange={(key) => dispatch({ type: "freeAction", key })} />
+      )}
       {draft.mode === "imperial_priority" ? <ImperialPriority /> : null}
-      {draft.mode === "colour_samples_swap" ? <ColourSamplesSwap brief={source === "after_action" || options.stepChoices.length > 0} /> : null}
+      {draft.mode === "colour_samples_swap" ? <ColourSamplesSwap brief={after} /> : null}
       {draft.mode === "sell_flawed" && options.sale !== null ? (
-        <SellFlawed
+        <SellFlawed model={model} engine={engine} options={options.sale} value={draft.sell} name="work.sell" hideLegend onChange={(ceramicId) => dispatch({ type: "sell", ceramicId })} />
+      ) : null}
+      {draft.mode === "complete_order" && options.completion !== null ? (
+        <OrderCompletionPicker
           model={model}
           engine={engine}
-          options={options.sale}
-          value={draft.sell}
-          name="work.sell"
-          // The heading already names the sale when it is open alone before the action.
-          hideLegend={source === "before_action" && options.heading === "sell_flawed"}
-          onChange={(ceramicId) => dispatch({ type: "sell", ceramicId })}
+          draft={draft.completion}
+          options={options.completion}
+          dispatch={(action) => dispatch({ type: "complete", action })}
+          namePrefix="work."
+          showOrder={!after}
         />
       ) : null}
     </div>

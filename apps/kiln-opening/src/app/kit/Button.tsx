@@ -7,7 +7,7 @@
  * - `busy` renders `aria-busy="true"` and ignores activation too; ConfirmBar keeps focus on the
  *   button while a command is sending (§3.6, §8.2).
  * - `pressed` makes it a toggle (`aria-pressed`).
- * - `action` is the test-driver hook (`data-action="confirm" | "alt"`, §9.6). A `data-action`
+ * - `action` is the test-driver hook (`data-action="confirm" | "confirm-stay" | "alt"`, §9.6, D21). A `data-action`
  *   passed by the caller (the lobby driver hooks) is kept when `action` is absent; `action` wins
  *   when both are given (change request CR B1-4).
  * - `type` defaults to `"button"`, so a button inside a form never submits by accident.
@@ -29,7 +29,7 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   /** Toggle state (`aria-pressed`). Omit for a plain button. */
   pressed?: boolean;
   /** Test-driver hook: the form's main or alternative action (§9.6). */
-  action?: "confirm" | "alt";
+  action?: "confirm" | "confirm-stay" | "alt";
   /** Leading decoration (icon, piece); hidden from assistive technology. */
   icon?: ReactNode;
   /** Grow to fill the row (ConfirmBar's primary button). */

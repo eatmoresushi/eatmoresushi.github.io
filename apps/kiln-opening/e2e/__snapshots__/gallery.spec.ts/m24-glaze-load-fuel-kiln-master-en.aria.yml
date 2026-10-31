@@ -100,5 +100,5 @@
       - text: at
       - strong: Glaze & Load
       - text: — Bowl, Plain → White, High 1 (+1); Plate, Carved → White, High 2 (+1); Kiln Master marker +1 on Bowl, Plain; pay 1 Wood (kiln fuel)
+    - button "Place · end turn"
     - button "Clear"
-    - button "Confirm"

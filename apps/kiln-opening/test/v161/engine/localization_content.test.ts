@@ -161,13 +161,12 @@ describe("every stable ID resolves to English and Chinese text", () => {
     }
     expect(formatRuleError({ code: "KILN_SPACE_UNAVAILABLE", details: { spaceId: "low_2" } }, "zh")).toBe("低温区2号窑位不可用：已被盖住或已有器物");
     expect(formatRuleError({ code: "TECH_LIMIT", details: { maxOwned: 3 } }, "zh")).toBe("你已拥有3项技艺");
-    // Revision 4: Ge takes a Fine or Standard ceramic (change 29); only a Flawed ceramic is sold (R20).
-    expect(formatRuleError({ code: "INVALID_TARGET", details: { ceramicId: "c1", reason: "not_fine_or_standard" } }, "en"))
-      .toBe("That target is not allowed: the ceramic is not Fine or Standard.");
-    expect(formatRuleError({ code: "INVALID_TARGET", details: { ceramicId: "c1", reason: "not_fine_or_standard" } }, "zh")).toBe("此目标不合法：器物不是上品或良品");
+    // Revision 5: Ge takes a ceramic of any Quality (change 39), so its Quality reason is gone;
+    // only a Flawed ceramic is sold (change 42).
+    expect(REASON_TEXT["not_fine_or_standard"]).toBeUndefined();
     expect(formatRuleError({ code: "INVALID_TARGET", details: { ceramicId: "c1", reason: "not_flawed" } }, "zh")).toBe("此目标不合法：器物不是瑕品");
     // Only a Select returns RESERVATION_LIMIT, and a Colour Samples Select is a Tech effect, not an
-    // action (v1.6.2 L646): the text names the Select and reads for a limit of 1 as well as 2.
+    // action (v1.6.2 L656): the text names the Select and reads for a limit of 1 as well as 2.
     expect(formatRuleError({ code: "RESERVATION_LIMIT", details: { limit: 1, requested: 2 } }, "en"))
       .toBe("This Select reserves at most 1; you chose 2 Orders.");
     expect(formatRuleError({ code: "RESERVATION_LIMIT", details: { limit: 2, requested: 3 } }, "zh")).toBe("这次精选至多承接2张，你选了3张");
@@ -218,8 +217,8 @@ describe("Chinese text uses the glossary terms", () => {
     }
     expect(IMPERIAL_TRACK.track[1]?.rewardTextZh).toBe(track.find((cells) => cells[0] === "1")?.[3]);
     expect(IMPERIAL_TRACK.track[4]?.rewardTextZh).toBe(track.find((cells) => cells[0] === "4")?.[3]);
-    // The Imperial Gift formula keeps every term the English reward names (rev. 4 L428: Kiln Die result + Fire + the modifier
-    // chosen when loading). Like the English, it leaves Kiln Master's marker to that Tech's own rule (rev. 4 L628, R22).
+    // The Imperial Gift formula keeps every term the English reward names (L447: Kiln Die result + Fire + the modifier
+    // chosen when loading). Like the English, it leaves Kiln Master's marker to that Tech's own rule (L647, R22).
     expect(IMPERIAL_TRACK.track[2]?.rewardTextZh).toContain("实际火候 = 窑骰点数 + 窑火修正 + 装窑时选定的御窑修正");
     for (const id of CONTRIBUTION_CARD_IDS) expect(contributionCard(id).nameZh).toBe(glossaryTerm(contributionCard(id).name));
     const roundStructure = JSON.parse(readFileSync(join(ROOT, "data/round_structure.json"), "utf8")) as {
@@ -318,7 +317,24 @@ describe("Chinese text uses the glossary terms", () => {
     expect(glossary).toEqual(bulletsAfter(rulebookZh, "### 技艺通则"));
   });
 
-  it("names the Colour Samples swap 换单, as the Chinese rulebook does (changes 22 and 25, Chinese lines 34, 37 and 648)", () => {
+  it("names the free action 自由行动, as the Chinese rulebook does, and never the withdrawn draft's sale or purchase (changes 36, 41, 42; Chinese lines 81, 170)", () => {
+    expect(glossaryTerm("free action")).toBe("自由行动");
+    const rulebookZh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8").split("\n");
+    expect(rulebookZh[80]).toMatch(/^\| 自由行动 \| 在你的回合中工人行动之前或之后，以及烧窑之后按回合顺序，可以做任意多次的事：卖出瑕品（2铜钱）、完成在手委托、使用御烧优先。 \|$/);
+    expect(rulebookZh[169]).toBe("### 自由行动");
+    // The Order Phase summary (Chinese line 145) and the clarifications use the term.
+    const roundStructure = JSON.parse(readFileSync(join(ROOT, "data/round_structure.json"), "utf8")) as { phases: Array<{ id: string; summaryZh: string }> };
+    expect(roundStructure.phases.find((phase) => phase.id === "orders")?.summaryZh).toContain("自由行动");
+    expect(TECHS.T23.clarifications.some((item) => item.zh.includes("自由行动"))).toBe(true);
+    // Changes 41–42 withdrew the draft's Standard sale and resource purchase: no data text names them.
+    for (const file of ["orders", "techniques", "kilns", "imperial_progress", "round_structure", "firing", "action_locations", "components"]) {
+      const text = readFileSync(join(ROOT, `data/${file}.json`), "utf8");
+      expect(text, file).not.toMatch(/卖出良品|良品3铜钱|买1泥|买1柴|买泥|买柴/);
+      expect(text, file).not.toMatch(/sell a Standard|buy 1 Clay|buy 1 Wood/i);
+    }
+  });
+
+  it("names the Colour Samples swap 换单, as the Chinese rulebook does (changes 22 and 25, Chinese lines 34, 37 and 658)", () => {
     expect(glossaryTerm("Colour Samples swap (once per round)")).toBe("换单");
     const rulebookZh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8");
     expect(rulebookZh).toContain("色样簿增加每轮一次的换单");
@@ -369,9 +385,9 @@ describe("Chinese strings avoid retired terms and follow the glossary's punctuat
 
   it("collects the Chinese text of every data file", () => {
     expect(strings.length).toBeGreaterThan(300);
-    // Every D10 clarification's Chinese half is checked too (167 items in the V1.6.2 clarifications doc
-    // since owner revision 4).
-    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(167);
+    // Every D10 clarification's Chinese half is checked too (176 items in the V1.6.2 clarifications doc
+    // since owner revision 5).
+    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(176);
   });
 
   it("uses none of the retired or banned terms (glossary §1.5, §6)", () => {
@@ -471,7 +487,7 @@ function sampleState(): GameState {
     kilnFurniture: null,
   });
   return {
-    schemaVersion: 9,
+    schemaVersion: 10,
     rulesVersion: "1.6.2",
     gameId: "localization",
     revision: 12,

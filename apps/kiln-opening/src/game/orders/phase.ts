@@ -1,51 +1,53 @@
 /**
- * Order Phase: a single pass in First Player order (rev. 4 L298–302, INT: Order Phase). It is
- * the only place Orders are completed (rev. 4 L300): Ru, Guan, Tribute Ware, Crackle wildcards,
- * Crackle VP (rev. 4 L465, L480) and Canal Barge's 2 Coins all trigger here.
+ * Order Phase: a single pass in First Player order (rev. 5 L143, L318, L700; INT: Order Phase).
  *
- * - Beginning with the First Player and going clockwise, each player may complete any number
- *   of held Orders, one at a time (`COMPLETE_ORDER`), then ends their turn (`END_ORDER_TURN`).
- *   Each player gets exactly one turn; nobody acts twice.
- * - The Order Phase turn is also one of its player's sale windows (R20): they may sell Flawed
- *   ceramics (`SELL_FLAWED`, `flawedSaleHandler.ts`). In Round 5, with the Cleanup trim skipped,
- *   it is the last one before scoring.
- * - Only held Orders can be completed; face-up Main Orders never can, and the display does
- *   not change during the phase (L297): nothing here touches `market`.
- * - A player with nothing completable and no Flawed ceramic to sell is skipped automatically,
- *   at the start of their turn and after each completion or sale
- *   (`ORDER_TURN_ENDED{automatic: true}`, DESIGN §3.4, §4.5; DELTA §15.9.12). Which ceramics
- *   are Flawed is public, so a turn opened for a sale reveals nothing hidden.
+ * - Beginning with the First Player and going clockwise, each player may take any number of free
+ *   actions (L170, L318): complete held Orders one at a time, sell Flawed ceramics, spend
+ *   Imperial Priority (`freeActions.ts`); then they end their turn (`END_ORDER_TURN`, or
+ *   `endTurn: true` on the last free action, owner UI decision D21). Each player gets exactly
+ *   one turn; nobody acts twice.
+ * - It is the first chance to deliver ceramics fired this round (L176, L318). In Round 5, with
+ *   the Cleanup trim skipped, it is the last free-action window before scoring.
+ * - Only held Orders can be completed; face-up Main Orders never can, and the display does not
+ *   change during the phase (L318): nothing here touches `market`.
+ * - A turn opens only while `orderTurnOpen` holds (R28): a held Order its player can complete
+ *   (hidden; the accepted precedent, DESIGN §4.5), a Finished Flawed ceramic to sell or a usable
+ *   Imperial Priority. Otherwise it is skipped, at its start and after each free action
+ *   (`ORDER_TURN_ENDED{automatic: true}`, DESIGN §3.4, §3.7).
  * - When the pass ends the phase hands over through `ctx.flow.continueAfter("order_phase_done")`.
  *
  * Layer 4: imports layer 0–3.
  */
 
 import { invariant } from "../errors.ts";
-import { sellableFlawed } from "../flawedSale.ts";
-import { phaseAs, emit, turnOrder } from "../state.ts";
+import { imperialPriorityUsable, sellableFlawed } from "../freeActionWindow.ts";
+import { emit, phaseAs, turnOrder } from "../state.ts";
 import type { ActionHandlerTable, GameState, PlayerId, ResolveContext } from "../types.ts";
-import { completableOrderIds, resolveOrderCompletion, validateOrderCompletion } from "./completion.ts";
+import { completableOrderIds } from "./completion.ts";
 
-function hasCompletableOrder(draft: GameState, playerId: PlayerId): boolean {
-  return completableOrderIds(draft, playerId, draft.hidden.orderHands[playerId] ?? []).length > 0;
-}
-
-/** Whether `playerId`'s Order Phase turn has anything left in it: an Order to complete or a
- * Flawed ceramic to sell (R20). */
-function hasOrderTurnBusiness(draft: GameState, playerId: PlayerId): boolean {
-  return hasCompletableOrder(draft, playerId) || sellableFlawed(draft, playerId).length > 0;
+/**
+ * Whether `playerId`'s Order Phase turn has anything in it (R28): a held Order they can complete
+ * now, a Finished Flawed ceramic to sell, or Imperial Priority usable (Round 5 included, where its
+ * ceramic is never fired). The Colour Samples swap is not a free action and does not count.
+ */
+export function orderTurnOpen(draft: GameState, playerId: PlayerId): boolean {
+  return (
+    completableOrderIds(draft, playerId, draft.hidden.orderHands[playerId] ?? []).length > 0 ||
+    sellableFlawed(draft, playerId).length > 0 ||
+    imperialPriorityUsable(draft, playerId)
+  );
 }
 
 /**
- * Starts the turn at `phase.index`, skipping (and ending) every turn with nothing to complete
- * or sell; hands over once every player has had their turn.
+ * Starts the turn at `phase.index`, skipping (and ending) every turn with nothing in it; hands
+ * over once every player has had their turn.
  */
 function startNextTurn(draft: GameState, ctx: ResolveContext): void {
   const phase = phaseAs(draft, "orders");
   while (phase.index < phase.turnOrder.length) {
     const playerId = phase.turnOrder[phase.index] as PlayerId;
     emit(ctx, { type: "ORDER_TURN_STARTED", playerId });
-    if (hasOrderTurnBusiness(draft, playerId)) {
+    if (orderTurnOpen(draft, playerId)) {
       return;
     }
     emit(ctx, { type: "ORDER_TURN_ENDED", playerId, automatic: true });
@@ -68,27 +70,25 @@ export function openOrderPhase(draft: GameState, ctx: ResolveContext): void {
   startNextTurn(draft, ctx);
 }
 
-/** After the current player sold a Flawed ceramic in their Order Phase turn (R20): the turn
- * ends automatically when nothing is left to complete or sell, as after a completion. */
-export function continueAfterSale(draft: GameState, playerId: PlayerId, ctx: ResolveContext): void {
+/**
+ * After each free action of the current player's Order Phase turn: the turn ends automatically
+ * once nothing is left in it (`orderTurnOpen`). Otherwise `endTurnRequested` (the command's
+ * `endTurn: true`, owner UI decision D21's "Deliver · done") ends it as `END_ORDER_TURN` would
+ * (`automatic: false`), so the events are exactly those of the two-command path.
+ */
+export function continueOrderTurn(draft: GameState, playerId: PlayerId, ctx: ResolveContext, endTurnRequested = false): void {
   const phase = phaseAs(draft, "orders");
   invariant(phase.turnOrder[phase.index] === playerId, `${playerId} is not the Order Phase player`);
-  if (!hasOrderTurnBusiness(draft, playerId)) {
+  if (!orderTurnOpen(draft, playerId)) {
     endTurn(draft, playerId, true, ctx);
+    return;
+  }
+  if (endTurnRequested) {
+    endTurn(draft, playerId, false, ctx);
   }
 }
 
-export const handlers: Pick<ActionHandlerTable, "COMPLETE_ORDER" | "END_ORDER_TURN"> = {
-  COMPLETE_ORDER: {
-    phases: ["orders"],
-    validate: (view, action) => validateOrderCompletion(view, action),
-    resolve: (draft, actorId, action, ctx) => {
-      resolveOrderCompletion(draft, actorId, action, ctx);
-      if (!hasOrderTurnBusiness(draft, actorId)) {
-        endTurn(draft, actorId, true, ctx);
-      }
-    },
-  },
+export const handlers: Pick<ActionHandlerTable, "END_ORDER_TURN"> = {
   END_ORDER_TURN: {
     phases: ["orders"],
     // Phase and actor are checked by the dispatcher; ending is always legal (DESIGN §3.6).

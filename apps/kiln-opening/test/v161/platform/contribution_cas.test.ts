@@ -66,7 +66,7 @@ describe("V1.6.2 Contribution window over the service", () => {
 
     const second = await command(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "STOKE" });
     expect(revealedOf(second.events)?.contributions).toEqual({
-      // Fuel Ledger Bank (v1.6.2 L266, L634): −2 for its printed 1 Wood, paid on reveal.
+      // Fuel Ledger Bank (v1.6.2 L289, L644): −2 for its printed 1 Wood, paid on reveal.
       P1: { card: "FUEL_LEDGER_BANK", heat: -2, woodPaid: 1 },
       P2: { card: "STOKE", heat: 1, woodPaid: 1 },
     });

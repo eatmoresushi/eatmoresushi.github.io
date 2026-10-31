@@ -1,8 +1,8 @@
 /**
- * Worker availability, capacity, personal spaces and the worker effect (L136–156, L619).
+ * Worker availability, capacity, personal spaces and the worker effect (L158–188, L625).
  *
  * Location occupancy is derived from `WorkerState.placement` (the single source of truth),
- * never stored twice. The "at least 1 instance of the main action" check (L142) belongs to
+ * never stored twice. The "at least 1 instance of the main action" check (L164) belongs to
  * each location module, not here.
  *
  * Layer 2 (imports `state.ts` and `techs.ts` within P0).
@@ -64,7 +64,7 @@ export function workersAt(game: PublicCore, locationId: LocationId): Array<{ pla
   return found.sort((a, b) => a.sequence - b.sequence).map(({ playerId, worker }) => ({ playerId, worker }));
 }
 
-/** Absolute capacity at this player count (L140, L148–156); null = uncapped (Canal Wharf). */
+/** Absolute capacity at this player count (L162, L180–188); null = uncapped (Canal Wharf). */
 export function centralCapacity(game: PublicCore, locationId: CentralLocationId): number | null {
   return locationCapacity(locationId, game.playerCount);
 }
@@ -79,7 +79,7 @@ function usedPersonalSpaces(p: PlayerState, locationId: PersonalLocationId): Set
   return used;
 }
 
-/** The first unlocked personal space not used this round (L144), or null. */
+/** The first unlocked personal space not used this round (L166), or null. */
 export function nextPersonalSpace(
   game: PublicCore,
   playerId: PlayerId,
@@ -117,9 +117,9 @@ function seniorApprenticeError(p: PlayerState, worker: WorkerState, locationId: 
 
 /**
  * Placement checks shared by every location (DESIGN §2.3): phase `work_turn`, step
- * `before_action`, the active player; the worker available; absolute capacity (L140); the
- * personal space unlocked and unused this round (L144); Senior Apprentice only for an
- * Apprentice at the Materials Yard or Commission Market with T18 ready (L619, R12).
+ * `before_action`, the active player; the worker available; absolute capacity (L162); the
+ * personal space unlocked and unused this round (L166); Senior Apprentice only for an
+ * Apprentice at the Materials Yard or Commission Market with T18 ready (L625, R12).
  */
 export function validatePlacement(
   view: ActorView,
@@ -137,7 +137,7 @@ export function validatePlacement(
     return ruleError("NOT_YOUR_DECISION", "It is not your Work turn.", { playerId: actorId });
   }
   if (phase.step.kind === "colour_samples_swap" && phase.step.returnTo === "before_action") {
-    // A swap used before the worker action must be resolved first (v1.6.2 L617); no worker has
+    // A swap used before the worker action must be resolved first (v1.6.2 L632); no worker has
     // been placed yet, so this is not WORKER_ACTION_ALREADY_TAKEN.
     return ruleError("WRONG_PHASE", "Finish the Colour Samples swap before your worker action.", { phase: phase.type, step: phase.step.kind });
   }
@@ -177,7 +177,7 @@ export function validatePlacement(
 }
 
 /** The printed effect a placement resolves: the Shifu's, or an Apprentice's unless Senior
- * Apprentice upgrades it (L141, L619, R12). */
+ * Apprentice upgrades it (L163, L625, R12). */
 export function workerEffectFor(view: ActorView, workerId: WorkerId, seniorApprentice: boolean): WorkerEffect {
   const worker = lookup(player(view.game, view.viewerId).workers, workerId);
   invariant(worker !== undefined, `Unknown worker ${workerId}`);

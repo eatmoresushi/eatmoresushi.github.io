@@ -6,12 +6,12 @@
     - group "资源":
       - strong: "4"
       - text: 泥
-      - strong: "2"
+      - strong: "3"
       - text: 柴
-      - strong: "4"
+      - strong: "3"
       - text: 铜钱
-    - img "你的师傅"
-    - text: 手中4张委托 声望0／4 4分
+    - img "你的学徒"
+    - text: 手中3张委托 声望0／4 4分
   - form "派工":
     - paragraph: 你还有1名工人未派（共4名）。派工阶段不能跳过。
     - paragraph: 请选择可派的地点。

@@ -325,9 +325,14 @@ export function useTableSelection(): TableSelection {
       if (model === null || engine === null || spec === null || adapter === undefined) return;
       const current = drafts.read(key, spec.draft, model, engine);
       const next = adapter.act(current, action, model, engine);
-      // A Place shortcut, or a Sell button the window takes (D14: an opener brings the pane up,
-      // open on phones, with the sale for Confirm).
-      if (action.type === "place" || (action.type === "sell" && next !== null)) ui.actions.placeShortcut();
+      // A Place shortcut, a piece's own button (Sell, Deliver, Use: owner UI decision D21) or any
+      // other target that brings the hidden pane up: like a chip (D14), it opens on phones, with
+      // that choice for Confirm.
+      const bringsPaneUp = next !== null && spec.pane?.(current, model, engine).hidden === true;
+      const piece =
+        next !== null &&
+        (action.type === "sell" || action.type === "imperial_priority" || (action.type === "order" && selectTable(adapter, current, model, engine).orderTargets.get(action.key)?.state === "completable"));
+      if (action.type === "place" || piece || bringsPaneUp) ui.actions.placeShortcut();
       if (next !== null) drafts.dispatch(key, spec.draft, model, engine, next);
     },
     [model, engine, spec, adapter, drafts, key, ui],

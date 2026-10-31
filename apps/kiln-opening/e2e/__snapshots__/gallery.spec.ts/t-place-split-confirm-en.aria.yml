@@ -1,0 +1,37 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Place a worker" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 2 Orders in hand Recognition 3/4 0 VP
+  - form "Place a worker":
+    - paragraph: 4 of your 4 workers left. The Work Phase cannot be passed.
+    - region "Shifu at Canal Wharf":
+      - heading "Shifu at Canal Wharf" [level=3]
+      - text: No limit
+      - paragraph: 4 Coins + the top Order card, unseen, to hand
+      - group "Canal Wharf":
+        - paragraph: Gain 4 Coins
+        - paragraph: Then take the top Main Order card into your hand, unseen.
+        - group "Your resources after this action": After this action Clay 2 → 2 Wood 2 → 2 Coins 3 → 7
+      - paragraph: To place elsewhere, choose another Place on the table.
+    - paragraph:
+      - text: Place
+      - strong: Shifu
+      - text: at
+      - strong: Canal Wharf
+      - text: — +4 Coins and the top Main Order card, unseen
+    - button "Place · end turn"
+    - button "Place, then free actions"
+    - button "Clear"

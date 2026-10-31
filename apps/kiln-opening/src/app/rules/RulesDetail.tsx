@@ -135,7 +135,7 @@ function milestoneName(space: Recognition, t: Translator): string {
   return t("rules.milestone.name", { n: space, title: milestone?.title ?? "" });
 }
 
-/** "Apprentice: Gain 3 Clay/Wood" lines (rulebook Appendix E / glossary §4 short column). */
+/** "Apprentice: Gain 4 Clay/Wood" lines (rulebook Appendix E / glossary §4 short column). */
 export function LocationSummaries({ locationId }: { locationId: LocationId }) {
   const t = useT();
   return (

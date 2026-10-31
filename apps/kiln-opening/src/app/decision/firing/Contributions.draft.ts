@@ -3,14 +3,14 @@
  * Owner: B5.
  *
  * Firing step 1, secret and simultaneous: the viewer plays exactly 1 of their own Contribution
- * cards (v1.6.2 L246, L266, L668, change 26). Every card the viewer holds, its Heat, its Wood and
+ * cards (v1.6.2 L271, L289, L678, change 26). Every card the viewer holds, its Heat, its Wood and
  * whether it is affordable come from `contributionOptions`: Bank, Tend and Stoke, and, for the
  * owner of Fuel Ledger, Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2), the
- * two cards that come with the tile (v1.6.2 L634). The draft only remembers the card, and `build`
+ * two cards that come with the tile (v1.6.2 L644). The draft only remembers the card, and `build`
  * returns the selector's own command, so the window ID is always the open window's.
  *
  * - A card that costs less than its printed Wood (Fuel Ledger's free Bank and Stoke, v1.6.2
- *   L634) is marked, with the owned Tech whose printed text makes it free (content's
+ *   L644) is marked, with the owned Tech whose printed text makes it free (content's
  *   `techsFreeingContributionCard`), so the form can say why it costs no Wood. The costs
  *   themselves are the selector's.
  * - A card that comes with a Tech (Fuel Ledger's two) carries that Tech, from content.
@@ -35,7 +35,7 @@ export type ContributionsAction = { readonly type: "card"; readonly card: Contri
 export interface ContributionCardChoice {
   card: ContributionCardId;
   option: ContributionOption;
-  /** The card costs less Wood than its printed cost (Fuel Ledger's free Bank and Stoke, v1.6.2 L634). */
+  /** The card costs less Wood than its printed cost (Fuel Ledger's free Bank and Stoke, v1.6.2 L644). */
   belowPrintedCost: boolean;
   /** The owned Tech that makes it cost less (Fuel Ledger for Bank and Stoke); null when it costs its printed Wood. */
   freeBy: TechId | null;

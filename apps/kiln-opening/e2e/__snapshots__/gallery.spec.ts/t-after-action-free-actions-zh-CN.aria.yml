@@ -1,0 +1,41 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "工人行动之后" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中2张委托 声望3／4 0分
+  - form "工人行动之后":
+    - group "自由行动":
+      - text: ""
+      - radio "交付S05 3分 4铜钱 碗、盘或笔洗 · 任意釉 · 任意纹饰 · 良品以上" [checked]
+      - text: 交付S05 3分 4铜钱 碗、盘或笔洗 · 任意釉 · 任意纹饰 · 良品以上
+      - button "完整规则：委托S05"
+      - radio "卖出瑕品（+2铜钱）"
+      - text: 卖出瑕品（+2铜钱）
+      - radio "御烧优先"
+      - text: 御烧优先
+      - radio "色样簿换单 弃一张在手委托，然后精选3：私看主委托牌堆顶3张，承接其中一张或委托榜上的一张"
+      - text: 色样簿换单 弃一张在手委托，然后精选3：私看主委托牌堆顶3张，承接其中一张或委托榜上的一张
+    - group "器物":
+      - text: ""
+      - radio "方案1 白釉碗 · 素面 · 良品" [checked]
+      - text: 方案1 白釉碗 · 素面 · 良品
+    - heading "报酬" [level=3]
+    - text: +3分 得4铜钱
+    - paragraph:
+      - text: 用白釉碗 · 素面 · 良品完成
+      - strong: S05
+    - button "交付并结束回合"
+    - button "交付"
+    - button "结束回合"

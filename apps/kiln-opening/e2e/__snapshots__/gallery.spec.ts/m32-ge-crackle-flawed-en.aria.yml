@@ -1,0 +1,40 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "After-Quality abilities" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "1"
+      - text: Wood
+      - strong: "5"
+      - text: Coins
+    - text: 4 Orders in hand Recognition 0/4 4 VP
+  - form "After-Quality abilities":
+    - paragraph: Firing step 5, in First Player order
+    - paragraph: Use them in any order you like; the options are checked again after each use.
+    - heading "Queue" [level=3]
+    - list "Queue":
+      - listitem: "Lin (you): deciding"
+    - heading "Your ceramics in this firing" [level=3]
+    - text: Moon White Plate, Plain · Flawed Grey-Green Bowl, Plain · Flawed
+    - group "Ge Kiln · Crackle Mastery":
+      - button "Ge Kiln · Crackle Mastery"
+      - paragraph:
+        - strong: "Once per round, after Quality is assigned:"
+        - text: choose 1 of your ceramics from this firing → it develops Crackle; if it is Standard, it becomes Fine.
+        - strong: "Orders:"
+        - text: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
+      - radio "Moon White Plate, Plain · Flawed" [checked]
+      - text: Moon White Plate, Plain · Flawed
+      - radio "Grey-Green Bowl, Plain · Flawed"
+      - text: Grey-Green Bowl, Plain · Flawed
+    - paragraph:
+      - text: Use
+      - strong: Ge Kiln · Crackle Mastery
+      - text: ":"
+      - strong: Moon White Plate, Plain · Flawed
+      - text: gains a Crackle marker and stays Flawed
+    - button "Done — decline the rest"
+    - button "Confirm"

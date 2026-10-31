@@ -3,9 +3,9 @@
  * (`cleanup_hand_limit`, the only one since owner revision 4 removed the salvage step) a human
  * and a computer act independently; a command based on any revision since the window opened is
  * validated against the current head, in either order and concurrently, without
- * STALE_REVISION. A pending player's sale of a Flawed ceramic (R20) touches only their own
- * ceramic, so the tolerant rule covers it as it covers the trim. Every other phase keeps strict
- * equality.
+ * STALE_REVISION. Its only choice is the trim: Cleanup is not a free-action window (rev. 5 L176,
+ * R26), so a sale there is refused like any other rule failure, tolerant revision or not. Every
+ * other phase keeps strict equality.
  */
 
 import { describe, expect, it } from "vitest";
@@ -49,7 +49,7 @@ async function openHandLimitWindow(harness: Harness): Promise<{ revision: number
         { id: "P2", hand: [f!, g!, h!, i!, j!] },
       ],
       phase: { type: "cleanup_hand_limit", pendingPlayerIds: ["P1", "P2"], openedAtRevision: revision },
-      // The human holds a Finished Flawed ceramic to sell while pending (R20).
+      // The human holds a Finished Flawed ceramic, which may not be sold while trimming (R26).
       ceramics: [{ owner: "P1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" }],
     });
     humanDiscard = [a!];
@@ -99,34 +99,34 @@ describe("parallel windows: cleanup_hand_limit", () => {
   });
 });
 
-describe("parallel windows: a sale in cleanup_hand_limit (R20)", () => {
-  it("a pending human sells on the opening revision, stays pending, then trims on it too, after the computer", async () => {
+describe("parallel windows: no sale in cleanup_hand_limit (rev. 5 L176, R26)", () => {
+  it("a pending human's sale on the opening revision is refused (WRONG_PHASE); the human then trims on it, after the computer", async () => {
     const harness = await humanAndComputer();
     const { revision, humanDiscard, humanFlawed } = await openHandLimitWindow(harness);
     const computer = valueOf(await advance(harness, revision));
     expect(computer.actorIds).toEqual(["P2"]);
     const sale = await tryCommand(harness, "P1", { type: "SELL_FLAWED", ceramicId: humanFlawed }, revision);
-    expect(sale.ok, sale.ok ? undefined : sale.error.code).toBe(true);
+    expect(sale.ok ? null : sale.error.code).toBe("WRONG_PHASE");
     const afterSale = await headState(harness);
     expect(afterSale.phase).toMatchObject({ type: "cleanup_hand_limit", pendingPlayerIds: ["P1"] });
-    expect(afterSale.ceramics[humanFlawed]).toBeUndefined();
+    expect(afterSale.ceramics[humanFlawed]).toMatchObject({ stage: "finished", quality: "flawed" });
     const trim = await tryCommand(harness, "P1", { type: "DISCARD_TO_HAND_LIMIT", orderIds: humanDiscard }, revision);
     expect(trim.ok, trim.ok ? undefined : trim.error.code).toBe(true);
     expect((await headState(harness)).round).toBe(2);
   });
 
-  it("the human's sale and the computer's trim at once on the same revision", async () => {
+  it("the human's refused sale and the computer's trim at once on the same revision", async () => {
     const harness = await humanAndComputer();
     const { revision, humanFlawed } = await openHandLimitWindow(harness);
     const [sale, computer] = await Promise.all([
       tryCommand(harness, "P1", { type: "SELL_FLAWED", ceramicId: humanFlawed }, revision),
       advance(harness, revision),
     ]);
-    expect(sale.ok, sale.ok ? undefined : sale.error.code).toBe(true);
+    expect(sale.ok ? null : sale.error.code).toBe("WRONG_PHASE");
     expect(computer.ok, computer.ok ? undefined : computer.error.code).toBe(true);
     const head = await headState(harness);
     expect(head.phase).toMatchObject({ type: "cleanup_hand_limit", pendingPlayerIds: ["P1"] });
-    expect(head.players["P1"]?.resources.coins).toBe(5);
+    expect(head.players["P1"]?.resources.coins).toBe(3);
   });
 
   it("still refuses a stale sale from a seat that already trimmed", async () => {

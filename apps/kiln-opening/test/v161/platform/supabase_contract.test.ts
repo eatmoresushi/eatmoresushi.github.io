@@ -1,10 +1,13 @@
 /**
- * The Supabase contract for V1.6.2 (DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9): the undeployed
- * V1.6.1 migrations are edited in place (rules `1.6.2`, schema 9, `r32-`), every gate that
- * hard-coded V1.4 is rewritten, the five Contribution cards (Fuel Ledger's 2 included, change 26)
- * are stored and returned, the private event log is seat-checked and
- * service-only, public rows can never carry hidden data, the Edge adapter calls every RPC
- * with exactly its SQL parameters, and the playtest migration accepts only Form V3.
+ * The Supabase contract for V1.6.2 (DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9, §16.18): the V1.6.1
+ * migrations, edited in place up to owner revision 4 (rules `1.6.2`, schema 9, `r32-`), are
+ * applied to the live database and never edited again; owner revision 5's migration
+ * (`202610300001_v162_rev5_rules.sql`) re-creates every gate with schema 10 and `r33-` while the
+ * room constraint keeps the r32 rows as history. Every gate that hard-coded V1.4 is rewritten,
+ * the five Contribution cards (Fuel Ledger's 2 included, change 26) are stored and returned, the
+ * private event log is seat-checked and service-only, public rows can never carry hidden data,
+ * the Edge adapter calls every RPC with exactly its SQL parameters, and the playtest migration
+ * accepts only Form V3.
  */
 
 import { readdirSync, readFileSync } from "node:fs";
@@ -28,11 +31,27 @@ import playtestFunction from "../../../supabase/functions/playtest-submit/index.
 import supabaseStoreSource from "../../../supabase/functions/_shared/supabaseStore.ts?raw";
 import migration from "../../../supabase/migrations/202610150001_v161_rules.sql?raw";
 import playtestMigration from "../../../supabase/migrations/202610150002_playtest_v161.sql?raw";
+import rev5Migration from "../../../supabase/migrations/202610300001_v162_rev5_rules.sql?raw";
 
 const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
 const MIGRATION_FILES = readdirSync(MIGRATIONS_DIR).filter((name) => name.endsWith(".sql")).sort();
-const V161_FILES = new Set(["202610150001_v161_rules.sql", "202610150002_playtest_v161.sql"]);
-const R32 = `^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`;
+/** The V1.6.1-and-later files: the two applied ones and owner revision 5's. */
+const V161_FILES = new Set(["202610150001_v161_rules.sql", "202610150002_playtest_v161.sql", "202610300001_v162_rev5_rules.sql"]);
+/** The applied file's room gate (owner revision 4, history since revision 5). */
+const R32 = "^r32-[0-9a-f]{16}$";
+/** The current room gate (owner revision 5). */
+const R33 = `^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`;
+/** The five RPCs that pin the room fingerprint; the two commits also pin the state schema. */
+const FINGERPRINT_GATED = ["server_add_computer_seat", "server_commit_start", "server_commit_transition", "server_create_room", "server_join_room"];
+
+/** The latest definition of an RPC across every migration, with the file that holds it. */
+function latestDefinition(name: string): { file: string; body: string } {
+  for (const file of [...MIGRATION_FILES].reverse()) {
+    const sql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
+    if (sql.includes(`create or replace function public.${name}(`)) return { file, body: functionBody(sql, name) };
+  }
+  throw new Error(`${name} is never defined`);
+}
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -73,9 +92,8 @@ function v14GatedFunctions(): string[] {
   return [...gated].sort();
 }
 
-describe("V1.6.2 rules migration (edited in place, file name kept)", () => {
+describe("V1.6.2 rules migration (applied; owner revision 4's gates kept as history)", () => {
   it("allows V1.6.2 rooms with an r32 fingerprint, keeps every deployed historical label and drops V1.6.1", () => {
-    expect(RULES_BEHAVIOUR_REVISION).toBe(32);
     for (const check of ["rooms_rules_version_check", "rooms_content_version_check"]) {
       const definition = migration.split(`add constraint ${check}`)[1]!.split(";")[0]!;
       expect(definition).toContain("'1.6.2'");
@@ -107,11 +125,73 @@ describe("V1.6.2 rules migration (edited in place, file name kept)", () => {
       expect(body, name).not.toContain("'1.6.1'");
       if (name !== "server_submit_playtest") expect(body, name).toContain(R32);
     }
+    expect(FINGERPRINT_GATED).toEqual(gated.filter((name) => name !== "server_submit_playtest"));
     expect(functionBody(migration, "server_create_room")).toContain("'1.6.2', '1.6.2', 0, p_content_digest");
     for (const name of ["server_commit_start", "server_commit_transition"]) {
       const body = functionBody(migration, name);
       expect(body).toContain("<> 9");
       expect(body).not.toMatch(/<> [5678]\b/);
+    }
+  });
+});
+
+describe("V1.6.2 owner revision 5 migration (schema 10, r33; the applied files untouched)", () => {
+  it("is the latest migration and runs only the constraint, the five gates and their privileges", () => {
+    expect(RULES_BEHAVIOUR_REVISION).toBe(33);
+    expect(MIGRATION_FILES.at(-1)).toBe("202610300001_v162_rev5_rules.sql");
+    const defined = [...rev5Migration.matchAll(/create or replace function public\.(\w+)\(/g)].map((match) => match[1]!).sort();
+    expect(defined).toEqual(FINGERPRINT_GATED);
+    expect(rev5Migration).not.toMatch(/drop function/i);
+    const constraints = [...rev5Migration.matchAll(/add constraint (\w+)/g)].map((match) => match[1]!);
+    expect(constraints).toEqual(["rooms_v162_fingerprint_check"]);
+    // No statement of its own rewrites a row (comments stripped).
+    const statements = topLevel(rev5Migration).replace(/--.*$/gm, "");
+    expect(statements).not.toMatch(/\b(?:update|delete from|truncate)\s/i);
+    for (const name of FINGERPRINT_GATED) {
+      const signature = functionBody(migration, name).split(/\)\s*returns/)[0]!;
+      expect(rev5Migration, name).toContain(`revoke all on function public.${name}(`);
+      expect(rev5Migration, name).toContain(`grant execute on function public.${name}(`);
+      expect(functionBody(rev5Migration, name).split(/\)\s*returns/)[0], name).toBe(signature);
+    }
+  });
+
+  it("keeps the r32 rows valid as history while every write path requires r33", () => {
+    const definition = rev5Migration.split("add constraint rooms_v162_fingerprint_check")[1]!.split(";")[0]!;
+    expect(definition).toContain("content_digest, '') ~ '^r3[23]-[0-9a-f]{16}$'");
+    expect(definition).toContain("rules_version <> '1.6.2'");
+    expect(definition).toContain("content_version = '1.6.2'");
+    const pattern = new RegExp("^r3[23]-[0-9a-f]{16}$");
+    expect(pattern.test("r32-0123456789abcdef")).toBe(true);
+    expect(pattern.test("r33-0123456789abcdef")).toBe(true);
+    for (const old of ["r29-0123456789abcdef", "r30-0123456789abcdef", "r31-0123456789abcdef", "r34-0123456789abcdef"]) expect(pattern.test(old), old).toBe(false);
+  });
+
+  it("re-creates each gate verbatim from the applied file with only r33 and schema 10 changed", () => {
+    for (const name of FINGERPRINT_GATED) {
+      const applied = functionBody(migration, name);
+      const current = functionBody(rev5Migration, name);
+      expect(current, name).toBe(applied.split(`'${R32}'`).join(`'${R33}'`).replace(/<> 9\b/g, "<> 10"));
+      expect(current, name).toContain(R33);
+      expect(current, name).not.toContain("^r32-");
+      expect(current, name).not.toMatch(/<> 9\b/);
+    }
+    for (const name of ["server_commit_start", "server_commit_transition"]) {
+      expect(functionBody(rev5Migration, name)).toContain("<> 10");
+    }
+  });
+
+  it("leaves the latest definition of every gated RPC on r33 and schema 10", () => {
+    for (const name of FINGERPRINT_GATED) {
+      const latest = latestDefinition(name);
+      expect(latest.file, name).toBe("202610300001_v162_rev5_rules.sql");
+      expect(latest.body, name).toContain(R33);
+      expect(latest.body, name).not.toMatch(/\^r3[0-2]-|\^r2\d-|<> [5-9]\b/);
+    }
+    // The other RPCs pin neither a fingerprint nor a schema, so the applied definitions stay.
+    for (const name of ["server_load_private_submissions", "server_find_own_pending", "server_list_private_events"]) {
+      const latest = latestDefinition(name);
+      expect(latest.file, name).toBe("202610150001_v161_rules.sql");
+      expect(latest.body, name).not.toMatch(/\^r\d\d-|schemaVersion/);
     }
   });
 

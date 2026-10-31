@@ -1,21 +1,21 @@
 /**
- * Opening the Firing Phase and the secret Contribution window (L237–263, v1.6.2 L246, L260–266,
- * L508, L634, L668–670, changes 16 and 26).
+ * Opening the Firing Phase and the secret Contribution window (L267–291, v1.6.2 L271, L283–289,
+ * L518, L644, L678–680, changes 16 and 26).
  *
- * - Skip check (L237, L670): with nothing loaded in the Shared Kiln or any Imperial Kiln, the
+ * - Skip check (L267, L676): with nothing loaded in the Shared Kiln or any Imperial Kiln, the
  *   phase is skipped and no Fire card is revealed.
- * - Participants (L261, change 16): players with at least 1 ceramic in the Shared Kiln. An
- *   Imperial Kiln ceramic is in this firing (`firingPlayerIds`, L290) but gives no say.
- * - Steps 1–2 (v1.6.2 L668–669): each participant secretly submits exactly 1 of their own
+ * - Participants (L289, change 16): players with at least 1 ceramic in the Shared Kiln. An
+ *   Imperial Kiln ceramic is in this firing (`firingPlayerIds`, L311) but gives no say.
+ * - Steps 1–2 (v1.6.2 L678–679): each participant secretly submits exactly 1 of their own
  *   Contribution cards (`PlayerState.contributionCards`) through `submitContribution`: Bank,
  *   Tend or Stoke, and for Fuel Ledger's owner also Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger
- *   Stoke (1 Wood, +2) (T12, v1.6.2 L266, L634, change 26). A Fuel Ledger owner's plain Bank and
+ *   Stoke (1 Wood, +2) (T12, v1.6.2 L289, L644, change 26). A Fuel Ledger owner's plain Bank and
  *   Stoke cost no Wood. The card must be affordable when chosen; nothing is set aside, and the
- *   Wood is paid only on reveal (v1.6.2 L508). Sealed choices live only in `PrivateFiringState`
+ *   Wood is paid only on reveal (v1.6.2 L518). Sealed choices live only in `PrivateFiringState`
  *   (DESIGN §4); the public state records who submitted. On the last submission every sealed
  *   choice is revalidated, then all are revealed together and paid.
  * - With no participants (INT), Contributions are skipped and Base Heat = the Kiln Die.
- * - Step 3 (L674): Base Heat = clamp(Kiln Die + Σ, 0, 5); then `pipeline.openAfterBaseHeat`.
+ * - Step 3 (L680): Base Heat = clamp(Kiln Die + Σ, 0, 5); then `pipeline.openAfterBaseHeat`.
  *
  * Layer 4: imports layers 0–3 and, inside P5, `firing/pipeline` (DESIGN §2.4).
  */
@@ -54,7 +54,7 @@ function contributionWindowId(game: GameState): string {
 
 /**
  * The opener wired to `work_phase_done` (DESIGN §2.5). Skips the phase when nothing is
- * loaded (L237), else builds the `FiringContext`, emits `FIRING_STARTED` and opens the
+ * loaded (L267), else builds the `FiringContext`, emits `FIRING_STARTED` and opens the
  * Contribution window, or — with no participant (INT) — goes straight to Base Heat.
  */
 export function openFiringPhase(draft: GameState, ctx: ResolveContext): void {
@@ -88,7 +88,6 @@ export function openFiringPhase(draft: GameState, ctx: ResolveContext): void {
       quality: null,
       history: [],
       crackle: false,
-      sold: false,
     };
   }
   // The previous recap is kept only until the next firing starts.
@@ -128,10 +127,10 @@ export function createPrivateFiringState(state: GameState): PrivateFiringState {
 }
 
 /**
- * Whether the actor may submit this Contribution (v1.6.2 L668, change 26): the window is open and
+ * Whether the actor may submit this Contribution (v1.6.2 L678, change 26): the window is open and
  * matches, the actor participates and has not submitted, holds the card (a Fuel Ledger card only
  * with Fuel Ledger, `CONTRIBUTION_CARD_NOT_HELD`), and can pay its Wood: the printed cost, none
- * for a Fuel Ledger owner's Bank or Stoke. Tend is always affordable (L266). Sees only the actor's
+ * for a Fuel Ledger owner's Bank or Stoke. Tend is always affordable (L289). Sees only the actor's
  * view and their own sealed state.
  */
 export function validateContribution(
@@ -211,7 +210,7 @@ export function applyContribution(
 }
 
 /**
- * Steps 2–3 (L673–674): revalidate each sealed choice against the current state (an
+ * Steps 2–3 (L679–680): revalidate each sealed choice against the current state (an
  * unaffordable or ill-formed sealed choice is an engine or store bug), reveal them all,
  * pay, then Base Heat = clamp(Kiln Die + Σ, 0, 5) and on to Test Pieces.
  */
@@ -250,7 +249,7 @@ function revealAndDetermineBaseHeat(
   openAfterBaseHeat(draft, ctx);
 }
 
-/** Candidate order: Tend first (always affordable, v1.6.2 L266), Bank, Stoke, then Fuel Ledger
+/** Candidate order: Tend first (always affordable, v1.6.2 L289), Bank, Stoke, then Fuel Ledger
  * Bank and Fuel Ledger Stoke. */
 const CANDIDATES = ["TEND", "BANK", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const satisfies readonly ContributionCardId[];
 /** Every card is a candidate: a new `ContributionCardId` fails this until it is listed above. */

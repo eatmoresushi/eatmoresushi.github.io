@@ -15,7 +15,8 @@ function modelOf(id: string): GameModel {
 
 describe("tableCeramics (model.ceramics, CR B2-1)", () => {
   it("reads every ceramic from model.ceramics, every stage included", () => {
-    const view = structuredClone(fixture("m1_work_phase_r2_3p").playerView);
+    // The rich 4-player start: Shaped and Finished ceramics.
+    const view = structuredClone(fixture("w-before-the-worker-action-rich-4-player-start").playerView);
     const model = buildGameModel(view, []);
     expect(model.ceramics).toBe(view.game.ceramics);
     const ceramics = tableCeramics(model);
@@ -30,7 +31,7 @@ describe("tableCeramics (model.ceramics, CR B2-1)", () => {
     expect(Object.values(view.game.ceramics).some((ceramic) => ceramic.stage === "shaped")).toBe(true);
   });
 
-  it("keeps only Vessel-card facts and Kiln Master's markers of loaded ceramics (public, face up; rev. 4 L628)", () => {
+  it("keeps only Vessel-card facts and Kiln Master's markers of loaded ceramics (public, face up; L647)", () => {
     const view = structuredClone(fixture("m3_kiln_master_marker_3p").playerView);
     const ceramics = tableCeramics(buildGameModel(view, []));
     const loaded = Object.values(view.game.ceramics).filter((ceramic) => ceramic.stage === "loaded");
@@ -82,12 +83,12 @@ describe("boardWorkers", () => {
     const model = modelOf("m5_two_player_board_2p");
     const lin = boardWorkers(model, summaryOf(model, "p1")!);
     expect(lin).toHaveLength(4);
-    expect(lin[0]).toEqual({ kind: "shifu", placedAt: "canal_wharf", senior: false });
+    expect(lin[0]).toEqual({ kind: "shifu", placedAt: "magistrates_hall", senior: false });
     expect(lin.filter((worker) => worker.placedAt === null)).toEqual([]);
-    expect(lin.map((worker) => worker.placedAt).sort()).toEqual(["canal_wharf", "form_decorate", "magistrates_hall", "materials_yard"].sort());
+    expect(lin.map((worker) => worker.placedAt).sort()).toEqual(["commission_market", "form_decorate", "glaze_load", "magistrates_hall"].sort());
     const zhao = boardWorkers(model, summaryOf(model, "p2")!);
-    expect(zhao[0]).toEqual({ kind: "shifu", placedAt: "glaze_load", senior: false });
-    expect(zhao.filter((worker) => worker.placedAt === null)).toEqual([{ kind: "apprentice", placedAt: null, senior: false }]);
+    expect(zhao[0]).toEqual({ kind: "shifu", placedAt: null, senior: false });
+    expect(zhao.filter((worker) => worker.placedAt === null)).toEqual([{ kind: "shifu", placedAt: null, senior: false }]);
     expect(JSON.stringify(lin)).not.toMatch(/p\d:/);
   });
 
@@ -103,13 +104,15 @@ describe("nextFreePersonalSpace", () => {
   it("is the first added, empty space", () => {
     const model = modelOf("m1_work_phase_r2_3p");
     const zhao = summaryOf(model, "p2")!;
-    // Zhao's Apprentice stands on the first Form & Decorate space; the second, added by a Tech, is free.
+    // Zhao's Shifu stands on the first Form & Decorate space; the second, added by a Tech, is free.
     expect(zhao.personalSpaces.find((space) => space.locationId === "form_decorate" && space.spaceIndex === 0)?.occupant).not.toBeNull();
     expect(nextFreePersonalSpace(zhao, "form_decorate")).toBe(1);
     expect(nextFreePersonalSpace(zhao, "glaze_load")).toBe(0);
-    // Wen's second Form & Decorate space is not added yet, and the first is taken: none free.
-    expect(nextFreePersonalSpace(summaryOf(model, "p3")!, "form_decorate")).toBeNull();
     const m5 = modelOf("m5_two_player_board_2p");
+    // m5's Zhao: the second Form & Decorate space is not added yet, and an Apprentice takes the first: none free.
+    const m5Zhao = summaryOf(m5, "p2")!;
+    expect(m5Zhao.personalSpaces.find((space) => space.locationId === "form_decorate" && space.spaceIndex === 1)?.unlocked).toBe(false);
+    expect(nextFreePersonalSpace(m5Zhao, "form_decorate")).toBeNull();
     const lin = summaryOf(m5, "p1")!;
     const glaze = lin.personalSpaces.filter((space) => space.locationId === "glaze_load");
     const expected = glaze.find((space) => space.unlocked && space.occupant === null)?.spaceIndex ?? null;

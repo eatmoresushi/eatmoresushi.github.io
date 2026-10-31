@@ -1,8 +1,8 @@
 /**
- * Hidden information at setup (P2): the secret deal of 2 Starting Orders (rev. 4 L115, L201,
- * L507), the Starting box (rev. 4 L116), deck orders and Tech decks never reach the public
+ * Hidden information at setup (P2): the secret deal of 2 Starting Orders (L123, L230,
+ * L521), the Starting box (L124), deck orders and Tech decks never reach the public
  * projection or public events; each seat sees only its own hand (DESIGN §4.2–4.4, §8.2). The
- * Main Order each player takes face up with its Kiln is public (rev. 4 L122: "everyone has seen
+ * Main Order each player takes face up with its Kiln is public (L130: "everyone has seen
  * which Main Order each player took").
  */
 
@@ -116,7 +116,7 @@ describe("private views", () => {
     const shuffled: GameState = structuredClone(state);
     const rng = new SeededRandom(99);
     // Swap p2's and p3's hands with Starting cards of equal counts from the box (2 each in a
-    // 3-player game, rev. 4 L115–116).
+    // 3-player game, L123–124).
     const box = shuffled.hidden.startingBox;
     for (const other of ["p2", "p3"] as PlayerId[]) {
       const hand = shuffled.hidden.orderHands[other] ?? [];

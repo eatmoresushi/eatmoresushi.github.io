@@ -41,7 +41,7 @@ export function phaseScenarios(): PhaseScenario[] {
   };
 
   // Setup step 9: reverse-order Kiln and face-up Main Order choice over all five Kilns (rev. 4
-  // L122, R1, R23).
+  // L130, R1, R23).
   {
     const created = createGame({ gameId: "scenario-setup", players: [{ id: "p1", displayName: "A" }, { id: "p2", displayName: "B" }, { id: "p3", displayName: "C" }] }, new SeededRandom(3));
     if (!created.ok) {
@@ -215,8 +215,36 @@ export function phaseScenarios(): PhaseScenario[] {
     table.act("p1", { type: "USE_SECOND_FIRING", ceramicId: "c1" });
     add("Second Firing choice with Jun (R7)", table, "p1", (c) => c.type === "SECOND_FIRING_CHOOSE" && c.cardIndex === 0 && c.jun === null);
   }
-  // R20: the Order Phase turn opens for a Finished Flawed ceramic even with nothing to
-  // complete; the player may sell it (SELL_FLAWED) or end the turn.
+  // Free actions after the worker action (rev. 5 L168–176, R27): a held Order with a Finished
+  // ceramic and a Finished Flawed ceramic open the window; the player may complete, sell, or end.
+  {
+    const table = work({
+      players: [{ hand: ["S08"] }, {}],
+      ceramics: [
+        { owner: "p1", stage: "finished", shape: "plate", glaze: "white", quality: "standard" },
+        { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" },
+      ],
+    });
+    table.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
+    add("After the worker action: complete an Order and sell (free actions)", table, "p1", (c) => c.type === "END_TURN");
+  }
+  // Imperial Priority in the Order Phase (rev. 5 L174, L314, R28): the token alone opens the turn;
+  // the ceramic would wait for the next round's firing.
+  add(
+    "Order Phase: Imperial Priority",
+    new LocalTable(
+      buildState({
+        round: 2,
+        players: [{ recognition: 3 }, {}],
+        phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+        ceramics: [{ owner: "p1", stage: "shaped", shape: "vase" }],
+      }),
+    ),
+    "p1",
+    (c) => c.type === "END_ORDER_TURN",
+  );
+  // The Order Phase turn opens for a Finished Flawed ceramic even with nothing to complete (R28);
+  // the player may sell it (SELL_FLAWED, a free action) or end the turn.
   add(
     "Order Phase: sell a Flawed ceramic",
     new LocalTable(
@@ -230,14 +258,34 @@ export function phaseScenarios(): PhaseScenario[] {
     (c) => c.type === "END_ORDER_TURN",
   );
   add(
-    "Order Phase with Ru, Tribute Ware and a Crackle wildcard",
+    "Order Phase with Ru and Tribute Ware",
     new LocalTable(
       buildState({
-        players: [{ kilnId: "RU", techs: ["T25"], hand: ["O22", "O18", "S01", "S07"] }, { kilnId: "GE" }],
+        players: [{ kilnId: "RU", techs: ["T25"], hand: ["O22", "O18", "S01"] }, { kilnId: "GE" }],
         phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
         ceramics: [
           { owner: "p1", stage: "finished", shape: "bowl", glaze: "celadon", decoration: "plain", quality: "masterpiece" },
           { owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", decoration: "plain", quality: "masterpiece" },
+          { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", quality: "fine" },
+          { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" },
+        ],
+      }),
+      { flow: "halt", pass: ["worker_action_done"] },
+    ),
+    "p1",
+    (c) => c.type === "END_ORDER_TURN",
+  );
+  // Only Ge makes Crackle (rev. 5 L482), so the wildcard scenario is a Ge owner's. Since change 39
+  // a Crackle ceramic keeps its Quality: the crackled Masterpiece may declare Painted for O13
+  // (Masterpiece), the crackled Fine vase a Carved, Impressed or Painted Decoration for S07.
+  add(
+    "Order Phase with a Crackle wildcard",
+    new LocalTable(
+      buildState({
+        players: [{ kilnId: "GE", hand: ["O13", "S07", "S01"] }, { kilnId: "RU" }],
+        phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+        ceramics: [
+          { owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", decoration: "plain", quality: "masterpiece", crackle: true },
           { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", quality: "fine", crackle: true },
           { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" },
         ],

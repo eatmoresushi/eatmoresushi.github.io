@@ -14,11 +14,11 @@
  *   (Apprentice) or a discipline's deck (Shifu) is chosen; a Tech the worker cannot buy is
  *   focusable but cannot be chosen, with its reason.
  * - A language switch keeps the draft and re-renders the ConfirmBar sentence.
- * - The Guild Hall inspection (v1.6.2 L207): one take per Confirm; after a take, stopping with the
+ * - The Guild Hall inspection (v1.6.2 L237): one take per Confirm; after a take, stopping with the
  *   bottom order set by Move up / Move down, then Confirm (§8.1); a single untaken Tech is named,
  *   not ordered. The face-up Techs may be chosen on the Tech display for either take (D14), and a
  *   refused take shows the engine's reason in words.
- * - The Colour Samples swap (v1.6.2 L617): after the action, the held Order to give up, chosen
+ * - The Colour Samples swap (v1.6.2 L632): after the action, the held Order to give up, chosen
  *   in the pane or on the hand row; Confirm sends the swap.
  * - Kiln selection: no Full rules button; a Kiln another player took is focusable but cannot be
  *   chosen.
@@ -155,7 +155,7 @@ function shifuId(id: string): string {
 
 describe("rules details (owner review, 2026-10-17)", () => {
   it("the work pane and the location cards open no location rules", () => {
-    mount(new ControlledSource("m1_work_phase_r2_3p"), <Table />);
+    mount(new ControlledSource("w-before-the-worker-action-rich-4-player-start"), <Table />);
     expect(container.querySelector('[aria-label="Full rules: Commission Market"]')).toBeNull();
     expect(container.querySelector('article[data-location-id] .kit-detail-trigger')).toBeNull();
     click(placeButton("commission_market", "shifu"));
@@ -174,7 +174,7 @@ describe("rules details (owner review, 2026-10-17)", () => {
 
 describe("the work turn: workers are placed on the table", () => {
   it("a Place shortcut chooses worker and location; the pane shows the placement and its sub-editor, and Confirm sends it", () => {
-    const id = "m1_work_phase_r2_3p";
+    const id = "w-before-the-worker-action-rich-4-player-start";
     const source = new ControlledSource(id);
     mount(source, <Table />);
     expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
@@ -195,7 +195,7 @@ describe("the work turn: workers are placed on the table", () => {
     expect(chosen()?.querySelector("h3")?.textContent).toBe("Shifu at Canal Wharf");
     expect(summary()).toBe("Place Shifu at Canal Wharf — +4 Coins and the top Main Order card, unseen");
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "PLACE_CANAL_WHARF", workerId: shifuId(id) }]);
+    expect(source.submitted).toEqual([{ type: "PLACE_CANAL_WHARF", workerId: shifuId(id), endTurn: true }]);
   });
 
   it("a personal space's Place shortcut on the viewer's own board chooses that space", () => {
@@ -231,7 +231,7 @@ describe("the work turn: workers are placed on the table", () => {
 
   it("a language switch keeps the draft and re-renders the sentence", () => {
     mount(
-      new ControlledSource("m1_work_phase_r2_3p"),
+      new ControlledSource("w-before-the-worker-action-rich-4-player-start"),
       <>
         <LanguageToggle />
         <Table />
@@ -286,7 +286,7 @@ describe("the Guild Hall choice is made on the Tech display", () => {
     expect(chosen()?.querySelector(`[data-guild-choice="${legal.techId}"]`)?.textContent).toContain(techText(legal.techId, "en").name);
     expect(summary()).toBe(`Place Apprentice at Guild Hall — buy ${techText(legal.techId, "en").name} for ${legal.cost} ${legal.cost === 1 ? "Coin" : "Coins"}`);
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "PLACE_GUILD_HALL", workerId: expect.any(String), choice: { kind: "buy_face_up", techId: legal.techId } }]);
+    expect(source.submitted).toEqual([{ type: "PLACE_GUILD_HALL", workerId: expect.any(String), choice: { kind: "buy_face_up", techId: legal.techId }, endTurn: true }]);
   });
 
   it("a Shifu there: each discipline offers its deck to inspect; the Techs stay display tiles with their rules details", async () => {
@@ -330,7 +330,7 @@ describe("the Guild Hall choice is made on the Tech display", () => {
   });
 });
 
-describe("the Guild Hall inspection (v1.6.2 L207)", () => {
+describe("the Guild Hall inspection (v1.6.2 L237)", () => {
   it("the first take: one Tech, sent alone, with no bottom order yet", () => {
     const id = "m12_guild_shifu_inspection";
     const options = guildInspectionOptions(fixture(id).playerView);
@@ -370,11 +370,11 @@ describe("the Guild Hall inspection (v1.6.2 L207)", () => {
     click(down);
     [expected[0], expected[1]] = [expected[1]!, expected[0]!];
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "GUILD_FINISH", bottomOrder: expected }]);
+    expect(source.submitted).toEqual([{ type: "GUILD_FINISH", bottomOrder: expected, endTurn: true }]);
   });
 });
 
-describe("the Guild Hall inspection on the Tech display (D14, v1.6.2 L207)", () => {
+describe("the Guild Hall inspection on the Tech display (D14, v1.6.2 L237)", () => {
   it("a face-up Tech chosen on the display is the pane's take; one the Shifu cannot take cannot be chosen", () => {
     const id = "m12_guild_shifu_inspection";
     const options = guildInspectionOptions(fixture(id).playerView);
@@ -438,7 +438,7 @@ describe("the Guild Hall inspection on the Tech display (D14, v1.6.2 L207)", () 
     expect(container.querySelector(".kit-reorder-list")).toBeNull();
     expect($("[data-b4='guild-return-one']").textContent).toBe(`${techText(left, "en").name} goes back to the bottom of the Firing deck.`);
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "GUILD_FINISH", bottomOrder: [left] }]);
+    expect(source.submitted).toEqual([{ type: "GUILD_FINISH", bottomOrder: [left], endTurn: true }]);
   });
 
   it("a take the server refuses shows the engine's reason in the player's words", async () => {
@@ -455,12 +455,14 @@ describe("the Guild Hall inspection on the Tech display (D14, v1.6.2 L207)", () 
   });
 });
 
-describe("the Colour Samples swap (v1.6.2 L617)", () => {
+describe("the Colour Samples swap (v1.6.2 L632)", () => {
   it("after the action: the held Order to give up, chosen in the pane; Confirm sends the swap", () => {
     const id = "m17_after_action";
     const source = new ControlledSource(id);
     mount(source, <DecisionPane />);
-    click(radio("mode", "colour_samples_swap"));
+    // The swap is m17's only free-action entry; it waits for the player's own press (D21).
+    expect(radio("freeAction", "colour_samples_swap").checked).toBe(false);
+    click(radio("freeAction", "colour_samples_swap"));
     const hand = fixture(id).playerView.own?.orderHand ?? [];
     expect([...container.querySelectorAll<HTMLInputElement>('input[name="discardOrderId"]')].map((input) => input.value)).toEqual(hand);
     expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");

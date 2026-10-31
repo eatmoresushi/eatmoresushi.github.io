@@ -20,9 +20,9 @@
       "shortTextZh": "每轮一次，以素面青釉臻品完成委托时：得4分。",
       "clarifications": [
         {
-          "en": "Ru triggers while completing an Order in the Order Phase.",
-          "zh": "汝窑在交货阶段完成委托时触发。",
-          "source": "L480"
+          "en": "Ru triggers while completing an Order, before or after your worker action or in the Order Phase; once per round, whichever window the completion is in.",
+          "zh": "汝窑在完成委托时触发，工人行动之前或之后或在交货阶段都可以；无论在哪个时机完成，每轮只触发一次。",
+          "source": "L499 · L176"
         }
       ]
     },
@@ -44,9 +44,9 @@
       "shortTextZh": "每轮一次，完成御令委托时：得2铜钱和1分。",
       "clarifications": [
         {
-          "en": "Guan triggers while completing an Order in the Order Phase.",
-          "zh": "官窑在交货阶段完成委托时触发。",
-          "source": "L480"
+          "en": "Guan triggers while completing an Order, before or after your worker action or in the Order Phase; once per round, whichever window the completion is in.",
+          "zh": "官窑在完成委托时触发，工人行动之前或之后或在交货阶段都可以；无论在哪个时机完成，每轮只触发一次。",
+          "source": "L499 · L176"
         },
         {
           "en": "Tribute Ware's bonus Crown is not a printed Crown and does not make an Order \"showing a Crown\".",
@@ -56,7 +56,7 @@
         {
           "en": "Starting Orders have no Crowns.",
           "zh": "起始委托没有御令。",
-          "source": "L516"
+          "source": "L535"
         }
       ]
     },
@@ -64,46 +64,48 @@
       "id": "GE",
       "oncePerRound": true,
       "params": {
-        "fromQualities": [
-          "fine",
-          "standard"
-        ],
-        "toQuality": "fine",
+        "upgradeFrom": "standard",
+        "upgradeTo": "fine",
         "vpPerDeliveredCrackle": 1
       },
       "name": "Ge Kiln",
       "nameZh": "哥窑",
       "abilityName": "Crackle Mastery",
       "abilityNameZh": "金丝铁线",
-      "ability": "Once per round, after Quality is assigned, choose 1 of your Fine or Standard ceramics from this firing: it develops Crackle and is Fine (a Standard one becomes Fine). Place a Crackle marker on it; the ceramic keeps the marker. When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged. Each Crackle ceramic you deliver to complete an Order scores 1 VP.",
-      "abilityZh": "每轮一次，定品后，选择你本次烧成中的1件上品或良品：它开片，品质为上品（良品升为上品）。在它上面放1个开片标，此标一直留在该器物上。完成委托时，你的每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。你每交付1件开片器完成委托，得1分。",
-      "shortText": "Once per round, after Quality is assigned: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine. Orders: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.",
-      "shortTextZh": "每轮一次，定品后：可令己方本窑1件上品或良品开片→品质为上品。完成委托时：每件开片器可作任意1种纹饰，交付时得1分。",
+      "ability": "Once per round, after Quality is assigned, choose 1 of your ceramics from this firing: it develops Crackle, and if it is Standard it becomes Fine. Place a Crackle marker on it. When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged. Each Crackle ceramic you deliver to complete an Order scores 1 VP.",
+      "abilityZh": "每轮一次，定品后，选择你本次烧成中的1件器物：它开片；若它是良品，则升为上品。在它上面放1个开片标。完成委托时，你的每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。你每交付1件开片器完成委托，得1分。",
+      "shortText": "Once per round, after Quality is assigned: choose 1 of your ceramics from this firing → it develops Crackle; if it is Standard, it becomes Fine. Orders: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.",
+      "shortTextZh": "每轮一次，定品后：选择己方本窑1件器物→它开片；若它是良品，则升为上品。完成委托时：每件开片器可作任意1种纹饰，交付时得1分。",
       "clarifications": [
         {
-          "en": "Ge targets 1 of your ceramics from this firing that is Fine or Standard at that moment; a Masterpiece or Flawed ceramic is not a target. A Standard one becomes Fine, a Fine one stays Fine, and it permanently carries a Crackle marker.",
-          "zh": "哥窑选择你本次烧成中1件此时为上品或良品的器物；臻品与瑕品不能选。良品升为上品，上品仍是上品，并一直带着开片标。",
-          "source": "INT Ge Crackle revision 4"
+          "en": "Ge may target any of your ceramics from this firing, whatever its Quality. A Standard one becomes Fine; a Masterpiece, Fine or Flawed one keeps its Quality, and a Flawed one gains nothing. The ceramic carries a Crackle marker.",
+          "zh": "哥窑可以选择你本次烧成中的任意1件器物，品质不限。良品升为上品；臻品、上品与瑕品保持原品质，瑕品开片没有收益。该器物带上开片标。",
+          "source": "R30"
+        },
+        {
+          "en": "Second Firing may still recalculate a crackled Flawed ceramic: the new Quality stands and the ceramic keeps its Crackle marker. Crackle does not raise the new Quality.",
+          "zh": "复烧仍可以重算已开片的瑕品：新品质照常生效，该器物保留开片标。开片不会再提升新品质。",
+          "source": "R30"
         },
         {
           "en": "Ge's Crackle is an after-Quality effect; Ge chooses its order among their own after-Quality effects. With Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' Standard → Fine step and Crackle may both apply to the same ceramic.",
           "zh": "哥窑开片是定品后效果；哥窑玩家自行决定它在己方各项定品后效果中的先后。有匣钵护烧时，本应为瑕品的器物算作良品，可以再开片；匣钵护烧的“良品变上品”与开片可以作用于同一件器物。",
-          "source": "L479 · L641"
+          "source": "L498 · L660"
         },
         {
           "en": "An Imperial Kiln ceramic counts as a ceramic in this firing for your abilities.",
           "zh": "对你的能力而言，御窑中的器物算作本次烧成中的器物。",
-          "source": "L293"
+          "source": "L311"
         },
         {
           "en": "A marked ceramic keeps its Crackle marker until delivered or exhibited.",
           "zh": "带有开片标的器物一直保留此标，直到交付或陈列。",
-          "source": "L108"
+          "source": "L116"
         },
         {
-          "en": "Crackle VP triggers while completing an Order in the Order Phase, where a Crackle ceramic's wildcard Decoration is declared. It is automatic and recorded with the Order as Kiln Tradition VP.",
-          "zh": "开片器的得分在交货阶段完成委托时触发，开片器的任意纹饰也在此时声明。它自动计入，作为窑口传承所得的分数随委托记录。",
-          "source": "L480 · INT Ge Crackle revision 4"
+          "en": "Crackle VP triggers while completing an Order, before or after your worker action or in the Order Phase; a Crackle ceramic's wildcard Decoration is declared then. It is automatic, has no once-per-round limit and is recorded with the Order as Kiln Tradition VP.",
+          "zh": "开片器的得分在完成委托时触发，工人行动之前或之后或在交货阶段都可以；开片器的任意纹饰也在此时声明。它自动计入，没有每轮一次的限制，作为窑口传承所得的分数随委托记录。",
+          "source": "L499 · INT Completion effects across windows"
         }
       ]
     },
@@ -117,16 +119,16 @@
           "washer"
         ],
         "clay": 1,
-        "coins": 1
+        "coins": 2
       },
       "name": "Ding Kiln",
       "nameZh": "定窑",
       "abilityName": "Moulded Production",
       "abilityNameZh": "范制成器",
-      "ability": "Once per round, when resolving a Form & Decorate action, after you form a Bowl, Plate or Brush Washer, you may pay 1 Clay and 1 Coin to form one additional vessel of the same Shape, with any Decoration. It does not count against the action's vessel limit and is not one of the 2 vessels for the Shifu's discount. For effects that refer to vessels formed by that action, it counts as formed by that action.",
-      "abilityZh": "每轮一次，结算制坯饰纹行动时，在你制成1件碗、盘或笔洗之后，可以支付1泥和1铜钱，再制1件同器型的坯，纹饰任选。它不计入该行动的制坯件数上限，也不算师傅减免所说的“2件”之一；对于提到“该行动所制坯”的效果，它算作该行动所制。",
-      "shortText": "Once per round, during a Form & Decorate action: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 1 Coin → form 1 extra vessel of the same Shape with any Decoration (no discounts). It counts as formed by that action.",
-      "shortTextZh": "每轮一次，制坯饰纹行动中制成碗、盘或笔洗后：可付1泥1铜钱→多制1件同器型的坯，纹饰任选，不享减免。算作该行动所制。",
+      "ability": "Once per round, when resolving a Form & Decorate action, after you form a Bowl, Plate or Brush Washer, you may pay 1 Clay and 2 Coins to form one additional vessel of the same Shape, with any Decoration. It does not count against the action's vessel limit. For effects that refer to vessels formed by that action, it counts as formed by that action.",
+      "abilityZh": "每轮一次，结算制坯饰纹行动时，在你制成1件碗、盘或笔洗之后，可以支付1泥和2铜钱，再制1件同器型的坯，纹饰任选。它不计入该行动的制坯件数上限；对于提到“该行动所制坯”的效果，它算作该行动所制。",
+      "shortText": "Once per round, during a Form & Decorate action: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 2 Coins → form 1 extra vessel of the same Shape with any Decoration. It does not count against the action's vessel limit. It counts as formed by that action.",
+      "shortTextZh": "每轮一次，制坯饰纹行动中制成碗、盘或笔洗后：可付1泥2铜钱→多制1件同器型的坯，纹饰任选，不计入该行动的制坯件数上限。算作该行动所制。",
       "clarifications": [
         {
           "en": "Ding's ability works with either worker type.",
@@ -136,17 +138,27 @@
         {
           "en": "Ding triggers during its Form & Decorate action.",
           "zh": "定窑在其制坯饰纹行动中触发。",
-          "source": "L481"
+          "source": "L500"
         },
         {
           "en": "Prepared Clay is a Tech effect and never counts as a Form & Decorate action, so a vessel formed through Prepared Clay does not trigger Ding.",
           "zh": "练泥是技艺效果，不算制坯饰纹行动，所以通过练泥制成的坯不会触发定窑。",
-          "source": "L633"
+          "source": "L652"
         },
         {
-          "en": "The Shifu's discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. Ding's vessel takes neither. Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer.",
-          "zh": "师傅的减免、饰坯匣、定窑的1铜钱额外坯是三项各自独立的减免；定窑的额外坯两项都不适用。大陶车只减泥；定窑的额外坯不是瓶或香炉。",
-          "source": "L639"
+          "en": "Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer.",
+          "zh": "大陶车只减泥；定窑的额外坯不是瓶或香炉。",
+          "source": "L658"
+        },
+        {
+          "en": "Ding's extra vessel does not count toward the Shifu's \"If you form 2, one of them costs 1 Coin less\". A Shifu who forms 1 vessel and Ding's gets no Shifu discount; a Shifu who forms 2 and Ding's gets one.",
+          "zh": "定窑的额外坯不计入师傅“若制2件，其中1件少付1铜钱”所说的2件。师傅只制1件再加定窑的坯，没有师傅的减免；制2件再加定窑的坯，有1次减免。",
+          "source": "R29"
+        },
+        {
+          "en": "The Shifu's discount and Decorator's Kit could also reduce Ding's vessel, but each is once per action or round and the vessel that triggers Ding can always carry it. The online game applies them to the action's other vessels; the total is the same.",
+          "zh": "师傅的减免与饰坯匣也可以作用于定窑的额外坯，但每项每次行动或每轮只用一次，而触发定窑的那件坯总能承接它。数字版把减免算在该行动的其他坯上，总额相同。",
+          "source": "R29"
         }
       ]
     },
@@ -172,27 +184,27 @@
         {
           "en": "Jun acts after Actual Heat is calculated (Kiln Master marker included) and before Quality is assigned.",
           "zh": "钧窑在实际火候算出后（已计入窑工标）、定品前结算。",
-          "source": "L478"
+          "source": "L497"
         },
         {
           "en": "Jun's adjustment applies on top of Kiln Master's marker.",
           "zh": "钧窑的调整叠加在窑工标之上。",
-          "source": "L635"
+          "source": "L654"
         },
         {
           "en": "An Imperial Kiln ceramic counts as a ceramic in this firing for your abilities.",
           "zh": "对你的能力而言，御窑中的器物算作本次烧成中的器物。",
-          "source": "L293"
+          "source": "L311"
         },
         {
           "en": "Global Heat and Actual Heat are not clamped.",
           "zh": "全窑火候与实际火候不设上下限。",
-          "source": "L259"
+          "source": "L277"
         },
         {
           "en": "If a Second Firing recalculates a ceramic, an unused Jun adjustment may be applied to the recalculated heat. Jun's adjustment from the first calculation does not carry over.",
           "zh": "若复烧重算了某件器物，尚未使用的钧窑调整可以作用于重算后的火候；第一次计算时的钧窑调整不保留。",
-          "source": "L478 · L627"
+          "source": "L497 · L646"
         }
       ]
     }

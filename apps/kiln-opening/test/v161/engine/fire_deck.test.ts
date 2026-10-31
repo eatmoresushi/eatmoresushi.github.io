@@ -1,5 +1,5 @@
 /**
- * Fire deck (Appendix C L656–666, L511, L657, v1.6.2 L638–639, L648, owner ruling R15): the
+ * Fire deck (Appendix C L662–672, L526, L664, v1.6.2 L645–646, L655, owner ruling R15): the
  * 1/3/4/3/1 distribution, the open discard, Test Pieces' bury to the bottom, and the reshuffle
  * when the deck runs out: when a card is needed and every card left is buried (an empty deck
  * included), the open discard is shuffled and placed on top, above the buried cards, which are
@@ -57,7 +57,7 @@ describe("drawFire", () => {
     expect(ctx.events).toEqual([]);
   });
 
-  it("does not reshuffle while a single unburied card remains, even with a large discard (L511)", () => {
+  it("does not reshuffle while a single unburied card remains, even with a large discard (L526)", () => {
     const state = buildState({ fireDeck: [0], fireDiscard: [-2, -1, -1, -1, 0, 0, 0, 1, 1, 1, 2] });
     const ctx = testContext(5);
     const rngBefore = ctx.rng.getState();
@@ -68,7 +68,7 @@ describe("drawFire", () => {
     expect(ctx.rng.getState()).toBe(rngBefore);
   });
 
-  it("reshuffles the open discard into a new deck when the deck is empty, then draws (L511, L657)", () => {
+  it("reshuffles the open discard into a new deck when the deck is empty, then draws (L526, L664)", () => {
     const state = buildState({ fireDeck: [], fireDiscard: FULL });
     const ctx = testContext(9);
     const expectedDeck = shuffle(FULL, new SeededRandom(9));
@@ -80,7 +80,7 @@ describe("drawFire", () => {
     expect(ctx.events).toEqual([{ type: "FIRE_DECK_RESHUFFLED", cardCount: 12, buriedBelow: 0 }]);
   });
 
-  it("R15: with only a buried card left, the shuffled discard goes on top of it, and the buried card is drawn last (v1.6.2 L648)", () => {
+  it("R15: with only a buried card left, the shuffled discard goes on top of it, and the buried card is drawn last (v1.6.2 L655)", () => {
     const discard: FireModifier[] = [-2, -1, -1, -1, 0, 0, 0, 1, 1, 1, 2];
     const state = buildState({ fireDeck: [0], fireDiscard: discard, fireBuried: 1 });
     const ctx = testContext(4);
@@ -141,7 +141,7 @@ describe("drawFire", () => {
   });
 });
 
-describe("peekFire and buryTopFire (Test Pieces, v1.6.2 L638, L648, R15)", () => {
+describe("peekFire and buryTopFire (Test Pieces, v1.6.2 L645, L655, R15)", () => {
   it("peeks without moving the card", () => {
     const state = buildState({ fireDeck: [1, -2, 0] });
     const ctx = testContext();
@@ -206,7 +206,7 @@ describe("peekFire and buryTopFire (Test Pieces, v1.6.2 L638, L648, R15)", () =>
   });
 });
 
-describe("discardFire and the open discard (L511)", () => {
+describe("discardFire and the open discard (L526)", () => {
   it("adds the card face up, newest last, and keeps all 12 cards in exactly one zone", () => {
     const state = buildState({ fireDeck: [2, -1, 0] });
     const ctx = testContext();

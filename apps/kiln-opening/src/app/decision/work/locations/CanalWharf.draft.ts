@@ -2,9 +2,9 @@
  * The Canal Wharf sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor` canal_wharf).
  * Owner: B4.
  *
- * Nothing to choose: the location is uncapped and always legal (L143). The Coins gained come from
+ * Nothing to choose: the location is uncapped and always legal (L165). The Coins gained come from
  * `placementLimits(view, "canal_wharf", effect)`, and so does the Shifu effect's draw: 4 Coins,
- * then the top Main Order card into the hand, unseen (v1.6.2 L219–220). When the Main Order deck
+ * then the top Main Order card into the hand, unseen (v1.6.2 L249–250). When the Main Order deck
  * and its discard pile are both empty no card is taken (B1): `commissionOptions(...).lookCount`,
  * the engine's count of the cards the top of the deck can give now (it reshuffles the discard
  * when the deck is empty, as the draw does), says whether one is there.

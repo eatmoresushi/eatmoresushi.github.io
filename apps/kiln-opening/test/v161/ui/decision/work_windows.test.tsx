@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ROOT } from "../../support/glossary.ts";
-import { KILNS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, guildInspectionOptions, guildOptions, legalCommands, lookedOrderOptions, placementOptions, settersMarkOptions, shortTextSegments } from "../../../../src/game/index.ts";
+import { KILNS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, freeActionOptions, guildInspectionOptions, guildOptions, legalCommands, lookedOrderOptions, placementOptions, settersMarkOptions, shortTextSegments } from "../../../../src/game/index.ts";
 import type { AuthoritativeCommand, ClarificationDefinition, KilnId, KilnSpaceId, LocationId, OrderId, TechDiscipline, TechId } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
@@ -206,7 +206,7 @@ describe("B4 windows render from every fixture", () => {
     const kinds = new Set(entries.map((entry) => decisionWindow(entry.playerView).kind));
     expect([...kinds].sort()).toEqual([...B4_KINDS].sort());
     // Both Commission Market effects: the Apprentice's Select 2 and 1 reservation, the Shifu's Select 3 and up to 2;
-    // Colour Samples' Select 3 when acquired and in its swap (v1.6.2 L64, change 25).
+    // Colour Samples' Select 3 when acquired and in its swap (v1.6.2 L80, change 25).
     const limits = new Set(
       entries.map((entry) => decisionWindow(entry.playerView)).flatMap((window) => (window.kind === "commission" || window.kind === "colour_samples" || window.kind === "colour_samples_swap" ? [`${window.kind} ${window.select.n}/${window.select.maxReservations}`] : [])),
     );
@@ -240,7 +240,7 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(perceivable(html)).not.toContain("Choosing order");
     expect(perceivable(html)).toContain("reverse turn order");
     expect(summary(html)).toBe("Choose a Kiln and a Main Order.");
-    // The same turn takes 1 face-up Main Order (rev. 4 L122, R23): the display's Orders as radios.
+    // The same turn takes 1 face-up Main Order (L130, R23): the display's Orders as radios.
     const display = fixture("m15_kiln_selection").playerView.game.market.display;
     expect(valuesOf(html, "mainOrder")).toEqual(display.flatMap((orderId, slot) => (orderId === null ? [] : [String(slot)])));
     expect(perceivable(html)).toContain("Main Order to take");
@@ -311,34 +311,33 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(perceivable(zh(id, draftFor(id, commandOf(id, "PLACE_CANAL_WHARF"))))).toMatch(/派(师傅|学徒)到漕运码头/);
   });
 
-  it("work before the action: Imperial Priority and the Colour Samples swap may come first", () => {
-    // Placing a worker is one of the step's choices only while a placement is chosen (owner
-    // review, 2026-10-17): nothing chosen hides the pane, and choosing it from an open ability
-    // would hide the pane under the player's arrow keys.
-    expect(valuesOf(en(DING), "mode")).toEqual(["imperial_priority", "colour_samples_swap"]);
-    expect(valuesOf(en(DING, placedDraft(DING, "canal_wharf", "shifu")), "mode")).toEqual(["place", "imperial_priority", "colour_samples_swap"]);
+  it("work before the action: no choice of step (D21); a form opened from a chip has its way back and names the heading", () => {
+    expect(valuesOf(en(DING), "mode")).toEqual([]);
+    expect(valuesOf(en(DING, placedDraft(DING, "canal_wharf", "shifu")), "mode")).toEqual([]);
     expect(en(DING)).not.toContain('data-b4="back-to-placing"');
     const view = fixture(DING).playerView;
     const model = buildGameModel(view, []);
     const engine = engineViewOf(view);
-    const ability = workDraft.reduce(workDraft.initial(model, engine), { type: "mode", mode: "imperial_priority" }, model, engine);
+    const ability = workDraft.reduce(workDraft.initial(model, engine), { type: "freeAction", key: "imperial_priority" }, model, engine);
     expect(en(DING, ability)).toMatch(/<button[^>]*data-b4="back-to-placing"[^>]*>Back to placing a worker<\/button>/);
     expect(zh(DING, ability)).toMatch(/data-b4="back-to-placing"[^>]*>返回派工</);
     // The heading follows what the pane shows: never "Place a worker" beside "Back to placing".
-    expect(heading(en(DING, ability))).toBe("Before your worker action");
-    expect(heading(zh(DING, ability))).toBe("工人行动之前");
+    expect(heading(en(DING, ability))).toBe("Imperial Priority");
+    expect(heading(zh(DING, ability))).toBe("御烧优先");
     expect(heading(en(DING, placedDraft(DING, "canal_wharf", "shifu")))).toBe("Place a worker");
   });
 
-  it("work before the action: the only ability that may come first, opened with nothing placed, has no lone radio and names the heading", () => {
-    // DING with Imperial Priority already spent: the Colour Samples swap is the only ability that may come first.
+  it("work before the action: the swap opened from its chip has no radio and names the heading", () => {
+    // DING with Imperial Priority already spent and no Finished ceramic to deliver: the Colour
+    // Samples swap is the only ability that may come first.
     const source = editedSource(DING, (entry) => {
       entry.playerView.game.players[entry.viewerId]!.imperial.priority = "spent";
+      for (const [id, ceramic] of Object.entries(entry.playerView.game.ceramics)) if (ceramic.stage === "finished") delete entry.playerView.game.ceramics[id];
     });
     const view = source.getSnapshot().view!;
     const model = buildGameModel(view, []);
     const engine = engineViewOf(view);
-    const swap = workDraft.reduce(workDraft.initial(model, engine), { type: "mode", mode: "colour_samples_swap" }, model, engine);
+    const swap = workDraft.reduce(workDraft.initial(model, engine), { type: "freeAction", key: "colour_samples_swap" }, model, engine);
     const render = (locale: "en" | "zh-CN", draft?: unknown) => renderWindow(source, { locale, ...(draft === undefined ? {} : { draft }) });
     expect(valuesOf(render("en"), "mode")).toEqual([]);
     expect(valuesOf(render("en", swap), "mode")).toEqual([]);
@@ -354,15 +353,10 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(perceivable(form)).toContain("Once per round, not a worker action: give up a held Order, then Select 3 (look privately at the top 3 Main Orders and reserve one of them or one from the display).");
     expect(perceivable(form)).toContain("A Main Order goes face down to the discard pile; a Starting Order goes back to the box.");
     expect(perceivable(render("zh-CN", swap))).toContain("每轮一次，不是工人行动：弃一张在手委托，然后精选3（私看主委托牌堆顶3张，承接其中一张或委托榜上的一张）。");
-    const placed = workDraft.reduce(workDraft.initial(model, engine), { type: "place", locationId: "canal_wharf", workerKey: "shifu" }, model, engine);
-    expect(valuesOf(render("en", placed), "mode")).toEqual(["place", "colour_samples_swap"]);
     // A legal discard shows no unavailable reason (a full look needs no words); each Order has its rules pill.
     expect(form).not.toContain("kit-opt-reason");
     expect(perceivable(form)).not.toContain("Then you look at");
     expect(orderOptions(form)).toHaveLength(view.own?.orderHand.length ?? -1);
-    // The step's choice says what the swap does (before the action, with a placement chosen).
-    expect(perceivable(render("en", placed))).toContain("Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display");
-    expect(perceivable(render("zh-CN", placed))).toContain("弃一张在手委托，然后精选3：私看主委托牌堆顶3张，承接其中一张或委托榜上的一张");
   });
 
   it("work: the Colour Samples swap's discards say when the deck is short, and an impossible one shows the engine's reason (B1)", () => {
@@ -383,7 +377,7 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(perceivable(html)).toContain("Then you look at only 1 card (the Main Order deck is short).");
     expect(perceivable(renderWindow(short, { locale: "zh-CN", draft: swapDraft(short) }))).toContain("之后只能查看1张（主委托牌堆不足）。");
     // Both piles empty: after a Starting Order there is no card to look at, but the display still offers
-    // the Select's reservation (v1.6.2 L64), so every Order can be given up; each says so.
+    // the Select's reservation (v1.6.2 L80), so every Order can be given up; each says so.
     const empty = editedSource(DING, (entry) => {
       entry.playerView.game.counts.mainDeck = 0;
       entry.playerView.game.counts.mainDiscard = 0;
@@ -407,21 +401,25 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(perceivable(none)).toContain("No Main Order shows on the display and the Main Order deck and discard pile are both empty; there is nothing to reserve.");
   });
 
-  it("work after the action: End turn is the alternative and a mode choice", () => {
+  it("work after the action: the free-action list, with End turn the alternative (D21)", () => {
     const html = en("w-after-the-worker-action");
     expect(heading(html)).toBe("After your worker action");
     expect(html).toContain('data-step="after_action"');
-    expect(valuesOf(html, "mode")).toEqual(["imperial_priority", "colour_samples_swap", "end_turn"]);
+    expect(valuesOf(html, "mode")).toEqual([]);
+    expect(valuesOf(html, "freeAction")).toEqual(["complete-O01", "imperial_priority", "colour_samples_swap"]);
     expect(alt(html)).toBe("End turn");
     expect(alt(zh("w-after-the-worker-action"))).toBe("结束回合");
-    // m17: the Colour Samples swap or End turn, nothing preselected; with the swap used, End turn alone is.
-    expect(valuesOf(en("m17_after_action"), "mode")).toEqual(["colour_samples_swap", "end_turn"]);
-    expect(summary(en("m17_after_action"))).toBe("Choose what to do now.");
+    // m17: the swap is the only entry; with the swap used, End turn alone remains.
+    expect(valuesOf(en("m17_after_action"), "freeAction")).toEqual(["colour_samples_swap"]);
     const used = editedSource("m17_after_action", (entry) => {
       const p = entry.playerView.game.players[entry.viewerId]!;
       p.techs = p.techs.map((tech) => (tech.id === "T10" ? { ...tech, usedThisRound: true } : tech));
     });
-    expect(summary(renderWindow(used, { locale: "en" }))).toBe("End your turn");
+    const nothing = renderWindow(used, { locale: "en" });
+    expect(valuesOf(nothing, "freeAction")).toEqual([]);
+    expect(perceivable(nothing)).toContain("You have no free action to take right now.");
+    expect(nothing).not.toContain('data-action="confirm"');
+    expect(alt(nothing)).toBe("End turn");
     // The swap's entry says what it does; once chosen, its form only adds "once per round, not a worker action".
     expect(perceivable(html)).toContain("Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display");
     const view = fixture("w-after-the-worker-action").playerView;
@@ -435,7 +433,7 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(perceivable(zh("w-after-the-worker-action", swap))).toContain("每轮一次，不是工人行动。");
   });
 
-  it("Commission step, Shifu effect: the private top 3 and the display, up to 2 checkboxes, no resource and no alternative (v1.6.2 L196)", () => {
+  it("Commission step, Shifu effect: the private top 3 and the display, up to 2 checkboxes, no resource and no alternative (v1.6.2 L226)", () => {
     const id = "w-commission-market-shifu-top-3-look-2-reservations";
     const html = en(id);
     // The keyword names the window (change 25).
@@ -496,7 +494,7 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(perceivable(none)).not.toContain("is looking at");
   });
 
-  it("Commission step, Apprentice effect: the private top 2 and the display as one radio group (v1.6.2 L195)", () => {
+  it("Commission step, Apprentice effect: the private top 2 and the display as one radio group (v1.6.2 L225)", () => {
     const id = "w-commission-market-apprentice-top-2-look-1-reservation";
     const html = en(id);
     expect(heading(html)).toBe("Select 2: reserve an Order");
@@ -575,7 +573,7 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(heading(renderWindow(source, { locale: "zh-CN" }))).toBe("再习得一项技艺，或不再习得");
   });
 
-  it("Guild inspection after the second take: only the bottom order of the 2 untaken inspected Techs is left; no Tech, no take note, no table chooser (v1.6.2 L207, B2)", () => {
+  it("Guild inspection after the second take: only the bottom order of the 2 untaken inspected Techs is left; no Tech, no take note, no table chooser (v1.6.2 L237, B2)", () => {
     const source = editedSource("w-guild-hall-shifu-inspection", (entry) => {
       const game = entry.playerView.game;
       const phase = game.phase;
@@ -617,7 +615,7 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(spec.draft.build(draft as never, model, engine)).toEqual({ type: "GUILD_FINISH", bottomOrder: guildInspectionOptions(view)?.inspected.map((option) => option.techId) });
   });
 
-  it("Colour Samples' Select 3: the looked-at Orders, only you, and the display, as one radio group; the rest are discarded (v1.6.2 L622, change 25, R25)", () => {
+  it("Colour Samples' Select 3: the looked-at Orders, only you, and the display, as one radio group; the rest are discarded (v1.6.2 L632, change 25, R25)", () => {
     for (const id of ["m16_colour_samples", "w-colour-samples-choice"]) {
       const html = en(id);
       expect(heading(html)).toBe("Colour Samples: Select 3");
@@ -707,14 +705,14 @@ describe("titles, alternatives and the test-driver contract", () => {
   });
 });
 
-describe("selling a Flawed ceramic in the work turn (change 30, R20)", () => {
+describe("selling a Flawed ceramic in the work turn (a free action, changes 30, 36)", () => {
   const SALE = "t-work-turn-sale";
 
   it("the hidden pane offers it first; chosen, the pane shows the ceramic with its Coins and the ConfirmBar says the sale", () => {
     const hidden = en(SALE);
     expect(hidden).toMatch(/<aside class="pane"[^>]*hidden=""/);
     // The bar above the world names the sale among what may come first.
-    expect(renderComponent(fixtureSource(SALE), <GameScreen />)).toMatch(/data-pane-opener="sell_flawed"[^>]*>Sell a Flawed ceramic/);
+    expect(renderComponent(fixtureSource(SALE), <GameScreen />)).toMatch(/data-pane-opener="sell_flawed"[^>]*>Sell Flawed \(\+2 Coins\)/);
     const sale = { mode: "sell_flawed", workerKey: null, locationId: null, sell: "c1" };
     const draft = draftFor(SALE, { type: "SELL_FLAWED", ceramicId: "c1" });
     expect(draft).toMatchObject(sale);
@@ -731,13 +729,14 @@ describe("selling a Flawed ceramic in the work turn (change 30, R20)", () => {
   it("the viewer's board puts a Sell button on the Flawed ceramic only, which chooses it (data-act=\"sell\")", () => {
     const html = renderComponent(fixtureSource(SALE), <GameScreen />);
     const buttons = [...html.matchAll(/<button[^>]*data-act="sell"[^>]*>/g)].map((match) => match[0]);
-    expect(buttons).toHaveLength(1);
-    expect(buttons[0]).toContain('data-ceramic-id="c1"');
+    // On the viewer's board and the Finished ceramics strip beside the hand, as in the Order Phase.
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) expect(button).toContain('data-ceramic-id="c1"');
     expect(buttons[0]).not.toContain("aria-pressed");
-    // The name starts with the words the button shows (WCAG 2.5.3 Label in Name).
-    expect(buttons[0]).toMatch(/aria-label="Sell \(2 Coins\): Celadon Vase, Painted · Flawed \(finished\)"/);
-    expect(html).toMatch(/data-act="sell"[^>]*>Sell \(2 Coins\)<\/button>/);
-    expect(renderComponent(fixtureSource(SALE), <GameScreen />, { locale: "zh-CN" })).toMatch(/aria-label="卖出（得2铜钱）：[^"]+"[^>]*>卖出（得2铜钱）<\/button>/);
+    // D21: "Sell 2"; the name holds the words the button shows (WCAG 2.5.3 Label in Name), with the Coins in full.
+    expect(buttons[0]).toMatch(/aria-label="Sell 2 Coins: Celadon Vase, Painted · Flawed \(finished\)"/);
+    expect(html).toMatch(/data-act="sell"[^>]*>Sell 2<\/button>/);
+    expect(renderComponent(fixtureSource(SALE), <GameScreen />, { locale: "zh-CN" })).toMatch(/aria-label="卖出2铜钱：[^"]+"[^>]*>卖出2<\/button>/);
     // Another seat's turn, or nothing Flawed: no Sell button.
     for (const id of ["m1_work_phase_r2_3p", "t-firing-skipped"]) expect(renderComponent(fixtureSource(id), <GameScreen />), id).not.toContain('data-act="sell"');
   });
@@ -752,7 +751,7 @@ describe("sub-editors from seeded drafts", () => {
     expect(valuesOf(html, "clay").length).toBeGreaterThan(1);
     expect(perceivable(html)).toContain("After this action");
     expect(summary(html)).toMatch(/^Place .+ at Materials Yard — \d Clay \+ \d Wood/);
-    // The Shifu effect splits 8 (rev. 4 L177, change 34): nine splits, and nothing to buy with a Coin.
+    // The Shifu effect splits 8 (L195, change 34): nine splits, and nothing to buy with a Coin.
     const shifu = en(RICH, placedDraft(RICH, "materials_yard", "shifu"));
     expect(valuesOf(shifu, "clay")).toEqual(["8", "7", "6", "5", "4", "3", "2", "1", "0"]);
     expect(perceivable(shifu)).toContain("Split 8 between Clay and Wood");
@@ -760,7 +759,8 @@ describe("sub-editors from seeded drafts", () => {
     expect(valuesOf(en(RICH, placedDraft(RICH, "materials_yard", "apprentice")), "clay")).toEqual(["4", "3", "2", "1", "0"]);
     // The only choice is the split: no checkbox to buy more with a Coin.
     expect(inputs(shifu).filter((input) => input["type"] === "checkbox")).toEqual([]);
-    expect(inputs(shifu).map((input) => input["name"]).filter((name) => name !== "clay")).toEqual([]);
+    // (The step's radios, "mode", name the free actions that may come first, change 36.)
+    expect(inputs(shifu).map((input) => input["name"]).filter((name) => name !== "clay" && name !== "mode")).toEqual([]);
   });
 
   it("Form & Decorate: Shapes and Decorations with printed costs, and the live quote", () => {
@@ -777,7 +777,8 @@ describe("sub-editors from seeded drafts", () => {
     if (ding.type !== "PLACE_FORM_DECORATE" || ding.dingExtra === undefined) throw new Error("expected a command with Ding's extra vessel");
     const copied = ding.vessels[ding.dingExtra.copyOfVesselIndex]!.shape;
     const rows = (markup: string) => [...markup.matchAll(/<div class="b4-quote-line"[^>]*>(.*?)<\/div>/g)].map((match) => textOf(match[1]!).replace(/\s+/g, " ").trim());
-    expect(rows(html).filter((row) => row.includes("Moulded Production"))).toEqual([`Moulded Production: ${shapeName(copied, "en")} 1 Clay, 1 Coin`]);
+    // 1 Clay + 2 Coins since change 40, outside the Shifu's "if you form 2" (R29).
+    expect(rows(html).filter((row) => row.includes("Moulded Production"))).toEqual([`Moulded Production: ${shapeName(copied, "en")} 1 Clay, 2 Coins`]);
     expect(rows(zh(id, draft)).filter((row) => row.includes("范制成器"))).toHaveLength(1);
   });
 
@@ -884,26 +885,26 @@ describe("sub-editors from seeded drafts", () => {
     expect(perceivable(cmApprentice)).toContain("Select 2: look privately at the top 2 Main Orders, then reserve one Order from the display or those cards.");
     expect(perceivable(zh(RICH, placedDraft(RICH, "commission_market", "apprentice")))).toContain("精选2：私看主委托牌堆顶2张，然后从委托榜或这些牌中承接一张。");
     expect(perceivable(zh(RICH, placedDraft(RICH, "commission_market", "shifu")))).toContain("精选3：私看主委托牌堆顶3张，然后从委托榜和这些牌中承接至多2张（至少一张）。");
-    // Senior Apprentice gives the Apprentice the Shifu effect: the top 3 and up to 2 (v1.6.2 L618, R12).
+    // Senior Apprentice gives the Apprentice the Shifu effect: the top 3 and up to 2 (v1.6.2 L625, R12).
     const senior = en(INVERTED, placedDraft(INVERTED, "commission_market", "apprentice-senior"));
     expect(perceivable(senior)).toContain("Apprentice as Shifu at Commission Market");
     expect(perceivable(senior)).toContain("Select 3: look privately at the top 3 Main Orders, then reserve up to 2 Orders (at least one) from the display and those cards.");
     expect(summary(senior)).toMatch(/^Place Apprentice as Shifu at Commission Market — Select 3, reserving up to 2$/);
-    const cw = placedDraft("m1_work_phase_r2_3p", "canal_wharf", "shifu");
-    expect(perceivable(en("m1_work_phase_r2_3p", cw))).toMatch(/Gain 4 Coins/);
-    expect(perceivable(en("m1_work_phase_r2_3p", cw))).toContain("Then take the top Main Order card into your hand, unseen.");
-    expect(perceivable(zh("m1_work_phase_r2_3p", cw))).toMatch(/得4铜钱/);
-    expect(perceivable(zh("m1_work_phase_r2_3p", cw))).toContain("再不看牌面拿取主委托牌堆顶一张，收入手中。");
-    expect(perceivable(en("m1_work_phase_r2_3p", placedDraft("m1_work_phase_r2_3p", "canal_wharf", "apprentice")))).not.toContain("top Main Order");
+    const cw = placedDraft(RICH, "canal_wharf", "shifu");
+    expect(perceivable(en(RICH, cw))).toMatch(/Gain 4 Coins/);
+    expect(perceivable(en(RICH, cw))).toContain("Then take the top Main Order card into your hand, unseen.");
+    expect(perceivable(zh(RICH, cw))).toMatch(/得4铜钱/);
+    expect(perceivable(zh(RICH, cw))).toContain("再不看牌面拿取主委托牌堆顶一张，收入手中。");
+    expect(perceivable(en(RICH, placedDraft(RICH, "canal_wharf", "apprentice")))).not.toContain("top Main Order");
     // With the Main Order deck and its discard pile both empty, the Shifu takes no card (B1).
-    const empty = editedSource("m1_work_phase_r2_3p", (entry) => {
+    const empty = editedSource(RICH, (entry) => {
       entry.playerView.game.counts = { ...entry.playerView.game.counts, mainDeck: 0, mainDiscard: 0 };
     });
-    const emptyHtml = renderWindow(empty, { locale: "en", draft: placedDraft("m1_work_phase_r2_3p", "canal_wharf", "shifu") });
+    const emptyHtml = renderWindow(empty, { locale: "en", draft: placedDraft(RICH, "canal_wharf", "shifu") });
     expect(perceivable(emptyHtml)).toContain("The Main Order deck and its discard pile are empty, so there is no card to take.");
     expect(perceivable(emptyHtml)).not.toContain("Then take the top Main Order card");
     expect(perceivable(emptyHtml)).toMatch(/Gain 4 Coins/);
-    expect(perceivable(renderWindow(empty, { locale: "zh-CN", draft: placedDraft("m1_work_phase_r2_3p", "canal_wharf", "shifu") }))).toContain("主委托牌堆和弃牌堆都空了，没有牌可拿。");
+    expect(perceivable(renderWindow(empty, { locale: "zh-CN", draft: placedDraft(RICH, "canal_wharf", "shifu") }))).toContain("主委托牌堆和弃牌堆都空了，没有牌可拿。");
     const mh = en(KM_FUEL, draftFor(KM_FUEL, commandOf(KM_FUEL, "PLACE_MAGISTRATES_HALL")));
     expect(perceivable(mh)).toMatch(/Imperial Recognition \d → \d/);
     expect(perceivable(mh)).toContain("Pay 4 Coins");
@@ -1230,11 +1231,16 @@ describe("table targets from seeded drafts (§3.5)", () => {
     expect(workDraft.build(draftFor(DING, command) as never, model, engineViewOf(view))).toEqual(command);
   });
 
-  it("work: a Commission Market placement makes no Order a target (the look comes first, v1.6.2 L195–196)", () => {
+  it("work: a Commission Market placement makes no display Order a target (the look comes first, v1.6.2 L225–226)", () => {
     const command = commandOf(RICH, "PLACE_COMMISSION_MARKET");
     const selection = probe(RICH, draftFor(RICH, command));
     expect(selection.active?.locationId).toBe("commission_market");
-    expect(selection.orders).toEqual([]);
+    // Only the held Orders the viewer may complete first, a free action (change 36), are targets.
+    expect(selection.orders).toEqual([
+      ["S05", { state: "completable", disabled: false }],
+      ["S02", { state: "completable", disabled: false }],
+    ]);
+    expect(selection.orders.map(([key]) => key)).toEqual(freeActionOptions(fixture(RICH).playerView)!.completableOrderIds);
   });
 
   it("the Commission step: the display slots and the looked-at Orders are targets, chosen ones pressed", () => {
@@ -1271,7 +1277,7 @@ describe("table targets from seeded drafts (§3.5)", () => {
   });
 
   it("work: a held Order the swap cannot give up says the engine's reason on its greyed table toggle", () => {
-    // Both Main Order piles and the display empty: a Starting Order given up (to the box) leaves no Order to reserve (B1, v1.6.2 L64).
+    // Both Main Order piles and the display empty: a Starting Order given up (to the box) leaves no Order to reserve (B1, v1.6.2 L80).
     const edit = (entry: ReturnType<typeof fixture>) => {
       entry.playerView.game.counts.mainDeck = 0;
       entry.playerView.game.counts.mainDiscard = 0;
@@ -1324,7 +1330,7 @@ describe("table targets from seeded drafts (§3.5)", () => {
       const pending = fixture(id).playerView.own?.pendingLook ?? null;
       const look = pending !== null && "orderIds" in pending ? pending.orderIds : [];
       expect(look.length, id).toBeGreaterThan(0);
-      // Every Select also offers the display's slots (`slot:<i>`, v1.6.2 L64), never another seat's cards.
+      // Every Select also offers the display's slots (`slot:<i>`, v1.6.2 L80), never another seat's cards.
       const keys = probe(id).orders.map(([key]) => key);
       expect(keys.filter((key) => !key.startsWith("slot:")), id).toEqual(look);
       const display = fixture(id).playerView.game.market.display;

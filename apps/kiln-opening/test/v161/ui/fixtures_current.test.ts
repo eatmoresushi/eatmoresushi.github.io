@@ -128,7 +128,7 @@ describe("moments.json is current", () => {
     expect(s07?.triggers.canalBarge).toBe(true);
   });
 
-  it("the R7 scenario and moment m18 show Second Firing's 2 revealed cards while the choice is open (§5 gap 7, v1.6.2 L631)", () => {
+  it("the R7 scenario and moment m18 show Second Firing's 2 revealed cards while the choice is open (§5 gap 7, v1.6.2 L646)", () => {
     for (const id of ["w-second-firing-choice-with-jun-r7", "m18_jun_second_firing"]) {
       const entry = all.find((e) => e.id === id);
       expect(entry, id).toBeDefined();

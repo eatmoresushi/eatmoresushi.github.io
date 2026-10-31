@@ -62,7 +62,7 @@ describe("V1.6.2 reconnect", () => {
     expect(denied.ok ? null : denied.error.code).toBe("AUTHENTICATION_FAILED");
   });
 
-  it("restores a pending Commission Market Select 3 only to its owner, seat and step unchanged (v1.6.2 L202)", async () => {
+  it("restores a pending Commission Market Select 3 only to its owner, seat and step unchanged (v1.6.2 L226)", async () => {
     const { harness } = await started();
     let topThree: string[] = [];
     await seedState(harness, (gameId) => {
@@ -90,7 +90,7 @@ describe("V1.6.2 reconnect", () => {
     }
   });
 
-  it("restores a Colour Samples swap's Select 3 only to its owner; the discarded Order and the looked cards stay private (v1.6.2 L622, change 25, R25, B3)", async () => {
+  it("restores a Colour Samples swap's Select 3 only to its owner; the discarded Order and the looked cards stay private (v1.6.2 L632, change 25, R25, B3)", async () => {
     const { harness } = await started();
     let look: OrderId[] = [];
     await seedState(harness, (gameId) => {
@@ -128,7 +128,7 @@ describe("V1.6.2 reconnect", () => {
     expect(after.game?.counts.mainDiscard).toBe(3);
   });
 
-  it("restores a Second Firing choice with its 2 public cards; only the owner may choose (v1.6.2 L631, R7)", async () => {
+  it("restores a Second Firing choice with its 2 public cards; only the owner may choose (v1.6.2 L646, R7)", async () => {
     const { harness } = await started();
     await seedState(harness, (gameId) => {
       // P1's White Bowl in a High space: Base 2 + Fire 0 + 1 = 3, Heat Difference 2, Standard.
@@ -152,7 +152,7 @@ describe("V1.6.2 reconnect", () => {
       const view = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, playerId).seatToken }));
       expect(view.seat.playerId).toBe(playerId);
       expect(view.game?.phase).toEqual({ type: "firing_second_firing_choice", actorId: "P1", ceramicId: "c1" });
-      // Both revealed cards are public (L631), so every seat sees them.
+      // Both revealed cards are public (L646), so every seat sees them.
       expect(view.game?.firing?.pendingExtraFire).toEqual({ playerId: "P1", ceramicId: "c1", modifiers: [1, -1] });
     }
     const refused = await tryCommand(harness, "P2", { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null });
@@ -163,7 +163,7 @@ describe("V1.6.2 reconnect", () => {
     expect(chosen.game.fireDiscard.slice(-3)).toEqual([1, -1, 0]);
   });
 
-  it("restores the Setup pick mid-way: each seat's own hand, the public take, seat and state unchanged, and the pending chooser picks after (rev. 4 L122, R23)", async () => {
+  it("restores the Setup pick mid-way: each seat's own hand, the public take, seat and state unchanged, and the pending chooser picks after (L130, R23)", async () => {
     const { harness } = await started();
     const head = await headState(harness);
     if (head.phase.type !== "setup_kiln_selection") throw new Error(`expected Setup, found ${head.phase.type}`);
@@ -220,12 +220,64 @@ describe("V1.6.2 reconnect", () => {
     expect(secondPick.game.phase.type).not.toBe("setup_kiln_selection");
   });
 
+  it.each(["after_action", "order_phase"] as const)(
+    "restores a free-action window (%s) with the seat's own hand only; the window is the same for every seat, and the seat completes after (rev. 5 L168–176, R27, R28)",
+    async (window) => {
+      const { harness } = await started();
+      await seedState(harness, (gameId) =>
+        seatState(2, {
+          gameId,
+          round: 3,
+          players: [
+            { id: "P1", displayName: "Seat 1", hand: ["O02"], resources: { coins: 1 } },
+            { id: "P2", displayName: "Seat 2", hand: ["O40"] },
+          ],
+          ceramics: [{ owner: "P1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
+          ...(window === "order_phase" ? { phase: { type: "orders", turnOrder: ["P1", "P2"], index: 0 } } : {}),
+        }),
+      );
+      if (window === "after_action") {
+        // A held Order and a Finished ceramic that is not Flawed open the window (public facts).
+        await command(harness, "P1", { type: "PLACE_CANAL_WHARF", workerId: "P1:apprentice:1" });
+      }
+      const head = await headState(harness);
+      const expected = window === "after_action" ? { type: "work_turn", activePlayerId: "P1", step: { kind: "after_action" } } : { type: "orders", turnOrder: ["P1", "P2"], index: 0 };
+      expect(head.phase).toEqual(expected);
+      const headBefore = await harness.store.loadHead(harness.roomId);
+      const auditBefore = harness.store.audit();
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const own = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P1").seatToken }));
+        expect(own.seat).toEqual(connectionFor(harness, "P1").seat);
+        expect(own.ownPrivateView?.orderHand).toEqual(["O02"]);
+        expect(own.game?.phase).toEqual(expected);
+        expect(own.game?.revision).toBe(head.revision);
+        const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
+        expect(other.ownPrivateView?.orderHand).toEqual(["O40"]);
+        expect(other.game?.phase).toEqual(expected);
+        expect(other.game?.counts.orderHands["P1"]).toBe(1);
+        expect(JSON.stringify(other)).not.toContain('"O02"');
+        expect(JSON.stringify(own)).not.toContain('"O40"');
+        expect(JSON.stringify(other.game)).toEqual(JSON.stringify(own.game));
+      }
+      expect(await harness.store.loadHead(harness.roomId)).toEqual(headBefore);
+      expect(harness.store.audit()).toEqual(auditBefore);
+
+      // The seat continues where it left off: the completion is a free action, and public.
+      const completed = await command(harness, "P1", { type: "COMPLETE_ORDER", orderId: "O02", ceramicIds: ["c1"] });
+      expect(completed.ownPrivateView?.orderHand).toEqual([]);
+      expect(completed.game.players["P1"]?.completedOrders.map((record) => record.orderId)).toEqual(["O02"]);
+      const after = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
+      expect(after.game?.players["P1"]?.completedOrders.map((record) => record.orderId)).toEqual(["O02"]);
+      expect(after.game?.phase).not.toEqual(expected);
+    },
+  );
+
   it("replays an accepted command by its ID without committing it again", async () => {
     const { harness, start } = await started();
     const actor = decisionPrompt(start.game).actorIds[0]!;
     const other = actor === "P1" ? "P2" : "P1";
     const commandId = "00000000-0000-4000-9700-000000000001";
-    // Setup step 9 (rev. 4 L122, R23): the Kiln and a face-up Main Order in one command.
+    // Setup step 9 (L130, R23): the Kiln and a face-up Main Order in one command.
     const orderId = start.game.market.display[0]!;
     const pick = { type: "SELECT_KILN", kilnId: "DI", mainOrder: { slotIndex: 0, orderId } } as const;
     const first = valueOf(await tryCommand(harness, actor, pick, start.revision, commandId));

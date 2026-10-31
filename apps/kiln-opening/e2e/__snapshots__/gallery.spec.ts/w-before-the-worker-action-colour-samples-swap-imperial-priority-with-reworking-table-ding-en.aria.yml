@@ -1,6 +1,8 @@
 - region "Your decision":
   - paragraph: "Your turn: place a worker · 4 left"
-  - group "Or first:":
+  - group "Free actions":
     - text: ""
+    - button "Deliver O01"
+    - button "Deliver S01"
     - button "Imperial Priority"
     - button "Colour Samples swap"

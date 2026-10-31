@@ -22,7 +22,9 @@
  * A steered game also reaches the optional abilities a random autopilot rarely meets — the
  * Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master's
  * marker chosen at loading (owner revision 4, R22), the Magistrate's Hall Shifu's Crown Order
- * (change 33), the sale of a Flawed ceramic (R20) and Fuel Ledger's own Contribution cards —
+ * (change 33), the free actions in their revision-5 windows (a sale, a held Order completed in
+ * a Work turn, Imperial Priority in the Order Phase; change 36, R26–R28) and Fuel Ledger's own
+ * Contribution cards —
  * through their real form controls: a short preference list (Ge at Kiln selection, the Guild Hall
  * and those Techs when offered, then the ability's own option or card) is tried once per decision before
  * the autopilot's own pick. The forms still build every command, and the engine still accepts
@@ -60,7 +62,8 @@ import { LocalTable } from "../engine/support/localTable.ts";
 class TableSource implements GameSource {
   private snapshot: GameSnapshot;
   private readonly listeners = new Set<() => void>();
-  readonly sent: Array<{ actorId: PlayerId; command: AuthoritativeCommand }> = [];
+  /** Every command sent, with the phase it was sent in (a free action's window, owner revision 5). */
+  readonly sent: Array<{ actorId: PlayerId; command: AuthoritativeCommand; phase: string }> = [];
   readonly rejected: string[] = [];
 
   constructor(readonly table: LocalTable) {
@@ -89,7 +92,7 @@ class TableSource implements GameSource {
   async submit(command: AuthoritativeCommand): Promise<SubmitOutcome> {
     const actorId = this.snapshot.view?.viewerId ?? null;
     if (actorId === null) return { kind: "ignored" };
-    this.sent.push({ actorId, command });
+    this.sent.push({ actorId, command, phase: this.table.state.phase.type });
     const result = command.type === "SUBMIT_CONTRIBUTION" ? this.table.tryContribute(actorId, command.card) : this.table.tryAct(actorId, command);
     if (!result.ok) {
       this.rejected.push(`${actorId} ${JSON.stringify(command)}: ${result.error.code}`);
@@ -136,20 +139,24 @@ interface GameReport {
   moves: number;
   windows: Map<string, number>;
   commands: Map<string, number>;
-  /** Every command the forms sent, in order. */
-  sent: ReadonlyArray<{ actorId: PlayerId; command: AuthoritativeCommand }>;
+  /** Every command the forms sent, in order, with the phase it was sent in. */
+  sent: ReadonlyArray<{ actorId: PlayerId; command: AuthoritativeCommand; phase: string }>;
   /** Presses of table targets, by kind (`place`, `tech`, `inspect`). */
   table: Map<string, number>;
 }
 
 /**
  * The optional abilities a game's forms used: the command types, Kiln Master's marker inside a
- * loading command (Glaze & Load or Imperial Priority, rev. 4 R22) and the Magistrate's Hall
- * Shifu's Crown Order (change 33).
+ * loading command (Glaze & Load or Imperial Priority, rev. 4 R22), the Magistrate's Hall
+ * Shifu's Crown Order (change 33), and the free actions outside their old windows (owner
+ * revision 5, change 36): an Order completed in a Work turn and Imperial Priority spent in the
+ * Order Phase (R28).
  */
 function abilitiesUsed(report: GameReport): Set<string> {
   const used = new Set<string>();
-  for (const { command } of report.sent) {
+  for (const { command, phase } of report.sent) {
+    if (command.type === "COMPLETE_ORDER" && phase === "work_turn") used.add("COMPLETE_ORDER.workTurn");
+    if (command.type === "USE_IMPERIAL_PRIORITY" && phase === "orders") used.add("USE_IMPERIAL_PRIORITY.orderPhase");
     if (command.type === "USE_COLOUR_SAMPLES_SWAP" || command.type === "USE_PROTECTIVE_SAGGARS" || command.type === "USE_GE_CRACKLE" || command.type === "SECOND_FIRING_CHOOSE" || command.type === "SELL_FLAWED") used.add(command.type);
     if (command.type === "PLACE_GLAZE_LOAD" && command.loads.some((load) => load.kilnMaster !== undefined)) used.add("kilnMaster");
     if (command.type === "USE_IMPERIAL_PRIORITY" && command.kilnMaster !== undefined) used.add("kilnMaster");
@@ -168,19 +175,26 @@ function abilitiesUsed(report: GameReport): Set<string> {
  */
 const ABILITY_PREFERENCES: readonly string[] = [
   'input[name="kilnId"][value="GE"]',
-  // Before the worker action the pane is hidden: the Colour Samples swap is opened from above the world.
+  // Before the worker action the pane is hidden: the Colour Samples swap is a chip above the world.
   '[data-pane-opener="colour_samples_swap"]',
-  'input[name="mode"][value="colour_samples_swap"]',
+  'input[name="freeAction"][value="colour_samples_swap"]',
   'input[name="afterQuality"][value^="protective_saggars:"]',
   'input[name="afterQuality"][value^="second_firing:"]',
   'input[name="afterQuality"][value^="ge_crackle:"]',
   // Kiln Master's side, chosen when loading (rev. 4 R22).
   'input[name="kilnMaster"]:not([value="none"])',
-  // The Magistrate's Hall Shifu's optional Crown Order (change 33), and a Flawed ceramic's sale (R20).
+  // The Magistrate's Hall Shifu's optional Crown Order (change 33), and the free actions (owner
+  // revision 5, change 36): a Flawed ceramic's sale, a held Order completed before or after the
+  // worker action, Imperial Priority in the Order Phase (R28).
   'input[name="crownOrder"]:not([value="none"])',
   '[data-pane-opener="sell_flawed"]',
+  'input[name="freeAction"][value="sell_flawed"]',
+  'input[name="work.sell"]',
   'input[name="orders.sell"]',
-  'input[name="afterQuality.sell"]',
+  '[data-pane-opener^="complete-"]',
+  'input[name="freeAction"][value^="complete-"]',
+  'form[data-window="orders"] input[name="freeAction"][value="imperial_priority"]',
+  'form[data-window="orders"] input[name="ceramicId"]',
   'input[name="take"][value="T10"]',
   'input[name="take"][value="T11"]',
   'input[name="take"][value="T14"]',
@@ -316,7 +330,7 @@ describe("full games played only through the decision forms (§9.4)", () => {
       "SUBMIT_CONTRIBUTION",
       "COMPLETE_ORDER",
       "DISCARD_TO_HAND_LIMIT",
-      // Owner revision 4 (R20): a Flawed ceramic sold.
+      // A Flawed ceramic sold (a free action since owner revision 5, change 36).
       "SELL_FLAWED",
     ]) {
       expect(used.has(type), type).toBe(true);
@@ -325,17 +339,17 @@ describe("full games played only through the decision forms (§9.4)", () => {
 });
 
 describe("steered games reach the optional abilities through their forms", () => {
-  // Seeds found by playing steered games (3 and 4 players, seeds 5000–5009 and the earlier sets),
-  // checked again under owner revision 4: together they use all five abilities, Kiln Master's
-  // marker at loading, a Crown Order at the Magistrate's Hall, a sale and a Fuel Ledger card.
+  // Seeds found by playing steered games (3 players 5000–5039, 4 players 5000–5029), checked
+  // again under owner UI decision D21: together they use all five abilities, Kiln Master's marker at
+  // loading, a Crown Order at the Magistrate's Hall, a sale, a held Order completed in a Work turn
+  // and Imperial Priority in the Order Phase (free actions, change 36, R28) and a Fuel Ledger card.
   // `KILN_UI_STEER_SEEDS="4:5000,3:5001"` plays other steered games (to search for seeds).
   const override = process.env["KILN_UI_STEER_SEEDS"];
   const steered: ReadonlyArray<readonly [2 | 3 | 4, number]> =
     override === undefined
       ? [
-          [3, 5_006],
-          [3, 5_003],
-          [3, 5_007],
+          [4, 5_017],
+          [3, 5_029],
         ]
       : override.split(",").map((pair) => {
           const [players, seed] = pair.split(":").map(Number);
@@ -355,15 +369,17 @@ describe("steered games reach the optional abilities through their forms", () =>
     }
   }, 600_000);
 
-  it("together, the Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master, a Crown Order, a sale and a Fuel Ledger card were sent from their forms", () => {
+  it("together, the Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master, a Crown Order, the free actions in their new windows and a Fuel Ledger card were sent from their forms", () => {
     if (override !== undefined) return;
     expect([...used].sort()).toEqual([
+      "COMPLETE_ORDER.workTurn",
       "PLACE_MAGISTRATES_HALL.crownOrder",
       "SECOND_FIRING_CHOOSE",
       "SELL_FLAWED",
       "SUBMIT_CONTRIBUTION.fuelLedgerCard",
       "USE_COLOUR_SAMPLES_SWAP",
       "USE_GE_CRACKLE",
+      "USE_IMPERIAL_PRIORITY.orderPhase",
       "USE_PROTECTIVE_SAGGARS",
       "kilnMaster",
     ]);

@@ -76,7 +76,7 @@ function rerandomiseHidden(
 
   // Tech decks (and another seat's inspection) per discipline, in a new order.
   for (const discipline of ["workshop", "glazing_loading", "firing"] as TechDiscipline[]) {
-    // Another seat's inspection, also while it waits behind its Colour Samples look (v1.6.2 L207).
+    // Another seat's inspection, also while it waits behind its Colour Samples look (v1.6.2 L237).
     const inspection = otherLook?.kind === "guild_inspection" ? otherLook : otherLook?.kind === "colour_samples" ? otherLook.inspection : null;
     const inspected = inspection !== null && inspection !== undefined && inspection.discipline === discipline ? inspection : null;
     const containers: TechId[][] = [hidden.techDecks[discipline], inspected?.techIds ?? []];

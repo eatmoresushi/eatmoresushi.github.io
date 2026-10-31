@@ -278,7 +278,8 @@ describe("skip link", () => {
     expect(document.activeElement).toBe($("[data-pane-openers] [data-focus-heading]"));
     expect(document.activeElement?.textContent).toMatch(/^Your turn: place a worker · \d left$/);
     // Its openers follow it in the Tab order, after the words that name them.
-    expect($("[data-pane-openers] [role='group']").textContent).toBe("Or first:Imperial PriorityColour Samples swap");
+    // (One "Deliver" chip per held Order the viewer may complete now: a free action, change 36.)
+    expect($("[data-pane-openers] [role='group']").textContent).toBe("Free actionsDeliver O01Deliver S01Imperial PriorityColour Samples swap");
   });
 });
 

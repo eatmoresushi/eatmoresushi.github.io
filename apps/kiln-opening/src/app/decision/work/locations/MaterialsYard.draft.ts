@@ -2,7 +2,7 @@
  * The Materials Yard sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor`
  * materials_yard). Owner: B4.
  *
- * Choices: the Clay/Wood split (3, or 6 for the Shifu effect, v1.6.2 L164–165; there is no Coin
+ * Choices: the Clay/Wood split (4, or 8 for the Shifu effect, v1.6.2 L194–195; there is no Coin
  * option) and Prepared Clay (T17: a Shape and a Decoration). Every list comes from
  * `materialsYardOptions(view, worker)` (§5 gap 14); the complete draft is quoted with
  * `quoteMaterialsYard`. A Prepared Clay Decoration is offered per chosen Shape from the

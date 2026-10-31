@@ -42,7 +42,7 @@ describe("Tech readiness", () => {
     expect(() => markTechUsed(state, "p2", "T13", ctx)).toThrow(InvariantError);
   });
 
-  it("readyAllAbilities readies every Tech and Kiln Tradition (L132)", () => {
+  it("readyAllAbilities readies every Tech and Kiln Tradition (L154)", () => {
     const state = buildState({
       players: [{ techs: [{ id: "T05", usedThisRound: true }], kilnAbilityUsedThisRound: true }, { techs: [{ id: "T24", usedThisRound: true }] }],
     });
@@ -53,7 +53,7 @@ describe("Tech readiness", () => {
   });
 });
 
-describe("hand limit (L200, L304, L626)", () => {
+describe("hand limit (L229, L325, L632)", () => {
   it("is 4, or 5 with Colour Samples", () => {
     const state = buildState({ players: [{ techs: ["T10"] }, {}] });
     expect(handLimit(state.players["p1"]!)).toBe(5);
@@ -61,7 +61,7 @@ describe("hand limit (L200, L304, L626)", () => {
   });
 });
 
-describe("acquisition (L208–214, L375)", () => {
+describe("acquisition (L237–243, L390)", () => {
   it("allows at most 1 Tech per discipline and 3 in total", () => {
     const state = buildState({ players: [{ techs: ["T01", "T22"] }, {}] });
     const p1 = state.players["p1"]!;
@@ -74,21 +74,23 @@ describe("acquisition (L208–214, L375)", () => {
     expectDocumentedDetails(acquisitionError(p1, "T16"));
   });
 
-  it("prices every Guild Hall take at the printed cost: V1.6.2 has no Shifu discount (v1.6.2 L206–207, owner revision 2026-10-17)", () => {
+  it("prices every Guild Hall take at the printed cost: V1.6.2 has no Shifu discount (v1.6.2 L236–237, owner revision 2026-10-17)", () => {
     for (const techId of TECH_IDS) expect(techPrice(techId), techId).toBe(TECHS[techId].cost);
-    expect([techPrice("T01"), techPrice("T17"), techPrice("T25")]).toEqual([2, 3, 4]);
+    expect([techPrice("T01"), techPrice("T17"), techPrice("T25")]).toEqual([2, 4, 4]);
   });
 
-  it("charges the V1.6.2 costs (v1.6.2 L32, L618, L626, L636; Fuel Ledger 4 by rev. 4 L625, change 30)", () => {
+  it("charges the V1.6.2 costs (v1.6.2 L32; Fuel Ledger 4 by L644, change 30; rev. 5 L624, L632, L637, L643, change 38)", () => {
     expect(TECHS.T18.cost).toBe(3);
     expect(TECHS.T20.cost).toBe(3);
-    expect(TECHS.T11.cost).toBe(3);
     expect(TECHS.T12.cost).toBe(4);
     expect(TECHS.T13.cost).toBe(3);
-    expect([techPrice("T18"), techPrice("T20"), techPrice("T11"), techPrice("T12")]).toEqual([3, 3, 3, 4]);
+    // Owner revision 5 (change 38): Canal Barge 3, Prepared Clay 4, Colour Samples 3, Protective Saggars 2.
+    expect([TECHS.T23.cost, TECHS.T17.cost, TECHS.T10.cost, TECHS.T11.cost]).toEqual([3, 4, 3, 2]);
+    expect([techPrice("T18"), techPrice("T20"), techPrice("T11"), techPrice("T12")]).toEqual([3, 3, 2, 4]);
+    expect([techPrice("T23"), techPrice("T17"), techPrice("T10")]).toEqual([3, 4, 3]);
   });
 
-  it("grantTech adds the Tech and unlocks the matching personal space (L212)", () => {
+  it("grantTech adds the Tech and unlocks the matching personal space (L241)", () => {
     const state = buildState({ round: 3 });
     const ctx = testContext();
     grantTech(state, "p1", "T16", ctx);
@@ -114,7 +116,7 @@ describe("acquisition (L208–214, L375)", () => {
   });
 });
 
-describe("Kiln Traditions (L454–486, R1)", () => {
+describe("Kiln Traditions (L468–500, R1)", () => {
   it("tracks the once-per-round Kiln ability", () => {
     const state = buildState({ players: [{ kilnId: "JU" }, { kilnId: "DI" }] });
     const p1 = state.players["p1"]!;
