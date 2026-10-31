@@ -8,7 +8,7 @@
  *   modifier and the Wood paid (Fuel Ledger's extra Wood included); none when nobody has a
  *   ceramic in the Shared Kiln;
  * - Base Heat (0–5) once revealed, the Fire card once turned, Global Heat;
- * - while the Second Firing choice is open (v1.6.2 L631), its 2 revealed Fire cards with their
+ * - while the Second Firing choice is open (v1.6.2 L646), its 2 revealed Fire cards with their
  *   ceramic (public; once one is chosen both go to the discard);
  * - the open Fire discard (D4).
  * No Actual Heat, previews, ladders or odds. Values not yet known read "?" with words for

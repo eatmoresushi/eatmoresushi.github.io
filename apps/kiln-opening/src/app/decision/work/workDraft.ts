@@ -129,7 +129,7 @@ export interface WorkDraft {
   readonly locationId: LocationId | null;
   readonly perLocation: PerLocation;
   readonly imperialPriority: ImperialPriorityDraft;
-  /** The Colour Samples swap's held Order to discard (v1.6.2 L622). */
+  /** The Colour Samples swap's held Order to discard (v1.6.2 L632). */
   readonly swap: ColourSamplesSwapDraft;
   /** The Flawed ceramic to sell (`sell_flawed`, a free action), or null. */
   readonly sell: CeramicId | null;

@@ -14,11 +14,11 @@
  *   (Apprentice) or a discipline's deck (Shifu) is chosen; a Tech the worker cannot buy is
  *   focusable but cannot be chosen, with its reason.
  * - A language switch keeps the draft and re-renders the ConfirmBar sentence.
- * - The Guild Hall inspection (v1.6.2 L207): one take per Confirm; after a take, stopping with the
+ * - The Guild Hall inspection (v1.6.2 L237): one take per Confirm; after a take, stopping with the
  *   bottom order set by Move up / Move down, then Confirm (§8.1); a single untaken Tech is named,
  *   not ordered. The face-up Techs may be chosen on the Tech display for either take (D14), and a
  *   refused take shows the engine's reason in words.
- * - The Colour Samples swap (v1.6.2 L617): after the action, the held Order to give up, chosen
+ * - The Colour Samples swap (v1.6.2 L632): after the action, the held Order to give up, chosen
  *   in the pane or on the hand row; Confirm sends the swap.
  * - Kiln selection: no Full rules button; a Kiln another player took is focusable but cannot be
  *   chosen.
@@ -330,7 +330,7 @@ describe("the Guild Hall choice is made on the Tech display", () => {
   });
 });
 
-describe("the Guild Hall inspection (v1.6.2 L207)", () => {
+describe("the Guild Hall inspection (v1.6.2 L237)", () => {
   it("the first take: one Tech, sent alone, with no bottom order yet", () => {
     const id = "m12_guild_shifu_inspection";
     const options = guildInspectionOptions(fixture(id).playerView);
@@ -374,7 +374,7 @@ describe("the Guild Hall inspection (v1.6.2 L207)", () => {
   });
 });
 
-describe("the Guild Hall inspection on the Tech display (D14, v1.6.2 L207)", () => {
+describe("the Guild Hall inspection on the Tech display (D14, v1.6.2 L237)", () => {
   it("a face-up Tech chosen on the display is the pane's take; one the Shifu cannot take cannot be chosen", () => {
     const id = "m12_guild_shifu_inspection";
     const options = guildInspectionOptions(fixture(id).playerView);
@@ -455,7 +455,7 @@ describe("the Guild Hall inspection on the Tech display (D14, v1.6.2 L207)", () 
   });
 });
 
-describe("the Colour Samples swap (v1.6.2 L617)", () => {
+describe("the Colour Samples swap (v1.6.2 L632)", () => {
   it("after the action: the held Order to give up, chosen in the pane; Confirm sends the swap", () => {
     const id = "m17_after_action";
     const source = new ControlledSource(id);

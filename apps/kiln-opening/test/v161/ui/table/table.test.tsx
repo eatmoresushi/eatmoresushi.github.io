@@ -255,7 +255,7 @@ describe("OrderDisplay", () => {
     expect(others).toContain(`Empty. Refills when <strong>${name}</strong>’s turn ends.`);
     const zh = renderComponent(new FixtureGameSource(entry), <OrderDisplay />, { registry: TABLE_WINDOWS, locale: "zh-CN" });
     expect(zh).toContain(`空位：<strong>${name}</strong>的回合结束时补榜。`);
-    // During the look nothing is reserved yet, so the display is full (v1.6.2 L195–196).
+    // During the look nothing is reserved yet, so the display is full (v1.6.2 L225–226).
     expect(render("m2_commission_market_look_r3_4p", <OrderDisplay />)).not.toContain("Refills when");
     const counts = viewOf(id).game.counts;
     expect(textOf(en)).toContain(`Main deck ${counts.mainDeck} · discard ${counts.mainDiscard} (face down)`);
@@ -500,7 +500,7 @@ describe("TechDisplay: the Guild Hall chooser (owner review, 2026-10-17)", () =>
     expect(textOf(real(id, placed(id, "guild_hall", "apprentice"), "zh-CN"))).toContain("派学徒到陶工行：选择要习得的公开技艺");
   });
 
-  it("a taken Tech's position stays empty until the taker's turn ends (v1.6.2 L209), shown as an empty tile, with no count", () => {
+  it("a taken Tech's position stays empty until the taker's turn ends (v1.6.2 L239), shown as an empty tile, with no count", () => {
     // Lin took Colour Samples (Glazing & Loading) this turn and is in the after-action window.
     const id = "t-colour-samples-select-face-up";
     const view = viewOf(id);
@@ -557,7 +557,7 @@ describe("TechDisplay: Guild Hall Shifu inspection", () => {
     expect(render(id, <TechDisplay />, { registry: ONLOOKER_WINDOWS })).not.toContain("techs-looking");
   });
 
-  it("a taken Tech's position shows as refilling while the inspection holds that deck's last cards (v1.6.2 L209, B2)", () => {
+  it("a taken Tech's position shows as refilling while the inspection holds that deck's last cards (v1.6.2 L239, B2)", () => {
     // w-guild-hall-shifu-inspection inspects Firing; here its deck held only the 2 inspected
     // Techs, and the Shifu then took a face-up Firing Tech. The 2 untaken go back under the deck
     // before the refill, so the taken position refills at the end of the turn.
@@ -590,7 +590,7 @@ describe("TechDisplay: Guild Hall Shifu inspection", () => {
     expect(firing(renderComponent(new FixtureGameSource(done), <TechDisplay />, { registry: WINDOWS }))).not.toContain("data-empty-position");
   });
 
-  it("the looker's own display is the take chooser: its prompt, every face-up Tech at its printed cost, no inspected Tech and no \"is looking\" line (D14, v1.6.2 L207)", () => {
+  it("the looker's own display is the take chooser: its prompt, every face-up Tech at its printed cost, no inspected Tech and no \"is looking\" line (D14, v1.6.2 L237)", () => {
     const id = "m12_guild_shifu_inspection";
     const view = viewOf(id);
     const options = guildInspectionOptions(view)!;
@@ -611,7 +611,7 @@ describe("TechDisplay: Guild Hall Shifu inspection", () => {
     expect(textOf(render(id, <TechDisplay />, { locale: "zh-CN" }))).toContain("师傅在陶工行：在这里习得一张公开技艺，或习得你所看的技艺");
   });
 
-  it("after the first take: the second-take prompt, the taken discipline greyed out with its reason, the taken position empty (v1.6.2 L207, L209)", () => {
+  it("after the first take: the second-take prompt, the taken discipline greyed out with its reason, the taken position empty (v1.6.2 L237, L239)", () => {
     const id = "d-guild-hall-after-a-take";
     const options = guildInspectionOptions(fixture(id).playerView)!;
     expect(options.takes).toHaveLength(1);

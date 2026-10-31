@@ -67,7 +67,7 @@ export function ownFiringCeramicIds(model: GameModel): CeramicId[] {
 }
 
 /**
- * Protective Saggars keeps this ceramic Standard this firing instead of Flawed (v1.6.2 L636;
+ * Protective Saggars keeps this ceramic Standard this firing instead of Flawed (v1.6.2 L643;
  * `FiringStageCeramic.saggarsFloor`, a public fact the game log also records). Only while its
  * recorded Quality is still Standard: once Saggars' own upgrade or Ge's Crackle makes it Fine,
  * "counts as Standard" no longer describes it (the engine keeps the flag set).

@@ -50,12 +50,12 @@ describe("error text", () => {
     expect(ruleErrorText({ code: "LOCATION_FULL", details: { locationId: "guild_hall" } }, "zh-CN")).toBe("陶工行已满");
   });
 
-  it("names the Guild Hall's and Glaze & Load's own placement conditions for NO_MAIN_ACTION_POSSIBLE (v1.6.2 L212, rev. 4 L198), and the generic sentence elsewhere", () => {
+  it("names the Guild Hall's and Glaze & Load's own placement conditions for NO_MAIN_ACTION_POSSIBLE (v1.6.2 L242, L216), and the generic sentence elsewhere", () => {
     const guild = { code: "NO_MAIN_ACTION_POSSIBLE", details: { locationId: "guild_hall", workerId: "p1:shifu", effect: "shifu" } } as const;
     expect(ruleErrorText(guild, "en")).toBe("You can place a worker at the Guild Hall only if you can afford a face-up Tech from a discipline you do not own yet.");
     expect(ruleErrorText(guild, "zh-CN")).toBe("只有当你付得起一张公开技艺，且还没有该门类的技艺时，才可以派工到陶工行");
     expect(mpErrorText(guild.code, guild.details, "en")).toBe(ruleErrorText(guild, "en"));
-    // Glaze & Load names the kiln fuel (rev. 4 L198, R24), from content.
+    // Glaze & Load names the kiln fuel (L216, R24), from content.
     const glaze = { code: "NO_MAIN_ACTION_POSSIBLE", details: { locationId: "glaze_load" } } as const;
     expect(ruleErrorText(glaze, "en")).toBe("You can place a worker at Glaze & Load only if you have a Shaped vessel, an empty active Shared Kiln space or your own empty Imperial Kiln, and 1 Wood if you load into the Shared Kiln.");
     expect(ruleErrorText(glaze, "zh-CN")).toBe("只有当你有坯，有空的启用窑位或自己空着的御窑，并且（若装进共窑）有1柴时，才可以派工到施釉装窑。");

@@ -160,7 +160,7 @@ describe("advanceTurns", () => {
     expect(keysOf(advanceTurns(startTurnTracker([], BASE), log, viewer).turns)).toEqual([[other, ["ORDER_COMPLETED"]]]);
   });
 
-  it("folds Canal Barge's Coins into its line, as the log does (v1.6.2 L622)", () => {
+  it("folds Canal Barge's Coins into its line, as the log does (v1.6.2 L637)", () => {
     const used: PublicGameEvent = { type: "TECH_USED", playerId: other, techId: "T23" };
     const barge: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: 2, reason: "canal_barge" };
     const log = entries(45, BASE + 1, other, [orderTurnStarted(other), used, barge, orderTurnEnded(other)]);
@@ -171,18 +171,18 @@ describe("advanceTurns", () => {
   });
 
   it("folds a Guild Hall payment into the acquisition line after it, as the log does", () => {
-    const paid: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: -2, reason: "guild_hall" };
-    const acquired: PublicGameEvent = { type: "TECH_ACQUIRED", playerId: other, techId: "T10", source: "face_up", cost: 2 };
+    const paid: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: -3, reason: "guild_hall" };
+    const acquired: PublicGameEvent = { type: "TECH_ACQUIRED", playerId: other, techId: "T10", source: "face_up", cost: 3 };
     const log = entries(150, BASE + 1, other, [placed(other, "guild_hall"), paid, acquired]);
     expect(isToastLine(log[1]!, log[0], log[2])).toBe(false);
     expect(keysOf(advanceTurns(startTurnTracker([], BASE), log, viewer).turns)).toEqual([[other, ["WORKER_PLACED", "TECH_ACQUIRED"]]]);
     // No VP for a Tech (v1.6.2 change 27).
-    expect(publicEventText(acquired, { t: en, view: logCeramicView(model, []), viewerId: viewer })).toBe(`${nameOf(other)} acquired Colour Samples: pay 2 Coins`);
+    expect(publicEventText(acquired, { t: en, view: logCeramicView(model, []), viewerId: viewer })).toBe(`${nameOf(other)} acquired Colour Samples: pay 3 Coins`);
   });
 
   it("shows the Contribution cards that come with Fuel Ledger as their own line, after the acquisition (v1.6.2 change 26)", () => {
-    const paid: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: -2, reason: "guild_hall" };
-    const acquired: PublicGameEvent = { type: "TECH_ACQUIRED", playerId: other, techId: "T12", source: "face_up", cost: 2 };
+    const paid: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: -4, reason: "guild_hall" };
+    const acquired: PublicGameEvent = { type: "TECH_ACQUIRED", playerId: other, techId: "T12", source: "face_up", cost: 4 };
     const cards: PublicGameEvent = { type: "CONTRIBUTION_CARDS_GAINED", playerId: other, techId: "T12", cards: ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] };
     const log = entries(160, BASE + 1, other, [placed(other, "guild_hall"), paid, acquired, cards, turnEnded(other)]);
     expect(isToastLine(log[3]!, log[2], log[4])).toBe(true);
@@ -247,7 +247,7 @@ describe("advanceTurns", () => {
     }
   });
 
-  it("fits a Glaze & Load turn with kiln fuel and Kiln Master's marker in 4 lines: no \"used Kiln Master\" (rev. 4 L628, R22, R24)", () => {
+  it("fits a Glaze & Load turn with kiln fuel and Kiln Master's marker in 4 lines: no \"used Kiln Master\" (L647, R22, R24)", () => {
     const loadedTo = (ceramicId: string, spaceId: "high_1" | "middle_1"): PublicGameEvent =>
       ({ type: "CERAMIC_LOADED", playerId: other, ceramicId, glaze: "celadon", placement: { kiln: "shared", spaceId, stacked: false }, loadedBy: "glaze_load" }) as PublicGameEvent;
     const glazeLoad = (kind: "apprentice" | "shifu"): PublicGameEvent =>
@@ -288,7 +288,7 @@ describe("advanceTurns", () => {
     expect(keysOf(advanceTurns(startTurnTracker([], BASE), ge, viewer).turns)).toEqual([[other, ["QUALITY_IMPROVED", "CRACKLE_APPLIED"]]]);
   });
 
-  it("states another player's Colour Samples swap in public words only (v1.6.2 L617)", () => {
+  it("states another player's Colour Samples swap in public words only (v1.6.2 L632)", () => {
     const swap: GameEvent[] = [
       { type: "TECH_USED", playerId: other, techId: "T10" },
       { type: "HELD_ORDER_DISCARDED", playerId: other, cause: "colour_samples_swap", to: "main_discard", secret: { visibleTo: other, orderId: "O41" } },

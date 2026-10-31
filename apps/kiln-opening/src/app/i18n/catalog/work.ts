@@ -93,7 +93,7 @@ export const work = defineNamespace({
     "fd.vesselCost": "{clay} + {coins}",
     "fd.decorationFree": "Any Decoration: it adds no cost. Each vessel costs its Shape’s Clay plus the Coins shown.",
     "fd.line.vesselCoins": "{shape} (forming)",
-    // Ding's extra vessel: its Clay and Coin in one row, with the Shape it copies.
+    // Ding's extra vessel: its Clay and Coins in one row, with the Shape it copies.
     "fd.line.ding": "{ability}: {shape}",
     "fd.line.shifuDiscount": "{shifu}: two vessels",
     "fd.line.tech": "{tech}",
@@ -140,7 +140,7 @@ export const work = defineNamespace({
     "gl.placeSpace": "{space} ({m})",
     "gl.placeInverted": "{space} · {tech}: stack on your ceramic ({m})",
 
-    // Every Select N (v1.6.2 L64, change 25; the Commission Market L195–206, Colour Samples L622):
+    // Every Select N (v1.6.2 L80, change 25; the Commission Market L219–230, Colour Samples L632):
     // a private look at the top N, then the reservations, from those cards and the display; no
     // resource. The windows name the keyword (titles, placement detail, plan, swap hint and note),
     // and where they explain it, the explanation follows the keyword (glossary: 精选N, with
@@ -217,9 +217,9 @@ export const work = defineNamespace({
     "gi.secondNote": "Another Tech must come from a different discipline, at its printed cost. A taken Tech’s place on the display stays empty until your turn ends.",
     // After the second take: the bottom order is the only decision left (B2).
     "gi.returnPrompt": "You have taken {n} Techs, the most this action allows. Put the inspected Techs you did not take back on the bottom of the {discipline} deck, in an order you choose.",
-    // The Guild Hall's placement condition (v1.6.2 L212), in place of the generic NO_MAIN_ACTION_POSSIBLE sentence.
+    // The Guild Hall's placement condition (v1.6.2 L242), in place of the generic NO_MAIN_ACTION_POSSIBLE sentence.
     "noMain.guildHall": "You can place a worker at the {location} only if you can afford a face-up Tech from a discipline you do not own yet.",
-    // Glaze & Load's placement condition with the kiln fuel (rev. 4 L198, R24).
+    // Glaze & Load's placement condition with the kiln fuel (L216, R24).
     "noMain.glazeLoad": "You can place a worker at {location} only if you have a Shaped vessel, an empty active Shared Kiln space or your own empty Imperial Kiln, and {wood} if you load into the Shared Kiln.",
 
     // Colour Samples' Selects: when acquired, and the swap's after its held Order is given up.
@@ -229,7 +229,7 @@ export const work = defineNamespace({
     "cs.promptSwapNone": "You gave up a held Order. Now reserve one Order from the display.",
     "cs.resume": "Then you go back to your {location} inspection: take another Tech, or stop.",
 
-    // The Colour Samples swap (v1.6.2 L622, R17): before or after a worker action.
+    // The Colour Samples swap (v1.6.2 L632, R17): before or after a worker action.
     "swap.note": "Once per round, not a worker action: give up a held Order, then Select {n} (look privately at the top {n} Main Orders and reserve one of them or one from the display).",
     "swap.noteBrief": "Once per round, not a worker action.",
     "swap.discard": "Held Order to give up",

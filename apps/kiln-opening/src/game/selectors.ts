@@ -29,6 +29,7 @@ import {
   DISCIPLINES,
   FIRING,
   GLAZES,
+  IMPERIAL_TRACK,
   KILNS,
   KILN_IDS,
   KILN_SPACE_IDS,
@@ -67,8 +68,10 @@ import { scorePreview as scorePreviewOf } from "./scoring.ts";
 import { ceramicSequence, ceramicsOf, decisionPrompt, imperialKilnCeramic, kilnMasterCarrier, lookup, player, selectStep, turnOrder, workStep } from "./state.ts";
 import { acquisitionError, handLimit, ownsTech, techPrice, techReady } from "./techs.ts";
 import { commissionLimits } from "./work/commissionMarket.ts";
+import { decisionLeft } from "./work/guildHall.ts";
 import { swapLookCount, validateColourSamplesSwap } from "./work/windowAbilities.ts";
 import type {
+  ActionBrings,
   ActorView,
   BoardView,
   CeramicId,
@@ -94,6 +97,7 @@ import type {
   GameRuleErrorCode,
   GuildInspectionOptions,
   GuildOptions,
+  GuildTake,
   GuildTechOption,
   HandLimitStatus,
   ImperialModifier,
@@ -159,6 +163,7 @@ const LARGE_THROWING_WHEEL: TechId = "T01";
 const DECORATORS_KIT: TechId = "T16";
 const FUEL_LEDGER: TechId = "T12";
 const PREPARED_CLAY: TechId = "T17";
+const COLOUR_SAMPLES: TechId = "T10";
 
 /**
  * Rule-error codes that depend only on the phase, the actor, the worker, the location and the
@@ -949,6 +954,52 @@ export function guildInspectionOptions(view: PlayerView): GuildInspectionOptions
 }
 
 /**
+ * Whether the viewer's inspection would still wait for a decision after this take: the engine's
+ * own `decisionLeft`, asked of the state after the take (a copy of the player with the cost paid
+ * and the Tech added, a copy of the step with the take added). The taken Tech may still show on
+ * the display here; the 1-per-discipline limit refuses it as a next take, as it does the rest of
+ * its discipline. The cost comes from the viewer's own `guildInspectionOptions`, so an inspected
+ * Tech's price is used only by the viewer who has seen it, and `decisionLeft` itself still reads
+ * public facts only. False when the viewer has no open inspection or `take` is not one of its
+ * options. A Colour Samples take opens its Select first (B1 permitting): this answers for the
+ * inspection after that Select, as `guildDecisionLeftOnResume` will.
+ */
+export function guildDecisionLeftAfterTake(view: PlayerView, take: GuildTake): boolean {
+  const options = guildInspectionOptions(view);
+  const step = workStep(view.game, "guild_inspection");
+  const p = view.viewerId === null ? null : seatedPlayer(view.game, view.viewerId);
+  if (options === null || step === null || p === null) {
+    return false;
+  }
+  const option = (take.kind === "inspected" ? options.inspected : options.faceUp).find((candidate) => candidate.techId === take.techId);
+  if (option === undefined) {
+    return false;
+  }
+  const after: PlayerState = {
+    ...p,
+    resources: { ...p.resources, coins: p.resources.coins - option.cost },
+    techs: [...p.techs, { id: take.techId, acquiredInRound: view.game.round, usedThisRound: false }],
+  };
+  return decisionLeft(view.game, after, { ...step, takes: [...step.takes, { kind: take.kind, techId: take.techId }] });
+}
+
+/**
+ * Whether the viewer's inspection would still wait for a decision after Colour Samples'
+ * when-acquired Select (v1.6.2 L243): the engine's own `decisionLeft` on the step that Select
+ * resumes. The reservation changes nothing it reads. False unless that Select is the viewer's own
+ * and has an inspection behind it.
+ */
+export function guildDecisionLeftOnResume(view: PlayerView): boolean {
+  const viewerId = view.viewerId;
+  const step = workStep(view.game, "colour_samples");
+  const p = viewerId === null ? null : seatedPlayer(view.game, viewerId);
+  if (step === null || step.resume === null || p === null || view.game.phase.type !== "work_turn" || view.game.phase.activePlayerId !== viewerId) {
+    return false;
+  }
+  return decisionLeft(view.game, p, step.resume);
+}
+
+/**
  * The display positions the Magistrate's Hall Shifu could take a Crown Order from now (rev. 4
  * L259, R21): positions holding a face-up Order that shows at least 1 Crown. Public.
  */
@@ -1125,6 +1176,43 @@ export function endTurnOptions(view: PlayerView): EndTurnOptions | null {
     default:
       return { stage: "worker_action", commandTypes: accepted(WORKER_ACTION_COMMANDS[step.kind]), ...common };
   }
+}
+
+/**
+ * Whether the after-action step may open once the viewer's worker action is done (R27, owner UI
+ * decision D21). `endTurnOptions(view).afterActionWouldOpen` is the public answer now; the action
+ * may still change the facts it reads, and `brings` says how:
+ * - a held Order counts with a Finished ceramic (a Flawed one has already opened it) or a ready
+ *   swap;
+ * - a Shaped vessel or the Imperial Priority token counts with the other half of Imperial Priority;
+ * - Colour Samples counts with a held Order.
+ * Everything else a worker action does (Clay, Wood, Coins, a load, another Tech) cannot open it.
+ * Public facts only, the hand count and never a hand, so a wrong "may open" can only be the safe
+ * side: the step then has nothing to offer and the turn ends by itself.
+ */
+export function afterActionMayOpen(view: PlayerView, brings: ActionBrings = {}): boolean {
+  if (endTurnOptions(view)?.afterActionWouldOpen === true) {
+    return true;
+  }
+  const viewerId = view.viewerId;
+  const p = viewerId === null ? null : seatedPlayer(view.game, viewerId);
+  if (viewerId === null || p === null) {
+    return false;
+  }
+  const game = view.game;
+  const handCount = lookup(game.counts.orderHands, viewerId) ?? 0;
+  if (brings.colourSamples === true && (handCount > 0 || brings.order === true)) {
+    return true;
+  }
+  if (brings.order === true && (ceramicsOf(game, viewerId, "finished").length > 0 || techReady(p, COLOUR_SAMPLES))) {
+    return true;
+  }
+  const kilnEmpty = p.imperial.kilnGained && imperialKilnCeramic(game, viewerId) === null;
+  if (brings.vessel === true && p.imperial.priority === "held" && kilnEmpty) {
+    return true;
+  }
+  const reached = IMPERIAL_TRACK.track.find((space) => space.space === brings.recognition);
+  return reached?.reward?.kind === "imperial_priority" && kilnEmpty && ceramicsOf(game, viewerId, "shaped").length > 0;
 }
 
 /**

@@ -47,7 +47,7 @@ export interface TechTarget {
   legal: boolean;
   /** The engine's reason when it is not legal, with the details its message needs. */
   reason: (Pick<GameRuleError, "code"> & { details: Readonly<Record<string, string | number>> }) | null;
-  /** The printed cost, which every Guild Hall take pays (v1.6.2 L206–207: no discount). */
+  /** The printed cost, which every Guild Hall take pays (v1.6.2 L236–237: no discount). */
   cost: number;
 }
 
@@ -55,7 +55,7 @@ export interface TechTarget {
  * The Guild Hall chooser on the Tech display (owner review, 2026-10-17): with a worker chosen at
  * the Guild Hall, the face-up Techs (Apprentice: buy one) or the disciplines (Shifu: inspect one)
  * become table targets; during the Shifu's inspection (the `guild_inspection` window) the face-up
- * Techs are targets again, for the first take and the second (v1.6.2 L207). Everything comes from
+ * Techs are targets again, for the first take and the second (v1.6.2 L237). Everything comes from
  * `guildOptions` / `guildInspectionOptions` through the drafts.
  */
 export interface TechChooser {

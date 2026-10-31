@@ -92,7 +92,7 @@ describe("game log", () => {
     expect(lines.join(" ")).not.toContain("Order reward");
   });
 
-  it("states Canal Barge's 2 Coins once, on the first completion of the round (v1.6.2 L622), in both languages", () => {
+  it("states Canal Barge's 2 Coins once, on the first completion of the round (v1.6.2 L637), in both languages", () => {
     const snapshot = fixtureSnapshot(structuredClone(fixture("m1_work_phase_r2_3p")));
     const player = snapshot.view!.game.playerOrder[0]!;
     const name = snapshot.view!.game.players[player]!.displayName;

@@ -1,7 +1,7 @@
 /**
  * The draft model of the Setup choice (UI_V1.6.1_ARCHITECTURE §3.4 `kiln_selection`). Owner: B4.
  *
- * Setup step 9 (rev. 4 L122, change 32, owner ruling R23): in reverse turn order, each player in
+ * Setup step 9 (L130, change 32, owner ruling R23): in reverse turn order, each player in
  * one turn chooses a Kiln (all five are selectable, R1) and takes 1 face-up Main Order from the
  * display into their hand. One command carries both (`SELECT_KILN { kilnId, mainOrder }`); the
  * take is public and the display is refilled at once, before the next player chooses.

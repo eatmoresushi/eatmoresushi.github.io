@@ -1,19 +1,19 @@
 /**
  * The draft model of every Select N (UI_V1.6.1_ARCHITECTURE §3.4 `commission`, `colour_samples`,
- * `colour_samples_swap`; keyword Select N, v1.6.2 L64, change 25). Owner: B4.
+ * `colour_samples_swap`; keyword Select N, v1.6.2 L80, change 25). Owner: B4.
  *
  * A Select looks privately at the top N Main Orders (as many as remain, B1, R16), then reserves
  * 1 of them or 1 face-up Main Order from the display; the looked cards not reserved are discarded
  * face down to the Main Order discard (owner ruling R25, replacing change 24's deck bottom).
  * Three windows open one, and all three answer with one command, `SELECT_CHOOSE`:
- * - `commission`: the Commission Market (v1.6.2 L201–202). The Apprentice effect Selects 2 and
+ * - `commission`: the Commission Market (v1.6.2 L225–226). The Apprentice effect Selects 2 and
  *   reserves exactly 1; the Shifu effect (Senior Apprentice included, R12) Selects 3 and reserves
  *   1 or 2, from the looked cards and the display in any mix. No resource is gained;
- * - `colour_samples`: Colour Samples when acquired, Select 3 (v1.6.2 L622, R4). After a Guild
+ * - `colour_samples`: Colour Samples when acquired, Select 3 (v1.6.2 L632, R4). After a Guild
  *   Hall Shifu's take the inspection then continues (the engine's `resume`);
  * - `colour_samples_swap`: the once-per-round swap's Select 3, after its held Order was discarded
- *   (v1.6.2 L622, R17).
- * A face-up position reserved stays empty until the turn ends (v1.6.2 L197, L646).
+ *   (v1.6.2 L632, R17).
+ * A face-up position reserved stays empty until the turn ends (v1.6.2 L221, L656).
  *
  * Every list comes from `lookedOrderOptions(view)` (the viewer's own Select: N, the looked cards,
  * the display positions reservable now and the reservation limit); the draft only holds which of
@@ -71,7 +71,7 @@ export interface SelectStepOptions {
   kind: SelectWindowKind | null;
   /** The Commission Market placement's effect; null for Colour Samples. */
   effect: WorkerEffect | null;
-  /** N: 2 or 3 (v1.6.2 L64). */
+  /** N: 2 or 3 (v1.6.2 L225–226, L632). */
   n: number;
   /** 1, or 2 for the Commission Market Shifu effect. At least 1 is always required. */
   maxReservations: number;

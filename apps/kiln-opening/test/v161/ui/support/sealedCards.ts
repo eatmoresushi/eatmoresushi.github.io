@@ -1,5 +1,5 @@
 /**
- * The secrecy check of a sealed Contribution (v1.6.2 L508, change 26; AGENTS.md hidden
+ * The secrecy check of a sealed Contribution (v1.6.2 L518, change 26; AGENTS.md hidden
  * information): which card a player sealed stays secret until every eligible contributor has
  * chosen. Every player's Contribution cards are public (Fuel Ledger's 2 included), so a plain
  * text search for a card ID no longer proves anything; this walks the whole snapshot instead.

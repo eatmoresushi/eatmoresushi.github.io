@@ -1,6 +1,6 @@
 /**
  * The Order Phase window with V1.6.2's Starting deck and Canal Barge (owner revision 2, change
- * 23; v1.6.2 L622), rendered in English and Chinese. Owner: the Orders area.
+ * 23; v1.6.2 L637), rendered in English and Chinese. Owner: the Orders area.
  *
  * - S07 "Carved, Impressed or Painted": a Plain Crackle ceramic's auto declaration says what it
  *   counts as ("Counts as Carved."), from the engine's own search (`crackleDeclarationChecks`),
@@ -97,7 +97,7 @@ describe("S07 \"Carved, Impressed or Painted\" (change 23)", () => {
   });
 });
 
-describe("the auto mode names a wildcard only where the ceramic's own Decoration fails (L470)", () => {
+describe("the auto mode names a wildcard only where the ceramic's own Decoration fails (L484)", () => {
   /** The CR scenario with its Crackle Vase (c2) printed as another Decoration. */
   function withDecoration(decoration: "painted" | "carved") {
     const entry = structuredClone(fixture(CR));
@@ -109,7 +109,7 @@ describe("the auto mode names a wildcard only where the ceramic's own Decoration
 
   /**
    * The RU scenario's viewer as a Ge owner whose Celadon Vase (c3) is a Crackle ceramic (only Ge
-   * makes Crackle, rev. 5 L482), printed Plain or as another Decoration: its hand holds O18.
+   * makes Crackle, rev. 5 L116, L482), printed Plain or as another Decoration: its hand holds O18.
    */
   function geVase(decoration: "plain" | "carved") {
     const entry = structuredClone(fixture(RU));
@@ -167,7 +167,7 @@ describe("the auto mode names a wildcard only where the ceramic's own Decoration
   });
 });
 
-describe("m23: S07 with Canal Barge, a played moment (v1.6.2 L622)", () => {
+describe("m23: S07 with Canal Barge, a played moment (v1.6.2 L637)", () => {
   const id = "m23_order_phase_s07";
   const s07Group = () => {
     const view = fixture(id).playerView;

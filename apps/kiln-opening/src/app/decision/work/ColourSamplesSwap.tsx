@@ -1,5 +1,5 @@
 /**
- * ColourSamplesSwap (T10, v1.6.2 L622, R17; UI_V1.6.1_ARCHITECTURE §3.4). Owner: B4.
+ * ColourSamplesSwap (T10, v1.6.2 L632, R17; UI_V1.6.1_ARCHITECTURE §3.4). Owner: B4.
  *
  * The first half of the Colour Samples swap, before or after a worker action: choose the held
  * Order to give up (radios here, or the Choose toggles on the table's hand row). The note says

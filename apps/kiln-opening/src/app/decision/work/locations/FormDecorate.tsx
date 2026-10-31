@@ -3,10 +3,10 @@
  * Owner: B4.
  *
  * Shape and Decoration pills per vessel (each Shape with a vessel's printed cost, its Clay and 2
- * Coins whatever the Decoration, rev. 4 L183, change 30; a Decoration has no cost of its own; a
+ * Coins whatever the Decoration, L201, change 30; a Decoration has no cost of its own; a
  * choice the engine does not allow now is unavailable, with the engine's reason), a second vessel for the Shifu
  * when a two-vessel command is legal, the Workshop discounts the engine offers (Large Throwing Wheel, Decorator's Kit),
- * Ding's extra vessel, and the engine's live quote with its lines (Ding's Clay and Coin as one row
+ * Ding's extra vessel, and the engine's live quote with its lines (Ding's Clay and Coins as one row
  * naming the Shape it copies, `quoteRows`), total, reason and the resulting resources.
  */
 import type { CostLine, Decoration, GameRuleError, Shape } from "../../../../game/index.ts";

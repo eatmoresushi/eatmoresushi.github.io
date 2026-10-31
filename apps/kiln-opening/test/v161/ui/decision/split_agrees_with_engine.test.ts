@@ -1,5 +1,7 @@
 /**
- * The split Confirm against the engine (owner UI decision D21; `windows.work.ts`, `decision/endTurn.ts`).
+ * The split Confirm against the engine (owner UI decision D21; `windows.work.ts`, `decision/endTurn.ts`,
+ * and the selectors they read, `afterActionMayOpen` and `guildDecisionLeftAfterTake`, tested on their
+ * own in `test/v161/engine/end_turn_selectors.test.ts`).
  *
  * The buttons promise what the next screen does, so random legal games check each promise on the
  * command the UI would send, against what the engine then does with it:
@@ -12,10 +14,11 @@
  * `KILN_UI_SPLIT_GAMES` plays more games per player count.
  */
 import { describe, expect, it } from "vitest";
-import { SeededRandom, endTurnOptions, sampleLegalAction, validateAction } from "../../../../src/game/index.ts";
-import type { AuthoritativeCommand, EndTurnCommandType, GameAction, PlayerCount, PlayerView } from "../../../../src/game/index.ts";
+import { MAIN_ORDER_IDS, SeededRandom, endTurnOptions, sampleLegalAction, validateAction } from "../../../../src/game/index.ts";
+import type { AuthoritativeCommand, EndTurnCommandType, GameAction, OrderId, PlayerCount, PlayerView } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { buildGameModel, engineViewOf } from "../../../../src/app/state/model.ts";
+import { buildState } from "../../engine/support/fixtures.ts";
 import { LocalTable } from "../../engine/support/localTable.ts";
 
 const GAMES = Math.max(1, Number(process.env["KILN_UI_SPLIT_GAMES"] ?? "12"));
@@ -106,10 +109,48 @@ describe("the split Confirm says what the engine then does (D21)", () => {
     expect(tally.byType.get("SELECT_CHOOSE") ?? 0).toBeGreaterThan(0);
     if (process.env["KILN_UI_SPLIT_LOG"] !== undefined) console.info(players, tally);
     // A second button that offers nothing is the safe side, and stays the exception (1 of about
-    // 6,000 such buttons when this was written): one in 50 would mean `afterActionMayOpen` has drifted
-    // from R27's facts. Most second buttons do open the step.
+    // 6,000 such buttons when this was written): one in 50 would mean the selector `afterActionMayOpen`
+    // has drifted from R27's facts, or `placementBrings` from what a placement does. Most second buttons
+    // do open the step.
     const stays = tally.split - tally.noStay;
     expect(stays - tally.stayWithoutStep).toBeGreaterThan(0);
     expect(tally.stayWithoutStep).toBeLessThanOrEqual(Math.ceil(stays / 50));
   }, 600_000);
+
+  // Random games do not reach this: all their Colour Samples takes opened a Select.
+  it("a Colour Samples take with no Select to open (B1): the swap it brings opens the step, if an Order is held", () => {
+    const take = (hand: OrderId[]) => {
+      const table = new LocalTable(
+        buildState({
+          players: [{ hand, resources: { coins: 3 } }, { hand: MAIN_ORDER_IDS.filter((id) => !hand.includes(id)) }],
+          display: [null, null, null, null, null, null],
+          mainDeck: [],
+          mainDiscard: [],
+          techDecks: { glazing_loading: ["T10", "T20", "T15", "T21"] },
+          techDisplay: { glazing_loading: ["T22", "T23"] },
+        }),
+      );
+      table.act("p1", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "glazing_loading" } });
+      const command: GameAction = { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T10" } };
+      const view = table.actorView("p1") as unknown as PlayerView;
+      const model = buildGameModel(view, []);
+      const engine = engineViewOf(view);
+      const spec = WINDOWS[model.window.kind];
+      const draft = spec.draft.fromCommand(command as AuthoritativeCommand, model, engine);
+      if (draft === null) throw new Error("the take does not express");
+      const split = spec.confirmSplit?.(draft as never, model, engine) ?? null;
+      table.act("p1", command);
+      return { split, phase: table.state.phase };
+    };
+
+    const held = take(["O01"]);
+    expect(held.split?.end).toMatchObject({ key: "common.confirm.takeEnd" });
+    expect(held.split?.stay).toMatchObject({ key: "common.confirm.takeStay" });
+    expect(held.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
+
+    const empty = take([]);
+    expect(empty.split?.end).toMatchObject({ key: "common.confirm.takeEnd" });
+    expect(empty.split?.stay).toBeNull();
+    expect(empty.phase).toMatchObject({ activePlayerId: "p2" });
+  });
 });

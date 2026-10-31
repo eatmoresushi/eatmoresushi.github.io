@@ -10,17 +10,17 @@
  *   review of 2026-10-17 the only place a worker is placed from; the Guild Hall chooser on the
  *   Tech display (`techChooser`: a face-up Tech to buy, or a discipline to inspect); Glaze &
  *   Load destinations on the kiln (`kilnTargets`) with pending chips; the Magistrate's Hall
- *   Shifu's optional Crown Order on the display (`orderTargets` keyed `slot:<i>`, rev. 4 L241,
+ *   Shifu's optional Crown Order on the display (`orderTargets` keyed `slot:<i>`, L259,
  *   R21); the held Orders the Colour Samples swap may give up (`orderTargets` keyed by OrderId);
  *   a Sell button on each Flawed ceramic the viewer may sell now (`sellTargets`, a free action);
  *   the held Orders the viewer may complete now (`orderTargets` keyed by OrderId, a free action,
  *   owner revision 5): their Deliver badge opens the completion in the pane; while it is open the
  *   other held Orders show blocked and the chosen group's ceramics are highlighted; Use on the
  *   viewer's Imperial Priority token (`imperialPriority`, D21); the chosen vessels highlighted;
- * - **kiln_selection:** the display's Main Orders (`slot:<i>`), one taken with the Kiln (rev. 4
- *   L122, R23);
+ * - **kiln_selection:** the display's Main Orders (`slot:<i>`), one taken with the Kiln (L130,
+ *   R23);
  * - **setters_mark:** the open kiln spaces;
- * - **commission**, **colour_samples** and **colour_samples_swap** (every Select N, v1.6.2 L64,
+ * - **commission**, **colour_samples** and **colour_samples_swap** (every Select N, v1.6.2 L80,
  *   change 25): the display slots reservable now (`slot:<i>`) and the privately looked-at Orders
  *   (keyed by OrderId), toggled into the reservation (`selectDraft`, one `SELECT_CHOOSE`);
  * - **guild_inspection:** the face-up Techs on the Tech display (`techChooser` in take mode), for
@@ -54,11 +54,11 @@
  *   after which the Shifu still decides has a plain Confirm, so "· end turn" is always true;
  * - after the action, each free action: ⟨Action⟩ · end turn / ⟨Action⟩, with End turn the alternative.
  * The secondary button is left out where the after-action step certainly will not open
- * (`afterActionMayOpen`, `decision/endTurn.ts`): the placement or the step says what it brings.
+ * (the engine's `afterActionMayOpen`): the placement or the step says what it brings.
  * Nothing here reads the hand.
  */
-import { commissionOptions, guildInspectionOptions, magistratesHallQuote } from "../../../game/index.ts";
-import type { CeramicId, EndTurnCommandType, LocationId, OrderId, PlacementWorkerOption, PlayerView, TechId } from "../../../game/index.ts";
+import { afterActionMayOpen, commissionOptions, guildDecisionLeftAfterTake, guildDecisionLeftOnResume, guildInspectionOptions, magistratesHallQuote } from "../../../game/index.ts";
+import type { ActionBrings, CeramicId, EndTurnCommandType, LocationId, OrderId, PlacementWorkerOption, PlayerView, TechId } from "../../../game/index.ts";
 import { andList } from "../../i18n/format.ts";
 import { msg } from "../../i18n/translator.ts";
 import type { MessageKey } from "../../i18n/translator.ts";
@@ -73,8 +73,7 @@ import type { KilnSelectionAction } from "../setup/KilnSelection.draft.ts";
 import { SettersMark } from "../setup/SettersMark.tsx";
 import { settersMarkDraft } from "../setup/SettersMark.draft.ts";
 import type { SettersMarkAction } from "../setup/SettersMark.draft.ts";
-import { acceptsEndTurn, afterActionMayOpen, endTurnOf } from "../endTurn.ts";
-import type { ActionBrings } from "../endTurn.ts";
+import { acceptsEndTurn, endTurnOf } from "../endTurn.ts";
 import { deliverableNow, freeActionItems, freeActionLabel } from "../freeActions.ts";
 import { COLOUR_SAMPLES, colourSamplesSwapDraft } from "./ColourSamplesSwap.draft.ts";
 import { placements, viewMemo } from "./context.ts";
@@ -82,7 +81,7 @@ import { GuildInspection } from "./GuildInspection.tsx";
 import { SelectStep } from "./SelectStep.tsx";
 import { lookPickKey, selectActionFor, selectDraft } from "./SelectStep.draft.ts";
 import type { SelectAction, SelectDraft } from "./SelectStep.draft.ts";
-import { guildInspectionDraft, inspectionReturnOnly, inspectionTechChooser, resumeLeavesDecision, takeLeavesDecision } from "./GuildInspection.draft.ts";
+import { guildInspectionDraft, inspectionReturnOnly, inspectionTechChooser } from "./GuildInspection.draft.ts";
 import type { GuildInspectionAction, GuildInspectionDraft } from "./GuildInspection.draft.ts";
 import { kilnTargetsOf, pendingLoads } from "./locations/GlazeLoad.draft.ts";
 import { techChooserOf } from "./locations/GuildHall.draft.ts";
@@ -194,7 +193,7 @@ function placementSplit(draft: WorkDraft, context: PlacementContext, engine: Eng
   const locationId = draft.locationId;
   if (locationId === null || placementOpensStep(draft, context) || !acceptsEndTurn(engine, PLACEMENT_COMMAND[locationId])) return null;
   const reserves = locationId === "magistrates_hall" && draft.perLocation.magistrates_hall.crownSlot !== null;
-  const stay = afterActionMayOpen(context.model, engine, placementBrings(draft, context));
+  const stay = afterActionMayOpen(context.view, placementBrings(draft, context));
   if (reserves) return { end: msg("common.confirm.reserveEnd"), stay: stay ? msg("common.confirm.reserveStay") : null };
   return { end: msg("common.confirm.placeEnd"), stay: stay ? msg("common.confirm.placeStay") : null };
 }
@@ -220,13 +219,11 @@ function afterActionSplit(draft: WorkDraft, engine: EngineView): ConfirmSplit | 
  * not the last step, so it has a plain Confirm. The swap's Select: the same, with plain "Reserve",
  * only after the worker action (the selector does not list it before).
  */
-function selectSplit(model: GameModel, engine: EngineView): ConfirmSplit | null {
+function selectSplit(engine: EngineView): ConfirmSplit | null {
   if (!acceptsEndTurn(engine, "SELECT_CHOOSE")) return null;
-  const phase = engine.view.game.phase;
-  const resume = phase.type === "work_turn" && phase.step.kind === "colour_samples" ? phase.step.resume : null;
-  if (resume !== null && model.me !== null && resumeLeavesDecision(engine.view, resume, model.me)) return null;
+  if (guildDecisionLeftOnResume(engine.view)) return null;
   const swap = endTurnOf(engine)?.stage === "colour_samples_swap";
-  const stay = afterActionMayOpen(model, engine, { order: true });
+  const stay = afterActionMayOpen(engine.view, { order: true });
   return { end: msg("common.confirm.reserveEnd"), stay: !stay ? null : swap ? msg("common.verb.reserve") : msg("common.confirm.reserveStay") };
 }
 
@@ -235,20 +232,18 @@ function selectSplit(model: GameModel, engine: EngineView): ConfirmSplit | null 
  * no decision. A take after which the Shifu still decides (2 inspected Techs to return, or another
  * Tech that might be taken), or one that opens Colour Samples' Select, has a plain Confirm.
  */
-function inspectionSplit(draft: GuildInspectionDraft, model: GameModel, engine: EngineView): ConfirmSplit | null {
+function inspectionSplit(draft: GuildInspectionDraft, engine: EngineView): ConfirmSplit | null {
   const choice = draft.choice;
   if (choice === null) return null;
   if (choice.kind === "finish") {
     if (!acceptsEndTurn(engine, "GUILD_FINISH")) return null;
-    return { end: msg("common.confirm.finishEnd"), stay: afterActionMayOpen(model, engine) ? msg("common.confirm.finishStay") : null };
+    return { end: msg("common.confirm.finishEnd"), stay: afterActionMayOpen(engine.view) ? msg("common.confirm.finishStay") : null };
   }
   if (!acceptsEndTurn(engine, "GUILD_TAKE")) return null;
-  const options = guildInspectionOptions(engine.view);
-  const me = model.me;
-  if (options === null || me === null || takeLeavesDecision(options, choice.take, me)) return null;
+  if (guildInspectionOptions(engine.view) === null || guildDecisionLeftAfterTake(engine.view, choice.take)) return null;
   const colourSamples = choice.take.techId === (COLOUR_SAMPLES as TechId);
   if (colourSamples && selectWouldOpen(engine.view)) return null;
-  return { end: msg("common.confirm.takeEnd"), stay: afterActionMayOpen(model, engine, { colourSamples }) ? msg("common.confirm.takeStay") : null };
+  return { end: msg("common.confirm.takeEnd"), stay: afterActionMayOpen(engine.view, { colourSamples }) ? msg("common.confirm.takeStay") : null };
 }
 
 // ── The private hint (D21) ────────────────────────────────────────────────────────────────
@@ -271,7 +266,7 @@ function selectHint(draft: SelectDraft, model: GameModel, engine: EngineView): W
 
 /**
  * A Select's targets (every Select N: the Commission Market, Colour Samples when acquired and its
- * swap, v1.6.2 L64): each display slot (`slot:<i>`) and looked card (OrderId), chosen or not.
+ * swap, v1.6.2 L80): each display slot (`slot:<i>`) and looked card (OrderId), chosen or not.
  * With the Commission Market Shifu effect's 2 chosen, the others are greyed out with the pane's
  * own reason ("You have chosen 2 already."), so the table never refuses a tap in silence.
  */
@@ -299,7 +294,7 @@ function selectTargets(draft: SelectDraft, model: GameModel, engine: EngineView)
 
 /** The table adapter of every Select window: the display's and the look row's Choose toggles. */
 const SELECT_CONFIRM = {
-  confirmSplit: (_draft: SelectDraft, model: GameModel, engine: EngineView) => selectSplit(model, engine),
+  confirmSplit: (_draft: SelectDraft, _model: GameModel, engine: EngineView) => selectSplit(engine),
   confirmHint: selectHint,
 };
 
@@ -321,7 +316,7 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
     Component: KilnSelection,
     draft: kilnSelectionDraft,
     title: () => msg("work.title.kilnSelection"),
-    // The Main Order taken with the Kiln (rev. 4 L122, R23): the display's Choose toggles.
+    // The Main Order taken with the Kiln (L130, R23): the display's Choose toggles.
     table: {
       select: (draft, model, engine) =>
         tableSelection({
@@ -416,7 +411,7 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
           };
         }
         if (context !== null && draft.locationId === "magistrates_hall") {
-          // The Magistrate's Hall Shifu's optional Crown Order (rev. 4 L241, R21): the display's
+          // The Magistrate's Hall Shifu's optional Crown Order (L259, R21): the display's
           // Crown Orders get a Choose toggle (none for the Apprentice, or with none showing).
           selection = { ...selection, orderTargets: crownTargetsOf(draft.perLocation.magistrates_hall, context) };
         }
@@ -510,7 +505,7 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
       if (options !== null && inspectionReturnOnly(options)) return msg("work.title.guildReturn");
       return model.window.kind === "guild_inspection" && model.window.takes > 0 ? msg("work.title.guildSecond") : msg("work.title.guild");
     },
-    confirmSplit: (draft, model, engine) => inspectionSplit(draft, model, engine),
+    confirmSplit: (draft, _model, engine) => inspectionSplit(draft, engine),
     table: {
       // The face-up Techs on the Tech display, for the first take and the second (D14).
       select: (draft, model, engine) => tableSelection({ techChooser: inspectionTechChooser(draft, model, engine) }),

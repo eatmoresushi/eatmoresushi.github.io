@@ -12,7 +12,7 @@
  * - which held Orders are completable: `completableOrders`;
  * - the ceramic groups: `orderMatchOptions` (the validator's matcher);
  * - Crackle verdicts: `crackleDeclarationChecks`, with an explicit "auto" mode in which the
- *   command omits `crackleDeclarations` and the engine searches (L470, L485, §9.4);
+ *   command omits `crackleDeclarations` and the engine searches (L484, L499, §9.4);
  * - the selection's verdict and the triggered optional abilities: `orderSelectionCheck`.
  */
 import { crackleDeclarationChecks, orderMatchOptions } from "../../../game/index.ts";
@@ -200,7 +200,7 @@ export function completionFromCommand(type: CompletionCommandType, command: Auth
 
 /**
  * The Decoration each Crackle ceramic of the chosen group counts as for this Order, where it is
- * not its own (L470). For words only: the auto command still omits declarations.
+ * not its own (L484). For words only: the auto command still omits declarations.
  * - Explicit mode: the declarations as given, except one naming the ceramic's own Decoration.
  * - Auto mode: only the ceramics that need their wildcard. The engine's search records a
  *   Decoration for every Crackle ceramic, trying Plain first (Plain on an Order without a

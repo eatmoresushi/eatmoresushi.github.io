@@ -1,9 +1,9 @@
 /**
  * Jun (UI_V1.6.1_ARCHITECTURE §3.4 `jun`: step 3). Owner: B5.
  *
- * Firing step 3 (rev. 4 L661): pay Wood to adjust one of your ceramics' Actual Heat by +1 or −1 (step 1 the
+ * Firing step 3 (L680): pay Wood to adjust one of your ceramics' Actual Heat by +1 or −1 (step 1 the
  * ceramic, step 2 the side, with its cost), or decline (the window's alternative button; Jun stays
- * unused, R4). An unused Jun after Second Firing (rev. 4 L627) is chosen in Second Firing's own window. No heat value
+ * unused, R4). An unused Jun after Second Firing (L646) is chosen in Second Firing's own window. No heat value
  * is shown for any ceramic (D3): only its place, Kiln Master's marker and the rule effect.
  */
 import type { CeramicId } from "../../../game/index.ts";

@@ -35,14 +35,14 @@ export interface KilnCeramicProps {
   id: CeramicId;
   /** Shown when the model holds no attributes for the ceramic. */
   ownerId: PlayerId;
-  /** Kiln Master's face-up marker on the ceramic while it is loaded (T24, rev. 4 L628). */
+  /** Kiln Master's face-up marker on the ceramic while it is loaded (T24, L647). */
   marker?: HeatDelta | null;
   /** A Quality to show when the model holds none (a recap or results record). */
   quality?: Quality | null;
   crackle?: boolean;
   /** Second Firing's Fire cards for this ceramic: both while its owner chooses, then the chosen one. */
   extraFire?: readonly FireModifier[] | null;
-  /** Protective Saggars kept it Standard this firing instead of Flawed (v1.6.2 L636). */
+  /** Protective Saggars kept it Standard this firing instead of Flawed (v1.6.2 L643). */
   saggarsFloor?: boolean;
   size?: number;
   /** Letters instead of Quality words (narrow kiln spaces). */

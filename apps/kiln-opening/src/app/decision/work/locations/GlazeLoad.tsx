@@ -5,8 +5,8 @@
  * and the destination — a Shared Kiln space (also choosable on the kiln, `TableSelection`), or
  * the Imperial Kiln — then, when a place offers several ways in, its modifier (zone, Kiln
  * Furniture −1/0/+1, Inverted Firing, or the Imperial modifier −1/0/+1). Kiln Master's optional
- * +1/−1 marker goes on one load, face up (T24, rev. 4 L628, R22). The kiln fuel block says what
- * the action pays (rev. 4 L197, R24: 1 Wood when any load goes into the Shared Kiln, 1 vessel or
+ * +1/−1 marker goes on one load, face up (T24, L647, R22). The kiln fuel block says what
+ * the action pays (L215, R24: 1 Wood when any load goes into the Shared Kiln, 1 vessel or
  * 2; nothing when it loads only into the Imperial Kiln), from the engine's quote, with the
  * resulting resources. There is no Heat marker since revision 4. Lists come from the selectors
  * through `options`.

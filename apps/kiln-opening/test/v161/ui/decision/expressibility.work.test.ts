@@ -86,7 +86,7 @@ describe("B4 forms express every canonical command", () => {
     for (const type of ["COMMISSION_CHOOSE", "COLOUR_SAMPLES_CHOOSE", "COLOUR_SAMPLES_SWAP_CHOOSE"]) expect(families.has(type as AuthoritativeCommand["type"]), type).toBe(false);
   });
 
-  it("expresses SELECT_CHOOSE in every Select window, a face-up Order and a looked card each (v1.6.2 L64, change 25)", () => {
+  it("expresses SELECT_CHOOSE in every Select window, a face-up Order and a looked card each (v1.6.2 L80, change 25)", () => {
     const picks = new Map<string, Set<string>>();
     for (const entry of ACTING) {
       const kind = decisionWindow(entry.playerView).kind;

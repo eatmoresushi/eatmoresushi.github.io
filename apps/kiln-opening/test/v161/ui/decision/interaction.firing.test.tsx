@@ -5,10 +5,10 @@
  *   clipping edge the panel takes the roomier side and is capped to the room there.
  * - The Order Phase form: choosing an Order with one group preselects it; Confirm sends
  *   `COMPLETE_ORDER`; the alternative sends `END_ORDER_TURN`.
- * - Second Firing's choice (v1.6.2 L631): a revealed card and R7's Jun side; Confirm sends
+ * - Second Firing's choice (v1.6.2 L646): a revealed card and R7's Jun side; Confirm sends
  *   `SECOND_FIRING_CHOOSE`; Clear forgets both; a rejection reads in the engine's words.
- * - Contributions with Fuel Ledger (v1.6.2 L637): the commitment for Bank and Stoke only, and
- *   the free Bank without it.
+ * - Contributions with Fuel Ledger (v1.6.2 L644, change 26): the owner's 5 cards, a Fuel Ledger
+ *   card sent by itself, and the plain Bank at no Wood.
  * - After-Quality: Protective Saggars' Standard → Fine with Confirm; "Done" declines (R4).
  * - The hand trim: a table click on an Order card toggles it in the pane synchronously.
  * - A language switch keeps the draft and re-renders the ConfirmBar summary.
@@ -163,7 +163,7 @@ describe("the Order Phase form (D21: the free-action list)", () => {
   });
 });
 
-describe("Second Firing's choice (v1.6.2 L631, R7)", () => {
+describe("Second Firing's choice (v1.6.2 L646, R7)", () => {
   it("chooses a revealed card and Jun's side, and Confirm sends SECOND_FIRING_CHOOSE", () => {
     const source = new ControlledSource("w-second-firing-choice-with-jun-r7");
     mount(source, <DecisionPane />);
@@ -216,7 +216,7 @@ describe("Second Firing: Clear and a server rejection in the player's words", ()
   });
 });
 
-describe("Contributions with Fuel Ledger (v1.6.2 L634, change 26)", () => {
+describe("Contributions with Fuel Ledger (v1.6.2 L644, change 26)", () => {
   it("offers the owner's 5 cards; Confirm sends the secret Fuel Ledger card by itself", () => {
     const source = new ControlledSource("w-secret-contributions-with-fuel-ledger");
     mount(source, <DecisionPane />);
@@ -245,7 +245,7 @@ describe("Contributions with Fuel Ledger (v1.6.2 L634, change 26)", () => {
   });
 });
 
-describe("after-Quality: Protective Saggars (v1.6.2 L628, R4)", () => {
+describe("after-Quality: Protective Saggars (v1.6.2 L643, R4)", () => {
   it("turns a Standard ceramic Fine with Confirm, or declines with the alternative", () => {
     const source = new ControlledSource("w-after-quality-saggars-and-ge");
     mount(source, <DecisionPane />);

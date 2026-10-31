@@ -111,7 +111,7 @@ export const CONTRIBUTION_CARDS: readonly ContributionCardId[] = CONTRIBUTION_CA
 
 /**
  * The Techs whose printed text makes this Contribution card cost no Wood (Fuel Ledger's Bank and
- * Stoke: T12 `freeCards`, v1.6.2 L634); [] for a card no Tech changes. A fact the tile prints, so
+ * Stoke: T12 `freeCards`, v1.6.2 L644); [] for a card no Tech changes. A fact the tile prints, so
  * the Contribution form can name the owned Tech that makes a card free.
  */
 export function techsFreeingContributionCard(card: ContributionCardId): readonly TechId[] {
@@ -258,21 +258,17 @@ export const RULE_NUMBERS = Object.freeze({
   coinVpMax: GAME_CONFIG.coinEndGame.maxVp,
   baseHeatMin: FIRING.baseHeat.minimum,
   baseHeatMax: FIRING.baseHeat.maximum,
-  /** A Glaze & Load action that loads into the Shared Kiln costs this much Wood (rev. 4 L197, R24). */
+  /** A Glaze & Load action that loads into the Shared Kiln costs this much Wood (L215, R24). */
   kilnFuelWood: LOCATIONS.glaze_load.effects.apprentice.sharedKilnWood,
   /** A Flawed ceramic sells for this many Coins, as a free action (rev. 5 L172, L302). */
   flawedSaleCoins: FIRING.flawedSaleCoins,
   recognitionMax,
-  /** The Recognition that brings the Imperial Priority token (rev. 5 L314). */
-  imperialPrioritySpace: IMPERIAL_TRACK.track.find((space) => space.reward?.kind === "imperial_priority")?.space ?? recognitionMax,
-  /** The Techs one Guild Hall Shifu action may take (v1.6.2 L237). */
-  guildShifuTakes: LOCATIONS.guild_hall.effects.shifu.maxTechs,
   overflowVpPerCrown: IMPERIAL_TRACK.overflowVpPerCrown,
-  /** Canal Barge's Coins on your first completed Order each round (T23, v1.6.2 L622). */
+  /** Canal Barge's Coins on your first completed Order each round (T23, v1.6.2 L637). */
   canalBargeCoins: TECHS.T23.params.coins,
-  /** The Colour Samples swap's Select N: it looks at this many Main Orders (T10, v1.6.2 L622, change 25). */
+  /** The Colour Samples swap's Select N: it looks at this many Main Orders (T10, v1.6.2 L632, change 25). */
   swapSelect: TECHS.T10.params.swapSelect,
-  /** Second Firing turns this many extra Fire cards face up (T14, v1.6.2 L631). */
+  /** Second Firing turns this many extra Fire cards face up (T14, v1.6.2 L646). */
   secondFiringCards: TECHS.T14.params.extraCards,
 });
 
@@ -298,7 +294,7 @@ export function firingStepCount(): number {
 // text: each component's clarifications with their source tags, and the facts its card prints.
 // Pure functions over content by stable ID; no rule is decided here.
 
-/** A D10 clarification in the current language, with its raw source tags ("L376 · D7" → ["L376", "D7"]). */
+/** A D10 clarification in the current language, with its raw source tags ("L174 · L314 · R28" → ["L174", "L314", "R28"]). */
 export interface ClarificationText {
   readonly text: string;
   readonly tags: readonly string[];

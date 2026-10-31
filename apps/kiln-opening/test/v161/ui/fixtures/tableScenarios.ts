@@ -108,7 +108,7 @@ function completeEarlier(state: GameState, playerId: PlayerId, orderIds: readonl
       bonusCrowns: 0,
       crackleDeclarations: [],
       kilnAbility: null,
-      // The engine always records Ge's Crackle VP (rev. 4 L465); none of these is a Crackle ceramic.
+      // The engine always records Ge's Crackle VP (L484); none of these is a Crackle ceramic.
       crackleVp: 0,
     };
     p.completedOrders.push(record);
@@ -143,7 +143,7 @@ export function tableScenarios(): TableScenario[] {
   const add = (id: string, name: string, table: LocalTable, viewerId: PlayerId, draftCommand?: AuthoritativeCommand) =>
     scenarios.push({ id, name, table: checked(table), viewerId, ...(draftCommand === undefined ? {} : { draftCommand }) });
 
-  // 1. A round with nothing loaded: the Firing Phase is skipped (L237), and the previous
+  // 1. A round with nothing loaded: the Firing Phase is skipped (L267), and the previous
   //    firing's recap stays until the next firing starts.
   {
     const recap = roundOneRecap();
@@ -190,7 +190,7 @@ export function tableScenarios(): TableScenario[] {
   );
 
   // 3. A Fire-deck reshuffle: the deck is empty at the reveal, so the open discard is shuffled
-  //    back and empties (L512); Jun keeps the firing open at step 3.
+  //    back and empties (L526); Jun keeps the firing open at step 3.
   {
     const table = openFiringTable({
       players: [{ kilnId: "JU", resources: { wood: 3 } }, {}, {}],
@@ -247,7 +247,7 @@ export function tableScenarios(): TableScenario[] {
     "p1",
   );
 
-  // 6. A winner by tie-breaker: equal VP, decided by Imperial Recognition (L498).
+  // 6. A winner by tie-breaker: equal VP, decided by Imperial Recognition (L512).
   {
     const table = new LocalTable(
       buildState({
@@ -262,7 +262,7 @@ export function tableScenarios(): TableScenario[] {
     add("t-tie-break-winner", "Final results: equal VP, won on Imperial Recognition", table, "p2");
   }
 
-  // 7. Recognition overflow: a Crown gained at Recognition 4 scores +1 VP (L438).
+  // 7. Recognition overflow: a Crown gained at Recognition 4 scores +1 VP (L452).
   {
     const table = new LocalTable(
       buildState({
@@ -354,7 +354,7 @@ export function tableScenarios(): TableScenario[] {
   }
 
   // 9. Glaze & Load into an Imperial Kiln (−1/0/+1 chosen when loading, R11) or onto Kiln
-  //    Furniture (−1/0/+1 tile, L628): the viewer's Work turn, before the action.
+  //    Furniture (−1/0/+1 tile, L634): the viewer's Work turn, before the action.
   add(
     "t-glaze-load-imperial-furniture",
     "Glaze & Load choices: Imperial modifier and Kiln Furniture",
@@ -373,7 +373,7 @@ export function tableScenarios(): TableScenario[] {
     "p1",
   );
 
-  // 10. A Colour Samples Select that took a face-up Order (v1.6.2 L64, L622, change 25): an
+  // 10. A Colour Samples Select that took a face-up Order (v1.6.2 L80, L632, change 25): an
   //     Apprentice bought Colour Samples at the Guild Hall, and its when-acquired Select 3 reserved
   //     display #3 instead of a looked card. The position stays empty until the turn ends; the 3
   //     looked cards were discarded (R25); the viewer is in the after-action window.

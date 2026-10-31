@@ -1,7 +1,7 @@
 /**
  * KilnSelection (UI_V1.6.1_ARCHITECTURE §3.4 `kiln_selection`). Owner: B4.
  *
- * Setup step 9 (rev. 4 L122, R23): one turn chooses a Kiln and takes 1 face-up Main Order.
+ * Setup step 9 (L130, R23): one turn chooses a Kiln and takes 1 face-up Main Order.
  * - The five Kiln Player Boards as radio cards: name, ability name and short text (timing in
  *   bold); a Kiln another player took is unavailable, with who took it. The options carry no
  *   "Full rules" button (owner review, 2026-10-17): the card text is the choice.

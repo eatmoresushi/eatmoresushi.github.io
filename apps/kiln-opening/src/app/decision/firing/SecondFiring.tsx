@@ -1,9 +1,9 @@
 /**
- * SecondFiring (UI_V1.6.1_ARCHITECTURE §3.4 `second_firing`; T14, rev. 4 L627). Owner: B5.
+ * SecondFiring (UI_V1.6.1_ARCHITECTURE §3.4 `second_firing`; T14, L646). Owner: B5.
  *
  * Second Firing's 2 extra Fire cards, turned face up (public: the table shows them too, in the
  * heat equation and beside the ceramic), and the ceramic they fire again. The owner chooses one
- * card (step 1, radios, each showing its card) and, with an unused Jun ready on this ceramic (rev. 4 L627), Jun's +1
+ * card (step 1, radios, each showing its card) and, with an unused Jun ready on this ceramic (L646), Jun's +1
  * or −1 for its Wood, or not to use it (step 2, pills; "Do not use" is the default, R4). A Jun
  * owner whose Jun is not ready sees why, in the engine's words. The rule is stated in words: the
  * new Quality replaces the old one even if worse, and both cards are discarded. No heat value or

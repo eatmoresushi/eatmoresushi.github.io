@@ -3,7 +3,7 @@
  * magistrates_hall). Owner: B4.
  *
  * Pay 4 Coins (either worker) for +1 Imperial Recognition, only from Recognition 0–2 and never to
- * 4 (rev. 4 L234–245, change 33). The Shifu then may reserve 1 face-up Crown Order from the
+ * 4 (L252–263, change 33). The Shifu then may reserve 1 face-up Crown Order from the
  * display (owner ruling R21: optional, the player chooses which or none; nothing when none
  * shows); its position stays empty until the end of the turn. The price, the Recognition reached,
  * the engine's reason and the display positions holding a Crown Order come from

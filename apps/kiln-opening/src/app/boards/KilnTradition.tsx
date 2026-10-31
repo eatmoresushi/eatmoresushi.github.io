@@ -6,7 +6,7 @@
  *   text (timing clause in bold). The block is the trigger of the Kiln's rules details (D10):
  *   full ability, the Kiln's clarifications, once per round and used this round.
  * - `MarkerLine`: Kiln Master's marker while it is on one of this player's loaded ceramics (it is
- *   chosen face up at loading, T24, rev. 4 L628; there is no player Heat marker since revision 4,
+ *   chosen face up at loading, T24, L647; there is no player Heat marker since revision 4,
  *   changes 28, 31), and the Imperial Kiln's ceramic. Markers are public (AGENTS.md). Ceramics are
  *   named in words (D9).
  */

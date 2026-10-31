@@ -1,10 +1,10 @@
 /**
  * Contributions (UI_V1.6.1_ARCHITECTURE §3.4, §3.7; wireframe `decContrib`, `submitRow`). Owner: B5.
  *
- * Firing step 1: the viewer chooses 1 of their own Contribution cards in secret (v1.6.2 L246,
- * L266, change 26): Tend, Bank and Stoke, and, with Fuel Ledger, Fuel Ledger Bank and Fuel Ledger
+ * Firing step 1: the viewer chooses 1 of their own Contribution cards in secret (v1.6.2 L271,
+ * L289, change 26): Tend, Bank and Stoke, and, with Fuel Ledger, Fuel Ledger Bank and Fuel Ledger
  * Stoke, the two cards that come with the tile; its owner's plain Bank and Stoke cost no Wood
- * (v1.6.2 L634). Each card shows its modifier and the Wood it would cost this player, paid at the
+ * (v1.6.2 L644). Each card shows its modifier and the Wood it would cost this player, paid at the
  * reveal, from the selector; a card that costs less than its printed Wood names the owned Tech
  * that makes it free (the draft's `freeBy`). Each Tech that brought cards gets a note: the cards
  * it brought and those it makes free, as the draft links them. Renders only from

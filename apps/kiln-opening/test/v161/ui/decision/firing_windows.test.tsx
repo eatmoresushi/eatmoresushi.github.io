@@ -143,7 +143,7 @@ describe("titles, alternatives and window content", () => {
     expect(bury).toContain('data-fire="0"');
   });
 
-  it("Kiln Master's marker: chosen at loading, it shows face up on its ceramic in the Jun window (rev. 4 L628, R22; no Heat-marker step)", () => {
+  it("Kiln Master's marker: chosen at loading, it shows face up on its ceramic in the Jun window (L647, R22; no Heat-marker step)", () => {
     const html = en("m3_kiln_master_marker_3p");
     expect(heading(html)).toBe("Jun Kiln · Kiln Transformation");
     expect(perceivable(html)).toContain("White Plate, Carved (in Middle 1), Kiln Master marker +1");
@@ -162,7 +162,7 @@ describe("titles, alternatives and window content", () => {
     expect(first).not.toContain('name="cardIndex"');
   });
 
-  it("Second Firing: the 2 revealed cards as radios, the ceramic, and R7's Jun when ready; no Quality preview (v1.6.2 L631, D3)", () => {
+  it("Second Firing: the 2 revealed cards as radios, the ceramic, and R7's Jun when ready; no Quality preview (v1.6.2 L646, D3)", () => {
     const id = "w-second-firing-choice-with-jun-r7";
     const html = en(id);
     expect(heading(html)).toBe("Second Firing: choose a Fire card");
@@ -235,7 +235,7 @@ describe("titles, alternatives and window content", () => {
     expect(perceivable(renderWindow(source(), { locale: "zh-CN" }))).toContain(chinese);
   });
 
-  it("Contributions with Fuel Ledger: free Bank and Stoke, and its own 2 cards at 1 Wood each (v1.6.2 L634, change 26)", () => {
+  it("Contributions with Fuel Ledger: free Bank and Stoke, and its own 2 cards at 1 Wood each (v1.6.2 L644, change 26)", () => {
     const id = "w-secret-contributions-with-fuel-ledger";
     const html = en(id);
     const seen = perceivable(html);
@@ -280,7 +280,7 @@ describe("titles, alternatives and window content", () => {
     expect(plainSeen).not.toContain("Fuel Ledger");
   });
 
-  it("after-Quality with Protective Saggars: the floored ceramic says so, Saggars costs nothing, and each summary states the effect (v1.6.2 L636, R4)", () => {
+  it("after-Quality with Protective Saggars: the floored ceramic says so, Saggars costs nothing, and each summary states the effect (v1.6.2 L643, R4)", () => {
     const id = "w-after-quality-saggars-and-ge";
     const html = en(id);
     const seen = perceivable(html);
@@ -410,12 +410,12 @@ describe("titles, alternatives and window content", () => {
     expect(html).toMatch(/data-action="confirm"[^>]*aria-disabled="true"|aria-disabled="true"[^>]*data-action="confirm"/);
     expect(seen).not.toContain("Rewards");
     const carved = perceivable(en(id, { ...draft, declarations: [{ ceramicId: "c2", decoration: "carved" }] }));
-    // The delivered Crackle ceramic's 1 VP shows with the rewards (rev. 4 L465).
+    // The delivered Crackle ceramic's 1 VP shows with the rewards (L484).
     expect(carved).toContain("Rewards +3 VP +3 Coins Crackle: +1 VP");
     expect(carved).toContain("Complete S07 with Celadon Vase, Plain · Fine · Crackle (as Carved)");
   });
 
-  it("Order Phase: Canal Barge's 2 Coins show with the rewards of the first completion of the round (v1.6.2 L622)", () => {
+  it("Order Phase: Canal Barge's 2 Coins show with the rewards of the first completion of the round (v1.6.2 L637)", () => {
     const id = "m6_order_phase_crackle_3p";
     const withBarge = editedFixtureSource(id, (entry) => {
       const p = entry.playerView.game.players[entry.viewerId]!;
@@ -430,7 +430,7 @@ describe("titles, alternatives and window content", () => {
     expect(perceivable(en(id, draft))).not.toContain("Canal Barge");
   });
 
-  it("Order Phase: a Crackle ceramic delivered scores 1 VP, shown with the rewards (Ge, rev. 4 L465)", () => {
+  it("Order Phase: a Crackle ceramic delivered scores 1 VP, shown with the rewards (Ge, L484)", () => {
     const id = "m6_order_phase_crackle_3p";
     // S05 with the Ge player's crackled Masterpiece Plate (c10).
     const crackle = { orderId: "S05", ceramicIds: ["c10"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };

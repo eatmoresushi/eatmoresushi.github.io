@@ -9,8 +9,8 @@
  * 2. the ceramic groups that complete it (`orderMatchOptions`), described in words (D9);
  * 3. Crackle declarations, when the group holds a Crackle ceramic;
  * 4. the printed rewards (a Crown reward with the Imperial Recognition rules details, D10),
- *    Canal Barge's automatic 2 Coins on your first completion this round (v1.6.2 L622, never
- *    declined), Ge's automatic 1 VP per Crackle ceramic delivered (rev. 4 L465; the engine's
+ *    Canal Barge's automatic 2 Coins on your first completion this round (v1.6.2 L637, never
+ *    declined), Ge's automatic 1 VP per Crackle ceramic delivered (L484; the engine's
  *    `triggers.crackleVp`), and the optional abilities this completion would trigger (Ru/Guan, Tribute Ware;
  *    declining keeps their once-per-round use, R4).
  *

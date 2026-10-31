@@ -42,7 +42,7 @@ export interface KilnSpaceProps {
 }
 
 /**
- * Second Firing's Fire cards for a ceramic (v1.6.2 L631): both revealed cards while the owner
+ * Second Firing's Fire cards for a ceramic (v1.6.2 L646): both revealed cards while the owner
  * chooses, then the chosen one; null for a ceramic not fired again. All of them are face up on
  * the table (public).
  */
@@ -55,7 +55,7 @@ export function extraFireFor(model: GameModel, ceramicId: CeramicId): readonly F
 }
 
 /**
- * Protective Saggars keeps this ceramic Standard this firing instead of Flawed (v1.6.2 L636),
+ * Protective Saggars keeps this ceramic Standard this firing instead of Flawed (v1.6.2 L643),
  * shown only while its recorded Quality is still Standard: after Saggars' own upgrade or Ge's
  * Crackle it is Fine, and "counts as Standard" would contradict its Quality chip (the engine
  * keeps the flag set).

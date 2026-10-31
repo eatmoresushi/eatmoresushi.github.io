@@ -87,7 +87,7 @@ describe("Order Phase", () => {
   });
 
   it("Crackle: auto mode omits declarations; explicit verdicts come from the validator (S07, \"Carved, Impressed or Painted\", change 23)", () => {
-    // A Ge owner's crackled Fine Vase (only Ge makes Crackle, rev. 5 L482; it keeps its Quality, change 39).
+    // A Ge owner's crackled Fine Vase (only Ge makes Crackle, rev. 5 L116, L482; it keeps its Quality, change 39).
     const auto = orders(cr, { type: "order", orderId: "S07" }, { type: "group", key: "c2" });
     expect(auto.ceramicIds).toEqual(["c2"]);
     const autoOptions = orderDraft.options(auto, cr.model, cr.engine);

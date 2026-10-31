@@ -5,7 +5,7 @@
  * Apprentice effect: buy one face-up Tech at its printed cost. Shifu effect: choose a discipline
  * to inspect (any, even one already owned, B2); up to 2 takes from different disciplines, each at
  * its printed cost, and the secret bottom order follow in the `guild_inspection` window (v1.6.2
- * L207). Costs, legality and reasons come from `guildOptions(view, effect)`.
+ * L237). Costs, legality and reasons come from `guildOptions(view, effect)`.
  *
  * The choice is made on the table (owner review, 2026-10-17): `techChooserOf` turns the options
  * into the Tech display's targets (`TableSelectionData.techChooser`), and the work window's table
@@ -32,7 +32,7 @@ export interface GuildHallOptions {
   /** `buy` for the Apprentice effect, `inspect` for the Shifu effect. */
   mode: "buy" | "inspect";
   guild: GuildOptions;
-  /** How many Techs this action may take: 1, or up to 2 for the Shifu effect (v1.6.2 L206–207). */
+  /** How many Techs this action may take: 1, or up to 2 for the Shifu effect (v1.6.2 L236–237). */
   maxTechs: number;
 }
 

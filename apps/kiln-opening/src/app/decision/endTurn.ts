@@ -14,20 +14,16 @@
  * inspection behind it): the engine remembers it until the action ends, and "then free actions"
  * on a later step withdraws it with `endTurn: false` (`requested`).
  *
- * **The second button** is left out where the after-action step certainly will not open
- * (`afterActionMayOpen`): the selector's public answer (R27) is no, and what this action brings cannot
- * change it. That is said here once, over the viewer's public summary only (no hand), and a wrong "may
- * open" is the safe side: the button then ends the turn, as the engine does when the step has nothing
- * to offer. `test/v161/ui/decision/split_agrees_with_engine.test.ts` plays random games against it.
+ * **The second button** is left out where the after-action step certainly will not open: the
+ * engine's `afterActionMayOpen(view, brings)` (R27, public facts, no hand) says so, and
+ * `windows.work.ts` says what each draft brings. A wrong "may open" is the safe side: the button
+ * then ends the turn, as the engine does when the step has nothing to offer.
+ * `test/v161/ui/decision/split_agrees_with_engine.test.ts` plays random games against it.
  */
 import { endTurnOptions } from "../../game/index.ts";
 import type { AuthoritativeCommand, EndTurnCommandType, EndTurnOptions } from "../../game/index.ts";
-import { RULE_NUMBERS } from "../i18n/content.ts";
-import type { EngineView, GameModel } from "../state/model.ts";
+import type { EngineView } from "../state/model.ts";
 import { viewMemo } from "./work/context.ts";
-
-/** Colour Samples: its swap is one of the things the after-action step opens on (R27). */
-const COLOUR_SAMPLES = "T10";
 
 /** `endTurnOptions(view)`, once per view. */
 export function endTurnOf(engine: EngineView): EndTurnOptions | null {
@@ -50,35 +46,4 @@ export function withEndTurn(command: AuthoritativeCommand, endTurn: boolean): Au
  */
 export function stayCommand(command: AuthoritativeCommand, engine: EngineView): AuthoritativeCommand {
   return endTurnOf(engine)?.requested === true ? withEndTurn(command, false) : command;
-}
-
-/** What the worker action, or its last step, brings that the after-action step opens on (R27). */
-export interface ActionBrings {
-  /** An Order into the hand. */
-  order?: boolean;
-  /** A Shaped vessel (Form & Decorate, Prepared Clay at the Materials Yard). */
-  vessel?: boolean;
-  /** The Imperial Recognition it reaches (the Magistrate's Hall). */
-  recognition?: number | null;
-  /** The Colour Samples Tech. */
-  colourSamples?: boolean;
-}
-
-/**
- * Whether the after-action step may open once this action is done. `afterActionWouldOpen` is the
- * public answer now; the action may still change the facts it reads, from the same public view:
- * - a held Order counts with a Finished ceramic (a Flawed one has already opened it) or a ready swap;
- * - a Shaped vessel or the Imperial Priority token counts with the other half of Imperial Priority;
- * - Colour Samples counts with a held Order.
- * Everything else a worker action does (Clay, Wood, Coins, a load, another Tech) cannot open it.
- */
-export function afterActionMayOpen(model: GameModel, engine: EngineView, brings: ActionBrings = {}): boolean {
-  if (endTurnOf(engine)?.afterActionWouldOpen === true) return true;
-  const me = model.me;
-  if (me === null) return false;
-  if (brings.colourSamples === true && (me.orderHandCount > 0 || brings.order === true)) return true;
-  if (brings.order === true && (me.finishedCeramicIds.length > 0 || me.techs.some((tech) => tech.techId === COLOUR_SAMPLES && tech.ready))) return true;
-  const kilnEmpty = me.imperial.kilnGained && me.imperial.kilnCeramic === null;
-  if (brings.vessel === true && me.imperial.priority === "held" && kilnEmpty) return true;
-  return brings.recognition === RULE_NUMBERS.imperialPrioritySpace && kilnEmpty && me.shapedCeramicIds.length > 0;
 }

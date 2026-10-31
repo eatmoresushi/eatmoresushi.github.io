@@ -68,7 +68,7 @@ export const firing = defineNamespace({
     "tp.pick": "Choose one.",
 
 
-    // Step 3 (and an unused Jun in Second Firing, rev. 4 L627): Jun.
+    // Step 3 (and an unused Jun in Second Firing, L646): Jun.
     "jun.adjust": "Adjustment",
     "jun.adjustDesc": "Added to that ceramic’s Actual Heat before its Quality is assigned.",
     "jun.declineNote": "If you decline, {ability} stays unused this round.",
@@ -88,7 +88,7 @@ export const firing = defineNamespace({
     "aq.sumEnd": "Finish your after-Quality turn; decline the rest",
     "aq.pick": "Pick an ability, or finish.",
 
-    // Step 5: Second Firing's choice (rev. 4 L627).
+    // Step 5: Second Firing's choice (L646).
     "sf.lead": "{tech} turned {n} extra Fire cards face up, for everyone to see. Choose the one your ceramic is fired with again.",
     "sf.rule": "The {n} cards then go to the Fire discard, face up.",
     "sf.cards": "Choose a Fire card",

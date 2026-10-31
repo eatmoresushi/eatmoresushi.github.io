@@ -23,7 +23,7 @@ import type { GameModel } from "../state/model.ts";
 export interface TableCeramics {
   /** Attributes by ID, with this firing's recorded Quality and Crackle merged into loaded ones. */
   readonly byId: ReadonlyMap<CeramicId, CeramicFacts>;
-  /** Kiln Master's markers on loaded ceramics (public, face up, chosen at loading: T24, rev. 4 L628). */
+  /** Kiln Master's markers on loaded ceramics (public, face up, chosen at loading: T24, L647). */
   readonly markers: ReadonlyMap<CeramicId, HeatDelta>;
   /** For `ceramicLabel` and `errorTextOptions`: names and words, never IDs (D9). */
   readonly labelView: CeramicLabelModelView;

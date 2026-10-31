@@ -3,7 +3,7 @@
  * Source: Playtest Form V3: players.
  *
  * One card per player: name, Kiln (all five, R1), one Tech per discipline (V1.6.1 has no
- * Starting Tech; at most one per discipline, L211), then the end of the game: completed Orders,
+ * Starting Tech; at most one per discipline, L240), then the end of the game: completed Orders,
  * Imperial Recognition, remaining resources and score. Every option list comes from content;
  * a Kiln, Tech or Order another player already recorded is disabled (the schema checks too).
  */

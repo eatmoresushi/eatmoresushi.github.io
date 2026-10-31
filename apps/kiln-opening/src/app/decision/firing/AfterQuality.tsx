@@ -6,7 +6,7 @@
  * Confirm; the options are re-read after each use. "Done — decline the rest" is the window's
  * alternative button. Each ability shows its card text (its rule effect) and its eligible targets
  * with their recorded Quality; nothing predicts a result (D3). None of them costs anything in
- * V1.6.2. A ceramic Protective Saggars kept Standard (rev. 5 L655) says so, as the game log does;
+ * V1.6.2. A ceramic Protective Saggars kept Standard (rev. 5 L643) says so, as the game log does;
  * its Quality is the engine's. Ge (change 39, rev. 5 L482, R30) crackles any one of the owner's
  * ceramics of this firing, of any Quality: only a Standard one becomes Fine.
  *

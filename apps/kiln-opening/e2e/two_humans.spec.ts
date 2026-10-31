@@ -5,7 +5,7 @@
  * real lobby, store, client and local backend (`/test-api-v161`). A steered driver gives both
  * players a Shared Kiln ceramic (Form & Decorate, then Glaze & Load) so both are eligible to
  * contribute, and sends Lin's Shifu to the Commission Market, whose placement always opens its
- * Select 3 first: a private look at the top 3 Main Orders (v1.6.2 L64, L202, change 25). Everything
+ * Select 3 first: a private look at the top 3 Main Orders (v1.6.2 L80, L226, change 25). Everything
  * else is chosen by the shared autopilot
  * (`e2e/support/autopilot.ts`).
  *
@@ -26,7 +26,7 @@
  *   card until both have submitted; then both cards are revealed on both pages.
  *
  * A second game (seed 1) checks the other private looks of AGENTS.md "Hidden information",
- * over two rounds, and the Guild Hall Shifu's two takes (v1.6.2 L207, owner revision
+ * over two rounds, and the Guild Hall Shifu's two takes (v1.6.2 L237, owner revision
  * 2026-10-17). Lin's Shifu inspects the Glazing & Loading Tech deck at the Guild Hall and takes
  * the face-up Colour Samples (one `GUILD_TAKE`); Colour Samples, when gained, Selects 3 (the top 3
  * Main Orders, or a face-up one instead, `SELECT_CHOOSE`); back in the inspection, Lin's second take is the face-up Test Pieces (another
@@ -351,7 +351,7 @@ test("the secret Contribution and the private Commission look stay with their ow
       if (window === "contributions") {
         // Lin submits first; Zhao's page waits for that.
         if (player === guest) continue;
-        // Both players have a Shared Kiln ceramic, so both are eligible (L239).
+        // Both players have a Shared Kiln ceramic, so both are eligible (L289).
         await expect(other.page.locator('form.pane-form[data-window="contributions"]')).toBeAttached({ timeout: 15_000 });
         await host.page.locator(ENABLED_CARD).first().click();
         const card = await host.page.locator('form.pane-form input[name="card"]:checked').getAttribute("value");

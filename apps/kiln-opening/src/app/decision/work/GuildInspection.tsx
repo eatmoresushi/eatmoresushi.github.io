@@ -1,5 +1,5 @@
 /**
- * GuildInspection (UI_V1.6.1_ARCHITECTURE §3.4 `guild_inspection`, §8.1; v1.6.2 L206–213, B2).
+ * GuildInspection (UI_V1.6.1_ARCHITECTURE §3.4 `guild_inspection`, §8.1; v1.6.2 L236–243, B2).
  * Owner: B4.
  *
  * The Shifu's private inspection: take a Tech, inspected or face up, each at its printed cost

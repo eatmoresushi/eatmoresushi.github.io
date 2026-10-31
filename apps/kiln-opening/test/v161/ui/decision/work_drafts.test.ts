@@ -262,7 +262,7 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
     expect(WINDOWS.work.alternativeOnly?.(empty, only.model, only.engine)).toBe(true);
   });
 
-  it("the Colour Samples swap: gives up a held Order the engine allows, and builds USE_COLOUR_SAMPLES_SWAP (v1.6.2 L622)", () => {
+  it("the Colour Samples swap: gives up a held Order the engine allows, and builds USE_COLOUR_SAMPLES_SWAP (v1.6.2 L632)", () => {
     const c = ctx("m17_after_action");
     let draft = workDraft.reduce(workDraft.initial(c.model, c.engine), { type: "mode", mode: "colour_samples_swap" }, c.model, c.engine);
     expect(draft.mode).toBe("colour_samples_swap");
@@ -284,7 +284,7 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
     expect(workDraft.fromCommand(command!, c.model, c.engine)).toMatchObject({ mode: "colour_samples_swap", swap: { discardOrderId: hand[1] } });
   });
 
-  it("the Colour Samples swap: with no card to look at, the display still offers its Select's reservation (v1.6.2 L64, B1)", () => {
+  it("the Colour Samples swap: with no card to look at, the display still offers its Select's reservation (v1.6.2 L80, B1)", () => {
     // Both Main piles empty and only a Starting Order held: the look would see no card, but a face-up Order can be reserved.
     const c = ctxWith("m17_after_action", (view) => {
       view.game.counts = { ...view.game.counts, mainDeck: 0, mainDiscard: 0 };
@@ -331,7 +331,7 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
 // ── Location sub-drafts ───────────────────────────────────────────────────────────────────
 
 describe("Materials Yard sub-draft (gap 14)", () => {
-  it("offers every split of the worker's resources: 4 for the Apprentice, 8 for the Shifu and Senior Apprentice, with no Coin option (rev. 4 L176–177, change 34)", () => {
+  it("offers every split of the worker's resources: 4 for the Apprentice, 8 for the Shifu and Senior Apprentice, with no Coin option (L194–195, change 34)", () => {
     const c = ctx(INVERTED);
     for (const [key, total] of [
       ["shifu", 8],
@@ -426,7 +426,7 @@ describe("Form & Decorate sub-draft (gap 6)", () => {
     }
   });
 
-  it("shows each Shape's printed Clay and a vessel's 2 Coins from the quote lines; a Decoration has no cost of its own (rev. 4 L183, L336, change 30)", () => {
+  it("shows each Shape's printed Clay and a vessel's 2 Coins from the quote lines; a Decoration has no cost of its own (L201, L354, change 30)", () => {
     const c = ctx(RICH);
     const draft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "form_decorate" });
     const active = workDraft.options(draft, c.model, c.engine).active;
@@ -454,7 +454,7 @@ describe("Form & Decorate sub-draft (gap 6)", () => {
     }
   });
 
-  it("forming 2 with the Shifu: one vessel costs 1 Coin less, as the quote's shifu_discount line (rev. 4 L184)", () => {
+  it("forming 2 with the Shifu: one vessel costs 1 Coin less, as the quote's shifu_discount line (L202)", () => {
     const c = ctx(RICH);
     let draft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "form_decorate" });
     for (const action of [
@@ -496,7 +496,7 @@ describe("Form & Decorate sub-draft (gap 6)", () => {
     const vessels = [{ shape: "vase" as const, decoration: "plain" as const }, { shape: "plate" as const, decoration: "carved" as const }];
     const copyable = dingCopyableVesselIndexes(c.view, { type: "PLACE_FORM_DECORATE", workerId, vessels });
     expect(active.options.ding?.indexes).toEqual(copyable);
-    // Ding never copies a Vase (L652): only the Plate may be copied, so it is taken at once.
+    // Ding never copies a Vase (L658): only the Plate may be copied, so it is taken at once.
     expect(copyable).toEqual([1]);
     expect(draft.perLocation.form_decorate.ding?.index).toBe(1);
     step({ type: "dingIndex", index: 0 });
@@ -590,7 +590,7 @@ describe("Glaze & Load sub-draft (gap 15)", () => {
     expect(draft.perLocation.glaze_load.loads[0]?.destination).toEqual({ kiln: "shared", spaceId: "middle_1", invertedFiring: true });
   });
 
-  it("prices the kiln fuel from the quote: 1 Wood for an action loading into the Shared Kiln, 1 vessel or 2; none into the Imperial Kiln only (rev. 4 L197, R24)", () => {
+  it("prices the kiln fuel from the quote: 1 Wood for an action loading into the Shared Kiln, 1 vessel or 2; none into the Imperial Kiln only (L215, R24)", () => {
     const c = ctx(KM_FUEL);
     let draft = glazeDraft(c);
     const options = () => {
@@ -644,7 +644,7 @@ describe("Glaze & Load sub-draft (gap 15)", () => {
     expect(active.options.fuel).toMatchObject({ perAction: 1, have: 0, short: true });
   });
 
-  it("places Kiln Master's marker on one load when the tile is ready, optional, for either worker (T24, rev. 4 L628, R22)", () => {
+  it("places Kiln Master's marker on one load when the tile is ready, optional, for either worker (T24, L647, R22)", () => {
     const c = ctx(KM_FUEL);
     let draft = glazeDraft(c);
     const options = (d: WorkDraft = draft) => {
@@ -696,7 +696,7 @@ describe("Glaze & Load sub-draft (gap 15)", () => {
 });
 
 describe("Commission Market, Guild Hall, Magistrate's Hall and Canal Wharf sub-drafts", () => {
-  it("has nothing to choose at placement: the Select comes first, its N and limit from commissionOptions (v1.6.2 L201–202)", () => {
+  it("has nothing to choose at placement: the Select comes first, its N and limit from commissionOptions (v1.6.2 L225–226)", () => {
     const c = ctx(INVERTED);
     for (const [key, effect, n, max] of [
       ["apprentice", "apprentice", 2, 1],
@@ -746,7 +746,7 @@ describe("Commission Market, Guild Hall, Magistrate's Hall and Canal Wharf sub-d
     expect(workDraft.build(shifu, c.model, c.engine)).toMatchObject({ choice: { kind: "inspect", discipline: "firing" } });
   });
 
-  it("the Canal Wharf Shifu also takes the top Main Order card, unseen (v1.6.2 L219–220)", () => {
+  it("the Canal Wharf Shifu also takes the top Main Order card, unseen (v1.6.2 L249–250)", () => {
     const c = ctx(RICH);
     const shifuDraft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "canal_wharf" });
     const apprenticeDraft = work(c, { type: "worker", workerKey: "apprentice" }, { type: "location", locationId: "canal_wharf" });
@@ -771,7 +771,7 @@ describe("Commission Market, Guild Hall, Magistrate's Hall and Canal Wharf sub-d
     expect(active.options.draw).toBe("empty");
     expect(active.options.coins).toBe(placementLimits(view, "canal_wharf", "shifu").coins);
     expect(sentences(WINDOWS.work, draft, c)[0]).toBe("Place Shifu at Canal Wharf — +4 Coins");
-    // Only the discard left: it is reshuffled, so a card is still taken (L510).
+    // Only the discard left: it is reshuffled, so a card is still taken (L525).
     const reshuffle = structuredClone(fixture(RICH).playerView);
     reshuffle.game.counts = { ...reshuffle.game.counts, mainDeck: 0, mainDiscard: 3 };
     const r = ctxOf(reshuffle);
@@ -1005,7 +1005,7 @@ describe("Imperial Priority draft (gap 16)", () => {
     expect(draft.rework).toBe("plate");
     const work = workDraft.reduce(workDraft.initial(c.model, c.engine), { type: "imperialPriority", action: { type: "vessel", ceramicId: "c2" } }, c.model, c.engine);
     expect(work.mode).toBe("imperial_priority");
-    // Without Kiln Master there is no marker to place; Imperial Priority costs no Wood (rev. 4 L291).
+    // Without Kiln Master there is no marker to place; Imperial Priority costs no Wood (L309).
     expect(options.kilnMaster).toBeNull();
   });
 
@@ -1053,7 +1053,7 @@ describe("Imperial Priority draft (gap 16)", () => {
   });
 });
 
-describe("Commission Market reservation step: its Select (v1.6.2 L64, L197–205, change 25)", () => {
+describe("Commission Market reservation step: its Select (v1.6.2 L80, L221–229, change 25)", () => {
   const SHIFU = "w-commission-market-shifu-top-3-look-2-reservations";
   const APPRENTICE = "w-commission-market-apprentice-top-2-look-1-reservation";
 
@@ -1145,7 +1145,7 @@ describe("Commission Market reservation step: its Select (v1.6.2 L64, L197–205
   });
 });
 
-describe("Guild Hall inspection (v1.6.2 L206–213, owner revision 2026-10-17)", () => {
+describe("Guild Hall inspection (v1.6.2 L236–243, owner revision 2026-10-17)", () => {
   it("takes one Tech per command at its printed cost; nothing to finish before the first take", () => {
     const c = ctx("m12_guild_shifu_inspection");
     const options = guildInspectionOptions(c.view);
@@ -1242,7 +1242,7 @@ describe("Guild Hall inspection (v1.6.2 L206–213, owner revision 2026-10-17)",
 });
 
 describe("Colour Samples, Kiln selection and Setter's Mark", () => {
-  it("Colour Samples' Select 3 reserves 1: a looked card or a face-up Order (v1.6.2 L64, L622, change 25)", () => {
+  it("Colour Samples' Select 3 reserves 1: a looked card or a face-up Order (v1.6.2 L80, L632, change 25)", () => {
     for (const [id, kind] of [
       ["m16_colour_samples", "colour_samples"],
       ["w-colour-samples-choice", "colour_samples"],
@@ -1303,7 +1303,7 @@ describe("Colour Samples, Kiln selection and Setter's Mark", () => {
     expect(sentences(WINDOWS.colour_samples, draft, c)).toEqual([`Reserve ${at(options.slots, 0).orderId}`, `承接${at(options.slots, 0).orderId}`]);
   });
 
-  it("offers every available Kiln from setupChoiceOptions and never a taken one; one turn takes a Kiln and a face-up Main Order (rev. 4 L122, R23)", () => {
+  it("offers every available Kiln from setupChoiceOptions and never a taken one; one turn takes a Kiln and a face-up Main Order (L130, R23)", () => {
     const view = structuredClone(fixture("m15_kiln_selection").playerView);
     const other = view.game.playerOrder.find((pid) => pid !== view.viewerId);
     const otherPlayer = other === undefined ? undefined : view.game.players[other];
@@ -1402,7 +1402,7 @@ describe("table adapters", () => {
 
   it("work: a held Order the swap cannot give up is greyed out on the table with the engine's reason", () => {
     // Both Main Order piles and the display empty: giving up a Starting Order (to the box) would
-    // leave no Order to reserve (B1, v1.6.2 L64); giving up a Main Order puts a card in the discard to look at.
+    // leave no Order to reserve (B1, v1.6.2 L80); giving up a Main Order puts a card in the discard to look at.
     const c = ctxWith("m17_after_action", (view) => {
       view.game.counts.mainDeck = 0;
       view.game.counts.mainDiscard = 0;

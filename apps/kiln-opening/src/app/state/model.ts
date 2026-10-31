@@ -62,7 +62,7 @@ export type TableCounts = Pick<PublicCounts, "orderHands" | "mainDeck" | "mainDi
 /**
  * One discipline of the Tech display, with `returning`: how many Techs a Guild Hall Shifu's open
  * inspection of this discipline will put back on the bottom of its deck before the display refills
- * (v1.6.2 L208–209, B2; 0 otherwise). Public: the inspected discipline and the number inspected
+ * (v1.6.2 L237–239, B2; 0 otherwise). Public: the inspected discipline and the number inspected
  * and taken are on the table; which Techs they are is not. With it a taken Tech's empty position
  * shows as refilling at the end of the turn even while the inspection holds the deck's last cards.
  */
@@ -77,7 +77,7 @@ export type TableBoardView = Pick<
   counts: TableCounts;
   /**
    * Who owes the deferred Main display refill (`game.market.refillPendingFor`): a reserved
-   * face-up position stays empty until that player's turn ends (L191, L391). Change request
+   * face-up position stays empty until that player's turn ends (L221, L405). Change request
    * CR B2-2.
    */
   refillPendingFor: PlayerId | null;

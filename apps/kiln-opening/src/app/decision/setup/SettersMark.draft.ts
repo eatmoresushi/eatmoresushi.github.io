@@ -1,7 +1,7 @@
 /**
  * The draft model of Setter's Mark (UI_V1.6.1_ARCHITECTURE §3.4 `setters_mark`). Owner: B4.
  *
- * At the start of the Work Phase, in First Player order (T22, L630): put the tile on an empty
+ * At the start of the Work Phase, in First Player order (T22, L636): put the tile on an empty
  * active Shared Kiln space — only you may load there this round — or decline (R4). The spaces
  * come from `settersMarkOptions(view)`; they are also the kiln's table targets (§3.5).
  */

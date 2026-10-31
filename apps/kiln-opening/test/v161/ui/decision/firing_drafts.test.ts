@@ -80,7 +80,7 @@ describe("Contributions", () => {
     expect(contributionsDraft.fromCommand(command!, c.model, c.engine)).toEqual({ card: "BANK" });
   });
 
-  it("Fuel Ledger: its own 2 cards cost 1 Wood each for −2 / +2 and name the Tech; the owner's Bank and Stoke cost none, and name the Tech that makes them free (v1.6.2 L634)", () => {
+  it("Fuel Ledger: its own 2 cards cost 1 Wood each for −2 / +2 and name the Tech; the owner's Bank and Stoke cost none, and name the Tech that makes them free (v1.6.2 L644)", () => {
     const options = contributionsDraft.options(contributionsDraft.initial(c.model, c.engine), c.model, c.engine);
     // [card, Wood, Heat, below its printed Wood, made free by, came with]
     expect(options.cards.map((choice) => [choice.card, choice.option.woodCost, choice.option.heat, choice.belowPrintedCost, choice.freeBy, choice.techId])).toEqual([
@@ -182,13 +182,13 @@ describe("Jun", () => {
     expect(run(junDraft, c, { type: "ceramic", ceramicId: "c99" }).ceramicId).toBeNull();
   });
 
-  it("is step 3 only: Second Firing's choice carries an unused Jun itself (rev. 4 L627)", () => {
+  it("is step 3 only: Second Firing's choice carries an unused Jun itself (L646)", () => {
     const c = ctx("w-second-firing-choice-with-jun-r7");
     expect(junDraft.options(junDraft.initial(c.model, c.engine), c.model, c.engine).during).toBeNull();
   });
 });
 
-describe("Second Firing's choice (rev. 4 L627)", () => {
+describe("Second Firing's choice (L646)", () => {
   it("chooses 1 of the 2 revealed cards, with R7's Jun when ready; nothing preselected", () => {
     const c = ctx("w-second-firing-choice-with-jun-r7");
     const draft = secondFiringDraft.initial(c.model, c.engine);
@@ -284,7 +284,7 @@ describe("after-Quality", () => {
     expect(c.model.firingStage?.ceramics.find((ceramic) => ceramic.id === "c2")).toMatchObject({ quality: "standard", saggarsFloor: true });
     const ge = run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c1" });
     expect(afterQualityDraft.build(ge, c.model, c.engine)).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c1" });
-    // The Fine ceramic is a Ge target (rev. 4 L463), but no Protective Saggars target (Standard only).
+    // The Fine ceramic is a Ge target (L482), but no Protective Saggars target (Standard only).
     expect(afterQualityDraft.build(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c3" }), c.model, c.engine)).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c3" });
     expect(run(afterQualityDraft, c, { type: "use", ability: "protective_saggars", ceramicId: "c3" }).choice).toBeNull();
     // A sale is no choice of this step (R26): an action naming one is dropped.

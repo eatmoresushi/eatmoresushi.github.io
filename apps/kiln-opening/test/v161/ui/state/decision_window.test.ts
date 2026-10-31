@@ -125,7 +125,7 @@ describe("decisionWindow", () => {
     expect(after.kind === "work" && after.step).toBe("after_action");
   });
 
-  it("names Second Firing's choice and its ceramic; Jun is firing step 3 only (rev. 4 L627, L661)", () => {
+  it("names Second Firing's choice and its ceramic; Jun is firing step 3 only (L646, L680)", () => {
     const view = fixture("w-second-firing-choice-with-jun-r7").playerView;
     const window = decisionWindow(view);
     expect(window.kind).toBe("second_firing");
@@ -136,21 +136,21 @@ describe("decisionWindow", () => {
     expect(step3.kind).toBe("jun");
   });
 
-  it("carries the Commission Market step's Select: N, the reservation limit, the display (v1.6.2 L64, L201–202, change 25)", () => {
+  it("carries the Commission Market step's Select: N, the reservation limit, the display (v1.6.2 L80, L225–226, change 25)", () => {
     const shifu = decisionWindow(fixture("w-commission-market-shifu-top-3-look-2-reservations").playerView);
     expect(shifu.kind === "commission" && [shifu.effect, shifu.select.n, shifu.select.maxReservations, shifu.select.fromDisplay]).toEqual(["shifu", 3, 2, true]);
     const apprentice = decisionWindow(fixture("w-commission-market-apprentice-top-2-look-1-reservation").playerView);
     expect(apprentice.kind === "commission" && [apprentice.effect, apprentice.select.n, apprentice.select.maxReservations, apprentice.select.fromDisplay]).toEqual(["apprentice", 2, 1, true]);
   });
 
-  it("carries Colour Samples' Select 3 when acquired and in its swap, each with the display (v1.6.2 L622, change 25)", () => {
+  it("carries Colour Samples' Select 3 when acquired and in its swap, each with the display (v1.6.2 L632, change 25)", () => {
     const acquired = decisionWindow(fixture("w-colour-samples-choice").playerView);
     expect(acquired.kind === "colour_samples" && acquired.select).toEqual({ n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 });
     const swap = decisionWindow(fixture("w-colour-samples-swap-look").playerView);
     expect(swap.kind === "colour_samples_swap" && swap.select).toEqual({ n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 });
   });
 
-  it("carries the played V1.6.2 moments' steps: the Apprentice's Select 2, a second Guild Hall take, the swap's Select 3 (v1.6.2 L201, L207, L622)", () => {
+  it("carries the played V1.6.2 moments' steps: the Apprentice's Select 2, a second Guild Hall take, the swap's Select 3 (v1.6.2 L225, L237, L632)", () => {
     const look = decisionWindow(fixture("m19_commission_apprentice_look").playerView);
     expect(look.kind === "commission" && [look.effect, look.select.n, look.select.maxReservations, look.select.lookedCount]).toEqual(["apprentice", 2, 1, 2]);
     const second = decisionWindow(fixture("m21_guild_shifu_second_take").playerView);

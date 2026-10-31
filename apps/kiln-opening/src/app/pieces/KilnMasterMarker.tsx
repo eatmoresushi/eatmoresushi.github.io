@@ -1,6 +1,6 @@
 /**
  * KilnMasterMarker (pieces; wireframe `markerBadge`, `.hm`): Kiln Master's +1 or −1 marker on a
- * loaded ceramic (T24, rev. 4 L628, R22). It is chosen face up when the ceramic is loaded, so it
+ * loaded ceramic (T24, L647, R22). It is chosen face up when the ceramic is loaded, so it
  * always shows its value, and it is public (AGENTS.md). Revision 4 has no player Heat marker
  * (changes 28, 31), so this is the only marker a ceramic carries. The words are visually hidden
  * text ("Kiln Master marker +1"), so a chip that contains the badge reads it as part of its name.

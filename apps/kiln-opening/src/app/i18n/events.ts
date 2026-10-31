@@ -164,10 +164,10 @@ function kilnAbility(kilnId: KilnId, context: EventTextContext): string {
   return kilnText(kilnId, context.t.locale).abilityName;
 }
 
-/** Ding's extra vessel costs exactly this (v1.6.2 L473): its line states it, and the cost line folds. */
+/** Ding's extra vessel costs exactly this (v1.6.2 L488): its line states it, and the cost line folds. */
 const DING_COST = Object.freeze({ clay: -KILNS.DI.params.clay, wood: 0, coins: -KILNS.DI.params.coins });
 
-/** Jun's adjustment costs exactly this Wood (v1.6.2 L477): its line states it, and the cost line folds. */
+/** Jun's adjustment costs exactly this Wood (v1.6.2 L492): its line states it, and the cost line folds. */
 const JUN_WOOD = KILNS.JU.params.wood;
 
 function reasonText(reason: ResourceChangeReason, context: EventTextContext): string {
@@ -225,7 +225,7 @@ function resourceChanges(amounts: Readonly<Record<ResourceKind, number>>, contex
 export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   // Setup and rounds.
   GAME_CREATED: (event, c) => c.t("shell.ev.GAME_CREATED", { n: event.playerCount, name: name(event.firstPlayerId, c) }),
-  // Only Starting Orders are dealt (rev. 4 L115); the Main Order is taken face up with the Kiln.
+  // Only Starting Orders are dealt (L123); the Main Order is taken face up with the Kiln.
   ORDERS_DEALT: (event, c) => c.t("shell.ev.ORDERS_DEALT", { name: name(event.playerId, c), n: event.startingCount }),
   KILN_SELECTED: (event, c) => c.t("shell.ev.KILN_SELECTED", { name: name(event.playerId, c), kiln: kilnText(event.kilnId, c.t.locale).name }),
   ROUND_STARTED: (event, c) => c.t("shell.ev.ROUND_STARTED", { n: event.round, name: name(event.firstPlayerId, c) }),
@@ -293,8 +293,8 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     switch (event.source) {
       case "face_up": {
         if (event.orderId === null) return c.t("shell.ev.ORDER_RESERVED.looked", { name: who });
-        // The Setup take with the Kiln (rev. 4 L122, R23) and the Magistrate's Hall Shifu's Crown
-        // Order (rev. 4 L241, R21) are public; every Select may take a face-up Order (v1.6.2 L64,
+        // The Setup take with the Kiln (L130, R23) and the Magistrate's Hall Shifu's Crown
+        // Order (L259, R21) are public; every Select may take a face-up Order (v1.6.2 L80,
         // change 25): Colour Samples' say so.
         if (event.via === "setup") return c.t("shell.ev.ORDER_RESERVED.setup", { name: who, order: event.orderId });
         if (event.via === "magistrates_hall") {
@@ -328,7 +328,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   },
   // A Select's looked cards not reserved are discarded face down (owner ruling R25).
   LOOKED_ORDERS_DISCARDED: (event, c) => c.t("shell.ev.LOOKED_ORDERS_DISCARDED", { name: name(event.playerId, c), n: event.count }),
-  // The swap's discard (v1.6.2 L622): the line before it says "used Colour Samples to swap".
+  // The swap's discard (v1.6.2 L632): the line before it says "used Colour Samples to swap".
   HELD_ORDER_DISCARDED: (event, c) =>
     event.to === "box" ? c.t("shell.ev.HELD_ORDER_DISCARDED.box", { name: name(event.playerId, c) }) : c.t("shell.ev.HELD_ORDER_DISCARDED", { name: name(event.playerId, c) }),
   // No VP: gaining a Tech scores nothing (v1.6.2 change 27).
@@ -338,7 +338,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
       tech: techName(event.techId, c.t.locale),
       cost: event.cost === 0 ? c.t("common.free") : c.t("common.payRes", { n: event.cost, res: resourceName("coins", c.t.locale, event.cost) }),
     }),
-  // Fuel Ledger brings its 2 Contribution cards with the tile (v1.6.2 L634, change 26): public.
+  // Fuel Ledger brings its 2 Contribution cards with the tile (v1.6.2 L644, change 26): public.
   CONTRIBUTION_CARDS_GAINED: (event, c) =>
     c.t("shell.ev.CONTRIBUTION_CARDS_GAINED", {
       name: name(event.playerId, c),
@@ -357,13 +357,13 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     c.t("shell.ev.PERSONAL_SPACE_UNLOCKED", { name: name(event.playerId, c), location: locationName(event.locationId, c.t.locale) }),
   TECH_USED: (event, c) => {
     const values = { name: name(event.playerId, c), tech: techName(event.techId, c.t.locale) };
-    // Colour Samples is used only by its swap (v1.6.2 L622); Canal Barge always pays its Coins
+    // Colour Samples is used only by its swap (v1.6.2 L632); Canal Barge always pays its Coins
     // in the next event, which the log folds into this line (`repeatsPreviousEntry`).
     if (event.techId === TECH.colourSamples) return c.t("shell.ev.TECH_USED.swap", values);
     if (event.techId === TECH.canalBarge) return c.t("shell.ev.TECH_USED.coins", { ...values, coins: coins(RULE_NUMBERS.canalBargeCoins, c) });
     return c.t("shell.ev.TECH_USED", values);
   },
-  // Ru and Guan score as the Order is completed (v1.6.2 L459, L463): the line states what they give, and
+  // Ru and Guan score as the Order is completed (v1.6.2 L474, L478): the line states what they give, and
   // Guan's Coins line folds into it. Ding, Jun and Ge's lines fold into the line beside them,
   // which names the ability (`repeatsPreviousEntry`, `repeatsNextEntry`).
   KILN_ABILITY_USED: (event, c) => {
@@ -436,7 +436,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     event.buried
       ? c.t("shell.ev.TEST_PIECES_USED.buried", { name: name(event.playerId, c) })
       : c.t("shell.ev.TEST_PIECES_USED.kept", { name: name(event.playerId, c) }),
-  // Chosen face up as the ceramic is loaded (T24, rev. 4 L628, R22).
+  // Chosen face up as the ceramic is loaded (T24, L647, R22).
   KILN_MASTER_PLACED: (event, c) =>
     c.t("shell.ev.KILN_MASTER_PLACED", { name: name(event.playerId, c), value: signed(event.value), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
   FIRE_REVEALED: (event, c) => c.t("shell.ev.FIRE_REVEALED", { modifier: signed(event.modifier), heat: event.globalHeat }),
@@ -497,7 +497,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
 
   // Orders.
   ORDER_TURN_STARTED: (event, c) => c.t("shell.ev.ORDER_TURN_STARTED", { name: name(event.playerId, c) }),
-  // Ge's Crackle VP (rev. 4 L465): 1 VP per Crackle ceramic delivered, stated on the line.
+  // Ge's Crackle VP (L484): 1 VP per Crackle ceramic delivered, stated on the line.
   ORDER_COMPLETED: (event, c) => {
     const record = event.record;
     const values = { name: name(event.playerId, c), order: record.orderId, vp: record.vp };
@@ -621,7 +621,7 @@ function abilityNamedBy(event: PublicGameEvent): KilnId | null {
 
 /**
  * The Tech a line names in its own words, for a "used ⟨Tech⟩" line directly before it: Kiln
- * Master's marker line ("placed the Kiln Master marker +1 on …", T24, rev. 4 L628), Kiln
+ * Master's marker line ("placed the Kiln Master marker +1 on …", T24, L647), Kiln
  * Furniture's tile line ("set Kiln Furniture −1 on …", T15) and Kiln Tending's resources line
  * ("+1 Clay · +1 Wood (Kiln Tending)", T20); or null.
  */
@@ -659,7 +659,7 @@ function namedBeside(entry: LogEntry, beside: LogEntry | undefined, side: "previ
  * (and the turn toasts) fold; the event stays in the history.
  * - The Coins of an Order reward (`RESOURCES_CHANGED`, `order_reward`) directly after the same
  *   player's `ORDER_COMPLETED`, whose line already states those Coins.
- * - Canal Barge's Coins (`RESOURCES_CHANGED`, `canal_barge`, v1.6.2 L622) directly after the
+ * - Canal Barge's Coins (`RESOURCES_CHANGED`, `canal_barge`, v1.6.2 L637) directly after the
  *   same player's `TECH_USED` of Canal Barge, whose line already states them ("used Canal
  *   Barge: +2 Coins").
  * - Guan's Coins (`guan`) directly after the same player's `KILN_ABILITY_USED` of Guan, whose

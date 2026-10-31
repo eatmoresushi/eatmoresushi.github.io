@@ -6,9 +6,10 @@
  * and a Decoration; Large Throwing Wheel and Decorator's Kit when `formDiscountVariants` offers
  * them; Ding's extra vessel on an index `dingCopyableVesselIndexes` lists. The engine's quote
  * (`quoteFormDecorate`, live per draft, gap 6) prices the draft. Each vessel costs its Shape's
- * Clay and 2 Coins, whatever its Decoration (rev. 4 L183, L336, change 30): the Decoration has no
- * cost of its own; the Shifu's −1 Coin for two vessels, Decorator's Kit and Ding are reductions
- * the quote lists (`vessel_coins`, `shifu_discount`, …).
+ * Clay and 2 Coins, whatever its Decoration (L201, L354, change 30): the Decoration has no
+ * cost of its own; the Shifu's −1 Coin for two vessels and Decorator's Kit are reductions (L658),
+ * Ding's extra vessel costs 1 Clay and 2 Coins (L488), and the quote lists them all (`vessel_coins`,
+ * `shifu_discount`, …).
  *
  * The form offers exactly what the engine allows now. Every Shape and Decoration of every vessel
  * is listed (the vocabulary of the action), but one is available only when some command placing
@@ -100,7 +101,7 @@ export interface FormDecorateOptions {
   maxVessels: number;
   /** Every Shape, with its printed Clay (from the quote's lines). */
   shapes: ReadonlyArray<{ shape: Shape; clay: number | null }>;
-  /** Every Decoration (none has a cost of its own, rev. 4 L336). */
+  /** Every Decoration (none has a cost of its own, L354). */
   decorations: ReadonlyArray<{ decoration: Decoration }>;
   /** The Coins every vessel costs before any reduction (the quote's `vessel_coins` line), or null. */
   vesselCoins: number | null;

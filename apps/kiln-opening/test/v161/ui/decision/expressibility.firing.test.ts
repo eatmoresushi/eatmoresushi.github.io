@@ -2,9 +2,9 @@
  * The forms can express every legal firing, Order and Cleanup command (UI_V1.6.1_ARCHITECTURE
  * §9.4). Owner: B5.
  *
- * For each command of B5's forms — Contributions, Test Pieces, Jun, after-Quality (with a
- * Flawed ceramic's sale), Second Firing's choice, the Order Phase and the hand trim (each with a
- * sale too, rev. 4 R20) — the expressibility
+ * For each command of B5's forms — Contributions, Test Pieces, Jun, after-Quality, Second
+ * Firing's choice, the Order Phase (with a Flawed ceramic's sale, rev. 5 L172, L318) and the hand
+ * trim (no sale in after-Quality or the trim, rev. 5 L170, L176, R26) — the expressibility
  * helper checks `fromCommand` → every value offered by `options()` → `build` equals the command
  * (after `normalizeCommand`) → `build` validates. Inputs:
  * - canonical mode over every scripted scenario and played moment;

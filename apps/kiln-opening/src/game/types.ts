@@ -2737,6 +2737,21 @@ export interface EndTurnOptions {
 }
 
 /**
+ * What a worker action, or its last step, brings that the after-action step opens on (R27), for
+ * `afterActionMayOpen`: the UI's account of a draft that has not been sent yet.
+ */
+export interface ActionBrings {
+  /** An Order into the hand. */
+  order?: boolean;
+  /** A Shaped vessel (Form & Decorate, Prepared Clay at the Materials Yard). */
+  vessel?: boolean;
+  /** The Imperial Recognition it reaches (the Magistrate's Hall). */
+  recognition?: number | null;
+  /** The Colour Samples Tech. */
+  colourSamples?: boolean;
+}
+
+/**
  * The viewer's free actions now (rev. 5 L168–176; `freeActionOptions`): non-null only in one of
  * the viewer's free-action windows. Each list is what the matching command accepts now.
  */

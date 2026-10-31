@@ -9,7 +9,7 @@
  *   Contributions: who has chosen, never what), an Imperial-only firing (no Contribution
  *   participants: Base Heat = Kiln Die), and two lines on phones;
  * - Second Firing's 2 revealed Fire cards in the equation and beside their ceramic, while the
- *   owner chooses one (v1.6.2 L631; the R7 scenario and m18);
+ *   owner chooses one (v1.6.2 L646; the R7 scenario and m18);
  * - the queue and the submissions row; public Test Pieces records; the open Fire discard only
  *   (never a deck size, odds or previews).
  */
@@ -62,7 +62,7 @@ describe("the stage takes over the column in the Firing Phase (D3)", () => {
     expect(zh).toContain("实际火候");
     expect(html).not.toMatch(/Heat marker|Salvage/);
     expect(zh).not.toMatch(/火标|折卖/);
-    // Test Pieces resolves at the end of step 1, after Base Heat and before the Fire card (rev. 4 L626, L670).
+    // Test Pieces resolves at the end of step 1, after Base Heat and before the Fire card (L645, L689).
     const testPieces = render("m11b_test_pieces_bury");
     expect(testPieces).toContain("Your turn · Step 1/6");
     expect(testPieces).toContain('<h3 class="stage-title">Test Pieces: after Base Heat, before the Fire card</h3>');
@@ -114,7 +114,7 @@ describe("heat equation", () => {
     expect(text).toMatch(/Fire discard \(open\)\s+empty/);
   });
 
-  it("m3: the turned Fire card and Global Heat; Kiln Master's marker shows face up on its ceramic (rev. 4 L628)", () => {
+  it("m3: the turned Fire card and Global Heat; Kiln Master's marker shows face up on its ceramic (L647)", () => {
     const view = stage("m3_kiln_master_marker_3p");
     const html = renderComponent(fixtureSource("m3_kiln_master_marker_3p"), <HeatEquation stage={view} />);
     const text = perceivable(html);
@@ -205,7 +205,7 @@ describe("heat equation", () => {
   });
 });
 
-describe("Second Firing's 2 revealed Fire cards (v1.6.2 L631)", () => {
+describe("Second Firing's 2 revealed Fire cards (v1.6.2 L646)", () => {
   it.each(["w-second-firing-choice-with-jun-r7", "m18_jun_second_firing"])("%s shows both cards in the equation and beside their ceramic", (id) => {
     const view = stage(id);
     expect(view.extraFire).not.toBeNull();
@@ -229,7 +229,7 @@ describe("Second Firing's 2 revealed Fire cards (v1.6.2 L631)", () => {
 /**
  * The R7 scenario right after SECOND_FIRING_CHOOSE took card 2 (−1) without Jun: back in the
  * after-Quality step, the chosen card recorded on the ceramic, both cards in the discard in
- * reveal order (v1.6.2 L631; the engine's `resolveSecondFiringChoice`).
+ * reveal order (v1.6.2 L646; the engine's `resolveSecondFiringChoice`).
  */
 function afterSecondFiringChoice(): UiFixture {
   const entry = structuredClone(fixture("w-second-firing-choice-with-jun-r7"));
@@ -246,7 +246,7 @@ function afterSecondFiringChoice(): UiFixture {
   return entry;
 }
 
-describe("Second Firing after the choice (v1.6.2 L631)", () => {
+describe("Second Firing after the choice (v1.6.2 L646)", () => {
   const entry = afterSecondFiringChoice();
   const html = renderComponent(new FixtureGameSource(entry), <FiringStage />);
 
@@ -269,7 +269,7 @@ describe("Second Firing after the choice (v1.6.2 L631)", () => {
   });
 });
 
-describe("Protective Saggars' floor on the table (v1.6.2 L636)", () => {
+describe("Protective Saggars' floor on the table (v1.6.2 L643)", () => {
   it("the ceramic shows the engine's Quality, and its details say Saggars kept it Standard", () => {
     const id = "w-after-quality-saggars-and-ge";
     expect(stage(id).ceramics.find((ceramic) => ceramic.id === "c2")).toMatchObject({ quality: "standard", saggarsFloor: true });

@@ -263,7 +263,7 @@ describe("V1.6.2 lines", () => {
     expect(eventText(entry(publicPart, 1, own), context("en", VIEW, "p2"))).not.toMatch(/O20/);
   });
 
-  it("states a face-up reservation by any Select, naming the Order and Colour Samples where it took it (v1.6.2 L64, change 25)", () => {
+  it("states a face-up reservation by any Select, naming the Order and Colour Samples where it took it (v1.6.2 L80, change 25)", () => {
     const faceUp = SAMPLES.ORDER_RESERVED;
     expect(publicEventText(faceUp, en)).toBe("Zhao reserved O17 from the display");
     expect(publicEventText({ ...faceUp, via: "colour_samples" }, en)).toBe("Zhao reserved O17 from the display with Colour Samples");
@@ -299,7 +299,7 @@ describe("V1.6.2 lines", () => {
     for (const c of [en, zh]) expect(publicEventText(SAMPLES.LOOKED_ORDERS_DISCARDED, c)).not.toMatch(/bottom|牌堆底/);
   });
 
-  it("states the Setup take and the Magistrate's Hall Crown Order in public (rev. 4 L122, L241; R21, R23)", () => {
+  it("states the Setup take and the Magistrate's Hall Crown Order in public (L130, L259; R21, R23)", () => {
     const setup: PublicGameEvent = { ...SAMPLES.ORDER_RESERVED, via: "setup", slotIndex: 0, orderId: "O22" };
     expect(publicEventText(setup, en)).toBe("Zhao took O22 from the display with their Kiln");
     expect(publicEventText(setup, zh)).toBe("Zhao选窑口时从委托榜上拿取O22");
@@ -349,7 +349,7 @@ describe("V1.6.2 lines", () => {
   });
 
   it("states the Colour Samples swap, then where its held Order went, never which Order, except to its owner", () => {
-    // Colour Samples is used (TECH_USED) only by its swap (v1.6.2 L617); that line names the swap.
+    // Colour Samples is used (TECH_USED) only by its swap (v1.6.2 L632); that line names the swap.
     const used: PublicGameEvent = { type: "TECH_USED", playerId: "p2", techId: "T10" };
     expect(publicEventText(used, en)).toBe("Zhao used Colour Samples to swap a held Order");
     // A Tech's name in running Chinese text stands in 「」, as in the reservation line after it.
@@ -415,7 +415,7 @@ describe("V1.6.2 lines", () => {
     expect(publicEventText(SAMPLES.RESOURCES_CHANGED, zh)).toBe("Zhao：+2铜钱（漕船）");
   });
 
-  it("says Canal Barge's use with its Coins, and folds the Coins line that follows it (v1.6.2 L622)", () => {
+  it("says Canal Barge's use with its Coins, and folds the Coins line that follows it (v1.6.2 L637)", () => {
     const used: PublicGameEvent = { type: "TECH_USED", playerId: "p2", techId: "T23" };
     expect(publicEventText(used, en)).toBe("Zhao used Canal Barge: +2 Coins");
     expect(publicEventText(used, zh)).toBe("Zhao使用「漕船」：得2铜钱");
@@ -520,7 +520,7 @@ describe("Kiln ability lines (D17: a toast's 4 lines carry the moves)", () => {
     expect(kept([ding[0]!, ding[1]!, { ...(ding[2] as Extract<PublicGameEvent, { type: "CERAMIC_FORMED" }>), playerId: "p1" }], en)).toHaveLength(2);
   });
 
-  it("Jun: one line states the Wood, the adjustment and the Actual Heat (v1.6.2 L477)", () => {
+  it("Jun: one line states the Wood, the adjustment and the Actual Heat (v1.6.2 L492)", () => {
     const jun: PublicGameEvent[] = [
       { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: -1, coins: 0, reason: "jun" },
       used("JU", "p1"),
@@ -541,7 +541,7 @@ describe("Kiln ability lines (D17: a toast's 4 lines carry the moves)", () => {
     expect(kept(ge, zh).join(" | ")).not.toContain("使用「金丝铁线」");
   });
 
-  it("Ru and Guan: the use states what it scores; Guan's Coins fold into it (v1.6.2 L459, L463)", () => {
+  it("Ru and Guan: the use states what it scores; Guan's Coins fold into it (v1.6.2 L474, L478)", () => {
     expect(publicEventText(used("RU"), en)).toBe("Zhao used Quiet Perfection: +4 VP");
     expect(publicEventText(used("RU"), zh)).toBe("Zhao使用「天青无瑕」：+4分");
     const guan: PublicGameEvent[] = [used("GU"), { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: 2, reason: "guan" }];
@@ -571,7 +571,7 @@ describe("Order Phase lines", () => {
     const completed = SAMPLES.ORDER_COMPLETED;
     const reward: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: 2, reason: "order_reward" };
     expect(publicEventText(completed, context("en"))).toContain("+2 Coins");
-    // Ge's Crackle VP for the delivered Crackle ceramic is stated on the completion line (rev. 4 L465).
+    // Ge's Crackle VP for the delivered Crackle ceramic is stated on the completion line (L484).
     expect(publicEventText(completed, context("en"))).toBe("Zhao completed O39: +7 VP, +2 Coins; Crackle: +1 VP");
     expect(publicEventText(completed, context("zh-CN"))).toBe("Zhao完成委托O39：+7分，得2铜钱；开片器+1分");
     const plain = { ...completed, record: { ...completed.record, crackleVp: 0 } };
@@ -596,7 +596,7 @@ describe("own secrets", () => {
     // Another seat's secret (or a viewer that is not seated) falls back to the public line.
     expect(ownSecretOf(line, "p2")).toBeNull();
     const asZhao = eventText(line, context("en", VIEW, "p2"));
-    // Only Starting Orders are dealt (rev. 4 L115); the Main Order is taken face up with the Kiln.
+    // Only Starting Orders are dealt (L123); the Main Order is taken face up with the Kiln.
     expect(asZhao).toBe("Lin was dealt 2 Starting Orders");
     expect(asZhao).not.toMatch(/S02|S05/);
     expect(ownSecretOf(line, null)).toBeNull();

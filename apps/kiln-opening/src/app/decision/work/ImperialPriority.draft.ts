@@ -1,10 +1,11 @@
 /**
  * The draft model of Imperial Priority (UI_V1.6.1_ARCHITECTURE §3.4, §5 gap 16). Owner: B4.
  *
- * Before or after the worker action (L293, R10): spend the token to give one Shaped vessel a
- * Glaze and load it into your empty Imperial Kiln with a public −1/0/+1 Imperial modifier, free (no
- * Wood, rev. 4 L291); Reworking Table may change its Shape first (P1), and Kiln Master's +1/−1
- * marker may go on it, face up (T24, rev. 4 L628, R22: any loading). Every list comes from
+ * A free action, before or after the worker action or in the Order Phase (L174, L314, R10, R28):
+ * spend the token to give one Shaped vessel a Glaze and load it into your empty Imperial Kiln with
+ * a public −1/0/+1 Imperial modifier, free (no Wood, L309); Reworking Table may change its Shape
+ * first (P1), and Kiln Master's +1/−1 marker may go on it, face up (T24, L647, R22: any loading).
+ * Every list comes from
  * `imperialPriorityOptions(view).ceramics` (per vessel: Glazes, Imperial modifiers, rework
  * Shapes); the combination is checked by `validateAction` in ConfirmBar.
  *

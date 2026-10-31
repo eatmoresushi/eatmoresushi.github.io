@@ -31,7 +31,7 @@ describe("tableCeramics (model.ceramics, CR B2-1)", () => {
     expect(Object.values(view.game.ceramics).some((ceramic) => ceramic.stage === "shaped")).toBe(true);
   });
 
-  it("keeps only Vessel-card facts and Kiln Master's markers of loaded ceramics (public, face up; rev. 4 L628)", () => {
+  it("keeps only Vessel-card facts and Kiln Master's markers of loaded ceramics (public, face up; L647)", () => {
     const view = structuredClone(fixture("m3_kiln_master_marker_3p").playerView);
     const ceramics = tableCeramics(buildGameModel(view, []));
     const loaded = Object.values(view.game.ceramics).filter((ceramic) => ceramic.stage === "loaded");

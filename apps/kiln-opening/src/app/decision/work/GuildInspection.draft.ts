@@ -1,6 +1,6 @@
 /**
  * The draft model of the Guild Hall Shifu inspection (UI_V1.6.1_ARCHITECTURE §3.4
- * `guild_inspection`, §8.1; v1.6.2 L206–213, B2, owner revision 2026-10-17). Owner: B4.
+ * `guild_inspection`, §8.1; v1.6.2 L236–243, B2, owner revision 2026-10-17). Owner: B4.
  *
  * After inspecting a discipline (B2, private), the Shifu takes up to 2 Techs from different
  * disciplines, inspected or face up, each at its printed cost, one per command (`GUILD_TAKE`).
@@ -24,14 +24,14 @@
  * is then pre-selected, the table offers no Tech (`inspectionTechChooser` is null) and the window
  * asks only for that order.
  *
- * Whether a decision is left after a take (`takeLeavesDecision`) or after Colour Samples' Select
- * (`resumeLeavesDecision`) says where the split Confirm belongs (owner UI decision D21: on the
- * action's last step). It is the question the engine asks when it closes the step, on the same public
- * facts from the selectors: the price of an inspected Tech never counts (R27, DESIGN §4.5).
+ * Whether a decision is left after a take (`guildDecisionLeftAfterTake`) or after Colour Samples'
+ * Select (`guildDecisionLeftOnResume`) says where the split Confirm belongs (owner UI decision D21:
+ * on the action's last step). Those selectors ask the engine's own `decisionLeft`, so
+ * `windows.work.ts` reads them and nothing here repeats the rule.
  */
-import { guildInspectionOptions, guildOptions } from "../../../game/index.ts";
-import type { GuildInspectionOptions, GuildInspectionStep, GuildTechOption, PlayerSummary, PlayerView, TechDiscipline, TechId } from "../../../game/index.ts";
-import { RULE_NUMBERS, disciplineName, techName } from "../../i18n/content.ts";
+import { guildInspectionOptions } from "../../../game/index.ts";
+import type { GuildInspectionOptions, GuildTechOption, TechId } from "../../../game/index.ts";
+import { disciplineName, techName } from "../../i18n/content.ts";
 import { msg } from "../../i18n/translator.ts";
 import type { RichMessage, Translator } from "../../i18n/translator.ts";
 import type { DraftModel } from "../../state/draftStore.ts";
@@ -86,57 +86,11 @@ function bottomFor(options: GuildInspectionOptions, current: readonly TechId[]):
 }
 
 /**
- * Both takes are made (v1.6.2 L207: up to 2): only the untaken inspected Techs' bottom order is
+ * Both takes are made (v1.6.2 L237: up to 2): only the untaken inspected Techs' bottom order is
  * left to decide (B2).
  */
 export function inspectionReturnOnly(options: GuildInspectionOptions): boolean {
   return options.takesLeft === 0;
-}
-
-interface InspectionFacts {
-  takes: number;
-  untaken: number;
-  discipline: TechDiscipline;
-  faceUp: readonly GuildTechOption[];
-  coins: number;
-  owned: ReadonlySet<TechDiscipline>;
-  techCount: number;
-}
-
-/** The Shifu still has a decision: a bottom order of 2 Techs, or another take that might be legal. */
-function decisionLeftOn(facts: InspectionFacts): boolean {
-  if (facts.untaken >= 2) return true;
-  if (facts.takes >= RULE_NUMBERS.guildShifuTakes || facts.techCount >= RULE_NUMBERS.techsMaxOwned) return false;
-  if (facts.faceUp.some((option) => !facts.owned.has(option.discipline) && option.cost <= facts.coins)) return true;
-  return facts.untaken > 0 && !facts.owned.has(facts.discipline);
-}
-
-/** After this take the inspection goes on (another step follows, the turn does not end yet). */
-export function takeLeavesDecision(options: GuildInspectionOptions, take: GuildTake, me: PlayerSummary): boolean {
-  const option = findOption(options, take);
-  if (option === undefined) return false;
-  return decisionLeftOn({
-    takes: options.takes.length + 1,
-    untaken: options.inspected.length - (take.kind === "inspected" ? 1 : 0),
-    discipline: options.discipline,
-    faceUp: options.faceUp.filter((candidate) => candidate.techId !== take.techId),
-    coins: me.resources.coins - option.cost,
-    owned: new Set([...me.techs.map((tech) => tech.discipline), option.discipline]),
-    techCount: me.techs.length + 1,
-  });
-}
-
-/** Colour Samples' Select came from this inspection: after the reservation it goes on. */
-export function resumeLeavesDecision(view: PlayerView, resume: GuildInspectionStep, me: PlayerSummary): boolean {
-  return decisionLeftOn({
-    takes: resume.takes.length,
-    untaken: resume.inspectedCount - resume.takes.filter((take) => take.kind === "inspected").length,
-    discipline: resume.discipline,
-    faceUp: guildOptions(view, "shifu").faceUp,
-    coins: me.resources.coins,
-    owned: new Set(me.techs.map((tech) => tech.discipline)),
-    techCount: me.techs.length,
-  });
 }
 
 /** No Tech can be taken next: stopping is the only choice. */
@@ -163,7 +117,7 @@ export function inspectionReason(option: GuildTechOption, options: GuildInspecti
 }
 
 /**
- * The Tech display's chooser during the inspection (owner review, 2026-10-17; v1.6.2 L207): every
+ * The Tech display's chooser during the inspection (owner review, 2026-10-17; v1.6.2 L237): every
  * face-up Tech showing now, legal or not, pressed when the draft takes it. The inspected Techs are
  * private and stay in the pane (B2). Null when the viewer has no open inspection, and after the
  * second take, when no Tech can be taken any more (`inspectionReturnOnly`).

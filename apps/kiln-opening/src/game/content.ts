@@ -251,7 +251,7 @@ export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|[12][0-9
 /** The kind of a source tag, which the UI labels (Rulebook, Owner amendment, Owner ruling, …). */
 export type ClarificationSourceKind = "rulebook" | "amendment" | "ruling" | "editorial" | "interpretation" | "provisional" | "wording";
 
-/** The tags of a clarification `source`, in order ("L376 · D7" → ["L376", "D7"]). */
+/** The tags of a clarification `source`, in order ("L174 · L314 · R28" → ["L174", "L314", "R28"]). */
 export function clarificationTags(source: string): string[] {
   return source.split(" · ");
 }
