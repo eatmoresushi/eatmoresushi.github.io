@@ -1,0 +1,26 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "工人行动之后" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "5"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中1张委托 声望0／4 0分
+  - form "工人行动之后":
+    - group "自由行动":
+      - text: ""
+      - radio "交付S08 2分 4铜钱 任意器型 · 任意釉 · 任意纹饰 · 良品以上"
+      - text: 交付S08 2分 4铜钱 任意器型 · 任意釉 · 任意纹饰 · 良品以上
+      - button "完整规则：委托S08"
+      - radio "卖出瑕品（+2铜钱）"
+      - text: 卖出瑕品（+2铜钱）
+    - paragraph: 请选择一项自由行动，或结束回合。
+    - button "结束回合"

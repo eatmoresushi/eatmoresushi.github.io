@@ -32,6 +32,12 @@ export const boards = defineNamespace({
     // Kiln Tradition and the marker line (wireframe `kilnTrad`, `hmLine`).
     "kiln.tradition": "{kiln} · {ability}",
     "markers.kilnMasterOn": "Kiln Master marker {value} on <b>{ceramic}</b>",
+    // The Imperial Priority token on its holder's board (owner UI decision D21).
+    "priority.token": "Imperial Priority token",
+    "priority.held": "Held",
+    "priority.use": "Use",
+    "priority.chosen": "Chosen",
+    "priority.useLabel": "{action}: {token}",
     "markers.imperial": "Imperial Kiln: {state}",
     "markers.imperialEmpty": "empty this round",
     "markers.imperialNotYet": "not yet gained",
@@ -78,6 +84,11 @@ export const boards = defineNamespace({
 
     "kiln.tradition": "{kiln} · {ability}",
     "markers.kilnMasterOn": "窑工标{value}在<b>{ceramic}</b>上",
+    "priority.token": "御烧优先标",
+    "priority.held": "持有",
+    "priority.use": "使用",
+    "priority.chosen": "已选",
+    "priority.useLabel": "{action}：{token}",
     "markers.imperial": "御窑：{state}",
     "markers.imperialEmpty": "本轮空着",
     "markers.imperialNotYet": "尚未获得",

@@ -13,7 +13,11 @@
  * - no clipped text: no text container with `overflow: hidden | clip` cuts its text off;
  * - no English Tech name broken inside a word, also at 200% text (the price moves under it);
  * - no ConfirmBar button label broken across lines (the alternative never squeezes to one
- *   character's width beside Confirm);
+ *   character's width beside Confirm), the split Confirm's two buttons included, and no "Free
+ *   actions" chip label either (owner UI decision D21);
+ * - the moments of owner revision 5 and D21 show what they are for (`D21_MOMENTS`): the turn line and
+ *   its chips in order, the pieces' own buttons, the split Confirm's labels in both languages, the
+ *   private hint, and no free-action control in the after-Quality step or the hand trim (R26);
  * - focus is visible after Tab;
  * - on phone projects, every interactive element is at least 44×44 CSS px or has 44px spacing
  *   (WCAG 2.5.8; inline links in running text excepted; spacing is measured to the visible part
@@ -23,6 +27,9 @@
  * - an ARIA snapshot of the decision pane (1440; `npm run test:e2e:update` refreshes them); while
  *   the work turn hides the pane (owner review, 2026-10-17), of the hidden pane's bar above the
  *   world instead (its turn cue, then the openers, if any).
+ * - in short landscape between the project sizes (568×320 … 812×375), which no project opens: the
+ *   split Confirm's buttons are on screen as soon as the pane opens, and stay there at the end of
+ *   the scroll, and no pinned part takes more than two thirds of the pane body.
  * A viewport screenshot of each view goes to `output/ui-v1.6.1/screens/` (gitignored) for review;
  * `KILN_E2E_SCREENS=full` takes full-page ones. No pixel baselines are kept.
  */
@@ -37,6 +44,60 @@ const fixtureIds = (file: string): string[] =>
 
 const SHELL_IDS = ["shell-home", "shell-home-saved", "shell-lobby-host", "shell-lobby-guest", "shell-reconnecting", "shell-offline", "shell-computer-failure", "shell-unsent", "shell-ended"];
 const ENTRIES: readonly string[] = ["kit", ...SHELL_IDS, ...fixtureIds("scenarios.json"), ...fixtureIds("moments.json")];
+
+/** A label in both languages. */
+type Label = Readonly<Record<"en" | "zh-CN", string>>;
+
+/** What a moment of owner revision 5 or owner UI decision D21 must show (`expectD21Moment`). */
+interface D21Moment {
+  /** The turn line, and its chips in order, with the pane hidden. */
+  chips?: readonly Label[];
+  /** The same actions on the pieces. */
+  pieces?: readonly string[];
+  /** The primary Confirm. */
+  primary?: Label;
+  /** The split's secondary button; `null`: a plain Confirm, with no second button. */
+  secondary?: Label | null;
+  /** The alternative beside them. */
+  alternative?: Label;
+  /** "You can deliver this now". */
+  hint?: boolean;
+  /** No free-action control on the page: the firing and Cleanup sell nothing (R26). */
+  noFreeActions?: boolean;
+}
+
+const PLACE_END: Label = { en: "Place · end turn", "zh-CN": "派工并结束回合" };
+const PLACE_STAY: Label = { en: "Place, then free actions", "zh-CN": "派工后做自由行动" };
+const RESERVE_END: Label = { en: "Reserve · end turn", "zh-CN": "承接并结束回合" };
+const RESERVE_STAY: Label = { en: "Reserve, then free actions", "zh-CN": "承接后做自由行动" };
+const DELIVER: Label = { en: "Deliver", "zh-CN": "交付" };
+const END_TURN: Label = { en: "End turn", "zh-CN": "结束回合" };
+const DONE: Label = { en: "Done", "zh-CN": "结束回合" };
+const FREE_ACTION_CONTROLS = '[data-act="sell"], [data-act="imperial-priority"], [data-pane-opener], [data-target="completable"]';
+
+const D21_MOMENTS: Readonly<Record<string, D21Moment>> = {
+  "t-free-action-chips": {
+    chips: [
+      { en: "Deliver S05", "zh-CN": "交付S05" },
+      { en: "Sell Flawed (+2 Coins)", "zh-CN": "卖出瑕品（+2铜钱）" },
+      { en: "Imperial Priority", "zh-CN": "御烧优先" },
+      { en: "Colour Samples swap", "zh-CN": "色样簿换单" },
+    ],
+    pieces: ['[data-target="completable"] [data-act="order"]', '[data-act="sell"]', '[data-act="imperial-priority"]'],
+  },
+  "t-place-split-confirm": { primary: PLACE_END, secondary: PLACE_STAY },
+  "t-after-action-free-actions": { primary: { en: "Deliver · end turn", "zh-CN": "交付并结束回合" }, secondary: DELIVER, alternative: END_TURN },
+  "t-order-phase-free-actions": { primary: { en: "Deliver · done", "zh-CN": "交付并结束回合" }, secondary: DELIVER, alternative: DONE },
+  "t-swap-select-after-action": { primary: RESERVE_END, secondary: { en: "Reserve", "zh-CN": "承接" } },
+  "t-reserve-deliver-hint": { primary: RESERVE_END, secondary: RESERVE_STAY, hint: true },
+  "t-crown-order-deliver-hint": { primary: RESERVE_END, secondary: RESERVE_STAY, hint: true },
+  // A free action before the worker action has a plain Confirm: the placement is still due.
+  m28_before_action_delivery: { primary: { en: "Confirm", "zh-CN": "确认" }, secondary: null },
+  m29_after_action_sale: { primary: { en: "Sell · end turn", "zh-CN": "卖出并结束回合" }, secondary: { en: "Sell", "zh-CN": "卖出" }, alternative: END_TURN },
+  m30_order_phase_imperial_priority: { primary: { en: "Imperial Priority · done", "zh-CN": "用御烧优先并结束回合" }, secondary: { en: "Imperial Priority", "zh-CN": "用御烧优先" }, alternative: DONE },
+  "t-after-quality-no-sale": { noFreeActions: true },
+  "t-cleanup-no-sale": { noFreeActions: true },
+};
 
 interface View {
   lang: "en" | "zh-CN";
@@ -162,11 +223,11 @@ async function brokenTechNames(page: Page): Promise<string[]> {
   });
 }
 
-/** ConfirmBar buttons whose label breaks onto a second line (取/消, 结束回/合, End/turn). */
+/** ConfirmBar buttons and chips whose label breaks onto a second line (取/消, 结束回/合, End/turn). */
 async function wrappedConfirmLabels(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const found: string[] = [];
-    for (const button of Array.from(document.querySelectorAll<HTMLElement>(".confirm-buttons > .kit-btn"))) {
+    for (const button of Array.from(document.querySelectorAll<HTMLElement>(".confirm-buttons > .kit-btn, .pane-opener"))) {
       if (button.closest("[hidden], [inert]") !== null || button.getClientRects().length === 0) continue;
       // Each text node of the label must sit on one line (an icon beside it is not a line).
       const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
@@ -261,6 +322,26 @@ async function screenshot(page: Page, project: string, id: string, view: View): 
   await page.screenshot({ path: `output/ui-v1.6.1/screens/${name}`, fullPage: process.env["KILN_E2E_SCREENS"] === "full" });
 }
 
+/** The moment's own controls (`D21_MOMENTS`), in this view's language; every size, every theme. */
+async function expectD21Moment(page: Page, id: string, lang: View["lang"]): Promise<void> {
+  const moment = D21_MOMENTS[id];
+  if (moment === undefined) return;
+  const { chips, pieces, primary, secondary, alternative, hint, noFreeActions } = moment;
+  if (chips !== undefined) {
+    await expect(page.locator('[data-shell][data-pane="hidden"], aside.pane[hidden]').first()).toBeAttached();
+    await expect(page.locator("[data-pane-openers] .pane-openers-lead")).toHaveText(lang === "en" ? /^Your turn: place a worker · \d+ left$/ : /^轮到你了：派工 · 还剩\d+名工人$/);
+    await expect(page.locator("[data-pane-openers] .pane-openers-label")).toHaveText(lang === "en" ? "Free actions" : "自由行动");
+    await expect(page.locator("[data-pane-opener]")).toHaveText(chips.map((chip) => chip[lang]));
+  }
+  for (const selector of pieces ?? []) await expect(page.locator(selector).first(), `${id}: ${selector}`).toBeAttached();
+  if (primary !== undefined) await expect(page.locator('form.pane-form [data-action="confirm"]')).toHaveText(primary[lang]);
+  if (secondary === null) await expect(page.locator('form.pane-form [data-action="confirm-stay"]')).toHaveCount(0);
+  else if (secondary !== undefined) await expect(page.locator('form.pane-form [data-action="confirm-stay"]')).toHaveText(secondary[lang]);
+  if (alternative !== undefined) await expect(page.locator('form.pane-form [data-action="alt"]')).toHaveText(alternative[lang]);
+  if (hint === true) await expect(page.locator("[data-confirm-hint]")).toHaveText(lang === "en" ? "You can deliver this now" : "现在就能交付");
+  if (noFreeActions === true) await expect(page.locator(FREE_ACTION_CONTROLS)).toHaveCount(0);
+}
+
 const isPhone = (width: number | undefined, height: number | undefined) => width !== undefined && height !== undefined && (width < 900 || height <= 500);
 
 for (const id of ENTRIES) {
@@ -272,6 +353,7 @@ for (const id of ENTRIES) {
         test.setTimeout(120_000);
         await open(page, id, view);
         const where = `${id} ${view.lang}-${view.theme} ${String(viewport?.width)}×${String(viewport?.height)}`;
+        await expectD21Moment(page, id, view.lang);
         expect(await horizontalScroll(page), `${where}: horizontal page scroll`).toBeLessThanOrEqual(0);
         expect(await clippedText(page), `${where}: clipped text`).toEqual([]);
         expect(await brokenTechNames(page), `${where}: a Tech name broken inside a word`).toEqual([]);
@@ -338,3 +420,44 @@ for (const id of ENTRIES) {
     });
   });
 }
+
+/** Short landscape below the project sizes: nothing above the bar may push the buttons off (D21). */
+test.describe("the split Confirm in narrow short landscape", () => {
+  // Decided from the viewport alone: one project opens these sizes itself.
+  test.skip(({ viewport }) => viewport?.width !== 1440, "runs at 1440 only (desktop-1440)");
+  const SHORT = [[568, 320], [640, 360], [667, 375], [740, 360], [812, 375]] as const;
+  const SPLITS = ["t-place-split-confirm", "t-reserve-deliver-hint", "t-order-phase-free-actions"] as const;
+  for (const [width, height] of SHORT) {
+    for (const lang of ["en", "zh-CN"] as const) {
+      test(`${width}×${height} ${lang}`, async ({ page }) => {
+        await page.setViewportSize({ width, height });
+        for (const id of SPLITS) {
+          await open(page, id, { lang, theme: "light", text: 100 });
+          const measure = () =>
+            page.evaluate(() => {
+              const body = document.querySelector<HTMLElement>("aside.pane .kit-sheet-body")!;
+              const buttons = Array.from(document.querySelectorAll<HTMLElement>(".confirm-buttons > .kit-btn"));
+              const pin = document.querySelector<HTMLElement>(".confirm-pin")!;
+              const pinned = getComputedStyle(pin).position === "sticky" ? pin : document.querySelector<HTMLElement>(".confirm")!;
+              return {
+                count: buttons.length,
+                lowest: Math.max(...buttons.map((button) => button.getBoundingClientRect().bottom)),
+                pinned: pinned.getBoundingClientRect().height,
+                body: body.clientHeight,
+              };
+            });
+          const opened = await measure();
+          expect(opened.count, `${id}: its buttons`).toBeGreaterThanOrEqual(2);
+          expect(opened.lowest, `${id}: the buttons as the pane opens`).toBeLessThanOrEqual(height);
+          expect(opened.pinned, `${id}: the pinned part`).toBeLessThanOrEqual((opened.body * 2) / 3);
+          await page.evaluate(() => {
+            const body = document.querySelector<HTMLElement>("aside.pane .kit-sheet-body")!;
+            body.scrollTop = body.scrollHeight;
+          });
+          const scrolled = await measure();
+          expect(scrolled.lowest, `${id}: the buttons at the end of the scroll`).toBeLessThanOrEqual(height);
+        }
+      });
+    }
+  }
+});

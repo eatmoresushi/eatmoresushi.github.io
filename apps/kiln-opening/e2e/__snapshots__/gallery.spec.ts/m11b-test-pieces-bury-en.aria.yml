@@ -8,8 +8,8 @@
       - text: Clay
       - strong: "1"
       - text: Wood
-      - strong: "1"
-      - text: Coin
+      - strong: "0"
+      - text: Coins
     - text: 4 Orders in hand Recognition 0/4 0 VP
   - 'form "Test Pieces: the card you saw"':
     - paragraph: Firing step 1

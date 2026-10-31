@@ -35,7 +35,10 @@ function inputs(html: string): Record<string, string>[] {
   return [...html.matchAll(/<input\b([^>]*)\/?>/g)].map((match) => Object.fromEntries([...(match[1] ?? "").matchAll(/([\w-]+)="([^"]*)"/g)].map((attr) => [attr[1]!, attr[2]!])));
 }
 
-const RU = "w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard";
+/** A Ge owner's Order Phase: a crackled Masterpiece Plate (c1), a crackled Fine Celadon Vase (c2). */
+const CR = "w-order-phase-with-a-crackle-wildcard";
+/** The Ru / Tribute Ware Order Phase, whose hand holds O18 (no Decoration requirement). */
+const RU = "w-order-phase-with-ru-and-tribute-ware";
 const draftOf = (orderId: OrderId, ceramicIds: CeramicId[], declarations: unknown = "auto") => ({
   orderId,
   ceramicIds,
@@ -56,30 +59,30 @@ function autoDecoration(id: string, orderId: OrderId, ceramicIds: CeramicId[]) {
 }
 
 describe("S07 \"Carved, Impressed or Painted\" (change 23)", () => {
-  const draft = draftOf("S07", ["c3"]);
+  const draft = draftOf("S07", ["c2"]);
 
   it("the auto declaration says which of the three the Crackle ceramic counts as, in both languages", () => {
-    const recorded = autoDecoration(RU, "S07", ["c3"]);
+    const recorded = autoDecoration(CR, "S07", ["c2"]);
     expect(["carved", "impressed", "painted"]).toContain(recorded);
-    const en = perceivable(renderWindow(fixtureSource(RU), { locale: "en", draft }));
+    const en = perceivable(renderWindow(fixtureSource(CR), { locale: "en", draft }));
     expect(en).toContain(`Find a declaration for me ✓ satisfies S07 The game picks Decorations for your Crackle ceramics that complete the Order, and records them. Counts as ${decorationName(recorded, "en")}.`);
     expect(en).toContain(`Complete S07 with Celadon Vase, Plain · Fine · Crackle (as ${decorationName(recorded, "en")})`);
     expect(en).toContain("Rewards +3 VP +3 Coins");
-    const zh = perceivable(renderWindow(fixtureSource(RU), { locale: "zh-CN", draft }));
+    const zh = perceivable(renderWindow(fixtureSource(CR), { locale: "zh-CN", draft }));
     expect(zh).toContain(`视为${decorationName(recorded, "zh-CN")}。`);
     expect(zh).toContain(`（视为${decorationName(recorded, "zh-CN")}）`);
     expect(zh).toContain("满足S07");
   });
 
   it("the auto command still omits the declaration; the engine records its own", () => {
-    const view = structuredClone(fixture(RU).playerView);
+    const view = structuredClone(fixture(CR).playerView);
     const model = buildGameModel(view, []);
     const engine = engineViewOf(view);
-    expect(orderDraft.build(draft as never, model, engine)).toEqual({ type: "COMPLETE_ORDER", orderId: "S07", ceramicIds: ["c3"] });
+    expect(orderDraft.build(draft as never, model, engine)).toEqual({ type: "COMPLETE_ORDER", orderId: "S07", ceramicIds: ["c2"] });
   });
 
   it("an explicit declaration of the printed Decoration is not repeated as \"(as Plain)\" and does not satisfy S07", () => {
-    const plain = perceivable(renderWindow(fixtureSource(RU), { locale: "en", draft: draftOf("S07", ["c3"], [{ ceramicId: "c3", decoration: "plain" }]) }));
+    const plain = perceivable(renderWindow(fixtureSource(CR), { locale: "en", draft: draftOf("S07", ["c2"], [{ ceramicId: "c2", decoration: "plain" }]) }));
     expect(plain).toContain("Complete S07 with Celadon Vase, Plain · Fine · Crackle");
     expect(plain).not.toContain("(as Plain)");
     expect(plain).toContain("Plain ✕ does not satisfy S07");
@@ -88,64 +91,79 @@ describe("S07 \"Carved, Impressed or Painted\" (change 23)", () => {
   });
 
   it("a group without a Crackle ceramic has no declaration step", () => {
-    const html = renderWindow(fixtureSource(RU), { locale: "en", draft: draftOf("S01", ["c4"]) });
+    const html = renderWindow(fixtureSource(CR), { locale: "en", draft: draftOf("S01", ["c3"]) });
     expect(inputs(html).some((input) => input["name"] === "crackleDeclarations")).toBe(false);
     expect(perceivable(html)).not.toContain("Counts as");
   });
 });
 
 describe("the auto mode names a wildcard only where the ceramic's own Decoration fails (L470)", () => {
-  /** The RU scenario with its Crackle Vase (c3) printed as another Decoration. */
+  /** The CR scenario with its Crackle Vase (c2) printed as another Decoration. */
   function withDecoration(decoration: "painted" | "carved") {
+    const entry = structuredClone(fixture(CR));
+    const c2 = entry.playerView.game.ceramics["c2"];
+    if (c2 === undefined || c2.stage !== "finished" || !c2.crackle || c2.shape !== "vase") throw new Error("fixture changed");
+    c2.decoration = decoration;
+    return new FixtureGameSource(entry);
+  }
+
+  /**
+   * The RU scenario's viewer as a Ge owner whose Celadon Vase (c3) is a Crackle ceramic (only Ge
+   * makes Crackle, rev. 5 L482), printed Plain or as another Decoration: its hand holds O18.
+   */
+  function geVase(decoration: "plain" | "carved") {
     const entry = structuredClone(fixture(RU));
-    const c3 = entry.playerView.game.ceramics["c3"];
-    if (c3 === undefined || c3.stage !== "finished" || !c3.crackle) throw new Error("fixture changed");
+    const game = entry.playerView.game;
+    const c3 = game.ceramics["c3"];
+    if (c3 === undefined || c3.stage !== "finished" || c3.shape !== "vase" || !(entry.playerView.own?.orderHand ?? []).includes("O18")) throw new Error("fixture changed");
+    game.players[entry.viewerId]!.kilnId = "GE";
+    c3.crackle = true;
     c3.decoration = decoration;
     return new FixtureGameSource(entry);
   }
 
   it("a Painted Crackle ceramic on S07 already meets it: no \"Counts as\", no \"(as Carved)\"", () => {
-    const en = perceivable(renderWindow(withDecoration("painted"), { locale: "en", draft: draftOf("S07", ["c3"]) }));
+    const en = perceivable(renderWindow(withDecoration("painted"), { locale: "en", draft: draftOf("S07", ["c2"]) }));
     expect(en).toContain("Find a declaration for me ✓ satisfies S07");
     expect(en).toContain("Complete S07 with Celadon Vase, Painted · Fine · Crackle");
     expect(en).not.toContain("Counts as");
     expect(en).not.toMatch(/\(as \w+\)/);
-    const zh = perceivable(renderWindow(withDecoration("painted"), { locale: "zh-CN", draft: draftOf("S07", ["c3"]) }));
+    const zh = perceivable(renderWindow(withDecoration("painted"), { locale: "zh-CN", draft: draftOf("S07", ["c2"]) }));
     expect(zh).toContain("满足S07");
     expect(zh).not.toMatch(/视为(素面|刻花|印花|画花)/);
   });
 
   it("a Plain Crackle ceramic on an Order without a Decoration requirement (O18) says nothing", () => {
     for (const locale of ["en", "zh-CN"] as const) {
-      const seen = perceivable(renderWindow(fixtureSource(RU), { locale, draft: draftOf("O18", ["c3"]) }));
+      const seen = perceivable(renderWindow(geVase("plain"), { locale, draft: draftOf("O18", ["c3"]) }));
       expect(seen).toMatch(/satisfies O18|满足O18/);
       expect(seen).not.toMatch(/Counts as|Its own Decoration \(Plain\)\.|视为素面|本身纹饰（素面）。/);
     }
   });
 
   it("a Carved Crackle ceramic on O18 is not said to count as Plain", () => {
-    const en = perceivable(renderWindow(withDecoration("carved"), { locale: "en", draft: draftOf("O18", ["c3"]) }));
+    const en = perceivable(renderWindow(geVase("carved"), { locale: "en", draft: draftOf("O18", ["c3"]) }));
     expect(en).toContain("Complete O18 with Celadon Vase, Carved · Fine · Crackle");
     expect(en).not.toContain("Counts as");
     expect(en).not.toContain("(as Plain)");
   });
 
-  it("m6: a Carved Crackle Censer on S06 (any Decoration) is not said to count as anything, in both languages", () => {
+  it("m6: a Plain Crackle Plate on S05 (any Decoration) is not said to count as anything, in both languages", () => {
     const id = "m6_order_phase_crackle_3p";
     const view = fixture(id).playerView;
     const model = buildGameModel(structuredClone(view), []);
     const engine = engineViewOf(structuredClone(view));
-    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "S06" }, model, engine);
-    const draft = orderDraft.reduce(chosen, { type: "group", key: "c7" }, model, engine);
-    expect(draft.ceramicIds).toEqual(["c7"]);
-    expect(view.game.ceramics["c7"]).toMatchObject({ crackle: true, decoration: "carved" });
+    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "S05" }, model, engine);
+    const draft = orderDraft.reduce(chosen, { type: "group", key: "c10" }, model, engine);
+    expect(draft.ceramicIds).toEqual(["c10"]);
+    expect(view.game.ceramics["c10"]).toMatchObject({ crackle: true, decoration: "plain", quality: "masterpiece" });
     const en = perceivable(renderWindow(fixtureSource(id), { locale: "en", draft }));
-    expect(en).toContain("Find a declaration for me ✓ satisfies S06");
+    expect(en).toContain("Find a declaration for me ✓ satisfies S05");
     expect(en).not.toContain("Counts as");
-    expect(en).not.toContain("(as Carved)");
+    expect(en).not.toContain("(as Plain)");
     const zh = perceivable(renderWindow(fixtureSource(id), { locale: "zh-CN", draft }));
-    expect(zh).toContain("满足S06");
-    expect(zh).not.toContain("视为刻花");
+    expect(zh).toContain("满足S05");
+    expect(zh).not.toContain("视为素面");
   });
 });
 
@@ -155,9 +173,10 @@ describe("m23: S07 with Canal Barge, a played moment (v1.6.2 L622)", () => {
     const view = fixture(id).playerView;
     const model = buildGameModel(structuredClone(view), []);
     const engine = engineViewOf(structuredClone(view));
-    // S07 can take the Crackle Bowl (c13) or the Carved Bowl (c15): the Carved one, no Crackle.
-    const chosen = orderDraft.reduce(orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "S07" }, model, engine), { type: "group", key: "c15" }, model, engine);
-    if (chosen.ceramicIds?.join() !== "c15") throw new Error("fixture changed: S07 no longer takes c15 in m23");
+    // S07 takes the Ge player's Plain Crackle Vase (c13), its only group: preselected, with the
+    // wildcard counting as one of the three Decorations.
+    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "S07" }, model, engine);
+    if (chosen.ceramicIds?.join() !== "c13") throw new Error("fixture changed: S07 no longer takes c13 in m23");
     return chosen;
   };
 
@@ -165,7 +184,7 @@ describe("m23: S07 with Canal Barge, a played moment (v1.6.2 L622)", () => {
     const draft = s07Group();
     const en = perceivable(renderWindow(fixtureSource(id), { locale: "en", draft }));
     expect(en).toContain("S07 3 VP 3 Coins any Shape · any Glaze · Carved, Impressed or Painted · Standard+");
-    expect(en).toMatch(/Rewards \+3 VP \+3 Coins Canal Barge: \+2 Coins/);
+    expect(en).toMatch(/Rewards \+3 VP \+3 Coins Canal Barge: \+2 Coins Crackle: \+1 VP/);
     expect(en).toContain("Full rules: Order S07");
     const zh = perceivable(renderWindow(fixtureSource(id), { locale: "zh-CN", draft }));
     expect(zh).toContain("任意器型 · 任意釉 · 刻花、印花或画花");
@@ -205,10 +224,11 @@ describe("m27: Crackle VP on a completion (change 29), a played moment", () => {
 
   it("shows the Crackle ceramic's 1 VP with the rewards, in both languages", () => {
     const draft = draftOfMoment();
-    expect(draft.ceramicIds).toEqual(["c4"]);
-    expect(fixture(id).playerView.game.ceramics["c4"]).toMatchObject({ crackle: true });
+    expect(draft.ceramicIds).toEqual(["c6", "c13"]);
+    // The crackled Vase is a Masterpiece: Crackle never changes a Masterpiece's Quality (change 39, R30).
+    expect(fixture(id).playerView.game.ceramics["c6"]).toMatchObject({ crackle: true, quality: "masterpiece" });
     const en = perceivable(renderWindow(fixtureSource(id), { locale: "en", draft }));
-    expect(en).toMatch(/Rewards \+3 VP \+4 Coins Crackle: \+1 VP/);
+    expect(en).toMatch(/Rewards \+12 VP \+5 Coins Crackle: \+1 VP/);
     const zh = perceivable(renderWindow(fixtureSource(id), { locale: "zh-CN", draft }));
     expect(zh).toContain("开片器+1分");
   });

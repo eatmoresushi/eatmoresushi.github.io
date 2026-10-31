@@ -18,6 +18,7 @@ import { checkCommand } from "../../../../src/app/session/fixtureSource.ts";
 import { REVALIDATE } from "../../../../src/app/state/draftStore.ts";
 import type { DraftActionBase, DraftModel } from "../../../../src/app/state/draftStore.ts";
 import { buildGameModel, engineViewOf } from "../../../../src/app/state/model.ts";
+import { createTranslator } from "../../../../src/app/i18n/translator.ts";
 import type { EngineView, GameModel } from "../../../../src/app/state/model.ts";
 import { fixture } from "../support/fixtures.ts";
 
@@ -271,14 +272,14 @@ describe("after-Quality", () => {
 
   it("offers each ability with its eligible ceramics; one use per command", () => {
     const options = afterQualityDraft.options(afterQualityDraft.initial(c.model, c.engine), c.model, c.engine);
-    // v1.6.2 L628: Saggars upgrades a Standard ceramic (its floored one included) for nothing.
-    // Rev. 4 L463 (change 29): Ge crackles a Fine or Standard ceramic, so the Fine c3 is a Ge target too.
+    // Rev. 5 L643: Saggars upgrades a Standard ceramic (its floored one included) for nothing.
+    // Rev. 5 L482 (change 39, R30): Ge crackles any of its owner's ceramics of the firing, so the Fine c3 is a Ge target too.
     expect(options.abilities.map((option) => [option.ability, option.ceramicIds])).toEqual([
       ["protective_saggars", ["c1", "c2"]],
       ["ge_crackle", ["c1", "c2", "c3"]],
     ]);
-    // The viewer owns Protective Saggars: never Flawed, so there is nothing to sell (R20).
-    expect(options.sale).toBeNull();
+    // No sale during the firing (owner revision 5, R26): the step's options carry none.
+    expect(Object.keys(options).sort()).toEqual(["abilities", "canEnd"]);
     expect(options.abilities.every((option) => option.cost.clay + option.cost.wood + option.cost.coins === 0)).toBe(true);
     expect(c.model.firingStage?.ceramics.find((ceramic) => ceramic.id === "c2")).toMatchObject({ quality: "standard", saggarsFloor: true });
     const ge = run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c1" });
@@ -286,8 +287,8 @@ describe("after-Quality", () => {
     // The Fine ceramic is a Ge target (rev. 4 L463), but no Protective Saggars target (Standard only).
     expect(afterQualityDraft.build(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c3" }), c.model, c.engine)).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c3" });
     expect(run(afterQualityDraft, c, { type: "use", ability: "protective_saggars", ceramicId: "c3" }).choice).toBeNull();
-    // Nothing to sell: a sale choice is dropped.
-    expect(run(afterQualityDraft, c, { type: "use", ability: "sell_flawed", ceramicId: "c1" }).choice).toBeNull();
+    // A sale is no choice of this step (R26): an action naming one is dropped.
+    expect(run(afterQualityDraft, c, { type: "use", ability: "sell_flawed" as never, ceramicId: "c1" }).choice).toBeNull();
     expect(afterQualityDraft.build(run(afterQualityDraft, c, { type: "end" }), c.model, c.engine)).toEqual({ type: "END_AFTER_QUALITY" });
   });
 
@@ -295,7 +296,9 @@ describe("after-Quality", () => {
     const saggars = run(afterQualityDraft, c, { type: "use", ability: "protective_saggars", ceramicId: "c2" });
     expect(afterQualityDraft.build(saggars, c.model, c.engine)).toEqual({ type: "USE_PROTECTIVE_SAGGARS", ceramicId: "c2" });
     expect(afterQualityDraft.summary(saggars, c.model, c.engine)?.key).toBe("firing.aq.sumSaggars");
+    // Ge on a Standard ceramic: it becomes Fine; on a Fine one it keeps its Quality (change 39, R30).
     expect(afterQualityDraft.summary(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c1" }), c.model, c.engine)?.key).toBe("firing.aq.sumGe");
+    expect(afterQualityDraft.summary(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c3" }), c.model, c.engine)?.key).toBe("firing.aq.sumGeKeep");
     // The same firing with Second Firing (T14) as the viewer's Firing Tech instead of Protective Saggars.
     const view = structuredClone(fixture("w-after-quality-saggars-and-ge").playerView);
     const me = view.game.players[view.viewerId!]!;
@@ -317,8 +320,8 @@ function afterQualityOptionsFirst(c: Ctx, ability: "protective_saggars" | "secon
   return options.abilities.find((option) => option.ability === ability)?.ceramicIds[0] ?? null;
 }
 
-describe("after-Quality: Ge on a Fine ceramic (change 29) and the sale (change 30, R20)", () => {
-  it("Ge on a played Fine ceramic builds the command; the summary says it is Fine with a Crackle marker", () => {
+describe("after-Quality: Ge on any ceramic (changes 29, 39; R30) and no sale (R26)", () => {
+  it("Ge on a played Fine ceramic builds the command; the summary says it gains a Crackle marker and stays Fine", () => {
     const c = ctx("m26_ge_crackle_fine");
     const options = afterQualityDraft.options(afterQualityDraft.initial(c.model, c.engine), c.model, c.engine);
     const ge = options.abilities.find((option) => option.ability === "ge_crackle");
@@ -329,22 +332,21 @@ describe("after-Quality: Ge on a Fine ceramic (change 29) and the sale (change 3
     const command = afterQualityDraft.build(draft, c.model, c.engine);
     expect(command).toEqual({ type: "USE_GE_CRACKLE", ceramicId: fine });
     expect(valid(c, command)).toBe(true);
-    expect(afterQualityDraft.summary(draft, c.model, c.engine)?.key).toBe("firing.aq.sumGe");
+    const summary = afterQualityDraft.summary(draft, c.model, c.engine);
+    expect(summary?.key).toBe("firing.aq.sumGeKeep");
+    expect(createTranslator("en", { strict: true }).message(summary!)).toMatch(/gains a Crackle marker and stays Fine$/);
+    expect(createTranslator("zh-CN", { strict: true }).message(summary!)).toMatch(/开片，品质仍为上品$/);
   });
 
-  it("the own after-Quality turn offers the sale of a Flawed ceramic of this firing, beside Second Firing", () => {
-    const c = ctx("t-after-quality-sale");
+  it("the own after-Quality turn with a Flawed ceramic of this firing offers Second Firing and no sale (R26)", () => {
+    const c = ctx("t-after-quality-no-sale");
     const options = afterQualityDraft.options(afterQualityDraft.initial(c.model, c.engine), c.model, c.engine);
-    expect(options.sale).toEqual({ ceramicIds: ["c1"], coins: 2 });
     expect(options.abilities.find((option) => option.ability === "second_firing")?.ceramicIds).toEqual(["c1"]);
-    const sale = run(afterQualityDraft, c, { type: "use", ability: "sell_flawed", ceramicId: "c1" });
-    const command = afterQualityDraft.build(sale, c.model, c.engine);
-    expect(command).toEqual({ type: "SELL_FLAWED", ceramicId: "c1" });
-    expect(valid(c, command)).toBe(true);
-    expect(afterQualityDraft.summary(sale, c.model, c.engine)?.key).toBe("common.sale.sum");
-    expect(afterQualityDraft.fromCommand(command!, c.model, c.engine)).toEqual(sale);
-    // Another player's ceramic, or one that is not Flawed, is never offered.
-    expect(run(afterQualityDraft, c, { type: "use", ability: "sell_flawed", ceramicId: "c2" }).choice).toBeNull();
+    expect(c.model.firingStage?.ceramics.find((ceramic) => ceramic.id === "c1")?.quality).toBe("flawed");
+    expect(Object.keys(options)).not.toContain("sale");
+    // A sale command is neither built nor expressed here: the engine refuses it during the firing.
+    expect(afterQualityDraft.fromCommand({ type: "SELL_FLAWED", ceramicId: "c1" }, c.model, c.engine)).toBeNull();
+    expect(valid(c, { type: "SELL_FLAWED", ceramicId: "c1" })).toBe(false);
   });
 });
 
@@ -353,7 +355,7 @@ describe("every built command validates", () => {
     ["w-test-pieces-decision", testPiecesDraft, { type: "choose", choice: "peek" }],
     ["w-second-firing-choice-with-jun-r7", secondFiringDraft, { type: "card", cardIndex: 1 }],
     ["w-after-quality-saggars-and-ge", afterQualityDraft, { type: "use", ability: "protective_saggars", ceramicId: "c2" }],
-    ["t-after-quality-sale", afterQualityDraft, { type: "use", ability: "sell_flawed", ceramicId: "c1" }],
+    ["t-after-quality-no-sale", afterQualityDraft, { type: "use", ability: "second_firing", ceramicId: "c1" }],
     ["m26_ge_crackle_fine", afterQualityDraft, { type: "end" }],
   ] as const)("%s", (id, model, action) => {
     const c = ctx(id);

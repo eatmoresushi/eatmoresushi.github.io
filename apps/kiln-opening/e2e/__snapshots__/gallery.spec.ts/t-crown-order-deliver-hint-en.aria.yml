@@ -1,0 +1,52 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Place a worker" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "5"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 0 Orders in hand Recognition 0/4 0 VP
+  - form "Place a worker":
+    - paragraph: 4 of your 4 workers left. The Work Phase cannot be passed.
+    - region "Shifu at Magistrate's Hall":
+      - heading "Shifu at Magistrate's Hall" [level=3]
+      - text: 0/1 taken
+      - paragraph: Pay 4 Coins → +1 Recognition (0 → 1, 1 → 2 or 2 → 3), and reserve 1 face-up Crown Order (none if none is showing)
+      - group "Magistrate's Hall":
+        - paragraph: Pay 4 Coins
+        - paragraph: Imperial Recognition 0 → 1
+        - paragraph: "Reward on reaching 1:"
+        - paragraph:
+          - strong: Imperial Grant
+          - text: · Gain 1 Clay, 1 Wood and 1 Coin.
+        - 'button "Full rules: Recognition 1 · Imperial Grant"'
+        - group "Then reserve a Crown Order (optional)":
+          - text: ""
+          - paragraph: One face-up Order that shows a Crown, after the Recognition step. Its place on the display stays empty until your turn ends.
+          - radio "Reserve none"
+          - text: Reserve none
+          - radio "#1 O17 6 VP 2 Coins 1 Crown Brush Washer · White · Painted Fine+" [checked]
+          - text: "#1 O17 6 VP 2 Coins 1 Crown Brush Washer · White · Painted Fine+"
+          - 'button "Full rules: Order O17"'
+        - group "Your resources after this action": After this action Clay 2 → 3 Wood 3 → 4 Coins 5 → 2
+      - paragraph: To place elsewhere, choose another Place on the table.
+    - paragraph:
+      - text: Place
+      - strong: Shifu
+      - text: at
+      - strong: Magistrate's Hall
+      - text: — Pay 4 Coins, then reserve
+      - strong: O17
+    - paragraph: You can deliver this now
+    - button "Reserve · end turn"
+    - button "Reserve, then free actions"
+    - button "Clear"

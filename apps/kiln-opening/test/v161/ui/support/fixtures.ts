@@ -57,13 +57,16 @@ export function allFixtures(): readonly UiFixture[] {
  */
 const DERIVED: Readonly<Record<string, { base: string; edit: (entry: UiFixture) => void }>> = {
   /** Before the worker action with the Colour Samples swap as the only ability that may come
-   * first: the DING scenario after its Imperial Priority token was spent. */
+   * first: the DING scenario after its Imperial Priority token was spent and with no Finished
+   * ceramic to deliver (so no held Order can be completed, a free action since owner revision 5). */
   "d-colour-samples-swap-only": {
     base: "w-before-the-worker-action-colour-samples-swap-imperial-priority-with-reworking-table-ding",
     edit: (entry) => {
       const viewer = entry.playerView.game.players[entry.viewerId];
       if (viewer === undefined) throw new Error("no viewer");
       viewer.imperial.priority = "spent";
+      const ceramics = entry.playerView.game.ceramics;
+      for (const [id, ceramic] of Object.entries(ceramics)) if (ceramic.ownerId === entry.viewerId && ceramic.stage === "finished") delete ceramics[id];
     },
   },
   /** The Guild Hall Shifu's inspection after a first take (a face-up Glazing & Loading Tech):

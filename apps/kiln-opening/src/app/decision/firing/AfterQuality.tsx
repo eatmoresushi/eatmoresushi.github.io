@@ -1,17 +1,16 @@
 /**
  * AfterQuality (UI_V1.6.1_ARCHITECTURE §3.4 `after_quality`; wireframe `decAfterQuality`). Owner: B5.
  *
- * Appendix D step 5 (rev. 4 L663): Protective Saggars (Standard → Fine), Second Firing (which then opens its own
- * choice of 2 Fire cards) and Ge, in the order the player chooses, one use per Confirm; the
- * options are re-read after each use. "Done — decline the rest" is the window's alternative
- * button. Each ability shows its card text (its rule effect) and its eligible targets with their
- * recorded Quality; nothing predicts a result (D3). None of them costs anything in V1.6.2. A
- * ceramic Protective Saggars kept Standard (v1.6.2 L636) says so, as the game log does; its
- * Quality is the engine's. Ge (rev. 4 L463) crackles a Fine or Standard ceramic.
+ * Appendix D step 5 (rev. 5 L682): Protective Saggars (Standard → Fine), Second Firing (which then
+ * opens its own choice of 2 Fire cards) and Ge, in the order the player chooses, one use per
+ * Confirm; the options are re-read after each use. "Done — decline the rest" is the window's
+ * alternative button. Each ability shows its card text (its rule effect) and its eligible targets
+ * with their recorded Quality; nothing predicts a result (D3). None of them costs anything in
+ * V1.6.2. A ceramic Protective Saggars kept Standard (rev. 5 L655) says so, as the game log does;
+ * its Quality is the engine's. Ge (change 39, rev. 5 L482, R30) crackles any one of the owner's
+ * ceramics of this firing, of any Quality: only a Standard one becomes Fine.
  *
- * The after-Quality turn is also one of the player's own turns, so a Flawed ceramic (one of this
- * firing included) may be sold here (change 30, R20): the "Sell a Flawed ceramic" group lists
- * `sellFlawedOptions`, and the Sell buttons on the table choose the same.
+ * Nothing is sold here (owner revision 5, owner ruling R26: no free actions during the firing).
  */
 import type { AfterQualityAbility, CeramicId } from "../../../game/index.ts";
 import { kilnText, qualityName, techName, techText } from "../../i18n/content.ts";
@@ -25,7 +24,6 @@ import { afterQualityDraft, afterQualityValue } from "./AfterQuality.draft.ts";
 import type { AfterQualityAction, AfterQualityDraft } from "./AfterQuality.draft.ts";
 import { B5_KILNS, B5_TECHS, costText, ownFiringCeramicIds, saggarsFloored } from "./firingSupport.ts";
 import { CeramicLine, Lead, Section, ShortText, StepQueue, stepLabel } from "./WindowParts.tsx";
-import { SellFlawed } from "../sale/SellFlawed.tsx";
 
 const SUBJECTS: { readonly [A in AfterQualityAbility]: Extract<RulesSubject, { kind: "tech" | "kiln" }> } = {
   protective_saggars: { kind: "tech", id: B5_TECHS.protectiveSaggars },
@@ -49,7 +47,6 @@ export function AfterQuality() {
   const options = afterQualityDraft.options(draft, model, engine);
   const mine = ownFiringCeramicIds(model);
   const selected = draft.choice === null || draft.choice === "end" ? null : afterQualityValue(draft.choice.ability, draft.choice.ceramicId);
-  const sold = draft.choice !== null && draft.choice !== "end" && draft.choice.ability === "sell_flawed" ? draft.choice.ceramicId : null;
   const floorNote = (ceramicId: CeramicId) =>
     saggarsFloored(model, ceramicId)
       ? t("firing.aq.saggarsFloor", { tech: techName(B5_TECHS.protectiveSaggars, t.locale), standard: qualityName("standard", t.locale), flawed: qualityName("flawed", t.locale) })
@@ -95,16 +92,6 @@ export function AfterQuality() {
           </OptionGroup>
         );
       })}
-      {options.sale === null ? null : (
-        <SellFlawed
-          model={model}
-          engine={engine}
-          options={options.sale}
-          value={sold}
-          name="afterQuality.sell"
-          onChange={(ceramicId) => dispatch({ type: "use", ability: "sell_flawed", ceramicId })}
-        />
-      )}
     </div>
   );
 }

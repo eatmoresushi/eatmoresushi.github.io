@@ -1,7 +1,8 @@
 /**
- * SellFlawed (change 30, R20; rev. 4 L284): the choice of a Flawed ceramic to sell, as one group
- * of a window's form (the work turn's before- and after-action windows, the Order Phase turn, the
- * after-Quality turn and the hand trim). Owner: B6.
+ * SellFlawed (change 30; a free action since owner revision 5, change 36, rev. 5 L172, L302): the
+ * choice of a Flawed ceramic to sell, as one group of a window's form in the viewer's free-action
+ * windows (the work turn's before- and after-action steps, the Order Phase turn; never during the
+ * firing or at Cleanup, owner ruling R26). Owner: B6. The group is marked "Free action".
  *
  * Each sellable ceramic (`sellFlawedOptions`, through the window's draft) is a radio card with the
  * Coins it brings; the window's draft holds the choice and builds `SELL_FLAWED`. The same choice
@@ -35,6 +36,7 @@ export function SellFlawed({ model, engine, options, value, onChange, name = "se
     <OptionGroup
       legend={t("common.sale.title")}
       hideLegend={hideLegend}
+      aside={t("common.freeAction")}
       description={t("common.sale.lead", { coins })}
       name={name}
       value={value}

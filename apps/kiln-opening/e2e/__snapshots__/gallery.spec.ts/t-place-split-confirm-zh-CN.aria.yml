@@ -1,0 +1,37 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "派工" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中2张委托 声望3／4 0分
+  - form "派工":
+    - paragraph: 你还有4名工人未派（共4名）。派工阶段不能跳过。
+    - region "派师傅到漕运码头":
+      - heading "派师傅到漕运码头" [level=3]
+      - text: 不限
+      - paragraph: 得4铜钱，并拿取牌堆顶1张委托（不看）
+      - group "漕运码头":
+        - paragraph: 得4铜钱
+        - paragraph: 再不看牌面拿取主委托牌堆顶一张，收入手中。
+        - group "行动后你的资源": 行动后 泥2 → 2 柴2 → 2 铜钱3 → 7
+      - paragraph: 要改派别处，在桌面上另点一个派工按钮。
+    - paragraph:
+      - text: 派
+      - strong: 师傅
+      - text: 到
+      - strong: 漕运码头
+      - text: ：得4铜钱，并不看牌面拿取主委托牌堆顶的牌
+    - button "派工并结束回合"
+    - button "派工后做自由行动"
+    - button "取消"

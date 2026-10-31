@@ -1,5 +1,5 @@
 - region "Your decision":
   - paragraph: "Your turn: place a worker · 4 left"
-  - group "Or first:":
+  - group "Free actions":
     - text: ""
-    - button "Sell a Flawed ceramic"
+    - button "Sell Flawed (+2 Coins)"

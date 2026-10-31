@@ -56,6 +56,8 @@ export interface EventTextContext {
   /** For player names and ceramic descriptions. */
   view: CeramicLabelView;
   viewerId: PlayerId | null;
+  /** The event happened in the last round (`lastRoundStart`): no firing follows it. */
+  lastRound?: boolean;
 }
 
 export type EventTemplate<T extends GameEventType = GameEventType> = (
@@ -370,8 +372,13 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     if (event.kilnId === "GU") return c.t("shell.ev.KILN_ABILITY_USED.vpCoins", { ...values, vp: KILNS.GU.params.vp, coins: coins(KILNS.GU.params.coins, c) });
     return c.t("shell.ev.KILN_ABILITY_USED", values);
   },
+  // A free action (rev. 5 L174, L314): in the Order Phase its ceramic waits in the Imperial Kiln for
+  // the next round's firing, and in the last round is never fired (R28), which the line says.
   IMPERIAL_PRIORITY_USED: (event, c) =>
-    c.t("shell.ev.IMPERIAL_PRIORITY_USED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
+    c.t(event.window !== "order_phase" ? "shell.ev.IMPERIAL_PRIORITY_USED" : c.lastRound === true ? "shell.ev.IMPERIAL_PRIORITY_USED.lastRound" : "shell.ev.IMPERIAL_PRIORITY_USED.afterFiring", {
+      name: name(event.playerId, c),
+      ceramic: ceramic(event.ceramicId, c, event.playerId),
+    }),
   WORK_TURN_ENDED: (event, c) => c.t("shell.ev.WORK_TURN_ENDED", { name: name(event.playerId, c) }),
   WORK_PHASE_ENDED: (_event, c) => c.t("shell.ev.WORK_PHASE_ENDED"),
 
@@ -483,7 +490,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
       line: c.t("shell.ev.CRACKLE_APPLIED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { crackle: false }) }),
       via: kilnAbility("GE", c),
     }),
-  // A Flawed ceramic sold during its owner's turn (R20, rev. 4 L284).
+  // A Flawed ceramic sold as a free action, in any of its owner's free-action windows (rev. 5 L172, R26).
   CERAMIC_SOLD: (event, c) =>
     c.t("shell.ev.CERAMIC_SOLD", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { place: false }), coins: coins(event.coins, c) }),
   FIRING_FINISHED: (event, c) => c.t("shell.ev.FIRING_FINISHED", { n: event.finishedCeramicIds.length }),
@@ -736,6 +743,11 @@ export function foldedEntry(log: readonly LogEntry[], index: number): boolean {
 /** The text of one public event. */
 export function publicEventText(event: PublicGameEvent, context: EventTextContext): string {
   return publicText(event, context);
+}
+
+/** The sequence the log's last round starts at (its `ROUND_STARTED`), or null before it. */
+export function lastRoundStart(log: readonly LogEntry[]): number | null {
+  return log.find(({ event }) => event.type === "ROUND_STARTED" && event.round === RULE_NUMBERS.rounds)?.sequence ?? null;
 }
 
 /** The log line for one entry: the viewer's own secret version when it has one, else the public one. */

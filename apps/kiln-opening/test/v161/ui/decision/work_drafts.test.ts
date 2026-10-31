@@ -30,6 +30,7 @@ import {
   quoteMaterialsYard,
   settersMarkOptions,
   sellFlawedOptions,
+  freeActionOptions,
   setupChoiceOptions,
   validateAction,
   vesselCoins,
@@ -118,9 +119,10 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
   });
 
   it("pre-selects the only worker kind left, but not a location among several", () => {
+    // m5: Zhao's three Apprentices are placed; only the Shifu is left.
     const c = ctx("m5_two_player_board_2p");
     const draft = workDraft.initial(c.model, c.engine);
-    expect(draft.workerKey).toBe("apprentice");
+    expect(draft.workerKey).toBe("shifu");
     expect(draft.locationId).toBeNull();
   });
 
@@ -151,7 +153,7 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
   it("explains a second personal space not yet added in D7 wording", () => {
     // m1 with Zhao's Materials Yard Apprentice on the first Glaze & Load space instead: the second is not added yet.
     const c = ctxWith("m1_work_phase_r2_3p", (view) => {
-      const worker = viewer(view).workers["p2:apprentice:2"];
+      const worker = viewer(view).workers["p2:apprentice:1"];
       if (worker?.placement?.locationId !== "materials_yard") throw new Error("fixture changed");
       worker.placement = { ...worker.placement, locationId: "glaze_load", spaceIndex: 0 };
       if (viewer(view).personalSpaces.glaze_load[1].unlocked) throw new Error("fixture changed: the second Glaze & Load space is added");
@@ -163,11 +165,11 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
 
   it("ignores an unavailable location, and takes the only legal worker of a location", () => {
     const c = ctx("m5_two_player_board_2p");
-    expect(work(c, { type: "location", locationId: "materials_yard" }).locationId).toBeNull();
+    expect(work(c, { type: "location", locationId: "guild_hall" }).locationId).toBeNull();
     expect(work(c, { type: "location", locationId: "form_decorate" }).locationId).toBeNull();
     const draft = work(c, { type: "location", locationId: "commission_market" });
     expect(draft.locationId).toBe("commission_market");
-    expect(draft.workerKey).toBe("apprentice");
+    expect(draft.workerKey).toBe("shifu");
   });
 
   it("keeps each location's sub-draft while the player looks at other locations (§3.5)", () => {
@@ -205,20 +207,22 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
   });
 
   it("builds the placement and says so in both languages", () => {
-    const c = ctx("m1_work_phase_r2_3p");
+    const c = ctx(RICH);
     const draft = work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "canal_wharf" });
     const command = workDraft.build(draft, c.model, c.engine);
-    expect(command).toEqual({ type: "PLACE_CANAL_WHARF", workerId: c.model.me?.availableWorkerIds[0] });
+    expect(command).toEqual({ type: "PLACE_CANAL_WHARF", workerId: `${c.view.viewerId}:shifu` });
     expect(validateAction(c.actor, command as GameAction)).toBeNull();
     const [en, zh] = sentences(WINDOWS.work, draft, c);
     expect(en).toBe("Place Shifu at Canal Wharf — +4 Coins and the top Main Order card, unseen");
     expect(zh).toBe("派师傅到漕运码头：得4铜钱，并不看牌面拿取主委托牌堆顶的牌");
   });
 
-  it("offers Imperial Priority and the Colour Samples swap before the action when they are usable", () => {
+  it("offers the free actions and the Colour Samples swap before the action when they are usable (owner revision 5)", () => {
     const c = ctx(DING);
     const options = workDraft.options(workDraft.initial(c.model, c.engine), c.model, c.engine);
-    expect(options.modes.map((mode) => mode.mode)).toEqual(["place", "imperial_priority", "colour_samples_swap"]);
+    expect(options.modes.map((mode) => mode.mode)).toEqual(["place", "complete_order", "imperial_priority", "colour_samples_swap"]);
+    // Completing a held Order is a free action (change 36): the completable ones from the engine.
+    expect(options.completion?.orders).toEqual(freeActionOptions(c.view)!.completableOrderIds.map((orderId) => ({ orderId, completable: true })));
     expect(options.imperialPriority?.usable).toBe(true);
     expect(options.swap?.usable).toBe(true);
     expect(options.swap?.discards.map((discard) => discard.orderId)).toEqual(c.view.own?.orderHand);
@@ -226,24 +230,36 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
     expect(workDraft.options(workDraft.initial(plain.model, plain.engine), plain.model, plain.engine).modes.map((mode) => mode.mode)).toEqual(["place"]);
   });
 
-  it("after the action: Imperial Priority, the Colour Samples swap or End turn; End turn alone is pre-selected", () => {
+  it("after the action: the free-action list, End turn the alternative; nothing is chosen at first, even with one entry (D21)", () => {
     const after = ctx("w-after-the-worker-action");
     const draft = workDraft.initial(after.model, after.engine);
-    expect(workDraft.options(draft, after.model, after.engine).modes.map((mode) => mode.mode)).toEqual(["imperial_priority", "colour_samples_swap", "end_turn"]);
+    const options = workDraft.options(draft, after.model, after.engine);
+    expect(options.modes.map((mode) => mode.mode)).toEqual(["complete_order", "imperial_priority", "colour_samples_swap", "end_turn"]);
+    expect(options.freeActions.map((item) => item.key)).toEqual(["complete-O01", "imperial_priority", "colour_samples_swap"]);
     expect(draft.mode).toBeNull();
+    expect(workDraft.summary(draft, after.model, after.engine)?.key).toBe("orders.turn.pick");
     expect(WINDOWS.work.alternative?.(draft, after.model, after.engine)?.command).toEqual({ type: "END_TURN" });
+    expect(WINDOWS.work.alternativeOnly?.(draft, after.model, after.engine)).toBe(true);
     const ending = workDraft.reduce(draft, { type: "mode", mode: "end_turn" }, after.model, after.engine);
     expect(workDraft.build(ending, after.model, after.engine)).toEqual({ type: "END_TURN" });
-    // m17 after the swap was used this round: End turn is the only choice, so it is taken.
+    // m17: the swap is the only entry, and it still waits for the player's own press.
     const swap = ctx("m17_after_action");
-    expect(workDraft.initial(swap.model, swap.engine).mode).toBeNull();
+    const first = workDraft.initial(swap.model, swap.engine);
+    expect(first.mode).toBeNull();
+    expect(WINDOWS.work.alternativeOnly?.(first, swap.model, swap.engine)).toBe(true);
+    const chosen = workDraft.reduce(first, { type: "freeAction", key: "colour_samples_swap" }, swap.model, swap.engine);
+    expect(chosen.mode).toBe("colour_samples_swap");
+    expect(WINDOWS.work.alternativeOnly?.(chosen, swap.model, swap.engine)).toBe(false);
+    // m17 after the swap was used this round: nothing to choose; End turn is the only button.
     const only = ctxWith("m17_after_action", (view) => {
       const p = viewer(view);
       p.techs = p.techs.map((tech) => (tech.id === "T10" ? { ...tech, usedThisRound: true } : tech));
     });
-    expect(workDraft.options(workDraft.initial(only.model, only.engine), only.model, only.engine).modes.map((mode) => mode.mode)).toEqual(["end_turn"]);
-    expect(workDraft.initial(only.model, only.engine).mode).toBe("end_turn");
-    expect(workDraft.build(workDraft.initial(only.model, only.engine), only.model, only.engine)).toEqual({ type: "END_TURN" });
+    const empty = workDraft.initial(only.model, only.engine);
+    expect(workDraft.options(empty, only.model, only.engine).freeActions).toEqual([]);
+    expect(empty.mode).toBeNull();
+    expect(workDraft.summary(empty, only.model, only.engine)).toBeNull();
+    expect(WINDOWS.work.alternativeOnly?.(empty, only.model, only.engine)).toBe(true);
   });
 
   it("the Colour Samples swap: gives up a held Order the engine allows, and builds USE_COLOUR_SAMPLES_SWAP (v1.6.2 L622)", () => {
@@ -843,7 +859,7 @@ describe("Commission Market, Guild Hall, Magistrate's Hall and Canal Wharf sub-d
 
 // ── Imperial Priority and the sub-step windows ────────────────────────────────────────────
 
-describe("selling a Flawed ceramic in the work turn (change 30, R20)", () => {
+describe("selling a Flawed ceramic in the work turn (a free action, changes 30, 36)", () => {
   const SALE = "t-work-turn-sale";
 
   it("is a mode before the worker action, never a worker action: it builds SELL_FLAWED and the step stays", () => {
@@ -901,6 +917,69 @@ describe("selling a Flawed ceramic in the work turn (change 30, R20)", () => {
   });
 });
 
+describe("completing a held Order in the work turn (a free action, owner revision 5, change 36)", () => {
+  it("before the worker action: one Deliver chip per completable held Order; it opens the completion with that Order chosen", () => {
+    const c = ctx(DING);
+    const draft = workDraft.initial(c.model, c.engine);
+    const pane = WINDOWS.work.pane?.(draft, c.model, c.engine);
+    expect(pane?.hidden).toBe(true);
+    const openers = pane?.hidden === true ? pane.openers : [];
+    expect(openers.map((opener) => opener.key)).toEqual(["complete-O01", "complete-S01", "imperial_priority", "colour_samples_swap"]);
+    const opener = openers.find((candidate) => candidate.key === "complete-O01")!;
+    expect(EN.message(opener.label as never)).toBe("Deliver O01");
+    expect(ZH.message(opener.label as never)).toBe("交付O01");
+    const opened = workDraft.reduce(draft, opener.action as WorkAction, c.model, c.engine);
+    expect(opened.mode).toBe("complete_order");
+    expect(opened.completion.orderId).toBe("O01");
+    expect(WINDOWS.work.pane?.(opened, c.model, c.engine).hidden).toBe(false);
+    expect(workDraft.options(opened, c.model, c.engine).heading).toBe("complete_order");
+  });
+
+  it("builds COMPLETE_ORDER from the shared completion model, which the engine accepts before the action, and round-trips it", () => {
+    const c = ctx(DING);
+    const draft = work(c, { type: "complete", action: { type: "order", orderId: "O01" } });
+    const command = workDraft.build(draft, c.model, c.engine);
+    expect(command).toMatchObject({ type: "COMPLETE_ORDER", orderId: "O01" });
+    expect(validateAction(c.actor, command as GameAction)).toBeNull();
+    expect(workDraft.fromCommand(command!, c.model, c.engine)).toMatchObject({ mode: "complete_order", completion: { orderId: "O01" } });
+    const [en, zh] = sentences(WINDOWS.work, draft, c);
+    expect(en).toMatch(/^Complete O01 with /);
+    expect(zh).toMatch(/完成O01$/);
+    // Nothing chosen yet: the sentence asks for an Order.
+    expect(sentences(WINDOWS.work, work(c, { type: "mode", mode: "complete_order" }), c)).toEqual(["Choose an Order to complete.", "请选择要完成的委托。"]);
+    // Back to placing drops it.
+    expect(work(c, { type: "complete", action: { type: "order", orderId: "O01" } }, { type: "mode", mode: "place" }).completion.orderId).toBeNull();
+  });
+
+  it("the table: completable held Orders are choices on the hand row; with the completion open, the rest show blocked and the group is highlighted", () => {
+    const c = ctx(DING);
+    const table = WINDOWS.work.table!;
+    const placing = workDraft.initial(c.model, c.engine);
+    const targets = (draft: WorkDraft) => Object.fromEntries([...table.select(draft, c.model, c.engine).orderTargets].map(([key, target]) => [key, target.state]));
+    expect(targets(placing)).toEqual({ O01: "completable", S01: "completable" });
+    const action = table.act(placing, { type: "order", key: "S01" }, c.model, c.engine);
+    expect(action).toEqual({ type: "complete", action: { type: "order", orderId: "S01" } });
+    const open = workDraft.reduce(placing, action as WorkAction, c.model, c.engine);
+    expect(targets(open)).toEqual({ O01: "completable", S01: "chosen" });
+    expect([...table.select(open, c.model, c.engine).highlightedCeramicIds]).toEqual(open.completion.ceramicIds);
+    // The Colour Samples swap's discard choice takes the hand row while it is open.
+    const swap = work(c, { type: "mode", mode: "colour_samples_swap" });
+    expect(Object.values(targets(swap))).toEqual(["choosable", "choosable"]);
+    // No completable Order: no target.
+    const plain = ctx("m1_work_phase_r2_3p");
+    expect(table.select(workDraft.initial(plain.model, plain.engine), plain.model, plain.engine).orderTargets.size).toBe(0);
+  });
+
+  it("after the worker action: a mode beside End turn; the engine accepts the completion (R27)", () => {
+    const c = ctx("w-after-the-worker-action");
+    const draft = work(c, { type: "complete", action: { type: "order", orderId: "O01" } });
+    const command = workDraft.build(draft, c.model, c.engine);
+    expect(command).toMatchObject({ type: "COMPLETE_ORDER", orderId: "O01" });
+    expect(validateAction(c.actor, command as GameAction)).toBeNull();
+    expect(WINDOWS.work.alternative?.(draft, c.model, c.engine)?.command).toEqual({ type: "END_TURN" });
+  });
+});
+
 describe("Imperial Priority draft (gap 16)", () => {
   it("lists vessels, Glazes, modifiers and rework Shapes from imperialPriorityOptions and builds the command", () => {
     const c = ctx(DING);
@@ -928,6 +1007,22 @@ describe("Imperial Priority draft (gap 16)", () => {
     expect(work.mode).toBe("imperial_priority");
     // Without Kiln Master there is no marker to place; Imperial Priority costs no Wood (rev. 4 L291).
     expect(options.kilnMaster).toBeNull();
+  });
+
+  it("offers no Kiln Master's marker while its one marker waits with a ceramic in a kiln (P7, R28)", () => {
+    // Kiln Master's owner, with its marker on a Shaped vessel made a loaded ceramic: what Imperial
+    // Priority in an Order Phase leaves behind, carried into the next round with the Tech ready again.
+    const c = ctxWith(KM_FUEL, (view) => {
+      const me = view.viewerId as string;
+      const shaped = Object.values(view.game.ceramics).find((ceramic) => ceramic.ownerId === me && ceramic.stage === "shaped");
+      if (shaped === undefined) throw new Error("no Shaped vessel");
+      const waiting = { ...shaped, stage: "loaded", glaze: "white", loadedInRound: view.game.round, loadedBy: "imperial_priority", placement: { kiln: "imperial", modifier: 0 }, kilnMasterMarker: 1 };
+      (view.game.ceramics as Record<string, unknown>)[shaped.id] = waiting;
+    });
+    expect(kilnMasterOption(c.view, c.actor.viewerId)?.ready).toBe(false);
+    expect(imperialPriorityOptions(c.view).kilnMaster).toBe(false);
+    const active = workDraft.options(work(c, { type: "worker", workerKey: "shifu" }, { type: "location", locationId: "glaze_load" }), c.model, c.engine).active;
+    expect(active?.locationId === "glaze_load" && active.options.kilnMaster).toBeNull();
   });
 
   it("places Kiln Master's marker with Imperial Priority when it is ready (R22: any loading)", () => {
@@ -1293,7 +1388,8 @@ describe("table adapters", () => {
     const adapter = WINDOWS.work.table;
     if (adapter === undefined) throw new Error("no adapter");
     const hand = c.view.own?.orderHand ?? [];
-    const plain = workDraft.initial(c.model, c.engine);
+    // After the action the swap is m17's only entry; nothing is chosen until the player presses it (D21).
+    const plain = workDraft.reduce(workDraft.initial(c.model, c.engine), { type: "mode", mode: "end_turn" }, c.model, c.engine);
     expect(adapter.select(plain, c.model, c.engine).orderTargets.size).toBe(0);
     const swap = workDraft.reduce(plain, { type: "mode", mode: "colour_samples_swap" }, c.model, c.engine);
     expect([...adapter.select(swap, c.model, c.engine).orderTargets.keys()]).toEqual(hand);

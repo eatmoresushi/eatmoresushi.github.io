@@ -6,8 +6,9 @@
  *   trigger of its rules details (D10): click, tap or focus opens them.
  * - When the open window's table adapter names this card in `orderTargets` (key: the OrderId, or
  *   `slot:<i>` on the display), a separate toggle below the face chooses it
- *   (`act({ type: "order", key })`, `aria-pressed`): Choose / Chosen / Can complete / Discard, or
- *   "No matching ceramics" when the Order cannot be completed now. The table never decides the
+ *   (`act({ type: "order", key })`, `aria-pressed`): Choose / Chosen / Deliver (a held Order the
+ *   viewer can complete now, owner UI decision D21) / Discard, or "No matching ceramics" when the
+ *   Order cannot be completed now. The table never decides the
  *   state; the adapter does.
  * - A target the adapter greys out (`disabled`) keeps its toggle focusable with `aria-disabled`,
  *   and says why under it when the adapter gives a reason (the Commission Market's limit is

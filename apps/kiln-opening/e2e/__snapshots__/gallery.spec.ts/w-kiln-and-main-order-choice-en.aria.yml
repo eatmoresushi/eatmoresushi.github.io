@@ -27,16 +27,16 @@
       - text: Guan Kiln Imperial Patronage
       - strong: "Once per round, when you complete a Crown Order:"
       - text: gain 2 Coins + 1 VP.
-      - 'radio "Ge Kiln Crackle Mastery Once per round, after Quality is assigned: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine. Orders: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered."'
+      - 'radio "Ge Kiln Crackle Mastery Once per round, after Quality is assigned: choose 1 of your ceramics from this firing → it develops Crackle; if it is Standard, it becomes Fine. Orders: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered."'
       - text: Ge Kiln Crackle Mastery
       - strong: "Once per round, after Quality is assigned:"
-      - text: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine.
+      - text: choose 1 of your ceramics from this firing → it develops Crackle; if it is Standard, it becomes Fine.
       - strong: "Orders:"
       - text: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
-      - 'radio "Ding Kiln Moulded Production Once per round, during a Form & Decorate action: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 1 Coin → form 1 extra vessel of the same Shape with any Decoration (no discounts). It counts as formed by that action."'
+      - 'radio "Ding Kiln Moulded Production Once per round, during a Form & Decorate action: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 2 Coins → form 1 extra vessel of the same Shape with any Decoration. It does not count against the action''s vessel limit. It counts as formed by that action."'
       - text: Ding Kiln Moulded Production
       - strong: "Once per round, during a Form & Decorate action:"
-      - text: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 1 Coin → form 1 extra vessel of the same Shape with any Decoration (no discounts). It counts as formed by that action.
+      - text: after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 2 Coins → form 1 extra vessel of the same Shape with any Decoration. It does not count against the action's vessel limit. It counts as formed by that action.
       - 'radio "Jun Kiln Kiln Transformation Once per round, after Actual Heat is calculated, before Quality: pay 1 Wood → adjust 1 of your ceramics'' Actual Heat by +1 or −1."'
       - text: Jun Kiln Kiln Transformation
       - strong: "Once per round, after Actual Heat is calculated, before Quality:"

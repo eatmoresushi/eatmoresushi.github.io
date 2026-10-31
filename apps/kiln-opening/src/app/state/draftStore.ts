@@ -77,8 +77,20 @@ export interface WindowAlternative {
 }
 
 /**
- * A way to bring a hidden pane back (owner review, 2026-10-17): one draft action that gives the
- * pane something to show, such as using Imperial Priority before the worker action.
+ * The split Confirm (owner UI decision D21, DELTA §16.24): the action's last step offers the
+ * command that ends the turn in the same command (`end`: the primary button, Enter, `endTurn: true`)
+ * beside the command that leaves the turn open (`stay`: the secondary button, Shift+Enter; null when
+ * the after-action step could not open on public facts). Which command types accept it comes from
+ * `endTurnOptions` (`decision/endTurn.ts`), never from the hand.
+ */
+export interface ConfirmSplit {
+  end: WindowText;
+  stay: WindowText | null;
+}
+
+/**
+ * A way to bring a hidden pane back (owner review, 2026-10-17; owner UI decision D21): one draft
+ * action that gives the pane something to show. The work turn's "Free actions" chips.
  */
 export interface PaneOpener<A> {
   /** Unique among the window's openers (React key, `data-pane-opener`); never an engine ID (D9). */
@@ -93,7 +105,7 @@ export interface PaneOpener<A> {
  * one. While it is hidden, a slim bar above the world says whose turn it is and what to do
  * (`lead`: "Your turn: place a worker · 3 left", the visible cue the hidden pane's eyebrow and
  * heading gave; always shown) and names the draft actions that bring the pane back (`openers`),
- * after the words that name their group (`openersLabel`: "Or first:"; null with no openers).
+ * after the words that name their group (`openersLabel`: "Free actions"; null with no openers).
  */
 export type PanePresence<A> =
   | { readonly hidden: false }
@@ -119,6 +131,23 @@ export interface WindowSpec<D = unknown, A extends DraftActionBase = never, O = 
   title(model: GameModel, engine: EngineView, draft: D): WindowText;
   /** The alternative to Confirm, if this window has one now; else ConfirmBar offers Clear. */
   alternative?(draft: D, model: GameModel, engine: EngineView): WindowAlternative | null;
+  /**
+   * Nothing is chosen in a window that may simply end now (the after-action step, the Order Phase
+   * turn): the alternative (End turn, Done) is the only button, the primary one (D21).
+   */
+  alternativeOnly?(draft: D, model: GameModel, engine: EngineView): boolean;
+  /**
+   * That only button also takes Enter from anywhere in the pane: pressing it gives nothing up (the
+   * free-action list is empty). Otherwise it takes its own press.
+   */
+  alternativeTakesEnter?(draft: D, model: GameModel, engine: EngineView): boolean;
+  /** The split Confirm of this draft (D21), or null for a plain Confirm. */
+  confirmSplit?(draft: D, model: GameModel, engine: EngineView): ConfirmSplit | null;
+  /**
+   * A private line beside Confirm, from the viewer's own view only (D21: "You can deliver this
+   * now" when the Order about to be reserved matches their Finished ceramics).
+   */
+  confirmHint?(draft: D, model: GameModel, engine: EngineView): WindowText | null;
   /** Table targets driven by the draft (Place shortcuts, kiln spaces, Order cards). */
   table?: TableAdapter<D, A>;
   /** Whether the pane shows for this draft (`state/pane.ts`); without it, always. */

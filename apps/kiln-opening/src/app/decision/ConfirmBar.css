@@ -23,6 +23,33 @@
     overflow-wrap: anywhere;
   }
 
+  /* What stays pinned on the narrowest short screens (`DecisionPane.css`); elsewhere no box. */
+  .confirm-pin {
+    display: contents;
+  }
+
+  /* The private line beside Confirm (D21: "You can deliver this now"). */
+  .confirm-hint {
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    color: var(--teal-ink);
+    overflow-wrap: anywhere;
+  }
+
+  /* The split's keys (D21), for whoever has a keyboard: phones and tablets never show it. */
+  .confirm-keys {
+    display: none;
+    font-size: var(--fs-meta);
+    color: var(--ink-2);
+    overflow-wrap: anywhere;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .confirm-keys {
+      display: block;
+    }
+  }
+
   /* The alternative (or Clear) keeps its label on one line, its full width, beside a Confirm
      that takes the rest; a label never breaks mid-word (取/消, 结束回/合, End/turn). Only when
      the two cannot share a row (a long label, 200% text on a phone) does Confirm wrap to its own
@@ -43,5 +70,17 @@
     flex: 1 1 8rem;
     width: auto;
     white-space: nowrap;
+  }
+
+  /* The split Confirm (D21): the primary button on a row of its own, then the secondary one and
+     Clear or End turn on the next. Both choices are always visible, with no menu, so touch and
+     screen readers meet them the same way; the secondary one may wrap at word boundaries. */
+  .confirm-buttons--split > [data-action="confirm"] {
+    flex: 1 1 100%;
+  }
+
+  .confirm-buttons--split > [data-action="confirm-stay"] {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 }

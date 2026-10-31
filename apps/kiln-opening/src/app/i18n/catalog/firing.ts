@@ -5,8 +5,8 @@ import { defineNamespace } from "../defineNamespace.ts";
  *
  * Wireframe sources: `decContrib`, `decAfterQuality`, `submitRow`, `queueRow`, `decWait`, and the
  * windows the wireframe did not design (Test Pieces, Jun, Second Firing's choice), in the same
- * pattern. Revision 4 has no Heat-marker step and no salvage step (changes 28, 30, 31); selling a
- * Flawed ceramic is `common.sale.*`. Every rule number is a placeholder (§5 gap 19); Tech and Kiln names and their
+ * pattern. Revision 4 has no Heat-marker step and no salvage step (changes 28, 30, 31); since
+ * owner revision 5 nothing is sold during the firing (R26; selling is `common.sale.*`). Every rule number is a placeholder (§5 gap 19); Tech and Kiln names and their
  * card text come from data through `i18n/content.ts`. Owner decisions D3/D4: these strings state
  * rule effects only — no Quality previews, odds or Fire-deck counts.
  */
@@ -82,7 +82,8 @@ export const firing = defineNamespace({
     "aq.done": "Done — decline the rest",
     "aq.sumSaggars": "Use <b>{ability}</b>: <b>{ceramic}</b> becomes {quality}",
     "aq.sumSecond": "Use <b>{ability}</b> on <b>{ceramic}</b>: turn {n} extra Fire cards face up, then choose one",
-    "aq.sumGe": "Use <b>{ability}</b>: <b>{ceramic}</b> gains a Crackle marker and is {quality}",
+    "aq.sumGe": "Use <b>{ability}</b>: <b>{ceramic}</b> gains a Crackle marker and becomes {quality}",
+    "aq.sumGeKeep": "Use <b>{ability}</b>: <b>{ceramic}</b> gains a Crackle marker and stays {quality}",
     "aq.saggarsFloor": "{tech}: counts as {standard}, not {flawed}",
     "aq.sumEnd": "Finish your after-Quality turn; decline the rest",
     "aq.pick": "Pick an ability, or finish.",
@@ -171,7 +172,8 @@ export const firing = defineNamespace({
     "aq.done": "完成——其余不使用",
     "aq.sumSaggars": "使用「{ability}」：<b>{ceramic}</b>升为{quality}",
     "aq.sumSecond": "对<b>{ceramic}</b>使用「{ability}」：额外翻开{n}张窑火牌，再从中选一张",
-    "aq.sumGe": "使用「{ability}」：<b>{ceramic}</b>开片，品质为{quality}",
+    "aq.sumGe": "使用「{ability}」：<b>{ceramic}</b>开片，升为{quality}",
+    "aq.sumGeKeep": "使用「{ability}」：<b>{ceramic}</b>开片，品质仍为{quality}",
     "aq.saggarsFloor": "「{tech}」：算作{standard}，不为{flawed}",
     "aq.sumEnd": "结束定品后结算，其余不使用",
     "aq.pick": "选择一项能力，或直接完成。",

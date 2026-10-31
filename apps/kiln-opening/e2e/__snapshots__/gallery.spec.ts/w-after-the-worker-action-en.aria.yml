@@ -15,14 +15,14 @@
     - img "Your Apprentice"
     - text: 1 Order in hand Recognition 3/4 0 VP
   - form "After your worker action":
-    - group "This step":
+    - group "Free actions":
       - text: ""
-      - radio "Imperial Priority After your worker action"
-      - text: Imperial Priority After your worker action
+      - radio "Deliver O01 4 VP 3 Coins Bowl · any Glaze · any Decoration · Standard+"
+      - text: Deliver O01 4 VP 3 Coins Bowl · any Glaze · any Decoration · Standard+
+      - 'button "Full rules: Order O01"'
+      - radio "Imperial Priority"
+      - text: Imperial Priority
       - 'radio "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"'
       - text: "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"
-      - radio "End your turn Nothing more this turn"
-      - text: End your turn Nothing more this turn
-    - paragraph: Choose what to do now.
+    - paragraph: Choose a free action, or end your turn.
     - button "End turn"
-    - button "Confirm" [disabled]

@@ -52,6 +52,10 @@ export const kiln = defineNamespace({
     "imperialKilnOf": "{name}’s Imperial Kiln",
     "imperialKilnYours": "Your Imperial Kiln",
     "impEmpty": "empty this round",
+    // A ceramic loaded by Imperial Priority after a round's firing (R28).
+    "impWaitNext": "Loaded after this round’s firing: fired in the next round’s firing",
+    "impWaitThis": "Loaded after last round’s firing: fired in this round’s firing",
+    "impWaitNever": "Loaded after the last firing: never fired",
     "impNone": "{names}: none yet (Recognition {n})",
     "impMod": "Imperial modifier",
     "impModValue": "Imperial modifier {value}",
@@ -119,7 +123,6 @@ export const kiln = defineNamespace({
     "record.testPiecesPeeked": "{name} paid for {tech} and looked at the top Fire card.",
     "record.testPiecesBuried": "{name} paid for {tech} and put the top Fire card on the bottom of the deck.",
     "record.testPiecesDeclined": "{name} did not use {tech}.",
-    "record.sold": "{name} sold a Flawed ceramic for {coins}.",
     "record.secondFired": "{ceramic}: fired again with Fire card {value} ({tech}).",
 
     // The Kiln section's strip between firings (owner review, 2026-10-17; D4).
@@ -172,6 +175,9 @@ export const kiln = defineNamespace({
     "imperialKilnOf": "{name}的御窑",
     "imperialKilnYours": "你的御窑",
     "impEmpty": "本轮空着",
+    "impWaitNext": "本轮烧窑之后装进：下一轮烧窑时烧成",
+    "impWaitThis": "上一轮烧窑之后装进：本轮烧窑时烧成",
+    "impWaitNever": "最后一次烧窑之后装进：不会烧成",
     "impNone": "{names}：尚无（御府声望{n}获得）",
     "impMod": "御窑修正",
     "impModValue": "御窑修正{value}",
@@ -236,7 +242,6 @@ export const kiln = defineNamespace({
     "record.testPiecesPeeked": "{name}付柴用「{tech}」，私看了窑火牌堆顶的牌。",
     "record.testPiecesBuried": "{name}付柴用「{tech}」，把窑火牌堆顶的牌放到牌堆底。",
     "record.testPiecesDeclined": "{name}没有使用「{tech}」。",
-    "record.sold": "{name}卖出一件瑕品，得{coins}。",
     "record.secondFired": "{ceramic}：用窑火牌{value}复烧（「{tech}」）。",
 
     "strip.die": "本轮窑骰",

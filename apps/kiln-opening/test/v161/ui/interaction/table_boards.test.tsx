@@ -154,17 +154,17 @@ describe("D1 board tabs", () => {
     const { ui } = mount("m1_work_phase_r2_3p", <BoardArea />);
     const tabs = () => $$<HTMLButtonElement>('[role="tab"]');
     expect(tabs().map((tab) => tab.getAttribute("aria-selected"))).toEqual(["true", "false", "false"]);
-    // m1's viewer is Zhao (p2), who is also the First Player.
+    // m1's viewer is Zhao (p2); Lin is the First Player.
     expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p2");
     focus(tabs()[0]!);
-    // The other boards follow the players' order from the First Player (Wen, then Lin).
+    // The other boards follow the players' order from the First Player (Lin, then Wen).
     key(tabs()[0]!, "ArrowRight");
     expect(tabs()[1]!.getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(tabs()[1]);
-    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p3");
-    expect(ui.stateFor({ window: null, phase: null }).boardShown).toBe("p3");
-    key(tabs()[1]!, "End");
     expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p1");
+    expect(ui.stateFor({ window: null, phase: null }).boardShown).toBe("p1");
+    key(tabs()[1]!, "End");
+    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p3");
     click(tabs()[0]!);
     expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p2");
     expect(ui.stateFor({ window: null, phase: null }).boardShown).toBeNull();
@@ -174,10 +174,11 @@ describe("D1 board tabs", () => {
 describe("table targets change the pane's draft synchronously", () => {
   it("a Place shortcut chooses that location and worker", () => {
     const { drafts } = mount("m1_work_phase_r2_3p", <CentralBoard />);
-    const shifu = $<HTMLButtonElement>('[data-location-id="canal_wharf"] .pbtn[data-worker="shifu"]');
-    expect(shifu.getAttribute("aria-pressed")).toBe("false");
-    click(shifu);
-    expect($<HTMLButtonElement>('[data-location-id="canal_wharf"] .pbtn[data-worker="shifu"]').getAttribute("aria-pressed")).toBe("true");
+    // m1's viewer has one Apprentice left.
+    const apprentice = $<HTMLButtonElement>('[data-location-id="canal_wharf"] .pbtn[data-worker="apprentice"]');
+    expect(apprentice.getAttribute("aria-pressed")).toBe("false");
+    click(apprentice);
+    expect($<HTMLButtonElement>('[data-location-id="canal_wharf"] .pbtn[data-worker="apprentice"]').getAttribute("aria-pressed")).toBe("true");
     expect($('article[data-location-id="canal_wharf"]').className).toContain("loc--chosen");
     expect(drafts.getVersion()).toBeGreaterThan(0);
   });

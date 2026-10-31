@@ -10,15 +10,14 @@
       - text: 柴
       - strong: "1"
       - text: 铜钱
-    - text: 手中4张委托 声望1／4 6分
+    - text: /手中3张委托 声望0／4 \d+分/
   - form "暗选控火":
     - paragraph: 烧窑步骤1
     - paragraph: 共窑中有器物的玩家同时暗选。全员选定后一齐亮牌，并在这时付柴。
     - heading "选定情况" [level=3]
     - list "选定情况":
-      - listitem: Zhao：已选
+      - listitem: Lin：已选
       - listitem: Wen（你）：选择中……
-      - listitem: Lin：选择中……
     - group "控火牌 你有3柴。":
       - text: ""
       - paragraph: 基础火候 = 窑骰3 + 全部控火，限定在0–5。

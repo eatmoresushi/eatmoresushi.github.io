@@ -58,6 +58,13 @@
     color: var(--ink-3);
   }
 
+  /* A ceramic loaded by Imperial Priority after a round's firing (R28): when it is fired. */
+  .imp-wait {
+    color: var(--ink-2);
+    font-size: var(--fs-12);
+    overflow-wrap: anywhere;
+  }
+
   .imp-mod-label {
     color: var(--ink-2);
   }

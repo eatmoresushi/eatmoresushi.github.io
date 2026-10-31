@@ -127,28 +127,38 @@ describe("rules details stay inside the viewport (kit PieceDetail, CR B2-6, B3-5
   });
 });
 
-describe("the Order Phase form", () => {
-  it("chooses an Order (its only group preselected), confirms COMPLETE_ORDER, ends with END_ORDER_TURN", async () => {
+describe("the Order Phase form (D21: the free-action list)", () => {
+  it("chooses Deliver ⟨Order⟩ (its only group preselected); Deliver · done sends COMPLETE_ORDER with endTurn in one command", () => {
     const source = new ControlledSource("m6_order_phase_crackle_3p");
     mount(source, <DecisionPane />);
-    expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
-    click($('input[name="orderId"][value="O34"]'));
-    expect($<HTMLInputElement>('input[name="ceramicIds"][value="c7+c12"]').checked).toBe(true);
-    // O34 asks for the same Decoration: the Carved Crackle Censer counts as Plain (its wildcard).
-    expect($(".confirm-summary").textContent).toBe("Complete O34 with Celadon Censer, Carved · Fine · Crackle (as Plain), Moon White Plate, Plain · Masterpiece");
+    // Nothing chosen: Done is the only button.
+    expect(container.querySelector('[data-action="confirm"]')).toBeNull();
+    expect($('[data-action="alt"]').textContent).toBe("Done");
+    click($('input[name="freeAction"][value="complete-O38"]'));
+    expect($<HTMLInputElement>('input[name="ceramicIds"][value="c10+c11"]').checked).toBe(true);
+    // O38 asks for both Carved: the Plain Crackle Plate counts as Carved (its wildcard).
+    expect($(".confirm-summary").textContent).toBe("Complete O38 with White Plate, Plain · Masterpiece · Crackle (as Carved), Celadon Brush Washer, Carved · Masterpiece");
+    expect($('[data-action="confirm"]').textContent).toBe("Deliver · done");
+    expect($('[data-action="confirm-stay"]').textContent).toBe("Deliver");
+    expect($('[data-action="alt"]').textContent).toBe("Done");
     click($('[data-action="confirm"]'));
-    expect(source.submitted.at(-1)).toEqual({ type: "COMPLETE_ORDER", orderId: "O34", ceramicIds: ["c7", "c12"] });
+    expect(source.submitted.at(-1)).toEqual({ type: "COMPLETE_ORDER", orderId: "O38", ceramicIds: ["c10", "c11"], endTurn: true });
+  });
+
+  it("Deliver leaves the turn open (no field), and Done ends it with END_ORDER_TURN", async () => {
+    const source = new ControlledSource("m6_order_phase_crackle_3p");
+    mount(source, <DecisionPane />);
+    click($('input[name="freeAction"][value="complete-O38"]'));
+    click($('[data-action="confirm-stay"]'));
+    expect(source.submitted.at(-1)).toEqual({ type: "COMPLETE_ORDER", orderId: "O38", ceramicIds: ["c10", "c11"] });
     await act(async () => source.answer({ reject: null }));
     click($('[data-action="alt"]'));
     expect(source.submitted.at(-1)).toEqual({ type: "END_ORDER_TURN" });
   });
 
-  it("a blocked Order cannot be chosen", () => {
+  it("an Order it cannot complete is not in the list", () => {
     mount(new ControlledSource("m6_order_phase_crackle_3p"), <DecisionPane />);
-    const blocked = $<HTMLInputElement>('input[name="orderId"][value="O43"]');
-    expect(blocked.getAttribute("aria-disabled")).toBe("true");
-    click(blocked);
-    expect(blocked.checked).toBe(false);
+    expect(container.querySelector('input[name="freeAction"][value="complete-S03"]')).toBeNull();
     expect(container.querySelector('input[name="ceramicIds"]')).toBeNull();
   });
 });
@@ -307,6 +317,8 @@ describe("selling a Flawed ceramic (rev. 4, R20)", () => {
         <FinishedCeramicsStrip />
       </>,
     );
+    // The pane's list has a Sell entry; choosing it shows the ceramics (D21).
+    click($('input[name="freeAction"][value="sell_flawed"]'));
     const offered = [...container.querySelectorAll<HTMLInputElement>('input[name="orders.sell"]')];
     expect(offered.length).toBeGreaterThan(0);
     const choice = offered[0]!;
@@ -315,7 +327,6 @@ describe("selling a Flawed ceramic (rev. 4, R20)", () => {
     expect(buttons.map((button) => button.getAttribute("data-ceramic-id"))).toEqual(offered.map((input) => input.value));
     const button = buttons[0]!;
     expect(button.hasAttribute("aria-pressed")).toBe(false);
-    expect(button.hasAttribute("data-chosen")).toBe(false);
     click(button);
     expect($<HTMLInputElement>(`input[name="orders.sell"][value="${choice.value}"]`).checked).toBe(true);
     // Chosen: its words say so, and its name starts with them (WCAG 2.5.3); no aria-pressed, it is not a toggle.
@@ -327,6 +338,6 @@ describe("selling a Flawed ceramic (rev. 4, R20)", () => {
     click(chosen);
     expect($<HTMLInputElement>(`input[name="orders.sell"][value="${choice.value}"]`).checked).toBe(true);
     click($('[data-action="confirm"]'));
-    expect(source.submitted.at(-1)).toEqual({ type: "SELL_FLAWED", ceramicId: choice.value });
+    expect(source.submitted.at(-1)).toEqual({ type: "SELL_FLAWED", ceramicId: choice.value, endTurn: true });
   });
 });

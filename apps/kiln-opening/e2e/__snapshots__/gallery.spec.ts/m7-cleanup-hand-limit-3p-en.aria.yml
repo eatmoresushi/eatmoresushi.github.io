@@ -4,11 +4,11 @@
   - region "Zhao (you)":
     - heading "Zhao (you)" [level=3]
     - group "Resources":
-      - strong: "1"
+      - strong: "0"
       - text: Clay
       - strong: "3"
       - text: Wood
-      - strong: "3"
+      - strong: "0"
       - text: Coins
     - img "Your Shifu"
     - img "Your Apprentice"
@@ -20,21 +20,21 @@
     - group "Order Only you can see":
       - text: ""
       - paragraph: 0 of 1 chosen
+      - checkbox "S07 3 VP 3 Coins any Shape · any Glaze · Carved, Impressed or Painted · Standard+"
+      - text: S07 3 VP 3 Coins any Shape · any Glaze · Carved, Impressed or Painted · Standard+
+      - 'button "Full rules: Order S07"'
       - checkbox "S08 2 VP 4 Coins any Shape · any Glaze · any Decoration · Standard+"
       - text: S08 2 VP 4 Coins any Shape · any Glaze · any Decoration · Standard+
       - 'button "Full rules: Order S08"'
-      - checkbox "S04 4 VP 4 Coins any Shape · Moon White · any Decoration · Standard+"
-      - text: S04 4 VP 4 Coins any Shape · Moon White · any Decoration · Standard+
-      - 'button "Full rules: Order S04"'
-      - checkbox /O28 \d+ VP 5 Coins 2 ceramics of the same Shape; different Glazes; any Decorations · Fine\+ each/
-      - text: /O28 \d+ VP 5 Coins 2 ceramics of the same Shape; different Glazes; any Decorations · Fine\+ each/
-      - 'button "Full rules: Order O28"'
-      - checkbox "O17 6 VP 2 Coins 1 Crown Brush Washer · White · Painted · Fine+"
-      - text: O17 6 VP 2 Coins 1 Crown Brush Washer · White · Painted · Fine+
-      - 'button "Full rules: Order O17"'
-      - checkbox /O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations · Fine\+ each/
-      - text: /O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations · Fine\+ each/
-      - 'button "Full rules: Order O26"'
+      - checkbox "O25 9 VP 5 Coins 2 different Shapes; any Glazes; any Decorations · Standard+ each"
+      - text: O25 9 VP 5 Coins 2 different Shapes; any Glazes; any Decorations · Standard+ each
+      - 'button "Full rules: Order O25"'
+      - checkbox /O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations · Fine\+ all/
+      - text: /O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations · Fine\+ all/
+      - 'button "Full rules: Order O45"'
+      - checkbox /O33 \d+ VP 5 Coins 2 different Shapes; same Glaze; different Decorations · Fine\+ each; ≥1 Masterpiece/
+      - text: /O33 \d+ VP 5 Coins 2 different Shapes; same Glaze; different Decorations · Fine\+ each; ≥1 Masterpiece/
+      - 'button "Full rules: Order O33"'
     - paragraph: Everyone trims at the same time; others see only how many Orders you hold.
     - paragraph: 0 of 1 chosen
     - button "Clear"

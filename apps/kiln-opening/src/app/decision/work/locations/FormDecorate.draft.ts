@@ -32,7 +32,7 @@ import { resourcesAfter } from "./shared.ts";
 /**
  * One row of the quote as the pane lists it: an engine cost line, or Ding's extra vessel, whose
  * Clay and Coin lines (`ding_extra`) make one row naming the Shape it copies ("Moulded
- * Production: Bowl · 1 Clay, 1 Coin"), so the cost never reads as charged twice.
+ * Production: Bowl · 1 Clay, 2 Coins", change 40), so the cost never reads as charged twice.
  */
 export type QuoteRow = { readonly kind: "line"; readonly line: CostLine } | { readonly kind: "ding"; readonly shape: Shape | null; readonly amounts: ResourceState };
 

@@ -1,41 +1,34 @@
 - complementary "Your decision":
   - paragraph: Order Phase · Your turn
-  - heading "Complete held Orders" [level=2]
-  - region "Wen (you)":
-    - heading "Wen (you)" [level=3]
+  - 'heading "Order Phase: free actions" [level=2]'
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
     - group "Resources":
-      - strong: "6"
+      - strong: "1"
       - text: Clay
-      - strong: "3"
+      - strong: "1"
       - text: Wood
-      - strong: "3"
-      - text: Coins
-    - text: /4 Orders in hand Recognition 2\/4 \d+ VP/
-  - form "Complete held Orders":
-    - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
-    - group "Order 1 of 4 can be completed":
+      - strong: "1"
+      - text: Coin
+    - text: 5 Orders in hand Recognition 0/4 7 VP
+  - 'form "Order Phase: free actions"':
+    - paragraph: "In First Player order, after the firing. Take any number of free actions, one at a time: complete held Orders, sell a Flawed ceramic, use Imperial Priority. The choices are checked again after each one."
+    - group "Free actions":
       - text: ""
-      - radio "S06 3 VP 5 Coins Vase or Censer · any Glaze · any Decoration · Standard+"
-      - text: S06 3 VP 5 Coins Vase or Censer · any Glaze · any Decoration · Standard+
-      - 'button "Full rules: Order S06"'
-      - radio "O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed · Fine+ No matching ceramics" [disabled]
-      - text: O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed · Fine+ No matching ceramics
-      - 'button "Full rules: Order O19"'
-      - radio /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all No matching ceramics/ [disabled]
-      - text: /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all No matching ceramics/
-      - 'button "Full rules: Order O43"'
-      - radio /O35 \d+ VP 2 Coins 1 Crown Bowl \+ Plate; both Celadon; any Decorations · Fine\+ each No matching ceramics/ [disabled]
-      - text: /O35 \d+ VP 2 Coins 1 Crown Bowl \+ Plate; both Celadon; any Decorations · Fine\+ each No matching ceramics/
-      - 'button "Full rules: Order O35"'
-    - paragraph: Only held Orders can be completed; Orders on the display cannot.
-    - group "Sell a Flawed ceramic":
+      - radio "Deliver S05 3 VP 4 Coins Bowl, Plate or Brush Washer · any Glaze · any Decoration · Standard+"
+      - text: Deliver S05 3 VP 4 Coins Bowl, Plate or Brush Washer · any Glaze · any Decoration · Standard+
+      - 'button "Full rules: Order S05"'
+      - radio "Sell Flawed (+2 Coins)" [checked]
+      - text: Sell Flawed (+2 Coins)
+    - group "Sell a Flawed ceramicFree action":
       - text: ""
       - paragraph: You may sell one of your Flawed ceramics for 2 Coins. It leaves the game, and its Vessel card goes back to the supply.
-      - radio "White Censer, Plain · Flawed +2 Coins" [checked]
-      - text: White Censer, Plain · Flawed +2 Coins
+      - radio "Moon White Bowl, Carved · Flawed +2 Coins" [checked]
+      - text: Moon White Bowl, Carved · Flawed +2 Coins
     - paragraph:
       - text: Sell
-      - strong: White Censer, Plain · Flawed
+      - strong: Moon White Bowl, Carved · Flawed
       - text: for 2 Coins
-    - button "End turn"
-    - button "Confirm"
+    - button "Sell · done"
+    - button "Sell"
+    - button "Done"

@@ -83,7 +83,7 @@ const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type:
   PERSONAL_SPACE_UNLOCKED: { type: "PERSONAL_SPACE_UNLOCKED", playerId: "p2", locationId: "form_decorate" },
   TECH_USED: { type: "TECH_USED", playerId: "p2", techId: "T13" },
   KILN_ABILITY_USED: { type: "KILN_ABILITY_USED", playerId: "p2", kilnId: "JU" },
-  IMPERIAL_PRIORITY_USED: { type: "IMPERIAL_PRIORITY_USED", playerId: "p1", ceramicId: "c1" },
+  IMPERIAL_PRIORITY_USED: { type: "IMPERIAL_PRIORITY_USED", playerId: "p1", ceramicId: "c1", window: "before_action" },
   WORK_TURN_ENDED: { type: "WORK_TURN_ENDED", playerId: "p2", automatic: false },
   WORK_PHASE_ENDED: { type: "WORK_PHASE_ENDED", round: 2 },
   RECOGNITION_ADVANCED: { type: "RECOGNITION_ADVANCED", playerId: "p2", from: 1, to: 2, source: "printed_crown", orderId: "O33" },
@@ -113,12 +113,13 @@ const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type:
   SECOND_FIRING_REVEALED: { type: "SECOND_FIRING_REVEALED", playerId: "p1", ceramicId: "c1", modifiers: [2, -1] },
   SECOND_FIRING_CHOSEN: { type: "SECOND_FIRING_CHOSEN", playerId: "p1", ceramicId: "c1", cardIndex: 1, modifier: -1, calculation: calc },
   CRACKLE_APPLIED: { type: "CRACKLE_APPLIED", playerId: "p1", ceramicId: "c3" },
-  CERAMIC_SOLD: { type: "CERAMIC_SOLD", playerId: "p2", ceramicId: "c2", coins: 2, from: "finished" },
+  CERAMIC_SOLD: { type: "CERAMIC_SOLD", playerId: "p2", ceramicId: "c2", coins: 2, window: "after_action" },
   FIRING_FINISHED: { type: "FIRING_FINISHED", round: 2, finishedCeramicIds: ["c1", "c3"] },
   ORDER_TURN_STARTED: { type: "ORDER_TURN_STARTED", playerId: "p2" },
   ORDER_COMPLETED: {
     type: "ORDER_COMPLETED",
     playerId: "p2",
+    window: "order_phase",
     record: { orderId: "O39", ceramicIds: ["c3"], round: 2, canalBargeCoins: 2, vp: 7, coins: 2, printedCrowns: 1, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null, crackleVp: 1 },
   },
   ORDER_TURN_ENDED: { type: "ORDER_TURN_ENDED", playerId: "p2", automatic: true },
@@ -314,7 +315,7 @@ describe("V1.6.2 lines", () => {
     expect(publicEventText(fuel, zh)).toBe("Zhao：−1柴（烧窑要烧柴）");
   });
 
-  it("states a sale and folds its Coins into it (change 30, R20)", () => {
+  it("states a sale and folds its Coins into it, in any free-action window (changes 30, 36; R26)", () => {
     const sold = SAMPLES.CERAMIC_SOLD;
     expect(publicEventText(sold, en)).toBe("Zhao sold Vase, Painted for 2 Coins");
     expect(publicEventText(sold, zh)).toBe("Zhao卖出瓶 · 画花，得2铜钱");
@@ -324,6 +325,27 @@ describe("V1.6.2 lines", () => {
     expect(repeatsPreviousEntry(entry({ ...coins, coins: 3 }, 2), entry(sold, 1))).toBe(false);
     expect(repeatsPreviousEntry(entry({ ...coins, playerId: "p1" }, 2), entry(sold, 1))).toBe(false);
     for (const c of [en, zh]) expect(publicEventText(sold, c)).not.toMatch(/salvag|折卖/);
+    // The same line before the worker action and in the Order Phase (a free action, change 36).
+    for (const window of ["before_action", "order_phase"] as const) {
+      expect(publicEventText({ ...sold, window }, en)).toBe("Zhao sold Vase, Painted for 2 Coins");
+      expect(repeatsPreviousEntry(entry(coins, 2), entry({ ...sold, window }, 1))).toBe(true);
+    }
+  });
+
+  it("states Imperial Priority as loaded, and after the firing as waiting in the Imperial Kiln (change 36, R28)", () => {
+    const used = SAMPLES.IMPERIAL_PRIORITY_USED;
+    for (const window of ["before_action", "after_action"] as const) {
+      expect(publicEventText({ ...used, window }, en)).toMatch(/^Lin used Imperial Priority on [^;]+$/);
+      expect(publicEventText({ ...used, window }, zh)).toMatch(/^Lin用御烧优先把.+装进御窑$/);
+    }
+    const after: PublicGameEvent = { ...used, window: "order_phase" };
+    expect(publicEventText(after, en)).toMatch(/^Lin used Imperial Priority on .+ in the Order Phase; it waits in their Imperial Kiln for the next round’s firing$/);
+    expect(publicEventText(after, zh)).toMatch(/^Lin在交货阶段用御烧优先把.+装进御窑，器物留在御窑里，到下一轮烧窑时才烧成$/);
+    // The last round has no next firing, and may have had no firing at all (R28).
+    expect(publicEventText(after, { ...en, lastRound: true })).toMatch(/^Lin used Imperial Priority on .+ in the last Order Phase; it is never fired and does not score$/);
+    expect(publicEventText(after, { ...zh, lastRound: true })).toMatch(/^Lin在最后的交货阶段用御烧优先把.+装进御窑，这件器物不会烧成，也不计分$/);
+    // Before or after a worker action it says neither.
+    expect(publicEventText({ ...used, window: "after_action" }, { ...en, lastRound: true })).toMatch(/^Lin used Imperial Priority on [^;]+$/);
   });
 
   it("states the Colour Samples swap, then where its held Order went, never which Order, except to its owner", () => {
@@ -484,17 +506,17 @@ describe("Kiln ability lines (D17: a toast's 4 lines carry the moves)", () => {
     expect(kept([tech("T24"), { ...SAMPLES.WORKER_PLACED, playerId: "p2" } as PublicGameEvent], en)).toHaveLength(2);
   });
 
-  it("Ding: one line states the extra vessel with its cost (v1.6.2 L473)", () => {
+  it("Ding: one line states the extra vessel with its cost, 1 Clay + 2 Coins (change 40, rev. 5 L488)", () => {
     const formed: PublicGameEvent = { type: "CERAMIC_FORMED", playerId: "p2", ceramicId: "c2", shape: "plate", decoration: "plain", formedBy: "form_decorate" };
     const ding: PublicGameEvent[] = [
       used("DI"),
-      { type: "RESOURCES_CHANGED", playerId: "p2", clay: -1, wood: 0, coins: -1, reason: "ding_extra" },
+      { type: "RESOURCES_CHANGED", playerId: "p2", clay: -1, wood: 0, coins: -2, reason: "ding_extra" },
       { ...formed, ceramicId: "c9", formedBy: "ding_extra" },
     ];
-    expect(kept([formed, ...ding], en)).toEqual(["Zhao formed a vessel: Plate, Plain", "Zhao formed a vessel: Plate, Plain (Moulded Production: −1 Clay · −1 Coin)"]);
-    expect(kept(ding, zh)).toEqual(["Zhao制坯：盘 · 素面（「范制成器」：−1泥 · −1铜钱）"]);
-    // Another amount, or another player's vessel, keeps the cost line.
-    expect(kept([ding[0]!, { ...(ding[1] as Extract<PublicGameEvent, { type: "RESOURCES_CHANGED" }>), coins: -2 }, ding[2]!], en)).toHaveLength(2);
+    expect(kept([formed, ...ding], en)).toEqual(["Zhao formed a vessel: Plate, Plain", "Zhao formed a vessel: Plate, Plain (Moulded Production: −1 Clay · −2 Coins)"]);
+    expect(kept(ding, zh)).toEqual(["Zhao制坯：盘 · 素面（「范制成器」：−1泥 · −2铜钱）"]);
+    // Another amount (the revision-4 price, 1 Coin), or another player's vessel, keeps the cost line.
+    expect(kept([ding[0]!, { ...(ding[1] as Extract<PublicGameEvent, { type: "RESOURCES_CHANGED" }>), coins: -1 }, ding[2]!], en)).toHaveLength(2);
     expect(kept([ding[0]!, ding[1]!, { ...(ding[2] as Extract<PublicGameEvent, { type: "CERAMIC_FORMED" }>), playerId: "p1" }], en)).toHaveLength(2);
   });
 
@@ -538,10 +560,10 @@ describe("Kiln ability lines (D17: a toast's 4 lines carry the moves)", () => {
 describe("Order Phase lines", () => {
   // The engine ends a turn automatically both when it opens with nothing completable and after
   // completions leave nothing completable (src/game/orders/phase.ts): the line is true for both.
-  it("says an automatic end without claiming the player completed nothing (nothing to complete or sell, R20)", () => {
+  it("says an automatic end without claiming the player did nothing (no more free actions, R28)", () => {
     const ended = SAMPLES.ORDER_TURN_ENDED;
-    expect(publicEventText(ended, context("en"))).toBe("Zhao has nothing more to complete or sell");
-    expect(publicEventText(ended, context("zh-CN"))).toBe("Zhao再没有可以完成的委托或可以卖出的瑕品");
+    expect(publicEventText(ended, context("en"))).toBe("Zhao has no more free actions");
+    expect(publicEventText(ended, context("zh-CN"))).toBe("Zhao没有可做的自由行动了");
     expect(publicEventText({ ...ended, automatic: false }, context("en"))).toBe("Zhao ended their Order turn");
   });
 

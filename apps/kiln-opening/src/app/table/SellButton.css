@@ -1,4 +1,4 @@
-/* SellButton (B2): the Sell button on a sellable Flawed ceramic (change 30, R20). */
+/* SellButton (B2): the Sell button on a sellable Flawed ceramic (a free action, changes 30, 36). */
 @layer components {
   .sell-pick {
     display: inline-flex;

@@ -38,7 +38,7 @@
       - button "Ge Kiln · Crackle Mastery"
       - paragraph:
         - strong: "Once per round, after Quality is assigned:"
-        - text: 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine.
+        - text: choose 1 of your ceramics from this firing → it develops Crackle; if it is Standard, it becomes Fine.
         - strong: "Orders:"
         - text: each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
       - radio "Moon White Bowl, Plain · Standard"

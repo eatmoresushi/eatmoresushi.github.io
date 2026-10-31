@@ -15,6 +15,7 @@ import { assertInvariants } from "../../../../src/game/invariants.ts";
 import { matchOrder } from "../../../../src/game/orders/matching.ts";
 import { player, takeVesselCard } from "../../../../src/game/state.ts";
 import type {
+  AuthoritativeCommand,
   CompletedOrderRecord,
   Decoration,
   FinishedCeramic,
@@ -39,6 +40,8 @@ export interface TableScenario {
   name: string;
   table: LocalTable;
   viewerId: PlayerId;
+  /** The gallery opens it with this choice made (`FixtureEntry.draftCommand`); never sent. */
+  draftCommand?: AuthoritativeCommand;
 }
 
 const GLAZE_ORDER: readonly Glaze[] = ["white", "celadon", "grey_green", "moon_white"];
@@ -137,7 +140,8 @@ function checked(table: LocalTable): LocalTable {
 /** Every table-state scenario, freshly built (tables are mutable). */
 export function tableScenarios(): TableScenario[] {
   const scenarios: TableScenario[] = [];
-  const add = (id: string, name: string, table: LocalTable, viewerId: PlayerId) => scenarios.push({ id, name, table: checked(table), viewerId });
+  const add = (id: string, name: string, table: LocalTable, viewerId: PlayerId, draftCommand?: AuthoritativeCommand) =>
+    scenarios.push({ id, name, table: checked(table), viewerId, ...(draftCommand === undefined ? {} : { draftCommand }) });
 
   // 1. A round with nothing loaded: the Firing Phase is skipped (L237), and the previous
   //    firing's recap stays until the next firing starts.
@@ -281,7 +285,7 @@ export function tableScenarios(): TableScenario[] {
   }
 
   // 8. A 2-player and a 4-player final, reached through the last Order Phase (in the 2-player one
-  //    Zhao sells a Flawed ceramic in their last Order turn, R20).
+  //    Zhao sells a Flawed ceramic in their last Order turn, a free action, R28).
   {
     const table = new LocalTable(
       buildState({
@@ -306,8 +310,8 @@ export function tableScenarios(): TableScenario[] {
     table.act("p1", { type: "COMPLETE_ORDER", orderId: "S01", ceramicIds: ["c1"] });
     table.act("p1", { type: "COMPLETE_ORDER", orderId: "O22", ceramicIds: ["c2"] });
     if (table.state.phase.type === "orders") table.act("p2", { type: "COMPLETE_ORDER", orderId: "S06", ceramicIds: ["c5"] });
-    // Zhao's Order turn stays open for the Flawed bowl (R20: the Order Phase turn is a sale
-    // window); selling it leaves nothing to complete or sell, so the turn passes and the game ends.
+    // Zhao's Order turn stays open for the Flawed bowl (R28: the Order Phase turn is a free-action
+    // window); selling it leaves no free action, so the turn passes and the game ends.
     if (table.state.phase.type === "orders") table.act("p2", { type: "SELL_FLAWED", ceramicId: "c7" });
     if (table.state.phase.type !== "finished") throw new Error(`tableScenarios: the 2-player game ended in ${table.state.phase.type}`);
     add("t-final-2p", "2-player final results", table, "p1");
@@ -430,7 +434,7 @@ export function tableScenarios(): TableScenario[] {
     });
     tendAll(table);
     if (table.state.phase.type !== "firing_after_quality" || sellFlawedOptions(table.view("p1")) !== null) throw new Error("tableScenarios: a sale offered in Lin's after-Quality turn");
-    add("t-after-quality-sale", "After Quality: Lin may fire a Flawed ceramic again; no sale during the firing", table, "p1");
+    add("t-after-quality-no-sale", "After Quality: Lin may fire a Flawed ceramic again; no sale during the firing", table, "p1");
   }
   {
     const table = new LocalTable(
@@ -446,7 +450,7 @@ export function tableScenarios(): TableScenario[] {
       { seed: 19 },
     );
     if (sellFlawedOptions(table.view("p1")) === null) throw new Error("tableScenarios: no sale before Lin's worker action");
-    add("t-work-turn-sale", "Before the worker action: Lin may sell a Finished Flawed ceramic (not a worker action)", table, "p1");
+    add("t-work-turn-sale", "Before the worker action: Lin may sell a Finished Flawed ceramic (a free action, not a worker action)", table, "p1");
   }
   {
     const table = new LocalTable(
@@ -458,7 +462,104 @@ export function tableScenarios(): TableScenario[] {
       { flow: "halt" },
     );
     if (sellFlawedOptions(table.view("p1")) !== null) throw new Error("tableScenarios: a sale offered in Lin's hand trim");
-    add("t-cleanup-sale", "Cleanup: no sale while trimming", table, "p1");
+    add("t-cleanup-no-sale", "Cleanup: no sale while trimming", table, "p1");
+  }
+
+  // 15. Imperial Priority in the Order Phase (a free action, owner revision 5, owner ruling R28):
+  //     Lin loaded a vase into the Imperial Kiln after Round 2's firing; it waits there through
+  //     Cleanup and is fired in Round 3's firing. Round 3's Work Phase, Zhao to place.
+  {
+    const table = new LocalTable(
+      buildState({
+        round: 2,
+        players: [{ displayName: "Lin", recognition: 3 }, { displayName: "Zhao" }],
+        phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+        ceramics: [{ owner: "p1", stage: "shaped", shape: "vase", decoration: "carved" }],
+      }),
+      { seed: 23 },
+    );
+    table.act("p1", { type: "USE_IMPERIAL_PRIORITY", ceramicId: "c1", glaze: "celadon", imperialModifier: 1 });
+    const carried = table.state.ceramics["c1"];
+    if (table.state.round !== 3 || table.state.phase.type !== "work_turn" || carried?.stage !== "loaded" || carried.loadedInRound !== 2) {
+      throw new Error("tableScenarios: the Order Phase Imperial Priority load is not waiting in Round 3");
+    }
+    add("t-imperial-priority-carried", "Round 3: Lin's Imperial Priority load from Round 2's Order Phase waits for this round's firing", table, "p1");
+  }
+
+  // 16–22. Owner UI decision D21. Lin can do everything at once: a held S05 her Finished Bowl
+  //     completes (S03 it does not), a Flawed Vase to sell, the Imperial Priority token with a Shaped
+  //     vessel, and the Colour Samples swap; so the turn line's chips, the split Confirm, the pane's
+  //     free-action list and the private "You can deliver this now" all show from real states.
+  const shifuOf = (table: LocalTable, playerId: PlayerId): string => {
+    const worker = Object.values(player(table.state, playerId).workers).find((candidate) => candidate.kind === "shifu");
+    if (worker === undefined) throw new Error("tableScenarios: no Shifu");
+    return worker.id;
+  };
+  const apprenticeOf = (table: LocalTable, playerId: PlayerId): string => {
+    const worker = Object.values(player(table.state, playerId).workers).find((candidate) => candidate.kind === "apprentice");
+    if (worker === undefined) throw new Error("tableScenarios: no Apprentice");
+    return worker.id;
+  };
+  const everything = (phase: GameState["phase"]): LocalTable =>
+    new LocalTable(
+      buildState({
+        round: 2,
+        players: [{ displayName: "Lin", recognition: 3, techs: ["T10"], hand: ["S05", "S03"], resources: { clay: 2, wood: 2, coins: 3 } }, { displayName: "Zhao" }],
+        ceramics: [
+          { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard", firedInRound: 1, formedInRound: 1 },
+          { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", decoration: "painted", quality: "flawed", firedInRound: 1, formedInRound: 1 },
+          { owner: "p1", stage: "shaped", shape: "plate", decoration: "carved" },
+        ],
+        phase,
+      }),
+      { seed: 29 },
+    );
+  const beforeTurn = (): GameState["phase"] => ({ type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } });
+  const afterTurn = (): GameState["phase"] => ({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
+  const deliverS05: AuthoritativeCommand = { type: "COMPLETE_ORDER", orderId: "S05", ceramicIds: ["c1"] };
+  add("t-free-action-chips", "D21: the turn line's Free actions chips: Deliver S05, Sell Flawed, Imperial Priority, the Colour Samples swap", everything(beforeTurn()), "p1");
+  {
+    const table = everything(beforeTurn());
+    add("t-place-split-confirm", "D21: a placement's split Confirm: Place · end turn / Place, then free actions", table, "p1", { type: "PLACE_CANAL_WHARF", workerId: shifuOf(table, "p1") });
+  }
+  add("t-after-action-free-actions", "D21: after the worker action: the free-action list, Deliver · end turn beside Deliver, and End turn", everything(afterTurn()), "p1", deliverS05);
+  add("t-order-phase-free-actions", "D21: the Order Phase: the same free-action list, Deliver · done beside Deliver, and Done", everything({ type: "orders", turnOrder: ["p1", "p2"], index: 0 }), "p1", deliverS05);
+  {
+    const table = everything(afterTurn());
+    table.act("p1", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S03" });
+    add("t-swap-select-after-action", "D21: the swap's Select after the worker action: Reserve · end turn / Reserve", table, "p1");
+  }
+  // A display Order Lin's Finished ceramics complete, reserved at the Commission Market or as the
+  // Magistrate's Hall Shifu's Crown Order: the private hint.
+  const hintTable = (orderId: MainOrderId, phase: GameState["phase"], coins: number): LocalTable =>
+    new LocalTable(
+      buildState({
+        round: 2,
+        players: [{ displayName: "Lin", hand: [], resources: { coins } }, { displayName: "Zhao" }],
+        display: [orderId, ...MAIN_ORDER_IDS.filter((id) => id !== orderId).slice(0, 5)],
+        ceramics: ceramicsFor(ORDERS[orderId]).map((spec) => ({ owner: "p1" as const, stage: "finished" as const, ...spec, firedInRound: 1 as const, formedInRound: 1 as const })),
+        phase,
+      }),
+      { seed: 31 },
+    );
+  {
+    const orderId = MAIN_ORDER_IDS[0] as MainOrderId;
+    const table = hintTable(orderId, beforeTurn(), 3);
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: apprenticeOf(table, "p1") });
+    if (table.state.phase.type !== "work_turn" || table.state.phase.step.kind !== "commission_market") throw new Error("tableScenarios: no Select at the Commission Market");
+    add("t-reserve-deliver-hint", "D21: the Commission Market's Select: Reserve · end turn / Reserve, then free actions, with the private You can deliver this now", table, "p1", {
+      type: "SELECT_CHOOSE",
+      reservations: [{ kind: "face_up", slotIndex: 0, orderId }],
+    });
+  }
+  {
+    const orderId = MAIN_ORDER_IDS.find((id) => ORDERS[id].crowns > 0) as MainOrderId;
+    const table = hintTable(orderId, beforeTurn(), 5);
+    add("t-crown-order-deliver-hint", "D21: the Magistrate's Hall Shifu's Crown Order: the Reserve buttons on the placement, with the private hint", table, "p1", {
+      type: "PLACE_MAGISTRATES_HALL",
+      workerId: shifuOf(table, "p1"),
+      crownOrder: { slotIndex: 0, orderId },
+    });
   }
 
   return scenarios;

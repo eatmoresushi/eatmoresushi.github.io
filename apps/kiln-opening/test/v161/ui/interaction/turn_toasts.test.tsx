@@ -286,6 +286,25 @@ describe("turn toasts", () => {
     expect(container.innerHTML).toBe("");
   });
 
+  it("names an Imperial Priority ceramic as the log does, as it was when the line happened (D17), and says the last round plainly", () => {
+    const game = table();
+    mount(game.source, <TurnToasts />);
+    const formed: PublicGameEvent = { type: "CERAMIC_FORMED", playerId: other, ceramicId: "c951", shape: "plate", decoration: "carved", paid: { clay: 1, wood: 0, coins: 2 } } as unknown as PublicGameEvent;
+    game.play(other, [formed, turnEnded(other)]);
+    advance(TOAST_MS);
+    const used: PublicGameEvent = { type: "IMPERIAL_PRIORITY_USED", playerId: other, ceramicId: "c951", window: "order_phase" };
+    const loaded: PublicGameEvent = { type: "CERAMIC_LOADED", playerId: other, ceramicId: "c951", glaze: "white", placement: { kiln: "imperial", imperialModifier: 1 }, loadedBy: "imperial_priority" };
+    game.play(other, [used, loaded, turnEnded(other)]);
+    const [first, second] = textOf(toasts()[0]);
+    // Its Glaze comes with the load, the next line.
+    expect(first).toContain("Imperial Priority on Plate, Carved in the Order Phase; it waits in their Imperial Kiln for the next round’s firing");
+    expect(second).toContain("White Plate");
+    advance(TOAST_MS);
+    game.play(viewer, [{ type: "ROUND_STARTED", round: 5, firstPlayerId: viewer }]);
+    game.play(other, [used, turnEnded(other)]);
+    expect(textOf(toasts()[0])[0]).toContain("in the last Order Phase; it is never fired and does not score");
+  });
+
   it("shows nothing for the viewer's own move or the log present at mount", () => {
     const game = table();
     game.play(other, [placed(other)]);

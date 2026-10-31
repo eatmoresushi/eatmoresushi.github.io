@@ -8,7 +8,7 @@
       - text: Clay
       - strong: "9"
       - text: Wood
-      - strong: "7"
+      - strong: "6"
       - text: Coins
     - img "Your Shifu"
     - img "Your Apprentice"
@@ -53,5 +53,6 @@
     - strong: Others see
     - text: Player 1 is looking at 3 Orders
     - paragraph: Choose an Order to reserve.
+    - button "Reserve · end turn" [disabled]
+    - button "Reserve, then free actions" [disabled]
     - button "Clear"
-    - button "Confirm" [disabled]

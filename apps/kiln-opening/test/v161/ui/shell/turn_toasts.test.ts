@@ -34,7 +34,7 @@ import { eventText, publicEventText } from "../../../../src/app/i18n/events.ts";
 import { createTranslator } from "../../../../src/app/i18n/translator.ts";
 import type { LogEntry } from "../../../../src/app/session/gameSource.ts";
 import { ceramicLabel } from "../../../../src/app/i18n/ceramicLabel.ts";
-import { ceramicViewAsOf, logCeramicView } from "../../../../src/app/shell/logCeramics.ts";
+import { ceramicViewsAsOf, logCeramicView } from "../../../../src/app/shell/logCeramics.ts";
 import {
   GAP_WAIT_MS,
   MAX_TOAST_LINES,
@@ -76,8 +76,25 @@ const placed = (playerId: PlayerId, locationId: "canal_wharf" | "guild_hall" = "
 const coins = (playerId: PlayerId, amount: number, reason: "canal_wharf" | "order_reward" = "canal_wharf"): PublicGameEvent => ({ type: "RESOURCES_CHANGED", playerId, clay: 0, wood: 0, coins: amount, reason });
 const turnEnded = (playerId: PlayerId): PublicGameEvent => ({ type: "WORK_TURN_ENDED", playerId, automatic: false });
 const turnStarted = (playerId: PlayerId): PublicGameEvent => ({ type: "WORK_TURN_STARTED", playerId });
-const completed = (playerId: PlayerId, orderId: string, vp: number): PublicGameEvent =>
-  ({ type: "ORDER_COMPLETED", playerId, record: { orderId, vp, coins: 0, crowns: 0, ceramicIds: [], via: "order_phase" } }) as unknown as PublicGameEvent;
+/** An Order completed in a free-action window (the Order Phase unless said, owner revision 5). */
+const completed = (playerId: PlayerId, orderId: string, vp: number, window: "before_action" | "after_action" | "order_phase" = "order_phase", rewardCoins = 0): PublicGameEvent => ({
+  type: "ORDER_COMPLETED",
+  playerId,
+  window,
+  record: {
+    orderId: orderId as "S01",
+    ceramicIds: [],
+    round: 2,
+    canalBargeCoins: 0,
+    vp,
+    coins: rewardCoins,
+    printedCrowns: 0,
+    bonusCrowns: 0,
+    crackleDeclarations: [],
+    crackleVp: 0,
+    kilnAbility: null,
+  },
+});
 const orderTurnStarted = (playerId: PlayerId): PublicGameEvent => ({ type: "ORDER_TURN_STARTED", playerId });
 const orderTurnEnded = (playerId: PlayerId): PublicGameEvent => ({ type: "ORDER_TURN_ENDED", playerId, automatic: false });
 const contribution = (playerId: PlayerId): PublicGameEvent => ({ type: "CONTRIBUTION_SUBMITTED", playerId, windowId: "w" }) as PublicGameEvent;
@@ -180,7 +197,8 @@ describe("advanceTurns", () => {
       { type: "RESOURCES_CHANGED", playerId: other, clay: -1, wood: 0, coins: -2, reason: "form_decorate" },
       formed("c901", "form_decorate"),
       { type: "KILN_ABILITY_USED", playerId: other, kilnId: "DI" },
-      { type: "RESOURCES_CHANGED", playerId: other, clay: -1, wood: 0, coins: -1, reason: "ding_extra" },
+      // Ding's extra vessel: 1 Clay + 2 Coins since change 40 (rev. 5 L488).
+      { type: "RESOURCES_CHANGED", playerId: other, clay: -1, wood: 0, coins: -2, reason: "ding_extra" },
       formed("c902", "ding_extra"),
       turnEnded(other),
     ]);
@@ -189,7 +207,44 @@ describe("advanceTurns", () => {
     const context = { t: zh, view: logCeramicView(model, []), viewerId: viewer };
     const lines = turns[0]!.entries.map((entry) => publicEventText(entry.event, context));
     expect(toastLines(lines).more).toBe(0);
-    expect(lines.at(-1)).toBe(`${nameOf(other)}制坯：盘 · 素面（「范制成器」：−1泥 · −1铜钱）`);
+    expect(lines.at(-1)).toBe(`${nameOf(other)}制坯：盘 · 素面（「范制成器」：−1泥 · −2铜钱）`);
+  });
+
+  it("tells a Work turn's free actions: a delivery before the worker action, the placement, a sale after it; the rewards fold away (owner revision 5, change 36)", () => {
+    const sold: PublicGameEvent = { type: "CERAMIC_SOLD", playerId: other, ceramicId: "c950", coins: 2, window: "after_action" };
+    const log = entries(260, BASE + 1, other, [
+      turnStarted(other),
+      completed(other, "S01", 3, "before_action", 4),
+      coins(other, 4, "order_reward"),
+      placed(other),
+      coins(other, 4),
+      sold,
+      { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: 2, reason: "flawed_sale" },
+      turnEnded(other),
+    ]);
+    const { turns } = advanceTurns(startTurnTracker([], BASE), log, viewer);
+    expect(keysOf(turns)).toEqual([[other, ["ORDER_COMPLETED", "WORKER_PLACED", "RESOURCES_CHANGED", "CERAMIC_SOLD"]]]);
+    const context = { t: en, view: logCeramicView(model, []), viewerId: viewer };
+    const lines = turns[0]!.entries.map((entry) => publicEventText(entry.event, context));
+    expect(toastLines(lines).more).toBe(0);
+    expect(lines[0]).toBe(`${nameOf(other)} completed S01: +3 VP, +4 Coins`);
+    expect(lines[3]).toMatch(new RegExp(`^${nameOf(other)} sold .+ for 2 Coins$`));
+  });
+
+  it("tells an Order Phase turn spent on Imperial Priority: the ceramic waits for a later firing (R28)", () => {
+    const used: PublicGameEvent = { type: "IMPERIAL_PRIORITY_USED", playerId: other, ceramicId: "c951", window: "order_phase" };
+    const loaded: PublicGameEvent = { type: "CERAMIC_LOADED", playerId: other, ceramicId: "c951", glaze: "celadon", placement: { kiln: "imperial", imperialModifier: 1 }, loadedBy: "imperial_priority" };
+    const log = entries(280, BASE + 1, other, [orderTurnStarted(other), used, loaded, { type: "ORDER_TURN_ENDED", playerId: other, automatic: true }]);
+    const { turns } = advanceTurns(startTurnTracker([], BASE), log, viewer);
+    expect(keysOf(turns)).toEqual([[other, ["IMPERIAL_PRIORITY_USED", "CERAMIC_LOADED", "ORDER_TURN_ENDED"]]]);
+    for (const [t, after, none] of [
+      [en, "in the Order Phase; it waits in their Imperial Kiln for the next round’s firing", "has no more free actions"],
+      [zh, "在交货阶段用御烧优先", "没有可做的自由行动了"],
+    ] as const) {
+      const lines = turns[0]!.entries.map((entry) => publicEventText(entry.event, { t, view: logCeramicView(model, []), viewerId: viewer }));
+      expect(lines[0]).toContain(after);
+      expect(lines[2]).toContain(none);
+    }
   });
 
   it("fits a Glaze & Load turn with kiln fuel and Kiln Master's marker in 4 lines: no \"used Kiln Master\" (rev. 4 L628, R22, R24)", () => {
@@ -437,7 +492,8 @@ describe("toast lines", () => {
     // The game log names it as it is now: delivered.
     expect(label(logCeramicView(model, log))).toMatch(/\(delivered\)/);
     // The toast of the loading turn names it as it was then: in High 2, beside its twin.
-    const asOfLoad = ceramicViewAsOf(model, log, 203);
+    const asOf = (sequence: number) => ceramicViewsAsOf(model, log, new Set([sequence])).get(sequence)!;
+    const asOfLoad = asOf(203);
     expect(label(asOfLoad)).toMatch(/High 2/);
     expect(label(asOfLoad)).not.toMatch(/delivered/);
     expect(asOfLoad.ceramics?.["x1" as never]?.stage).toBe("loaded");
@@ -445,7 +501,7 @@ describe("toast lines", () => {
     expect(asOfLoad.ceramics?.["x3" as never]).toBeUndefined();
     for (const id of Object.keys(model.ceramics)) expect(asOfLoad.ceramics?.[id as never]?.ownerId).toBe(model.ceramics[id as never]!.ownerId);
     // As of the delivery, it is delivered.
-    expect(ceramicViewAsOf(model, log, 204).ceramics?.["x1" as never]?.stage).toBe("delivered");
+    expect(asOf(204).ceramics?.["x1" as never]?.stage).toBe("delivered");
   });
 
   it("have no count of dropped turns: none is ever dropped", () => {

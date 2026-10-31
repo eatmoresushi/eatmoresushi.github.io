@@ -49,5 +49,5 @@
       - strong: 州衙
       - text: ：付4铜钱，再承接
       - strong: O17
+    - button "承接并结束回合"
     - button "取消"
-    - button "确认"

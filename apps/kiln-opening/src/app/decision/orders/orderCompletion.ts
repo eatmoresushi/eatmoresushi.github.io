@@ -1,8 +1,11 @@
 /**
  * The shared model of completing one held Order (UI_V1.6.1_ARCHITECTURE §3.4, §3.5; wireframe
- * `decOrders`). Owner: B5. Used by the Order Phase (`orderDraft`, `COMPLETE_ORDER`): Orders are
- * completed only there (v1.6.2 L296; Canal Barge no longer completes one, it pays 2 Coins on
- * your first completion each round, an automatic trigger shown with the others).
+ * `decOrders`). Owner: B5. Completing a held Order is a free action (owner revision 5, change 36,
+ * rev. 5 L168–176, L417, L422): before or after the worker action of the player's own Work turn
+ * (the work draft's `complete_order` mode) and in their Order Phase turn (`orderDraft`), both
+ * building `COMPLETE_ORDER` through this model over `completableOrders`. Canal Barge completes no
+ * Order: it pays 2 Coins on your first completion each round, whichever window (rev. 5 L637), an
+ * automatic trigger shown with the others.
  *
  * The draft is: an Order, one ceramic group, the Crackle declaration mode, and the optional
  * Ru/Guan and Tribute Ware decline flags (R4). Nothing here re-implements an Order rule:

@@ -1,0 +1,37 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Deliver S07" [level=2]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "0"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 4 Orders in hand Recognition 0/4 0 VP
+  - form "Deliver S07":
+    - button "Back to placing a worker"
+    - heading "S07" [level=3]
+    - text: 3 VP 3 Coins
+    - 'button "Full rules: Order S07"'
+    - text: any Shape · any Glaze · Carved, Impressed or Painted · Standard+
+    - group "Ceramics":
+      - text: ""
+      - radio "Option 1 White Brush Washer, Carved · Masterpiece" [checked]
+      - text: Option 1 White Brush Washer, Carved · Masterpiece
+      - radio "Option 2 Grey-Green Censer, Carved · Fine"
+      - text: Option 2 Grey-Green Censer, Carved · Fine
+    - heading "Rewards" [level=3]
+    - text: +3 VP +3 Coins
+    - paragraph:
+      - text: Complete
+      - strong: S07
+      - text: with White Brush Washer, Carved · Masterpiece
+    - button "Clear"
+    - button "Confirm"

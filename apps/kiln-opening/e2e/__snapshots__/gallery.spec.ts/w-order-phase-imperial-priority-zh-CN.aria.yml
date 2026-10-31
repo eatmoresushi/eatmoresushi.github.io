@@ -1,0 +1,25 @@
+- complementary "你的决断":
+  - paragraph: 交货阶段·轮到你了
+  - heading "交货阶段：自由行动" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望3／4 0分
+  - form "交货阶段：自由行动":
+    - paragraph: 烧窑之后，按起始玩家顺序。你可以逐项进行任意数量的自由行动：完成在手委托、卖出瑕品、用御烧优先；每做一项，选项都会重新核验。
+    - group "自由行动":
+      - text: ""
+      - radio "御烧优先"
+      - text: 御烧优先
+    - paragraph: 请选择一项自由行动，或结束回合。
+    - button "结束回合"

@@ -1,0 +1,52 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "派工" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "5"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望0／4 0分
+  - form "派工":
+    - paragraph: 你还有4名工人未派（共4名）。派工阶段不能跳过。
+    - region "派师傅到州衙":
+      - heading "派师傅到州衙" [level=3]
+      - text: 已占0／1
+      - paragraph: 付4铜钱，声望+1（0→1、1→2或2→3），并承接榜上1张御令委托（榜上没有则不承接）
+      - group "州衙":
+        - paragraph: 付4铜钱
+        - paragraph: 御府声望0 → 1
+        - paragraph: 到达1时的奖励：
+        - paragraph:
+          - strong: 御赐
+          - text: · 获得1泥、1柴和1铜钱。
+        - button "完整规则：声望1 · 御赐"
+        - group "再承接一张御令委托（可选）":
+          - text: ""
+          - paragraph: 推进声望后，承接委托榜上一张印有御令的委托。它的榜位空着，到你的回合结束再补。
+          - radio "不承接"
+          - text: 不承接
+          - radio "#1 O17 6分 2铜钱 1个御令 笔洗 · 白釉 · 画花 上品以上" [checked]
+          - text: "#1 O17 6分 2铜钱 1个御令 笔洗 · 白釉 · 画花 上品以上"
+          - button "完整规则：委托O17"
+        - group "行动后你的资源": 行动后 泥2 → 3 柴3 → 4 铜钱5 → 2
+      - paragraph: 要改派别处，在桌面上另点一个派工按钮。
+    - paragraph:
+      - text: 派
+      - strong: 师傅
+      - text: 到
+      - strong: 州衙
+      - text: ：付4铜钱，再承接
+      - strong: O17
+    - paragraph: 现在就能交付
+    - button "承接并结束回合"
+    - button "承接后做自由行动"
+    - button "取消"

@@ -5,7 +5,7 @@
  * Every undelivered ceramic and its recorded attributes are public (AGENTS.md "Hidden
  * information"). The model's `ceramics` record (change request CR B1-1, landed by B6) describes
  * every ceramic still in the game. A sold Flawed ceramic leaves the game (its Vessel card returns
- * to the supply, rev. 4 L284, R20), so the log's older lines would lose it; the public events of
+ * to the supply, rev. 5 L172, L302), so the log's older lines would lose it; the public events of
  * the log (formed, reshaped, glazed and loaded, Quality, Crackle, finished, delivered, sold) keep it
  * describable, and the model's record and the recorded firing results are laid over them.
  *
@@ -49,7 +49,7 @@ function applyEvent(facts: Map<CeramicId, MutableFacts>, event: LogEntry["event"
         for (const id of event.finishedCeramicIds) update(id, { stage: "finished", placement: null });
         break;
       case "CERAMIC_SOLD":
-        // Sold (R20): still describable, never a twin of a ceramic on the table.
+        // Sold: still describable, never a twin of a ceramic on the table.
         update(event.ceramicId, { stage: "delivered", placement: null });
         break;
       case "ORDER_COMPLETED":
@@ -110,10 +110,12 @@ export function logCeramicView(model: GameModel, log: readonly LogEntry[]): Cera
 }
 
 /**
- * The game log's views: for each entry in `sequences`, the `CeramicLabelView` as of that entry
- * (as `ceramicViewAsOf` gives it), built in one pass over the log. A line then names a ceramic as
- * the table showed it when the line happened, never with what a later move gave it (a Crackle
- * marker, a Glaze, the place a later twin calls for).
+ * The game log's and the turn toasts' views: for each entry in `sequences`, the `CeramicLabelView`
+ * as of that entry, built in one pass
+ * over the log. A ceramic older than the log comes from the model's record. A line then names a
+ * ceramic as the table showed it when the line happened, never with what a later move gave it (a
+ * Crackle marker, a Glaze, the place a later twin calls for), so a toast shows the log's words (D17)
+ * and they do not change while it waits or shows.
  */
 export function ceramicViewsAsOf(model: GameModel, log: readonly LogEntry[], sequences: ReadonlySet<number>): ReadonlyMap<number, CeramicLabelModelView> {
   const views = new Map<number, CeramicLabelModelView>();
@@ -135,22 +137,4 @@ export function ceramicViewsAsOf(model: GameModel, log: readonly LogEntry[], seq
     views.set(entry.sequence, { viewerId: model.viewerId, players, ceramics });
   }
   return views;
-}
-
-/**
- * The `CeramicLabelView` as of one moment of the log, for a turn toast (which may show some turns
- * after its turn): the log's facts up to `upTo`, so a later move (a delivery, a twin formed
- * later) never changes how the turn's lines read. A ceramic formed before the log's first entry
- * (a log still waiting for its history) has no facts there: the model's record describes it.
- */
-export function ceramicViewAsOf(model: GameModel, log: readonly LogEntry[], upTo: number): CeramicLabelModelView {
-  const facts = factsFromLog(log.filter((entry) => entry.sequence <= upTo));
-  const formed = new Set<CeramicId>();
-  for (const { event } of log) if (event.type === "CERAMIC_FORMED") formed.add(event.ceramicId);
-  for (const [key, ceramic] of Object.entries(model.ceramics)) {
-    const id = key as CeramicId;
-    if (!formed.has(id)) facts.set(id, factsOf(id, ceramic));
-  }
-  const players: readonly { playerId: PlayerId; displayName: string }[] = model.players;
-  return { viewerId: model.viewerId, players, ceramics: Object.fromEntries(facts) };
 }

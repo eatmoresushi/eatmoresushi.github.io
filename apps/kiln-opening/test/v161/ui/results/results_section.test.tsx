@@ -36,8 +36,8 @@ describe("podium", () => {
     const zh = render(id, "zh-CN");
     expect(perceivable(zh)).toContain("共享胜利");
     expect(perceivable(zh)).toContain("第3名");
-    // m8 (revision 4's played 3-player game) is a single winner: tied on VP, decided by Imperial Recognition.
-    expect(resultOf("m8_final_results_3p").resolvedBy).toBe("imperial_recognition");
+    // m8 (the played 3-player game) is a single winner: tied on VP, decided by the Masterpieces delivered or exhibited.
+    expect(resultOf("m8_final_results_3p").resolvedBy).toBe("masterpieces");
   });
 
   it("the tie-break winner: one Winner, decided by Imperial Recognition", () => {

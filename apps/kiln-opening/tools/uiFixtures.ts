@@ -1666,7 +1666,11 @@ function findColourSamplesSwap(): Captured {
     playerCounts: [3],
     seeds: 30,
     steer: () => combine(buyTechSteer("T10"), swap),
-    at: (t, actor) => (workStep(t, actor)?.kind === "colour_samples_swap" ? actor : null),
+    // Before the worker action, as the description says (a computer may swap after its action too).
+    at: (t, actor) => {
+      const step = workStep(t, actor);
+      return step?.kind === "colour_samples_swap" && step.returnTo === "before_action" ? actor : null;
+    },
     giveUp: (t) => t.state.round > 4,
     fallback: "Colour Samples swap look",
     hint: 1,
@@ -1950,6 +1954,174 @@ function revision4Moments(): Captured[] {
   return [glazeLoadFuelMoment(), magistratesCrownMoment(), geOnFineMoment(), crackleVpMoment()];
 }
 
+// ── Owner revision 5 (changes 36–42; owner rulings R26–R30) ─────────────────────────────
+
+/** The firing record's Quality of a ceramic in this firing, or null. */
+function firedQuality(table: Table, ceramicId: string): string | null {
+  return table.state.firing?.ceramics[ceramicId]?.quality ?? null;
+}
+
+/**
+ * m30/m31: Ge's Crackle on one of the owner's ceramics of this firing with the given Quality (a
+ * Masterpiece or a Flawed one), after Quality (change 39, rev. 5 L482, R30): played with the
+ * Ge Kiln steered to the viewer; the draft chooses that ceramic.
+ */
+function geOnQualityMoment(meta: MomentMeta, quality: "masterpiece" | "flawed", hint: number): Captured {
+  const seat = "p1";
+  for (const seed of seedOrder(40, hint)) {
+    const table = new Table(seed, 3);
+    const viewer = table.runUntil((t, actor) => {
+      if (t.state.round > 5) return true;
+      if (actor !== seat || t.state.phase.type !== "firing_after_quality") return false;
+      const ge = afterQualityOptions(t.playerView(actor)).find((o) => o.ability === "ge_crackle");
+      return ge?.ceramicIds.some((id) => firedQuality(t, id) === quality) === true;
+    }, kilnSteer(seat, "GE"));
+    if (viewer !== seat || table.state.phase.type !== "firing_after_quality") continue;
+    const pick = (view: PlayerView) => commandOf(view, (c) => c.type === "USE_GE_CRACKLE" && firedQuality(table, c.ceramicId) === quality);
+    return withDraft(capture(table, seat, meta, () => ({})), pick, `Ge on the viewer's ${quality === "masterpiece" ? "Masterpiece" : "Flawed ceramic"} is chosen; it keeps its Quality.`);
+  }
+  throw new Error(`${meta.id}: no seed reached Ge with a ${quality} ceramic of the firing`);
+}
+
+/** The first canonical Form & Decorate command, with Decorator's Kit put on a Plain vessel, that validates. */
+function kitOnPlain(view: PlayerView): AuthoritativeCommand | null {
+  const actor = asActorView(view);
+  if (actor === null) return null;
+  for (const c of legalCommands(view, { mode: "canonical" })) {
+    if (c.type !== "PLACE_FORM_DECORATE") continue;
+    const plain = c.vessels.findIndex((vessel) => vessel.decoration === "plain");
+    if (plain < 0) continue;
+    const command: AuthoritativeCommand = { ...c, decoratorsKitVesselIndex: plain };
+    if (validateAction(actor, command) === null) return command;
+  }
+  return null;
+}
+
+/** Owner revision 5's free actions and changed abilities, with their choices made, for the gallery (m28–m34). */
+function revision5Moments(): Captured[] {
+  const giveUp = (t: Table) => t.state.round > 5;
+  return [
+    withDraft(
+      search({
+        meta: {
+          id: "m28_before_action_delivery",
+          title: "3P · Work Phase · before the worker action: complete a held Order (a free action)",
+          description:
+            "Before their worker action the viewer can complete a held Order with their Finished ceramics: completing held Orders is a free action, on their own turn before or after the worker action and in their Order Phase turn (owner revision 5, change 36, rev. 5 L168–176; freeActionOptions.completableOrderIds). Its Coins and Crowns count for the placement that follows. Ceramics fired this round are first available after the firing.",
+        },
+        playerCounts: [3],
+        seeds: 30,
+        steer: () => null,
+        at: (t, actor) => (t.state.round >= 2 && beforeAction(t, actor) && (freeActionOptions(t.playerView(actor))?.completableOrderIds.length ?? 0) > 0 ? actor : null),
+        giveUp,
+        fallback: "before the worker action: Colour Samples swap, Imperial Priority with Reworking Table, Ding",
+        hint: 1,
+      }),
+      (view) => commandOf(view, (c) => c.type === "COMPLETE_ORDER"),
+      "the completion of the first held Order the viewer can complete is chosen.",
+    ),
+    withDraft(
+      search({
+        meta: {
+          id: "m29_after_action_sale",
+          title: "3P · Work Phase · after the worker action: sell a Flawed ceramic (a free action)",
+          description:
+            "After their worker action the viewer holds a Finished Flawed ceramic: the after-action step opens on public facts (owner ruling R27), and they may sell it for 2 Coins as a free action (its Vessel card back to the supply), take another free action, or end the turn (sellFlawedOptions; rev. 5 L172, L302). Nothing is sold during the firing or at Cleanup (R26).",
+        },
+        playerCounts: [3, 4],
+        seeds: 30,
+        steer: () => null,
+        at: (t, actor) => {
+          const phase = t.state.phase;
+          return phase.type === "work_turn" && phase.activePlayerId === actor && phase.step.kind === "after_action" && sellFlawedOptions(t.playerView(actor)) !== null ? actor : null;
+        },
+        giveUp,
+        fallback: "After the worker action: complete an Order and sell (free actions)",
+        hint: 1,
+      }),
+      (view) => commandOf(view, (c) => c.type === "SELL_FLAWED"),
+      "the sale of the first sellable Flawed ceramic is chosen (its Sell button pressed).",
+    ),
+    withDraft(
+      search({
+        meta: {
+          id: "m30_order_phase_imperial_priority",
+          title: "Order Phase · Imperial Priority after the firing (a free action)",
+          description:
+            "In their Order Phase turn, the post-firing free-action window (owner ruling R28), the viewer may spend Imperial Priority: a Shaped vessel is glazed and loaded into their empty Imperial Kiln, free, with a public Imperial modifier (rev. 5 L174, L314). This round's firing is over, so the ceramic waits in the Imperial Kiln and is fired in the next round's firing; in Round 5 it is never fired, which the form says plainly. Kiln Master's one marker would wait with it (P7).",
+        },
+        playerCounts: [3],
+        seeds: 20,
+        steer: () => null,
+        at: (t, actor) => (t.state.phase.type === "orders" && t.state.round < 5 && imperialPriorityOptions(t.playerView(actor)).usable ? actor : null),
+        giveUp,
+        fallback: "Order Phase: Imperial Priority",
+        hint: 5,
+      }),
+      (view) => commandOf(view, (c) => c.type === "USE_IMPERIAL_PRIORITY"),
+      "Imperial Priority on the first Shaped vessel is chosen (its pending chip shows in the Imperial Kiln).",
+    ),
+    geOnQualityMoment(
+      {
+        id: "m31_ge_crackle_masterpiece",
+        title: "3P · Firing step 5 · Ge's Crackle on a Masterpiece",
+        description:
+          "The viewer owns the Ge Kiln: once per round, after Quality, 1 of their ceramics from this firing, of any Quality, gains a Crackle marker; only a Standard one becomes Fine (change 39, rev. 5 L482, owner ruling R30). Here a Masterpiece: it stays a Masterpiece with a Crackle marker (CRACKLE_APPLIED, no QUALITY_IMPROVED); as a Crackle ceramic it may count as any one Decoration and scores 1 VP when delivered.",
+      },
+      "masterpiece",
+      1,
+    ),
+    geOnQualityMoment(
+      {
+        id: "m32_ge_crackle_flawed",
+        title: "3P · Firing step 5 · Ge's Crackle on a Flawed ceramic",
+        description:
+          "Ge may crackle a Flawed ceramic of the firing too (change 39, owner ruling R30): it gains a Crackle marker and stays Flawed (a Flawed ceramic never completes an Order and is never exhibited, so the marker brings nothing unless a Second Firing improves it; the marker survives that recalculation). Never assume Crackle means Fine.",
+      },
+      "flawed",
+      6,
+    ),
+    withDraft(
+      search({
+        meta: {
+          id: "m33_ding_extra_vessel",
+          title: "3P · Work Phase · Form & Decorate with Ding's extra vessel: 1 Clay + 2 Coins",
+          description:
+            "The viewer owns the Ding Kiln: once per round, after forming a Bowl, Plate or Brush Washer, they may form 1 extra vessel of that Shape with any Decoration for 1 Clay + 2 Coins (change 40, rev. 5 L488). It does not count against the action's vessel limit, and not toward the Shifu's \"if you form 2\" discount (owner ruling R29); the quote shows it as one row.",
+        },
+        playerCounts: [3],
+        seeds: 30,
+        steer: () => kilnSteer("p1", "DI"),
+        at: (t, actor) => (actor === "p1" && beforeAction(t, actor) && commandOf(t.playerView(actor), (c) => c.type === "PLACE_FORM_DECORATE" && c.dingExtra !== undefined) !== null ? actor : null),
+        giveUp,
+        fallback: "before the worker action: Colour Samples swap, Imperial Priority with Reworking Table, Ding",
+        hint: 1,
+      }),
+      (view) => commandOf(view, (c) => c.type === "PLACE_FORM_DECORATE" && c.dingExtra !== undefined),
+      "a Form & Decorate placement with Ding's extra vessel is chosen (its 1 Clay + 2 Coins in the quote).",
+    ),
+    withDraft(
+      search({
+        meta: {
+          id: "m34_decorators_kit_plain",
+          title: "3P · Work Phase · Form & Decorate: Decorator's Kit on a Plain vessel",
+          description:
+            "The viewer owns Decorator's Kit (T16): once per round, 1 vessel they form costs 1 Coin less, whatever its Decoration (change 37, rev. 5 L622); here a Plain one. Each vessel costs its Shape's Clay + 2 Coins; the Kit and the Shifu's discount are two separate reductions and may apply to the same vessel (rev. 5 L658).",
+        },
+        playerCounts: [3],
+        seeds: 30,
+        steer: () => buyTechSteer("T16", "p1"),
+        at: (t, actor) => (actor === "p1" && beforeAction(t, actor) && techOwner(t, "T16") === actor && kitOnPlain(t.playerView(actor)) !== null ? actor : null),
+        giveUp,
+        fallback: "before the worker action (rich 4-player start)",
+        hint: 2,
+      }),
+      kitOnPlain,
+      "a Form & Decorate placement with Decorator's Kit on a Plain vessel is chosen (its 1 Coin less in the quote).",
+    ),
+  ];
+}
+
 /** The V1.6.2 windows the owner reviews in the gallery (m19–m23). */
 function v162Moments(): Captured[] {
   return [findCommissionApprenticeLook(), findColourSamplesSwap(), findGuildSecondTake(), findSaggarsUpgrade(), findStartingS07()];
@@ -2059,6 +2231,7 @@ function newMoments(): Captured[] {
     findJunSecondFiring(),
     ...v162Moments(),
     ...revision4Moments(),
+    ...revision5Moments(),
   ];
 }
 
@@ -2116,21 +2289,28 @@ export function buildScenarioFixtures(): { entries: UiFixtureEntry[]; secrets: R
     );
   }
   for (const scenario of tableScenarios()) {
-    add(
-      entryOf({
-        id: scenario.id,
-        name: scenario.name,
-        kind: "table",
-        description: `Table state: ${scenario.name}.`,
-        notes: [],
-        source: scriptedSource(scenario.table, "tableScenarios", scenario.id),
-        state: scenario.table.state,
-        privateState: scenario.table.privateState,
-        log: localTableLog(scenario.table),
-        viewerId: scenario.viewerId,
-        recent: SCENARIO_EVENTS,
-      }),
-    );
+    const built = entryOf({
+      id: scenario.id,
+      name: scenario.name,
+      kind: "table",
+      description: `Table state: ${scenario.name}.`,
+      notes: [],
+      source: scriptedSource(scenario.table, "tableScenarios", scenario.id),
+      state: scenario.table.state,
+      privateState: scenario.table.privateState,
+      log: localTableLog(scenario.table),
+      viewerId: scenario.viewerId,
+      recent: SCENARIO_EVENTS,
+    });
+    if (scenario.draftCommand !== undefined) {
+      // The gallery opens it with this choice made; the engine must accept it as it stands.
+      const actor = asActorView(built.entry.playerView);
+      if (scenario.draftCommand.type === "SUBMIT_CONTRIBUTION") throw new Error(`${scenario.id}: a Contribution is never a gallery draft`);
+      const error = actor === null ? "the viewer does not act" : validateAction(actor, scenario.draftCommand)?.code ?? null;
+      if (error !== null) throw new Error(`${scenario.id}: the gallery draft is not legal (${error})`);
+      built.entry.draftCommand = scenario.draftCommand;
+    }
+    add(built);
   }
   return { entries, secrets };
 }

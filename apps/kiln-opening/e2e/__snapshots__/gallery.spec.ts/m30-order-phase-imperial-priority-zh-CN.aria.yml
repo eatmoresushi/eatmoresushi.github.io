@@ -1,0 +1,54 @@
+- complementary "你的决断":
+  - paragraph: 交货阶段·轮到你了
+  - heading "交货阶段：自由行动" [level=2]
+  - region "Wen（你）":
+    - heading "Wen（你）" [level=3]
+    - group "资源":
+      - strong: "3"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "1"
+      - text: 铜钱
+    - text: /手中3张委托 声望3／4 \d+分/
+  - form "交货阶段：自由行动":
+    - paragraph: 烧窑之后，按起始玩家顺序。你可以逐项进行任意数量的自由行动：完成在手委托、卖出瑕品、用御烧优先；每做一项，选项都会重新核验。
+    - group "自由行动":
+      - text: ""
+      - radio "交付S04 4分 4铜钱 任意器型 · 月白釉 · 任意纹饰 · 良品以上"
+      - text: 交付S04 4分 4铜钱 任意器型 · 月白釉 · 任意纹饰 · 良品以上
+      - button "完整规则：委托S04"
+      - radio "御烧优先" [checked]
+      - text: 御烧优先
+    - paragraph: 自由行动，不花费任何资源。不是工人行动，也不算施釉装窑行动。
+    - button "完整规则：声望3 · 御烧优先"
+    - paragraph: 本轮烧窑已经结束：这件器物留在你的御窑里，到下一轮烧窑时才烧成。
+    - group "装进御窑的坯":
+      - text: ""
+      - radio "盘 · 素面" [checked]
+      - text: 盘 · 素面
+    - group "釉":
+      - text: ""
+      - radio "白釉" [checked]
+      - text: 白釉
+      - radio "青釉"
+      - text: 青釉
+      - radio "灰青釉"
+      - text: 灰青釉
+      - radio "月白釉"
+      - text: 月白釉
+    - group "御窑修正":
+      - text: ""
+      - radio "−1" [checked]
+      - text: −1
+      - radio "0"
+      - text: "0"
+      - radio "+1"
+      - text: "+1"
+    - paragraph:
+      - text: 御烧优先：
+      - strong: 盘 · 素面
+      - text: 施白釉，御窑修正−1
+    - button "用御烧优先并结束回合"
+    - button "用御烧优先"
+    - button "结束回合"

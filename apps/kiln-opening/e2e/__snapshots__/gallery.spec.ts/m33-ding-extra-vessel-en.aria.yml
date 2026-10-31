@@ -1,0 +1,70 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Place a worker" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "3"
+      - text: Wood
+      - strong: "7"
+      - text: Coins
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 4 Orders in hand Recognition 0/4 0 VP
+  - form "Place a worker":
+    - paragraph: 3 of your 4 workers left. The Work Phase cannot be passed.
+    - region "Apprentice at Form & Decorate":
+      - heading "Apprentice at Form & Decorate" [level=3]
+      - text: your space 1
+      - paragraph: "Form 1: Clay + 2 Coins, any Decoration"
+      - group "Form & Decorate":
+        - group "Shape":
+          - text: ""
+          - radio "Bowl 1 Clay + 2 Coins" [checked]
+          - text: Bowl 1 Clay + 2 Coins
+          - radio "Plate 1 Clay + 2 Coins"
+          - text: Plate 1 Clay + 2 Coins
+          - radio "Brush Washer 1 Clay + 2 Coins"
+          - text: Brush Washer 1 Clay + 2 Coins
+          - radio "Vase 2 Clay + 2 Coins"
+          - text: Vase 2 Clay + 2 Coins
+          - radio "Censer 2 Clay + 2 Coins"
+          - text: Censer 2 Clay + 2 Coins
+        - group "Decoration":
+          - text: ""
+          - paragraph: "Any Decoration: it adds no cost. Each vessel costs its Shape’s Clay plus the Coins shown."
+          - radio "Plain" [checked]
+          - text: Plain
+          - radio "Carved"
+          - text: Carved
+          - radio "Impressed"
+          - text: Impressed
+          - radio "Painted"
+          - text: Painted
+        - 'checkbox "Moulded Production: form another vessel of the same Shape" [checked]'
+        - text: "Moulded Production: form another vessel of the same Shape"
+        - 'button "Full rules: Ding Kiln · Moulded Production"'
+        - group "Decoration of the extra vessel":
+          - text: ""
+          - radio "Plain" [checked]
+          - text: Plain
+          - radio "Carved"
+          - text: Carved
+          - radio "Impressed"
+          - text: Impressed
+          - radio "Painted"
+          - text: Painted
+        - group "Cost": "Bowl 1 Clay Bowl (forming) 2 Coins Moulded Production: Bowl 1 Clay, 2 Coins You pay 2 Clay, 4 Coins"
+        - group "Your resources after this action": After this action Clay 2 → 0 Wood 3 → 3 Coins 7 → 3
+      - paragraph: To place elsewhere, choose another Place on the table.
+    - paragraph:
+      - text: Place
+      - strong: Apprentice
+      - text: at
+      - strong: Form & Decorate
+      - text: "— Bowl, Plain, plus Moulded Production: Bowl, Plain"
+    - button "Place · end turn"
+    - button "Clear"

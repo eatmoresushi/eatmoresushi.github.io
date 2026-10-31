@@ -1,5 +1,5 @@
 - region "你的决断":
   - paragraph: 轮到你了：派工 · 还剩4名工人
-  - group "也可以先：":
+  - group "自由行动":
     - text: ""
-    - button "卖出瑕品"
+    - button "卖出瑕品（+2铜钱）"

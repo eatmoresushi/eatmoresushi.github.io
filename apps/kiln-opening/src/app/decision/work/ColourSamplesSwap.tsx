@@ -5,7 +5,7 @@
  * Order to give up (radios here, or the Choose toggles on the table's hand row). The note says
  * the whole swap in one line (once per round, not a worker action: give up 1, look at the top 3,
  * reserve 1 of them or 1 from the display: its Select 3, change 25), or only "once per round, not
- * a worker action" when the step's choice above already describes it (`brief`), and the group
+ * a worker action" when the free-action list above already describes it (`brief`), and the group
  * says where the given-up Order goes (a Main Order face down to the discard pile, a Starting Order
  * back to the box). Each Order shows its card text and opens its rules details from the shared
  * "Rules" pill (D10). An Order after which the look would find fewer cards than usual, or none
@@ -14,8 +14,8 @@
  * in the `colour_samples_swap` window (`SelectStep`). Composed by `ActionWindow`; the draft lives
  * in the work draft (`swap`).
  *
- * On phones the form brings the Orders tab up behind the sheet when it opens (the opener above
- * the table, or the after-action window's choice), so collapsing the sheet shows the hand and its
+ * On phones the form brings the Orders tab up behind the sheet when it opens (the chip above
+ * the table, or the after-action list), so collapsing the sheet shows the hand and its
  * Choose toggles, the other way to choose, rather than the Workshop.
  */
 import { useEffect } from "react";
@@ -34,9 +34,9 @@ import type { WorkAction, WorkDraft } from "./workDraft.ts";
 
 export interface ColourSamplesSwapProps {
   /**
-   * The step's choice above already says what the swap does (its description), so the note says
-   * only that it is once per round and not a worker action. Without a choice above (the swap
-   * opened alone before the worker action) the note says the whole swap.
+   * The free-action list above already says what the swap does (its description), so the note says
+   * only that it is once per round and not a worker action. Without a list above (the swap opened
+   * from its chip before the worker action) the note says the whole swap.
    */
   brief?: boolean;
 }

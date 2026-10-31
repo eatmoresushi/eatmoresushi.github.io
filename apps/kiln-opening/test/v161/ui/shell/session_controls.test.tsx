@@ -14,12 +14,12 @@ import { renderComponent } from "../support/render.tsx";
 import { modelOf } from "./support.tsx";
 
 /** A moment whose viewer sits first, so the fixture seats them as host. */
-const HOST = "m17_after_action";
+const HOST = "m16_colour_samples";
 
 const menuItems = (html: string): string[] => [...html.matchAll(/<button[^>]*role="(menuitem|menuitemradio)"[^>]*>(?:<span[^>]*>[^<]*<\/span>)?([^<]*)<\/button>/g)].map((match) => match[2] ?? "");
 
 describe("session menu", () => {
-  // fixtureSnapshot seats the first player as host; m1's viewer is p2 (seat 1), m17's is p1 (seat 0).
+  // fixtureSnapshot seats the first player as host; m1's viewer is p2 (seat 1), m16's is p1 (seat 0).
   it("offers End session only to the host", () => {
     expect(fixture("m1_work_phase_r2_3p").playerView.game.playerOrder.indexOf(fixture("m1_work_phase_r2_3p").viewerId)).toBeGreaterThan(0);
     expect(fixture(HOST).playerView.game.playerOrder[0]).toBe(fixture(HOST).viewerId);

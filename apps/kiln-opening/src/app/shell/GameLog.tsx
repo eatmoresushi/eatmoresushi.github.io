@@ -21,7 +21,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useT } from "../i18n/I18nProvider.tsx";
-import { eventText, foldedEntry, ownSecretOf } from "../i18n/events.ts";
+import { eventText, foldedEntry, lastRoundStart, ownSecretOf } from "../i18n/events.ts";
 import { Chip } from "../kit/Chip.tsx";
 import { useGame, useLog, useUi } from "../state/hooks.ts";
 import { ceramicViewsAsOf, logCeramicView } from "./logCeramics.ts";
@@ -58,11 +58,12 @@ export function GameLog() {
     const shown = log.slice(start).filter((_entry, index) => !foldedEntry(log, start + index));
     // Each line names its ceramics as they were when it happened (`ceramicViewsAsOf`).
     const views = ceramicViewsAsOf(model, log, new Set(shown.map((entry) => entry.sequence)));
+    const lastRoundFrom = lastRoundStart(log);
     return shown
       .reverse()
       .map((entry) => ({
         sequence: entry.sequence,
-        text: eventText(entry, { t, view: views.get(entry.sequence) ?? view, viewerId: model.viewerId }),
+        text: eventText(entry, { t, view: views.get(entry.sequence) ?? view, viewerId: model.viewerId, lastRound: lastRoundFrom !== null && entry.sequence >= lastRoundFrom }),
         own: ownSecretOf(entry, model.viewerId) !== null,
       }));
   }, [open, log, shownCount, t, view, model]);

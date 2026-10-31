@@ -8,19 +8,16 @@
       - text: Clay
       - strong: "3"
       - text: Wood
-      - strong: "2"
-      - text: Coins
+      - strong: "1"
+      - text: Coin
     - img "Your Shifu"
     - img "Your Apprentice"
     - img "Your Apprentice"
     - text: 3 Orders in hand Recognition 0/4 0 VP
   - form "After your worker action":
-    - group "This step":
+    - group "Free actions":
       - text: ""
       - 'radio "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"'
       - text: "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"
-      - radio "End your turn Nothing more this turn"
-      - text: End your turn Nothing more this turn
-    - paragraph: Choose what to do now.
+    - paragraph: Choose a free action, or end your turn.
     - button "End turn"
-    - button "Confirm" [disabled]

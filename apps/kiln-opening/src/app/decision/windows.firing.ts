@@ -6,15 +6,19 @@
  * Each spec names its component and draft model, its title (the pane heading and phone sheet
  * strip), its ConfirmBar alternative where the window has one (End turn, Done, Decline, Keep it),
  * and a table adapter where the table shows the draft:
- * - Order Phase: the hand's Order cards (`orderTargets`: completable, chosen, blocked) and the
- *   chosen group's ceramics (`highlightedCeramicIds`); clicking a completable Order chooses it;
+ * - Order Phase (the post-firing free-action window, R28): the hand's Order cards (`orderTargets`:
+ *   completable, chosen, blocked) and the chosen group's ceramics (`highlightedCeramicIds`);
+ *   a completable Order's Deliver badge chooses it; Use on the Imperial Priority token
+ *   (`imperialPriority`, D21); Imperial Priority's vessel highlighted and its pending chip in the
+ *   Imperial Kiln (`pendingCeramics`); its Confirm is the split Deliver · done / Deliver, with Done
+ *   the alternative (owner UI decision D21, `orderSplit`);
  * - hand trim: the hand's Order cards marked for discard (`discard` / `choosable`); clicking one
  *   toggles it;
  * - firing windows: the target ceramic of the draft (`highlightedCeramicIds`); Second Firing's
  *   choice highlights its ceramic;
- * - the viewer's sale windows among them (change 30, R20: the Order Phase turn, the after-Quality
- *   turn and the hand trim): a Sell button on each sellable Flawed ceramic (`sellTargets`), which
- *   chooses it in the draft (`saleTargets`, `sale/sellFlawed.ts`).
+ * - the Order Phase turn, the only free-action window of this slice (owner revision 5, R26, R28):
+ *   a Sell button on each sellable Flawed ceramic (`sellTargets`), which chooses it in the draft
+ *   (`saleTargets`, `sale/sellFlawed.ts`). The after-Quality step and the hand trim sell nothing.
  * `final` and `waiting` never send a command (`noDraft()`).
  */
 import type { CeramicId, OrderId } from "../../game/index.ts";
@@ -23,8 +27,8 @@ import { list } from "../i18n/format.ts";
 import { msg } from "../i18n/translator.ts";
 import type { Translator } from "../i18n/translator.ts";
 import { defineWindow, noDraft } from "../state/draftStore.ts";
-import type { WindowSpecFor, WindowText } from "../state/draftStore.ts";
-import type { GameModel } from "../state/model.ts";
+import type { ConfirmSplit, WindowSpecFor, WindowText } from "../state/draftStore.ts";
+import type { EngineView, GameModel } from "../state/model.ts";
 import { tableSelection } from "../state/tableSelection.ts";
 import type { OrderTargetState } from "../state/tableSelection.ts";
 import { HandTrim } from "./cleanup/HandTrim.tsx";
@@ -41,8 +45,11 @@ import { secondFiringDraft } from "./firing/SecondFiring.draft.ts";
 import { TestPieces } from "./firing/TestPieces.tsx";
 import { testPiecesDraft } from "./firing/TestPieces.draft.ts";
 import { OrderTurn } from "./orders/OrderTurn.tsx";
-import { orderDraft } from "./orders/orderDraft.ts";
+import { chosenOrderFreeAction, orderDraft } from "./orders/orderDraft.ts";
+import type { OrderDraft } from "./orders/orderDraft.ts";
 import { FinalSummary } from "./results/FinalSummary.tsx";
+import { acceptsEndTurn } from "./endTurn.ts";
+import { freeActionItems } from "./freeActions.ts";
 import { saleOffered, saleTargets } from "./sale/sellFlawed.ts";
 import { Waiting } from "./Waiting.tsx";
 
@@ -68,6 +75,15 @@ const waitingTitle = (model: GameModel): WindowText => {
 /** A selection that only highlights ceramics (an ability's target). */
 function highlight(ids: readonly (CeramicId | null | undefined)[]) {
   return tableSelection({ highlightedCeramicIds: new Set(ids.filter((id): id is CeramicId => typeof id === "string")) });
+}
+
+/** The Order Phase Confirm (D21): ⟨Action⟩ · done, one command, beside ⟨Action⟩. */
+function orderSplit(draft: OrderDraft, engine: EngineView): ConfirmSplit | null {
+  const chosen = chosenOrderFreeAction(draft);
+  if (chosen === null) return null;
+  if (chosen === "sell_flawed") return acceptsEndTurn(engine, "SELL_FLAWED") ? { end: msg("common.confirm.sellDone"), stay: msg("common.confirm.sell") } : null;
+  if (chosen === "imperial_priority") return acceptsEndTurn(engine, "USE_IMPERIAL_PRIORITY") ? { end: msg("common.confirm.priorityDone"), stay: msg("common.confirm.priority") } : null;
+  return acceptsEndTurn(engine, "COMPLETE_ORDER") ? { end: msg("common.confirm.deliverDone"), stay: msg("common.confirm.deliver") } : null;
 }
 
 export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K> } = {
@@ -101,17 +117,8 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
     draft: afterQualityDraft,
     title: () => msg("firing.title.afterQuality"),
     alternative: () => ({ label: msg("firing.aq.done"), command: { type: "END_AFTER_QUALITY" } }),
-    table: {
-      select: (draft, _model, engine) => {
-        const choice = draft.choice === null || draft.choice === "end" ? null : draft.choice;
-        return tableSelection({
-          highlightedCeramicIds: new Set(choice === null ? [] : [choice.ceramicId]),
-          sellTargets: saleTargets(engine, choice?.ability === "sell_flawed" ? choice.ceramicId : null),
-        });
-      },
-      act: (_draft, action, _model, engine) =>
-        action.type === "sell" && saleOffered(engine, action.ceramicId) ? { type: "use" as const, ability: "sell_flawed" as const, ceramicId: action.ceramicId } : null,
-    },
+    // The target ceramic of the draft. No Sell buttons: nothing is sold during the firing (R26).
+    table: { select: (draft) => highlight([draft.choice === null || draft.choice === "end" ? null : draft.choice.ceramicId]), act: () => null },
   }),
   second_firing: defineWindow({
     kind: "second_firing",
@@ -125,7 +132,13 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
     Component: OrderTurn,
     draft: orderDraft,
     title: () => msg("orders.title.orders"),
-    alternative: () => ({ label: msg("common.verb.endTurn"), command: { type: "END_ORDER_TURN" } }),
+    // "Done" in English (D21). In Chinese the glossary's 完成 is also the verb of completing an Order,
+    // which this pane offers beside it, so the button says what it does: 结束回合.
+    alternative: () => ({ label: msg("orders.turn.done"), command: { type: "END_ORDER_TURN" } }),
+    // With nothing chosen, Done is the only button (D21).
+    alternativeOnly: (draft) => chosenOrderFreeAction(draft) === null,
+    alternativeTakesEnter: (_draft, _model, engine) => freeActionItems(engine).length === 0,
+    confirmSplit: (draft, _model, engine) => orderSplit(draft, engine),
     table: {
       select: (draft, model, engine) => {
         const options = orderDraft.options(draft, model, engine);
@@ -136,10 +149,16 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
         }
         const highlighted = new Set<CeramicId>(draft.ceramicIds ?? []);
         if (draft.sell !== null) highlighted.add(draft.sell);
-        return tableSelection({ orderTargets, highlightedCeramicIds: highlighted, sellTargets: saleTargets(engine, draft.sell) });
+        // Imperial Priority (R28): its vessel highlighted, and a pending chip in the Imperial Kiln.
+        const imperial = draft.imperialPriority ?? null;
+        if (imperial?.ceramicId != null) highlighted.add(imperial.ceramicId);
+        const pendingCeramics = imperial !== null && imperial.ceramicId !== null && imperial.glaze !== null ? [{ ceramicId: imperial.ceramicId, glaze: imperial.glaze, at: "imperial" as const }] : [];
+        const imperialPriority = freeActionItems(engine).some((item) => item.kind === "imperial_priority") ? { pressed: imperial !== null } : null;
+        return tableSelection({ orderTargets, highlightedCeramicIds: highlighted, sellTargets: saleTargets(engine, draft.sell), pendingCeramics, imperialPriority });
       },
       act: (_draft, action, model, engine) => {
         if (action.type === "sell") return saleOffered(engine, action.ceramicId) ? { type: "sell" as const, ceramicId: action.ceramicId } : null;
+        if (action.type === "imperial_priority") return freeActionItems(engine).some((item) => item.kind === "imperial_priority") ? { type: "freeAction" as const, key: "imperial_priority" as const } : null;
         if (action.type !== "order") return null;
         const options = orderDraft.options(_draft, model, engine);
         return options.orders.some((order) => order.orderId === action.key && order.completable) ? { type: "order" as const, orderId: action.key as OrderId } : null;
@@ -156,10 +175,10 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
         const options = handTrimDraft.options(draft, model, engine);
         const orderTargets = new Map<string, { state: OrderTargetState; disabled: boolean }>();
         for (const orderId of options.held) orderTargets.set(orderId, { state: draft.orderIds.includes(orderId) ? "discard" : "choosable", disabled: false });
-        return tableSelection({ orderTargets, sellTargets: saleTargets(engine, draft.sell), highlightedCeramicIds: new Set(draft.sell === null ? [] : [draft.sell]) });
+        // No Sell buttons: nothing is sold while trimming (R26).
+        return tableSelection({ orderTargets });
       },
       act: (draft, action, model, engine) => {
-        if (action.type === "sell") return saleOffered(engine, action.ceramicId) ? { type: "sell" as const, ceramicId: action.ceramicId } : null;
         if (action.type !== "order") return null;
         const held = handTrimDraft.options(draft, model, engine).held;
         const orderId = action.key as OrderId;

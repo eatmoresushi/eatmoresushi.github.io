@@ -53,5 +53,5 @@
     - strong: Others see
     - text: Player 1 is looking at 3 Orders
     - paragraph: Choose up to 2 Orders to reserve.
+    - button "Reserve · end turn" [disabled]
     - button "Clear"
-    - button "Confirm" [disabled]

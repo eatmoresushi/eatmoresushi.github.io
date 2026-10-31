@@ -1,0 +1,65 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "派工" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "1"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中3张委托 声望0／4 0分
+  - form "派工":
+    - paragraph: 你还有3名工人未派（共4名）。派工阶段不能跳过。
+    - region "派师傅到制坯饰纹":
+      - heading "派师傅到制坯饰纹" [level=3]
+      - text: 你的第1工位
+      - paragraph: 制至多2件坯；制2件时1件少付1铜钱
+      - group "制坯饰纹":
+        - group "器型":
+          - text: ""
+          - radio "碗 1泥 + 2铜钱" [checked]
+          - text: 碗 1泥 + 2铜钱
+          - radio "盘 1泥 + 2铜钱"
+          - text: 盘 1泥 + 2铜钱
+          - radio "笔洗 1泥 + 2铜钱"
+          - text: 笔洗 1泥 + 2铜钱
+          - radio "瓶 2泥 + 2铜钱"
+          - text: 瓶 2泥 + 2铜钱
+          - radio "香炉 2泥 + 2铜钱"
+          - text: 香炉 2泥 + 2铜钱
+        - group "纹饰":
+          - text: ""
+          - paragraph: 纹饰任选，不另计费。每件坯付器型泥费外加所示铜钱。
+          - radio "素面" [checked]
+          - text: 素面
+          - radio "刻花"
+          - text: 刻花
+          - radio "印花"
+          - text: 印花
+          - radio "画花"
+          - text: 画花
+        - paragraph: 减免
+        - group "饰坯匣":
+          - text: ""
+          - radio "不使用"
+          - text: 不使用
+          - radio "「饰坯匣」用于第1件坯" [checked]
+          - text: 「饰坯匣」用于第1件坯
+        - button "完整规则：饰坯匣"
+        - group "费用": 碗 1泥 碗（制坯） 2铜钱 「饰坯匣」 −1铜钱 共付 1泥1铜钱
+        - group "行动后你的资源": 行动后 泥2 → 1 柴3 → 3 铜钱1 → 0
+      - paragraph: 要改派别处，在桌面上另点一个派工按钮。
+    - paragraph:
+      - text: 派
+      - strong: 师傅
+      - text: 到
+      - strong: 制坯饰纹
+      - text: ：碗 · 素面
+    - button "派工并结束回合"
+    - button "取消"

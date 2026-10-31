@@ -104,15 +104,19 @@ function expectRuleAndClarifications(body: string, items: readonly Clarification
   expect(text, "source label").not.toMatch(/Source:|出处：|Owner (ruling|amendment)|业主(裁定|修订)|Rulebook “|规则书「/);
 }
 const alt = (html: string) => /data-action="alt"[^>]*>(.*?)<\/button>/.exec(html)?.[1]?.replace(/<[^>]*>/g, "") ?? null;
+/** The split Confirm's two buttons (owner UI decision D21). */
+const confirmText = (html: string) => /data-action="confirm"[^>]*>(.*?)<\/button>/.exec(html)?.[1]?.replace(/<[^>]*>/g, "") ?? null;
+const stayText = (html: string) => /data-action="confirm-stay"[^>]*>(.*?)<\/button>/.exec(html)?.[1]?.replace(/<[^>]*>/g, "") ?? null;
+const valuesOf = (html: string, name: string) => [...html.matchAll(/<input[^>]*>/g)].map((match) => match[0]).filter((input) => input.includes(`name="${name}"`)).map((input) => /value="([^"]*)"/.exec(input)?.[1] ?? "");
 
 describe("titles, alternatives and window content", () => {
   it("Contributions: who has chosen, never what; the owner's 5 Contribution cards with Fuel Ledger (v1.6.2 change 26)", () => {
     const html = en("m9_contributions_step1_3p");
     expect(heading(html)).toBe("Choose your Contribution");
     expect(heading(zh("m9_contributions_step1_3p"))).toBe("暗选控火");
-    // First Player order from Zhao: Zhao has chosen (never what), the viewer and Lin are choosing.
-    expect(perceivable(html)).toMatch(/Zhao: chosen Wen \(you\): choosing… Lin: choosing…/);
-    expect(perceivable(html)).not.toMatch(/Zhao: chosen [^.]*(Tend|Bank|Stoke)/);
+    // The participants in First Player order: Lin has chosen (never what), the viewer is choosing.
+    expect(perceivable(html)).toMatch(/Lin: chosen Wen \(you\): choosing…/);
+    expect(perceivable(html)).not.toMatch(/Lin: chosen [^.]*(Tend|Bank|Stoke)/);
     expect(inputs(html).filter((input) => input["name"] === "card").map((input) => input["value"])).toEqual(["TEND", "BANK", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
     expect(inputs(html).some((input) => input["name"] === "fuelLedger")).toBe(false);
     expect(alt(html)).toBeNull();
@@ -142,7 +146,7 @@ describe("titles, alternatives and window content", () => {
   it("Kiln Master's marker: chosen at loading, it shows face up on its ceramic in the Jun window (rev. 4 L628, R22; no Heat-marker step)", () => {
     const html = en("m3_kiln_master_marker_3p");
     expect(heading(html)).toBe("Jun Kiln · Kiln Transformation");
-    expect(perceivable(html)).toContain("White Brush Washer, Painted (in High 1), Kiln Master marker +1");
+    expect(perceivable(html)).toContain("White Plate, Carved (in Middle 1), Kiln Master marker +1");
     expect(html).toContain('class="hm hm--kiln-master"');
     expect(perceivable(zh("m3_kiln_master_marker_3p"))).toContain("窑工标+1");
     // No Heat-marker choice exists any more.
@@ -290,9 +294,9 @@ describe("titles, alternatives and window content", () => {
     expect(seen).not.toContain("Flawed ×");
     const summary = (draft: unknown) => /<p class="confirm-summary">(.*?)<\/p>/.exec(en(id, draft))?.[1]?.replace(/<[^>]*>/g, "");
     expect(summary({ choice: { ability: "protective_saggars", ceramicId: "c2" } })).toBe("Use Protective Saggars: Moon White Plate, Plain · Standard becomes Fine");
-    expect(summary({ choice: { ability: "ge_crackle", ceramicId: "c1" } })).toBe("Use Ge Kiln · Crackle Mastery: Moon White Bowl, Plain · Standard gains a Crackle marker and is Fine");
-    // Rev. 4 L463: Ge also crackles a Fine ceramic, which stays Fine.
-    expect(summary({ choice: { ability: "ge_crackle", ceramicId: "c3" } })).toBe("Use Ge Kiln · Crackle Mastery: Celadon Vase, Plain · Fine gains a Crackle marker and is Fine");
+    expect(summary({ choice: { ability: "ge_crackle", ceramicId: "c1" } })).toBe("Use Ge Kiln · Crackle Mastery: Moon White Bowl, Plain · Standard gains a Crackle marker and becomes Fine");
+    // Rev. 5 L482 (change 39, R30): Ge crackles any ceramic of the firing; a Fine one stays Fine.
+    expect(summary({ choice: { ability: "ge_crackle", ceramicId: "c3" } })).toBe("Use Ge Kiln · Crackle Mastery: Celadon Vase, Plain · Fine gains a Crackle marker and stays Fine");
     expect(inputs(html).filter((input) => input["name"] === "afterQuality").map((input) => input["value"])).toEqual([
       "protective_saggars:c1",
       "protective_saggars:c2",
@@ -300,7 +304,7 @@ describe("titles, alternatives and window content", () => {
       "ge_crackle:c2",
       "ge_crackle:c3",
     ]);
-    // Never Flawed with Protective Saggars: nothing to sell (R20).
+    // No sale during the firing (owner revision 5, R26).
     expect(seen).not.toContain("Sell a Flawed ceramic");
     expect(summary({ choice: "end" })).toBe("Finish your after-Quality turn; decline the rest");
   });
@@ -327,50 +331,85 @@ describe("titles, alternatives and window content", () => {
     for (const entry of allFixtures()) expect(decisionWindow(entry.playerView).kind as string).not.toBe("salvage");
   });
 
-  it("selling a Flawed ceramic in the own after-Quality turn: a group of its own, beside Second Firing (change 30, R20)", () => {
-    const id = "t-after-quality-sale";
+  it("the own after-Quality turn with a Flawed ceramic of this firing offers Second Firing and no sale (owner revision 5, R26)", () => {
+    const id = "t-after-quality-no-sale";
     const html = en(id);
     const seen = perceivable(html);
     expect(heading(html)).toBe("After-Quality abilities");
-    expect(seen).toContain("Sell a Flawed ceramic You may sell one of your Flawed ceramics for 2 Coins. It leaves the game, and its Vessel card goes back to the supply.");
-    expect(inputs(html).filter((input) => input["name"] === "afterQuality.sell").map((input) => input["value"])).toEqual(["c1"]);
     expect(inputs(html).filter((input) => input["name"] === "afterQuality").map((input) => input["value"])).toEqual(["second_firing:c1"]);
-    expect(seen).toContain("+2 Coins");
-    const summary = /<p class="confirm-summary">(.*?)<\/p>/.exec(en(id, { choice: { ability: "sell_flawed", ceramicId: "c1" } }))?.[1]?.replace(/<[^>]*>/g, "");
-    expect(summary).toBe("Sell Moon White Bowl, Carved · Flawed for 2 Coins");
+    expect(inputs(html).some((input) => input["name"] === "afterQuality.sell")).toBe(false);
+    expect(seen).not.toContain("Sell a Flawed ceramic");
+    expect(html).not.toContain('data-act="sell"');
     const chinese = perceivable(zh(id));
-    expect(chinese).toContain("卖出瑕品 你可以卖出你的一件瑕品，得2铜钱。它离开游戏，器型卡放回供应堆。");
-    expect(chinese).not.toMatch(/折卖/);
+    expect(chinese).not.toMatch(/卖出瑕品|折卖/);
   });
 
-  it("Order Phase: held Orders only, End turn, and the note that the display cannot be completed", () => {
+  it("Order Phase: the post-firing free-action window; the free-action list of the held Orders it can complete, and Done (D21)", () => {
     const html = en("m6_order_phase_crackle_3p");
-    expect(heading(html)).toBe("Complete held Orders");
-    expect(alt(html)).toBe("End turn");
-    expect(perceivable(html)).toContain("3 of 4 can be completed");
-    expect(perceivable(html)).toContain("O43 14 VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard+ all No matching ceramics");
-    expect(perceivable(html)).not.toMatch(/S06 3 VP 5 Coins [^.]*No matching ceramics/);
-    expect(perceivable(html)).toContain("Only held Orders can be completed; Orders on the display cannot.");
-    // No Flawed ceramic: no sale group.
+    expect(heading(html)).toBe("Order Phase: free actions");
+    expect(heading(zh("m6_order_phase_crackle_3p"))).toBe("交货阶段：自由行动");
+    expect(alt(html)).toBe("Done");
+    // Chinese: 完成 is the verb of completing an Order in this pane, so the button says what it does.
+    expect(alt(zh("m6_order_phase_crackle_3p"))).toBe("结束回合");
+    expect(perceivable(html)).toContain("Take any number of free actions, one at a time: complete held Orders, sell a Flawed ceramic, use Imperial Priority.");
+    // Deliver ⟨Order⟩ per held Order it can complete; the others are not in the list.
+    expect(valuesOf(html, "freeAction")).toEqual(["complete-S05", "complete-O38"]);
+    expect(perceivable(html)).toContain("Deliver S05");
+    expect(perceivable(html)).toContain("Deliver O38");
+    expect(perceivable(html)).not.toContain("Deliver S03");
+    // With nothing chosen, Done is the only button; a choice brings the split Confirm.
+    expect(html).not.toContain('data-action="confirm"');
+    const chosen = en("m6_order_phase_crackle_3p", { orderId: "O38", ceramicIds: ["c10", "c11"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false, sell: null });
+    expect(perceivable(chosen)).toContain("Only held Orders can be completed; Orders on the display cannot.");
+    expect(confirmText(chosen)).toBe("Deliver · done");
+    expect(stayText(chosen)).toBe("Deliver");
+    expect(alt(chosen)).toBe("Done");
+    // No Flawed ceramic and no Imperial Priority: no sale group, no Imperial Priority form.
     expect(perceivable(html)).not.toContain("Sell a Flawed ceramic");
+    expect(html).not.toContain('data-b4="imperial-priority"');
+  });
+
+  it("Order Phase: Imperial Priority alone opens the turn; its form says the ceramic waits for the next round's firing (R28)", () => {
+    const id = "w-order-phase-imperial-priority";
+    const html = en(id);
+    expect(heading(html)).toBe("Order Phase: free actions");
+    expect(alt(html)).toBe("Done");
+    // Its only entry waits for the player's own press; Done is the only button until then (D21).
+    expect(valuesOf(html, "freeAction")).toEqual(["imperial_priority"]);
+    expect(html).not.toContain('data-b4="imperial-priority"');
+    expect(confirmText(html)).toBeNull();
+    const open = { orderId: null, ceramicIds: null, declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false, sell: null, imperialPriority: { ceramicId: null, glaze: null, modifier: null, rework: null, kilnMaster: null } };
+    const form = en(id, open);
+    const seen = perceivable(form);
+    expect(form).toContain('data-b4="imperial-priority"');
+    expect(seen).toContain("A free action that costs nothing.");
+    expect(seen).toContain("This round’s firing is over: the ceramic waits in your Imperial Kiln and is fired in the next round’s firing.");
+    expect(seen).not.toContain("Deliver");
+    expect(perceivable(zh(id, open))).toContain("本轮烧窑已经结束：这件器物留在你的御窑里，到下一轮烧窑时才烧成。");
+    // The last round: never fired, said plainly.
+    const last = editedFixtureSource(id, (entry) => {
+      entry.playerView.game.round = 5;
+    });
+    expect(perceivable(renderWindow(last, { locale: "en", draft: open }))).toContain("This is the last round: a ceramic loaded now is never fired and does not score.");
+    expect(perceivable(renderWindow(last, { locale: "zh-CN", draft: open }))).toContain("这是最后一轮：现在装进御窑的器物不会烧成，也不计分。");
   });
 
   it("Order Phase with a seeded draft: groups in words, the Crackle verdicts and the rewards (S07's Decoration alternative, change 23)", () => {
-    const id = "w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard";
-    const draft = { orderId: "S07", ceramicIds: ["c3"], declarations: [{ ceramicId: "c3", decoration: "plain" }], declineKilnAbility: false, declineTributeWare: false, end: false };
+    const id = "w-order-phase-with-a-crackle-wildcard";
+    const draft = { orderId: "S07", ceramicIds: ["c2"], declarations: [{ ceramicId: "c2", decoration: "plain" }], declineKilnAbility: false, declineTributeWare: false, end: false };
     const html = en(id, draft);
     const seen = perceivable(html);
-    expect(seen).toContain("Option 1 Celadon Vase, Plain · Fine · Crackle");
+    expect(seen).toContain("Option 2 Celadon Vase, Plain · Fine · Crackle");
     // "Carved, Impressed or Painted": a Crackle ceramic counts as any one of them, never as Plain.
     expect(seen).toContain("Carved ✓ satisfies S07");
     expect(seen).toContain("Painted ✓ satisfies S07");
     expect(seen).toContain("Plain ✕ does not satisfy S07");
-    expect(inputs(html).find((input) => input["name"] === "decoration:c3" && input["value"] === "plain")?.["checked"]).toBe("");
+    expect(inputs(html).find((input) => input["name"] === "decoration:c2" && input["value"] === "plain")?.["checked"]).toBe("");
     // The engine's own reason, beside the disabled Confirm.
     expect(html).toMatch(/<p class="confirm-error"[^>]*>[^<]+<\/p>/);
     expect(html).toMatch(/data-action="confirm"[^>]*aria-disabled="true"|aria-disabled="true"[^>]*data-action="confirm"/);
     expect(seen).not.toContain("Rewards");
-    const carved = perceivable(en(id, { ...draft, declarations: [{ ceramicId: "c3", decoration: "carved" }] }));
+    const carved = perceivable(en(id, { ...draft, declarations: [{ ceramicId: "c2", decoration: "carved" }] }));
     // The delivered Crackle ceramic's 1 VP shows with the rewards (rev. 4 L465).
     expect(carved).toContain("Rewards +3 VP +3 Coins Crackle: +1 VP");
     expect(carved).toContain("Complete S07 with Celadon Vase, Plain · Fine · Crackle (as Carved)");
@@ -382,9 +421,9 @@ describe("titles, alternatives and window content", () => {
       const p = entry.playerView.game.players[entry.viewerId]!;
       p.techs = [...p.techs, { id: "T23", acquiredInRound: 1, usedThisRound: false }];
     });
-    const draft = { orderId: "S06", ceramicIds: ["c19"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
+    const draft = { orderId: "S05", ceramicIds: ["c11"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
     const html = renderWindow(withBarge, { locale: "en", draft });
-    expect(perceivable(html)).toContain("Rewards +3 VP +5 Coins Canal Barge: +2 Coins");
+    expect(perceivable(html)).toContain("Rewards +3 VP +4 Coins Canal Barge: +2 Coins");
     expect(perceivable(renderWindow(withBarge, { locale: "zh-CN", draft }))).toContain("「漕船」：得2铜钱");
     // Not offered as a choice: it is automatic, never declined.
     expect(inputs(html).filter((input) => input["name"] === "optional").map((input) => input["value"])).not.toContain("canalBarge");
@@ -393,30 +432,39 @@ describe("titles, alternatives and window content", () => {
 
   it("Order Phase: a Crackle ceramic delivered scores 1 VP, shown with the rewards (Ge, rev. 4 L465)", () => {
     const id = "m6_order_phase_crackle_3p";
-    const crackle = { orderId: "S06", ceramicIds: ["c7"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
-    expect(perceivable(en(id, crackle))).toContain("Rewards +3 VP +5 Coins Crackle: +1 VP");
+    // S05 with the Ge player's crackled Masterpiece Plate (c10).
+    const crackle = { orderId: "S05", ceramicIds: ["c10"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
+    expect(perceivable(en(id, crackle))).toContain("Rewards +3 VP +4 Coins Crackle: +1 VP");
     expect(perceivable(zh(id, crackle))).toContain("开片器+1分");
     // Another group without a Crackle ceramic: no Crackle VP.
-    expect(perceivable(en(id, { ...crackle, ceramicIds: ["c19"] }))).not.toContain("Crackle: +1 VP");
+    expect(perceivable(en(id, { ...crackle, ceramicIds: ["c11"] }))).not.toContain("Crackle: +1 VP");
     // The played Crackle VP moment (m27) opens with such a completion chosen in the gallery.
     const m27 = fixture("m27_crackle_vp_completion");
-    expect(m27.draftCommand).toMatchObject({ type: "COMPLETE_ORDER", orderId: "S03", ceramicIds: ["c4"] });
-    expect(perceivable(en("m27_crackle_vp_completion", { orderId: "S03", ceramicIds: ["c4"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false }))).toContain("Crackle: +1 VP");
+    expect(m27.draftCommand).toMatchObject({ type: "COMPLETE_ORDER", orderId: "O29", ceramicIds: ["c6", "c13"] });
+    expect(perceivable(en("m27_crackle_vp_completion", { orderId: "O29", ceramicIds: ["c6", "c13"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false }))).toContain("Crackle: +1 VP");
   });
 
-  it("Order Phase: a Flawed ceramic may be sold in the turn, which the Order Phase opens for even with nothing to complete (R20)", () => {
+  it("Order Phase: a Flawed ceramic may be sold in the turn (a free action), which the Order Phase opens for even with nothing to complete (R28)", () => {
     const id = "w-order-phase-sell-a-flawed-ceramic";
     const html = en(id);
     const seen = perceivable(html);
-    expect(seen).toContain("0 of 1 can be completed");
-    expect(seen).toContain("Sell a Flawed ceramic");
-    expect(inputs(html).filter((input) => input["name"] === "orders.sell").map((input) => input["value"])).toEqual(["c1"]);
-    expect(alt(html)).toBe("End turn");
+    // Its only entry waits for the player's own press: a sale cannot be undone (D21). Then the
+    // only ceramic comes chosen too.
+    expect(valuesOf(html, "freeAction")).toEqual(["sell_flawed"]);
+    expect(seen).toContain("Sell Flawed (+2 Coins)");
+    expect(inputs(html).filter((input) => input["name"] === "orders.sell")).toEqual([]);
+    expect(alt(html)).toBe("Done");
+    expect(confirmText(html)).toBeNull();
+    const selling = en(id, { orderId: null, ceramicIds: null, declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false, selling: true, sell: "c1" });
+    expect(inputs(selling).filter((input) => input["name"] === "orders.sell").map((input) => input["value"])).toEqual(["c1"]);
+    expect(confirmText(selling)).toBe("Sell · done");
+    expect(stayText(selling)).toBe("Sell");
     const sold = en(id, { orderId: null, ceramicIds: null, declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false, sell: "c1" });
     expect(/<p class="confirm-summary">(.*?)<\/p>/.exec(sold)?.[1]?.replace(/<[^>]*>/g, "")).toBe("Sell White Bowl, Plain · Flawed for 2 Coins");
     expect(sold).not.toMatch(/data-action="confirm"[^>]*aria-disabled="true"/);
     // The played moment: a completable Order and a sale in the same turn.
-    expect(perceivable(en("m14_sell_flawed"))).toMatch(/1 of 4 can be completed[\s\S]*Sell a Flawed ceramic/);
+    expect(valuesOf(en("m14_sell_flawed"), "freeAction").filter((value) => value.startsWith("complete-"))).toHaveLength(1);
+    expect(valuesOf(en("m14_sell_flawed"), "freeAction")).toContain("sell_flawed");
   });
 
   it("hand trim: own Orders only you can see, the count and the parallel note", () => {
@@ -471,10 +519,13 @@ describe("rules details (D10)", () => {
 
   it("an Order: its requirement and quality line, then the deck's clarifications, with no printed facts", () => {
     const html = en("m6_order_phase_crackle_3p");
-    expect(perceivable(html)).toContain("Full rules: Order O43");
-    const body = panel(html, "Full rules: Order O43");
-    expect(textOf(body)).toContain("Full rule 3 different Shapes; any Glazes; any Decorations Standard+ all");
-    expect(textOf(body)).not.toMatch(/Reward \d+ VP|14 VP|Crown Order Reward/);
+    // The list's Deliver entries carry them; O39 is one of the viewer's completable Orders' rules.
+    const orderId = valuesOf(html, "freeAction")[1]!.slice("complete-".length);
+    expect(orderId).toBe("O38");
+    expect(perceivable(html)).toContain("Full rules: Order O38");
+    const body = panel(html, "Full rules: Order O38");
+    expect(textOf(body)).toContain("Full rule");
+    expect(textOf(body)).not.toMatch(/Reward \d+ VP|13 VP|Crown Order Reward/);
     expectRuleAndClarifications(body, ORDER_CLARIFICATIONS.main, "en");
     expect(perceivable(zh("m7_cleanup_hand_limit_3p"))).toContain("完整规则：委托");
   });
@@ -507,7 +558,7 @@ describe("rules details (D10): one Order trigger across the pane (verifier findi
 
 describe("rules details (D10): Imperial Recognition beside a completion's Crowns", () => {
   // O22 (1 Crown) in the scripted Ru / Tribute Ware Order Phase.
-  const CROWNS = "w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard";
+  const CROWNS = "w-order-phase-with-ru-and-tribute-ware";
   const draft = { orderId: "O22", ceramicIds: ["c1"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
 
   it("lists the milestones, the reward beyond the track and the Crown clarifications, with no track facts or source labels", () => {
@@ -530,8 +581,8 @@ describe("rules details (D10): Imperial Recognition beside a completion's Crowns
   });
 
   it("is not offered for an Order without Crowns", () => {
-    const html = en("m6_order_phase_crackle_3p", { orderId: "S06", ceramicIds: ["c19"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false });
-    expect(perceivable(html)).toContain("Rewards +3 VP +5 Coins");
+    const html = en("m6_order_phase_crackle_3p", { orderId: "S05", ceramicIds: ["c11"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false });
+    expect(perceivable(html)).toContain("Rewards +3 VP +4 Coins");
     expect(html).not.toContain('<span class="rd-name">Imperial Recognition</span>');
     expect(html).not.toContain("ord-crown-note");
   });
@@ -566,14 +617,14 @@ function probe(id: string, draft: unknown): { orderTargets: Record<string, strin
 
 describe("seeded drafts drive the table (§3.5)", () => {
   it("Order Phase: Order states and the chosen group's ceramics", () => {
-    const result = probe("m6_order_phase_crackle_3p", { orderId: "O34", ceramicIds: ["c7", "c12"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false });
-    expect(result.orderTargets).toEqual({ S06: "completable", O43: "blocked", O34: "chosen", O10: "completable" });
-    expect(result.highlighted).toEqual(["c7", "c12"]);
+    const result = probe("m6_order_phase_crackle_3p", { orderId: "O38", ceramicIds: ["c10", "c11"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false });
+    expect(result.orderTargets).toEqual({ S05: "completable", S03: "blocked", O38: "chosen", O39: "blocked" });
+    expect(result.highlighted).toEqual(["c10", "c11"]);
     expect(result.sellTargets).toEqual({});
   });
 
   it("hand trim: the Orders marked for discard", () => {
-    const result = probe("w-cleanup-hand-limit", { orderIds: ["O01", "S02"], sell: null });
+    const result = probe("w-cleanup-hand-limit", { orderIds: ["O01", "S02"] });
     expect(result.orderTargets).toEqual({ S01: "choosable", S02: "discard", O01: "discard", O02: "choosable", O03: "choosable", O04: "choosable" });
   });
 
@@ -582,14 +633,14 @@ describe("seeded drafts drive the table (§3.5)", () => {
     expect(probe("w-jun-heat-adjustment", { ceramicId: "c1", delta: 1, decline: false }).highlighted).toEqual(["c1"]);
   });
 
-  it("the sale windows put a Sell button on each sellable Flawed ceramic, the chosen one pressed (R20)", () => {
+  it("the Order Phase puts a Sell button on each sellable Flawed ceramic, the chosen one pressed; the firing and the trim put none (R26, R28)", () => {
     expect(probe("w-order-phase-sell-a-flawed-ceramic", { orderId: null, ceramicIds: null, declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false, sell: null }).sellTargets).toEqual({ c1: false });
     const chosen = probe("w-order-phase-sell-a-flawed-ceramic", { orderId: null, ceramicIds: null, declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false, sell: "c1" });
     expect(chosen.sellTargets).toEqual({ c1: true });
     expect(chosen.highlighted).toEqual(["c1"]);
-    expect(probe("t-after-quality-sale", { choice: { ability: "sell_flawed", ceramicId: "c1" } })).toMatchObject({ highlighted: ["c1"], sellTargets: { c1: true } });
-    expect(probe("t-cleanup-sale", { orderIds: [], sell: null }).sellTargets).toEqual({ c1: false });
-    // Not a sale window: no Sell button.
+    // No free actions during the firing or at Cleanup: no Sell button, a Flawed ceramic or not.
+    expect(probe("t-after-quality-no-sale", { choice: null }).sellTargets).toEqual({});
+    expect(probe("t-cleanup-no-sale", { orderIds: [] }).sellTargets).toEqual({});
     expect(probe("w-after-quality-saggars-and-ge", { choice: null }).sellTargets).toEqual({});
   });
 });

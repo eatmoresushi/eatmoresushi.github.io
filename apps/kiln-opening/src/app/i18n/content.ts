@@ -39,6 +39,7 @@ import {
   contributionCard,
 } from "../../game/index.ts";
 import type {
+  OrderDefinition,
   CeramicStage,
   ClarificationDefinition,
   ContributionCardId,
@@ -259,9 +260,13 @@ export const RULE_NUMBERS = Object.freeze({
   baseHeatMax: FIRING.baseHeat.maximum,
   /** A Glaze & Load action that loads into the Shared Kiln costs this much Wood (rev. 4 L197, R24). */
   kilnFuelWood: LOCATIONS.glaze_load.effects.apprentice.sharedKilnWood,
-  /** A Flawed ceramic sells for this many Coins (rev. 4 L284, R20). */
+  /** A Flawed ceramic sells for this many Coins, as a free action (rev. 5 L172, L302). */
   flawedSaleCoins: FIRING.flawedSaleCoins,
   recognitionMax,
+  /** The Recognition that brings the Imperial Priority token (rev. 5 L314). */
+  imperialPrioritySpace: IMPERIAL_TRACK.track.find((space) => space.reward?.kind === "imperial_priority")?.space ?? recognitionMax,
+  /** The Techs one Guild Hall Shifu action may take (v1.6.2 L237). */
+  guildShifuTakes: LOCATIONS.guild_hall.effects.shifu.maxTechs,
   overflowVpPerCrown: IMPERIAL_TRACK.overflowVpPerCrown,
   /** Canal Barge's Coins on your first completed Order each round (T23, v1.6.2 L622). */
   canalBargeCoins: TECHS.T23.params.coins,
@@ -272,6 +277,12 @@ export const RULE_NUMBERS = Object.freeze({
 });
 
 export type RuleNumbers = typeof RULE_NUMBERS;
+
+/**
+ * Ge's Crackle (change 39, rev. 5 L482, R30): the one Quality it raises and what it becomes
+ * (Standard → Fine). Every other Quality keeps its own when the ceramic gains its Crackle marker.
+ */
+export const GE_CRACKLE_UPGRADE: Readonly<{ from: Quality; to: Quality }> = Object.freeze({ from: KILNS.GE.params.upgradeFrom, to: KILNS.GE.params.upgradeTo });
 
 /**
  * The number of firing steps: the length of the `kiln` namespace's `step.<n>.full` list
@@ -375,6 +386,11 @@ export interface KilnFacts {
 
 export function kilnFacts(id: KilnId): KilnFacts {
   return { oncePerRound: KILNS[id].oncePerRound };
+}
+
+/** An Order's definition, for the engine's matcher (`findOrderMatches`; D21's private hint). */
+export function orderDefinition(orderId: OrderId): OrderDefinition | undefined {
+  return ORDERS[orderId];
 }
 
 /** Card facts an Order card prints. A Crown Order is a Main Order with at least 1 printed Crown. */

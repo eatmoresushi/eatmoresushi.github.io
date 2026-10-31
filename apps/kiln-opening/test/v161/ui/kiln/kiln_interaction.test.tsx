@@ -40,10 +40,10 @@ function key(target: Element, keyName: string): void {
 
 describe("kiln tile rules details (D10)", () => {
   it("opens on keyboard focus, closes on Escape with focus kept, and pins on click", () => {
-    // m9: Wen's Setter's Mark tile on Middle 1.
+    // m9: Zhao's Setter's Mark tile on High 1.
     const setup = harness(fixtureSource("m9_contributions_step1_3p"));
     act(() => root.render(setup.wrap(<KilnBlock />)));
-    const cell = container.querySelector('[data-space="middle_1"]');
+    const cell = container.querySelector('[data-space="high_1"]');
     const trigger = cell?.querySelector<HTMLButtonElement>(".ktile-detail .kit-detail-trigger");
     expect(trigger).toBeTruthy();
     const panel = document.getElementById(trigger!.getAttribute("aria-controls")!);

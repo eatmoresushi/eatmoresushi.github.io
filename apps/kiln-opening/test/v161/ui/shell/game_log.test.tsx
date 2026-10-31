@@ -75,6 +75,7 @@ describe("game log", () => {
       {
         type: "ORDER_COMPLETED",
         playerId: player,
+        window: "order_phase",
         record: { orderId: "S04", ceramicIds: [], round: 2, canalBargeCoins: 0, vp: 3, coins: 5, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], crackleVp: 0, kilnAbility: null },
       },
       { type: "RESOURCES_CHANGED", playerId: player, clay: 0, wood: 0, coins: 5, reason: "order_reward" },
@@ -83,8 +84,8 @@ describe("game log", () => {
     const log: LogEntry[] = events.map((event, index) => ({ sequence: index + 1, revision: index + 1, actorId: player, event }));
     const lines = entries(renderComponent(new StaticSource({ ...snapshot, log }), <GameLog />, { ui: { logOpen: true } }));
     expect(lines).toEqual([
-      // An automatic end: nothing to complete and no Flawed ceramic to sell (R20).
-      `${name} has nothing more to complete or sell`,
+      // An automatic end: no free action left (nothing to complete or sell, no Imperial Priority, R28).
+      `${name} has no more free actions`,
       `${name} completed S04: +3 VP, +5 Coins`,
       `Order Phase: ${name}’s turn`,
     ]);
@@ -100,6 +101,7 @@ describe("game log", () => {
       {
         type: "ORDER_COMPLETED",
         playerId: player,
+        window: "before_action",
         record: { orderId: "S07", ceramicIds: [], round: 2, canalBargeCoins: 2, vp: 3, coins: 3, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], crackleVp: 0, kilnAbility: null },
       },
       { type: "RESOURCES_CHANGED", playerId: player, clay: 0, wood: 0, coins: 3, reason: "order_reward" },
@@ -145,7 +147,7 @@ describe("game log", () => {
     const html = renderComponent(fixtureSource("m2_commission_market_look_r3_4p"), <GameLog />, { ui: { logOpen: true } });
     expect(html).toMatch(/<li class="game-log-entry" data-own="">[^]*?only you/);
     // m2's viewer (Lin) sees the cards of their own open look; nobody else would.
-    expect(html).toContain("Lin looked at O19, O14, O02");
+    expect(html).toContain("Lin looked at O43, O09, O24");
   });
 
   it.each(allFixtures().map((entry) => [entry.id] as const))("%s: the open log shows no foreign secret or internal ID", (id) => {

@@ -3,10 +3,9 @@
  *
  * Cleanup (Rounds 1–4), parallel: discard exactly the excess over your hand limit. Checkboxes over
  * your own held Orders (secret: only you see them; others see only how many you hold). Starting
- * Orders return to the box and Main Orders go face down to the discard. A pending trim is one of
- * the player's own turns, so a Flawed ceramic may be sold first (change 30, R20), from the "Sell a
- * Flawed ceramic" group or the Sell buttons on the table. Renders only from
- * `handTrimDraft.options()`.
+ * Orders return to the box and Main Orders go face down to the discard. Nothing is sold while
+ * trimming (owner revision 5, owner ruling R26: Cleanup is not a free-action window). Renders only
+ * from `handTrimDraft.options()`.
  */
 import type { OrderId } from "../../../game/index.ts";
 import { orderRequirements } from "../../i18n/content.ts";
@@ -20,7 +19,6 @@ import { B5_TECHS } from "../firing/firingSupport.ts";
 import { Lead, Note } from "../firing/WindowParts.tsx";
 import { ORDER_OPTION_CLASS, OrderDetails, OrderReward } from "../orders/OrderCompletionPicker.tsx";
 import { RulesDetail } from "../../rules/RulesDetail.tsx";
-import { SellFlawed } from "../sale/SellFlawed.tsx";
 import { handTrimDraft } from "./HandTrim.draft.ts";
 import type { HandTrimAction, HandTrimDraft } from "./HandTrim.draft.ts";
 
@@ -64,9 +62,6 @@ export function HandTrim() {
         ))}
       </OptionGroup>
       <Note>{t("orders.trim.parallel")}</Note>
-      {options.sale === null ? null : (
-        <SellFlawed model={model} engine={engine} options={options.sale} value={draft.sell} name="trim.sell" onChange={(ceramicId) => dispatch({ type: "sell", ceramicId })} />
-      )}
     </div>
   );
 }

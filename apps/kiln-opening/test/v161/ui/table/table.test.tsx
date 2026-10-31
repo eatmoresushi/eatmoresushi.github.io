@@ -90,8 +90,8 @@ describe("CentralBoard and LocationCard", () => {
     expect(visibleText(magistrate)).toContain("1/1 taken");
     expect(magistrate).toContain("loc-count--full");
     expect(visibleText(magistrate)).toContain("Recognition 0–2 only");
-    // Lin's Apprentice stands there, named in words (D9).
-    expect(magistrate).toContain('aria-label="Lin’s Apprentice"');
+    // Lin's Shifu stands there, named in words (D9).
+    expect(magistrate).toContain('aria-label="Lin’s Shifu"');
     expect(magistrate).not.toMatch(/\bp\d:(shifu|apprentice)/);
     // The Canal Wharf has no limit.
     expect(visibleText(card(html, "canal_wharf"))).toContain("No limit");
@@ -133,9 +133,9 @@ describe("CentralBoard and LocationCard", () => {
     expect(chosen).toMatch(/aria-pressed="false"[^>]*aria-label="Place Apprentice at Materials Yard"/);
     // Without a table adapter the table is inert: no shortcuts.
     expect(render(RICH, <CentralBoard />, { registry: INERT_WINDOWS })).not.toContain('data-act="place"');
-    // m5's Materials Yard is full: no shortcut there, the reason instead.
-    expect(card(render("m5_two_player_board_2p", <CentralBoard />), "materials_yard")).not.toContain('data-act="place"');
-    expect(visibleText(card(render("m5_two_player_board_2p", <CentralBoard />), "materials_yard"))).toContain("Can’t place here");
+    // m5's Magistrate's Hall is full: no shortcut there, the reason instead.
+    expect(card(render("m5_two_player_board_2p", <CentralBoard />), "magistrates_hall")).not.toContain('data-act="place"');
+    expect(visibleText(card(render("m5_two_player_board_2p", <CentralBoard />), "magistrates_hall"))).toContain("Can’t place here");
   });
 
   it("renders Place shortcuts as compact worker pieces, the full sentence only in the accessible name (wireframe `.pbtn`)", () => {
@@ -271,15 +271,19 @@ describe("OrderDisplay", () => {
 
   it("prints each face-up Order: number, kind, VP, requirement, quality line, Coins and Crowns", () => {
     const html = render("m17_after_action", <OrderDisplay />);
-    const face = visibleText(orderCard(html, "O18"));
-    expect(face).toContain("O18");
+    const face = visibleText(orderCard(html, "O42"));
+    expect(face).toContain("O42");
     expect(face).toContain("Crown");
-    expect(face).toContain("6 VP");
-    expect(face).toContain("Vase · Celadon · any Decoration");
+    expect(face).toContain("16 VP");
+    expect(face).toContain("Brush Washer + Censer; different Glazes; same Decoration");
     expect(face).toContain("Fine+");
-    expect(face).toContain("2 Coins");
-    expect(face).toContain("1 Crown");
-    expect(orderCard(html, "O18")).toContain('class="ord ord--crown"');
+    expect(face).toContain("2 Crowns");
+    expect(orderCard(html, "O42")).toContain('class="ord ord--crown"');
+    const plain = visibleText(orderCard(html, "O10"));
+    expect(plain).toContain("5 VP");
+    expect(plain).toContain("any Shape · any Glaze · Plain");
+    expect(plain).toContain("3 Coins");
+    expect(orderCard(html, "O10")).not.toContain("ord--crown");
     // A re-valued Main Order prints its V1.6.2 value (change 24): O20 6 VP.
     expect(visibleText(orderCard(render("t-empty-main-supply", <OrderDisplay />), "O20"))).toContain("6 VP");
   });
@@ -359,8 +363,8 @@ describe("Order Phase: hand states and the Finished ceramics strip (m6)", () => 
       const markup = orderCard(html, orderId);
       if (completable.has(orderId)) {
         expect(markup).toContain('data-target="completable"');
-        expect(visibleText(markup)).toContain("Can complete");
-        expect(markup).toContain(`aria-label="Can complete: Order ${orderId}"`);
+        expect(visibleText(markup)).toContain("Deliver");
+        expect(markup).toContain(`aria-label="Deliver: Order ${orderId}"`);
       } else {
         expect(markup).toContain('data-target="blocked"');
         expect(visibleText(markup)).toContain("No matching ceramics");
@@ -394,8 +398,20 @@ describe("Order Phase: hand states and the Finished ceramics strip (m6)", () => 
     expect(textOf(renderComponent(withModelCeramics(fixtureSource(id)), <FinishedCeramicsStrip />, { locale: "zh-CN" }))).toContain("委托榜上的委托不能直接完成，要先在瓷牙行承接。");
   });
 
-  it("is shown only in the Order Phase", () => {
+  it("is shown in the Order Phase and, with Finished ceramics, in the viewer's own Work turn (free actions, owner revision 5)", () => {
+    // m1's viewer holds no Finished ceramic.
     expect(render("m1_work_phase_r2_3p", <FinishedCeramicsStrip />)).toBe("");
+    // Before the worker action: the ceramics a completion delivers, and a Sell button on a Flawed one.
+    const delivery = "m28_before_action_delivery";
+    expect(render(delivery, <FinishedCeramicsStrip />, { registry: WINDOWS })).toContain('class="finished-strip"');
+    const sale = render("t-work-turn-sale", <FinishedCeramicsStrip />, { registry: WINDOWS });
+    expect(sale).toContain('data-act="sell"');
+    // Another player's turn: no strip, whatever the viewer holds.
+    const waiting = structuredClone(fixture(delivery));
+    const phase = waiting.playerView.game.phase;
+    if (phase.type !== "work_turn") throw new Error("fixture changed");
+    phase.activePlayerId = waiting.playerView.game.playerOrder.find((playerId) => playerId !== waiting.viewerId)!;
+    expect(renderComponent(new FixtureGameSource(waiting), <FinishedCeramicsStrip />, { registry: WINDOWS })).toBe("");
   });
 });
 

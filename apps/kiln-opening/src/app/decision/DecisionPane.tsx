@@ -24,7 +24,10 @@
  *   nothing for it (the work turn before a placement is chosen) the `<aside>` is `hidden`, its
  *   markup kept (the test-driver contract below still holds), and `GameShell` gives its room to
  *   the world. When it appears in the same window (a Place shortcut, an opener), focus moves to
- *   its heading (or the sheet strip); when it hides with focus inside or on `<body>` (Clear, back
+ *   its heading (or the sheet strip); when it hides on a phone section with no Place control (a
+ *   free action's Confirm or Clear from the Orders tab, the Colour Samples swap: D20, D21), the phone
+ *   goes back to the Table tab, where the worker is placed (`placeControlShown`); when it hides with
+ *   focus inside or on `<body>` (Clear, back
  *   to placing, a new turn after Confirm), focus goes back to the table (`focusTable`): to the
  *   placement control the player last used (a Place shortcut or an opener, `PANE_RETURN_CONTROL`;
  *   never a prompt focused on the way, like the Guild Hall's Tech chooser), found again by its
@@ -42,14 +45,15 @@
  *   with the pane: the smoke spec presses it there with a dispatched click).
  */
 import { useEffect, useId, useLayoutEffect, useRef } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { CanonicalMoveButton } from "../dev/CanonicalMoveButton.tsx";
 import { useT } from "../i18n/I18nProvider.tsx";
 import { roundPhases } from "../i18n/content.ts";
 import { Sheet } from "../kit/Sheet.tsx";
 import { isActingWindow, windowDraftKey } from "../state/decisionWindow.ts";
-import { DEV_TOOLS_BUILD, useDecision, useDevTools, useDraft, useEngineView, useGame, useUi } from "../state/hooks.ts";
-import { PANE_RETURN_CONTROL, focusTable, usePane } from "../state/pane.ts";
+import { DEV_TOOLS_BUILD, useDecision, useDevTools, useDraft, useEngineView, useGame, useLayoutMode, useUi } from "../state/hooks.ts";
+import { isPhone } from "../state/layoutMode.ts";
+import { PANE_RETURN_CONTROL, focusTable, placeControlShown, usePane } from "../state/pane.ts";
 import { ConfirmBar, renderWindowText, useConfirmState } from "./ConfirmBar.tsx";
 import { OwnSummary } from "./OwnSummary.tsx";
 import "./DecisionPane.css";
@@ -80,6 +84,7 @@ export function DecisionPane() {
   const eyebrow = phaseName === null ? null : acting ? t("common.status.phaseYourTurn", { phase: phaseName }) : phaseName;
 
   const { hidden } = usePane();
+  const phone = isPhone(useLayoutMode());
 
   // The placement control the player last used (a Place shortcut, an opener above the world):
   // focus goes back there when the pane hides. Focus and clicks both count (WebKit does not
@@ -104,6 +109,9 @@ export function DecisionPane() {
   // mutation observer, so the move below is the one that counts.
   const kind = window.kind;
   const previous = useRef({ key, hidden, kind });
+  const { section, setSection } = ui;
+  // The focus move that waits for the Table tab to show (the section changes in the next commit).
+  const afterSection = useRef<(() => void) | null>(null);
   useLayoutEffect(() => {
     const before = previous.current;
     if (before.key === key && before.hidden === hidden) return;
@@ -114,7 +122,18 @@ export function DecisionPane() {
     const focusWasHere = active === null || active === document.body || (pane !== null && pane.contains(active));
     if (hidden) {
       // Same window: the player's own Clear or back to placing. A new key: a new turn.
-      if (focusWasHere) focusTable(document, { preferred: lastPlace.current, scroll: before.key === key ? true : "focus-visible" });
+      const focusBack = () => {
+        if (focusWasHere) focusTable(document, { preferred: lastPlace.current, scroll: before.key === key ? true : "focus-visible" });
+      };
+      // D20, D21: the pane hides for placing, so a phone section with nothing to place on (the Orders
+      // tab after a Deliver badge or the swap) gives way to the Table tab. Otherwise the player would
+      // read "place a worker" with no Place button in sight.
+      if (phone && section !== "table" && !placeControlShown(document)) {
+        afterSection.current = focusBack;
+        setSection("table");
+        return;
+      }
+      focusBack();
       return;
     }
     // A new window, or the pane shown again, starts at the top of its fields.
@@ -129,11 +148,41 @@ export function DecisionPane() {
     const heading = headingRef.current;
     if (isVisible(heading)) heading.focus({ preventScroll: true });
     else stripRef.current?.focus({ preventScroll: true });
-  }, [key, hidden, kind, acting]);
+  }, [key, hidden, kind, acting, phone, section, setSection]);
+
+  useLayoutEffect(() => {
+    const run = afterSection.current;
+    afterSection.current = null;
+    run?.();
+  }, [section]);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     confirm.confirm();
+  };
+
+  // D21: Enter is the default (the primary button, "Place · end turn"), Shift+Enter the secondary
+  // ("Place, then free actions"), wherever focus is in the pane: on the heading it focuses when it
+  // appears (outside the form, hence the handler on the pane), or on a choice. A button or link keeps
+  // its own Enter (Clear, Rules, Move up), except that Shift+Enter on the primary button is still the
+  // secondary choice. A held key never confirms (the Enter that pressed Place may repeat), and
+  // neither does an IME's Enter.
+  // Enter on a radio nobody has chosen yet chooses it, in every window: a keyboard player who tabbed
+  // to it means that entry, never what the form would otherwise send.
+  // Where End turn or Done is the only button, Enter presses it only if the list has nothing to lose
+  // (`alternativeTakesEnter`). Ending the window with entries left needs that button's own press: a
+  // stray Enter on the heading would otherwise give up the last chance to deliver for good.
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Enter" || event.repeat || event.nativeEvent.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
+    const target = event.target instanceof Element ? event.target : null;
+    const control = target?.closest('button, a[href], select, textarea, summary, [role="button"]') ?? null;
+    if (control !== null && !(event.shiftKey && control.getAttribute("data-action") === "confirm")) return;
+    event.preventDefault();
+    if (target instanceof HTMLInputElement && target.type === "radio" && !target.checked) target.click();
+    else if (confirm.alternativeOnly) {
+      if (!event.shiftKey && confirm.alternativeTakesEnter) confirm.sendAlternative();
+    } else if (event.shiftKey) confirm.confirmStay();
+    else confirm.confirm();
   };
 
   const strip = (
@@ -146,7 +195,7 @@ export function DecisionPane() {
   const Fields = spec.Component;
 
   return (
-    <aside ref={paneRef} className="pane" aria-label={t("common.landmark.decision")} data-window={window.kind} data-revision={model.revision} hidden={hidden}>
+    <aside ref={paneRef} className="pane" aria-label={t("common.landmark.decision")} data-window={window.kind} data-revision={model.revision} hidden={hidden} onKeyDown={acting ? onKeyDown : undefined}>
       <Sheet state={ui.sheet} onStateChange={ui.setSheet} strip={strip} stripAction={stripAction} stripRef={stripRef}>
         {eyebrow === null ? null : (
           <p className="pane-eyebrow" data-phase={model.roundPhase}>

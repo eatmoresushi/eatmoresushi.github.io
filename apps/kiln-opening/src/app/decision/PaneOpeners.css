@@ -1,10 +1,12 @@
-/* PaneOpeners (owner review, 2026-10-17): the hidden pane's bar, one slim band above the world
+/* PaneOpeners (owner review, 2026-10-17; D21): the hidden pane's bar, one slim band above the world
    (GameShell's `.shell-bar` cell places it and gives it the world's side padding). Two flex
-   items: the lead (the turn cue, one short line) and the openers' group (its label, then the
-   buttons). They share a line when they fit (desktop and tablet); otherwise the group moves,
+   items: the lead (the turn cue, one short line) and the chips' group (its label, then the
+   chips). They share a line when they fit (desktop and tablet); otherwise the group moves,
    whole, onto its own line under the lead, label and buttons in one row (phones down to 320px,
    in both languages). Only when even that row is too wide (large text sizes) do its items wrap
-   among themselves, so the page never scrolls sideways. */
+   among themselves, so the page never scrolls sideways. On small phones the bar must not crowd the
+   action spaces (D14, D21), however many chips there are: the group keeps one row of its own, which
+   scrolls sideways inside itself (the chip cut off at the edge says there is more). */
 @layer components {
   .pane-openers {
     display: flex;
@@ -52,8 +54,22 @@
     line-height: var(--lh-snug);
   }
 
+  /* The "Free actions" chips (owner UI decision D21). */
   .pane-opener {
     flex: none;
     max-width: 100%;
+    border-radius: var(--r-pill);
+  }
+
+  @media (max-width: 374.98px), (max-width: 899.98px) and (max-height: 667px) and (orientation: portrait) {
+    .pane-openers-row {
+      flex: 1 1 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      /* Room for a chip's focus ring inside the scroller. */
+      padding-block: 2px;
+      scrollbar-width: none;
+    }
   }
 }

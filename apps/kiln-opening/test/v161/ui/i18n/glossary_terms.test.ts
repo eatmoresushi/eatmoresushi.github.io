@@ -23,7 +23,6 @@ const VERB_KEYS: ReadonlyArray<readonly [keyof typeof CATALOG.common.zh, string]
   ["verb.decline", "Decline (an optional ability)"],
   ["verb.skip", "Skip (an optional step; never the Work Phase)"],
   ["verb.endTurn", "End turn"],
-  ["verb.done", "Done"],
   ["verb.form", "Form"],
   ["verb.decorate", "Decorate"],
   ["verb.glaze", "Glaze"],

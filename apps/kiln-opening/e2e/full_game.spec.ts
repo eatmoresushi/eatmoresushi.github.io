@@ -20,24 +20,43 @@
  * - none of the D3/D4 vocabulary is visible (odds, previews, cards left, a Fire-deck count…);
  * - `document.activeElement` is not `<body>`;
  * - Confirm held focus while it was sending (`aria-busy`).
+ * Before **every** pick, a free-action control (a chip, Sell, Use, a Deliver badge) shows only in
+ * the viewer's own Work turn and Order Phase turn: never during a worker action's later steps, on
+ * another player's turn, during the firing or at Cleanup (owner revision 5, change 36, R26).
  * The language is switched once mid-game, and the page is reloaded once mid-game: the same seat
  * comes back at the same revision (reconnect).
+ *
+ * **Free actions without extra clicks (owner UI decision D21).** Every case plays the turn three
+ * ways, chosen per decision from its revision (`turnPlanOf`): a free action first, from its chip;
+ * a free action first, from the piece it sits on (the Deliver badge, Sell 2, Use); or straight to a
+ * placement, more often with its second button ("Place, then free actions") so that the after-action
+ * list is reached. The rest of the time the primary button ends the turn in that one Confirm. In the
+ * after-action list a free action is preferred too, and its Confirm is "⟨Action⟩ · end turn" or plain
+ * "⟨Action⟩" by the same seeded choice. In the Order Phase a free action ("Deliver · done", "Deliver")
+ * waits until the Work turns' windows have been used; until then Done leaves a Flawed ceramic or a
+ * completable Order for the next Work turns' chips and list (`leavesOrderPhase`). A random
+ * game seldom has a ceramic that matches an Order, so every case sends its Apprentices to Form &
+ * Decorate, Glaze & Load, Canal Wharf and the Materials Yard (`preferencesOf`) and forms and loads what
+ * one of its own held Orders asks for (`handPreferences`). Each case must send a command with `endTurn: true` and press a
+ * second button at least once; the steered case must also send a free action in each of its windows
+ * (`FREE_ACTION_WINDOWS`). The commands are tallied by window in the annotations
+ * (`COMPLETE_ORDER@work:before_action`, `SELL_FLAWED@orders`, …).
  *
  * Cases (each runs in its own project only):
  * - 1440 EN, 4 players (1 human + 3 computers);
  * - 1440 EN, 2 players, **steered** to the V1.6.2 windows a random autopilot rarely meets: the
- *   autopilot's `prefer` list sends the Shifu to the Guild Hall (the Glazing & Loading deck
- *   inspected, Colour Samples and then a Firing Tech taken when offered, the inspected Techs back
- *   under the deck in a chosen order) and an Apprentice to Glaze & Load, the Workshop or the
- *   Commission Market (its Select: the private look and the reservations), and takes the Colour
+ *   autopilot's `prefer` list sends the Shifu, last in each round, to the Guild Hall (the Glazing &
+ *   Loading deck inspected, Colour Samples and then a Firing Tech taken when offered, the inspected
+ *   Techs back under the deck in a chosen order) or the Commission Market (its Select: the private
+ *   look and the reservations), and takes the Colour
  *   Samples swap, Protective Saggars' upgrade, Second Firing and a Fuel Ledger Contribution card
  *   (Fuel Ledger Stoke or Fuel Ledger Bank, v1.6.2 change 26) whenever they are offered, and
  *   owner revision 4's choices: Kiln Master's side when loading (R22), the Magistrate's Hall
- *   Shifu's Crown Order (change 33) and the sale of a Flawed ceramic (R20: a Sell button on the
- *   viewer's own Finished ceramics, or the sale option of the open window). A steered
- *   placement is completed inside its sub-editor (`within: ".b4-sub-region"`), a steered swap
- *   inside its form (the held Order to give up). It must confirm the Commission Market and Guild
- *   Hall windows; the V1.6.2 commands it sent are listed in the annotations;
+ *   Shifu's Crown Order (change 33) and the free actions (owner revision 5, change 36; never during
+ *   the firing or at Cleanup, R26). A steered placement is completed inside its sub-editor
+ *   (`within: ".b4-sub-region"`), a steered swap inside its form (the held Order to give up). It
+ *   must confirm the Commission Market and Guild Hall windows; the V1.6.2 commands it sent are
+ *   listed in the annotations;
  * - 390 ZH, 2 players;
  * - 844×390 EN, 3 players;
  * - 1024 ZH, 2 players;
@@ -49,8 +68,11 @@
  * may be made on the display and the look row, the Colour Samples swap gives up a held Order on
  * the hand row. Since owner revision 4 the Setup pick takes a Kiln and a face-up Main Order (the
  * display's toggles or the `mainOrder` radios), the firing has no Heat-marker step and no salvage
- * window, and a Flawed ceramic is sold from its Sell button (`[data-act="sell"]`).
+ * window, and a Flawed ceramic is sold as a free action (its Sell button, `[data-act="sell"]`, a chip,
+ * or the free-action list).
  */
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
 import { autopilotPick } from "./support/autopilot.ts";
@@ -72,8 +94,8 @@ interface GameCase {
 
 const CASES: readonly GameCase[] = [
   { title: "1440 EN, 1 human + 3 computers", width: 1440, height: 900, locale: "en", players: 4, policy: "strategic", seed: 1_441 },
-  // Seed 36 (two players, owner revision 4's setup): Colour Samples (T10) and the Fuel Ledger (T12) are face up from the start.
-  { title: "1440 EN, steered to the V1.6.2 windows, 1 human + 1 computer", width: 1440, height: 900, locale: "en", players: 2, policy: "canonical", seed: 36, steer: true },
+  // Seed 43 (two players): this steering reaches every window the case must, the three free-action windows among them.
+  { title: "1440 EN, steered to the V1.6.2 windows, 1 human + 1 computer", width: 1440, height: 900, locale: "en", players: 2, policy: "canonical", seed: 43, steer: true },
   { title: "390 ZH, 1 human + 1 computer", width: 390, height: 844, locale: "zh-CN", players: 2, policy: "strategic", seed: 3_902 },
   { title: "844×390 EN, 1 human + 2 computers", width: 844, height: 390, locale: "en", players: 3, policy: "strategic", seed: 8_443 },
   { title: "1024 ZH, 1 human + 1 computer", width: 1024, height: 768, locale: "zh-CN", players: 2, policy: "strategic", seed: 1_024 },
@@ -84,20 +106,17 @@ const MAX_PICKS = 20_000;
 
 /**
  * Steered placements, the first that can be pressed (a Place shortcut is there only when the
- * placement is legal): the Shifu to the Guild Hall; an Apprentice to Glaze & Load, else Form &
- * Decorate, else the Commission Market; then the Shifu to the Commission Market, and an Apprentice
- * to Canal Wharf for the Coins the Guild Hall and the Workshop cost.
+ * placement is legal). An Apprentice to Glaze & Load, else Form & Decorate; else, by the decision's
+ * plan, Canal Wharf for the Coins a vessel and the Guild Hall cost or the Materials Yard for Clay and
+ * Wood. The Shifu comes last, with what is left: the Guild Hall, else the Commission Market.
  */
-const PLACE_PREFERENCES: readonly string[] = [
-  '[data-act="place"][data-location-id="guild_hall"][data-worker="shifu"]',
-  '[data-act="place"][data-location-id="glaze_load"][data-worker="apprentice"]',
-  '[data-act="place"][data-location-id="form_decorate"][data-worker="apprentice"]',
-  '[data-act="place"][data-location-id="commission_market"][data-worker="apprentice"]',
-  '[data-act="place"][data-location-id="commission_market"][data-worker="shifu"]',
-  '[data-act="place"][data-location-id="canal_wharf"][data-worker="apprentice"]',
-];
-/** The Colour Samples swap's opener above the world (before the worker action) and its option in the after-action window. */
-const SWAP_PREFERENCES: readonly string[] = ['[data-pane-opener="colour_samples_swap"]', 'input[name="mode"][value="colour_samples_swap"]'];
+const APPRENTICE_MAKES: readonly string[] = ['[data-act="place"][data-location-id="glaze_load"][data-worker="apprentice"]', '[data-act="place"][data-location-id="form_decorate"][data-worker="apprentice"]'];
+const APPRENTICE_COINS = '[data-act="place"][data-location-id="canal_wharf"][data-worker="apprentice"]';
+const APPRENTICE_MATERIALS = '[data-act="place"][data-location-id="materials_yard"][data-worker="apprentice"]';
+const SHIFU_PLACES: readonly string[] = ['[data-act="place"][data-location-id="guild_hall"][data-worker="shifu"]', '[data-act="place"][data-location-id="commission_market"][data-worker="shifu"]'];
+const PLACE_PREFERENCES: readonly string[] = [...APPRENTICE_MAKES, APPRENTICE_COINS, APPRENTICE_MATERIALS, ...SHIFU_PLACES];
+/** The Colour Samples swap's chip above the world (before the worker action) and its entry in the after-action list (D21). */
+const SWAP_PREFERENCES: readonly string[] = ['[data-pane-opener="colour_samples_swap"]', 'input[name="freeAction"][value="colour_samples_swap"]'];
 /** The Shifu's Guild Hall takes, in the inspection's options or on the Tech display: Colour Samples, then a Firing Tech. */
 const TAKE_PREFERENCES: readonly string[] = ["T10", "T12", "T14", "T11"].flatMap((techId) => [`input[name="take"][value="${techId}"]`, `[data-act="tech"][data-tech-id="${techId}"]`]);
 /**
@@ -111,40 +130,107 @@ const FUEL_LEDGER_PREFERENCES: readonly string[] = ['input[name="card"][value="F
  */
 const REVISION_4_PREFERENCES: readonly string[] = ['input[name="kilnMaster"]:not([value="none"])', 'input[name="crownOrder"]:not([value="none"])'];
 /**
- * A Flawed ceramic's sale (R20): a Sell button on the viewer's own Finished ceramics, or the open
- * window's sale option. Either completes the form, so Confirm follows.
+ * The free actions before the worker action (owner revision 5, change 36; owner UI decision D21): the
+ * turn line's chips, or the same actions on the pieces. Either opens the form, and Confirm follows.
  */
-const SALE_PREFERENCES: readonly string[] = ['[data-act="sell"]', 'input[name="orders.sell"]', 'input[name="afterQuality.sell"]', 'input[name="trim.sell"]', 'input[name="work.sell"]'];
+const FREE_ACTION_CHIPS: readonly string[] = ['[data-pane-opener^="complete-"]', '[data-pane-opener="sell_flawed"]', '[data-pane-opener="imperial_priority"]'];
+const FREE_ACTION_PIECES: readonly string[] = ['[data-target="completable"] [data-act="order"]', '[data-act="sell"]', '[data-act="imperial-priority"]'];
+/** The list after the worker action and in the Order Phase, and the sale's own radios. */
+const FREE_ACTION_LIST: readonly string[] = ['input[name="freeAction"][value^="complete-"]', 'input[name="freeAction"][value="sell_flawed"]', 'input[name="freeAction"][value="imperial_priority"]', 'input[name="orders.sell"]', 'input[name="work.sell"]'];
+const FREE_ACTIONS: readonly string[] = [...FREE_ACTION_CHIPS, ...FREE_ACTION_PIECES, ...FREE_ACTION_LIST];
+/** The printed requirements of each Order (`data/orders.json`), to steer towards what the viewer's own hand asks for. */
+interface OrderCeramic {
+  shape?: string;
+  shapes?: readonly string[];
+  glaze?: string;
+  decoration?: string;
+  decorations?: readonly string[];
+}
+const ORDER_CERAMICS: ReadonlyMap<string, readonly OrderCeramic[]> = (() => {
+  const data = JSON.parse(readFileSync(fileURLToPath(new URL("../data/orders.json", import.meta.url)), "utf8")) as Record<"starting" | "main", ReadonlyArray<{ id: string; ceramics: readonly OrderCeramic[] }>>;
+  return new Map([...data.starting, ...data.main].map((order) => [order.id, order.ceramics]));
+})();
+
+/**
+ * Form and load what one of the viewer's own held Orders asks for, as a player would: a Finished
+ * ceramic that matches is what opens the Deliver chip. The target is the first held Order with the
+ * fewest ceramics, so a vessel and its load aim at the same Order; the engine still judges every command.
+ */
+function handPreferences(hand: readonly string[]): readonly string[] {
+  const [target] = [...hand].sort((a, b) => (ORDER_CERAMICS.get(a)?.length ?? 9) - (ORDER_CERAMICS.get(b)?.length ?? 9));
+  const ceramic = target === undefined ? undefined : ORDER_CERAMICS.get(target)?.[0];
+  if (ceramic === undefined) return [];
+  const shape = ceramic.shape ?? ceramic.shapes?.[0];
+  const decoration = ceramic.decoration ?? ceramic.decorations?.[0];
+  return [
+    ...(shape === undefined ? [] : [`input[name="vessels.0.shape"][value="${shape}"]`]),
+    ...(decoration === undefined ? [] : [`input[name="vessels.0.decoration"][value="${decoration}"]`]),
+    ...(ceramic.glaze === undefined ? [] : [`input[name="loads.0.glaze"][value="${ceramic.glaze}"]`]),
+  ];
+}
+
 /** After Quality: Protective Saggars' upgrade, else Second Firing (its card is the autopilot's choice). */
 const AFTER_QUALITY_PREFERENCES: readonly string[] = ['input[name="afterQuality"][value^="protective_saggars:"]', 'input[name="afterQuality"][value^="second_firing:"]'];
 /**
- * The steered case's preferences (`AutopilotArgs.prefer`), in order. Each is pressed at most once
- * per decision; the seeded autopilot completes every form.
+ * The steered case's other preferences (`AutopilotArgs.prefer`), in order. Each is pressed at most
+ * once per decision; the seeded autopilot completes every form.
  */
 const STEER: readonly string[] = [
-  ...SWAP_PREFERENCES,
   ...AFTER_QUALITY_PREFERENCES,
   ...FUEL_LEDGER_PREFERENCES,
   ...REVISION_4_PREFERENCES,
-  ...SALE_PREFERENCES,
   ...TAKE_PREFERENCES,
   // The Shifu inspects the Glazing & Loading deck (Colour Samples face up, or among the 2 seen).
   '[data-act="inspect"][data-discipline="glazing_loading"]',
-  ...PLACE_PREFERENCES,
 ];
+/** How this decision's turn is played (D21): a free action first, from its chip or its piece, or the placement first. */
+type TurnPlan = "chips" | "pieces" | "place";
+const TURN_PLANS: readonly TurnPlan[] = ["chips", "pieces", "place"];
+
+/**
+ * The plan of a decision, from its revision and the game's seed. Free actions are few in a game, so
+ * the windows still missing come first (`FREE_ACTION_WINDOWS`): one before a placement, then one after.
+ */
+function turnPlanOf(seed: number, revision: number, sent: ReadonlyMap<string, number>): TurnPlan {
+  const mixed = Math.imul(revision + 1, 0x9e3779b1) ^ seed;
+  const seeded = TURN_PLANS[((mixed >>> 16) & 0xffff) % TURN_PLANS.length]!;
+  if (!freeActionSent(sent, "work:before_action")) return seeded === "place" ? "chips" : seeded;
+  return freeActionSent(sent, "work:after_action") ? seeded : "place";
+}
+
+/**
+ * This Order Phase turn presses Done: a Flawed ceramic or a completable Order stays for the next Work
+ * turns' chips and list, until those windows have been used; then one turn takes a free action, and
+ * after that one in three. The last round has no Work turns to leave anything for.
+ */
+function leavesOrderPhase(plan: TurnPlan, sent: ReadonlyMap<string, number>, lastRound: boolean): boolean {
+  if (lastRound && !freeActionSent(sent, "orders")) return false;
+  if (!freeActionSent(sent, "work:before_action") || !freeActionSent(sent, "work:after_action")) return true;
+  return freeActionSent(sent, "orders") && plan !== "pieces";
+}
+
+/** This decision's preferences: the free actions the plan allows, what the hand asks for, the steered windows, then the placements. */
+function preferencesOf(game: GameCase, plan: TurnPlan, hand: readonly string[]): readonly string[] {
+  const free = plan === "chips" ? [...FREE_ACTION_CHIPS, ...FREE_ACTION_LIST] : plan === "pieces" ? [...FREE_ACTION_PIECES, ...FREE_ACTION_LIST] : FREE_ACTION_LIST;
+  const supply = plan === "place" ? [APPRENTICE_MATERIALS, APPRENTICE_COINS] : [APPRENTICE_COINS, APPRENTICE_MATERIALS];
+  const places = [...APPRENTICE_MAKES, ...supply];
+  // The swap gives up a held Order: one decision in three, so the hand keeps Orders to aim at.
+  return game.steer === true ? [...free, ...(plan === "pieces" ? SWAP_PREFERENCES : []), ...handPreferences(hand), ...STEER, ...places, ...SHIFU_PLACES] : [...free, ...handPreferences(hand), ...places];
+}
+
 /**
  * Preferences that are one choice: once one of a group is pressed, the rest of the group is
  * skipped in that decision. A placement and the swap open a form, which the autopilot then
  * completes inside (`within`: the placement's sub-editor, the swap's held Orders); a take, an
- * after-Quality ability and a Fuel Ledger card complete their form, so Confirm follows at once
- * when it can.
+ * after-Quality ability, a Fuel Ledger card and a free action complete their form, so Confirm
+ * follows at once when it can.
  */
 const STEER_GROUPS: ReadonlyArray<{ preferences: readonly string[]; within: (preferred: string) => string | null; confirm: boolean }> = [
   { preferences: [...SWAP_PREFERENCES, ...PLACE_PREFERENCES], within: (preferred) => (SWAP_PREFERENCES.includes(preferred) ? '[data-b4="colour-samples-swap"]' : ".b4-sub-region"), confirm: false },
   { preferences: TAKE_PREFERENCES, within: () => null, confirm: true },
   { preferences: AFTER_QUALITY_PREFERENCES, within: () => null, confirm: true },
   { preferences: FUEL_LEDGER_PREFERENCES, within: () => null, confirm: true },
-  { preferences: SALE_PREFERENCES, within: () => null, confirm: true },
+  { preferences: FREE_ACTIONS, within: () => null, confirm: true },
 ];
 /** Seeded picks inside a steered form before the autopilot may leave it. */
 const MAX_WITHIN_PICKS = 60;
@@ -158,22 +244,39 @@ const V162_COMMANDS = new Set([
   "USE_PROTECTIVE_SAGGARS",
   "USE_SECOND_FIRING",
   "SECOND_FIRING_CHOOSE",
-  // Owner revision 4 (R20).
+  // The free actions (owner revision 5, change 36), also tallied by window.
   "SELL_FLAWED",
+  "COMPLETE_ORDER",
+  "USE_IMPERIAL_PRIORITY",
 ]);
+/** The steered case sends a free action in each of these (`recordCommands`' keys). */
+const FREE_ACTION_WINDOWS: readonly string[] = ["work:before_action", "work:after_action", "orders"];
+/** A free action was sent in this window (`recordCommands`' keys). */
+function freeActionSent(sent: ReadonlyMap<string, number>, window: string): boolean {
+  return ["COMPLETE_ORDER", "SELL_FLAWED", "USE_IMPERIAL_PRIORITY"].some((type) => sent.has(`${type}@${window}`));
+}
+
+/** What this page sent: the tally, and the window of the press that is about to send. */
+interface CommandLog {
+  sent: Map<string, number>;
+  /** `work:before_action`, `work:after_action`, `orders`, …: set by the driver before each press. */
+  window: string;
+}
 
 /**
  * The game commands this page sends (`game_action` bodies), by type; a Fuel Ledger card
  * (`SUBMIT_CONTRIBUTION.FUEL_LEDGER_BANK` / `.FUEL_LEDGER_STOKE`), S07, Kiln Master's marker on a
- * load (`.kilnMaster`) and the Magistrate's Hall Shifu's Crown Order (`.crownOrder`) are counted apart.
+ * load (`.kilnMaster`) and the Magistrate's Hall Shifu's Crown Order (`.crownOrder`) are counted
+ * apart, and so are a command that ends the turn (`endTurn`, D21) and a free action in its window
+ * (`COMPLETE_ORDER@work:after_action`).
  */
-function recordCommands(page: Page): Map<string, number> {
-  const sent = new Map<string, number>();
+function recordCommands(page: Page): CommandLog {
+  const log: CommandLog = { sent: new Map(), window: "" };
   page.on("request", (request) => {
     if (!request.url().includes("/test-api-v161") || request.method() !== "POST") return;
     interface Body {
       operation?: string;
-      command?: { type?: string; card?: string; orderId?: string; kilnMaster?: number; loads?: Array<{ kilnMaster?: number }>; crownOrder?: unknown };
+      command?: { type?: string; card?: string; orderId?: string; kilnMaster?: number; loads?: Array<{ kilnMaster?: number }>; crownOrder?: unknown; endTurn?: boolean };
     }
     let body: Body | null;
     try {
@@ -189,9 +292,11 @@ function recordCommands(page: Page): Map<string, number> {
     if (command.type === "PLACE_GLAZE_LOAD" && (command.loads ?? []).some((load) => load.kilnMaster !== undefined)) keys.push("PLACE_GLAZE_LOAD.kilnMaster");
     if (command.type === "USE_IMPERIAL_PRIORITY" && command.kilnMaster !== undefined) keys.push("USE_IMPERIAL_PRIORITY.kilnMaster");
     if (command.type === "PLACE_MAGISTRATES_HALL" && command.crownOrder !== undefined) keys.push("PLACE_MAGISTRATES_HALL.crownOrder");
-    for (const key of keys) sent.set(key, (sent.get(key) ?? 0) + 1);
+    if (command.type === "COMPLETE_ORDER" || command.type === "SELL_FLAWED" || command.type === "USE_IMPERIAL_PRIORITY") keys.push(`${command.type}@${log.window}`);
+    if (command.endTurn === true) keys.push("endTurn");
+    for (const key of keys) log.sent.set(key, (log.sent.get(key) ?? 0) + 1);
   });
-  return sent;
+  return log;
 }
 /** D3/D4 vocabulary that must never be visible (rules panels are closed unless opened). */
 const BANNED = /\b(?:odds|chance|probability|ladder|preview|expected)\b|cards (?:left|remaining)|left in the deck|概率|几率|余张|预估|预览|剩余火牌|牌堆剩余|Fire deck\W{0,3}\d|窑火牌堆(?:余|剩余?|共|还有|[：:（(]|\s)*\d/i;
@@ -289,6 +394,22 @@ async function watchConfirmFocus(page: Page, selector: string): Promise<void> {
   }, selector);
 }
 
+/**
+ * The free-action controls on the page, and the window they show in (serialized into the page). A
+ * form's hidden pane still names its window, so this also holds while the viewer is placing.
+ */
+function freeActionControls(): { window: string; step: string; count: number; hand: string[]; lastRound: boolean } {
+  const form = document.querySelector("form.pane-form[data-window]");
+  return {
+    // The top bar's round counter, "5/5" (no number of rounds here: this runs in the page).
+    lastRound: /5\s*\/\s*5/.test(document.querySelector(".top-bar")?.textContent ?? ""),
+    window: form?.getAttribute("data-window") ?? "",
+    step: form?.getAttribute("data-step") ?? "",
+    count: document.querySelectorAll('[data-act="sell"], [data-act="imperial-priority"], [data-pane-opener], [data-target="completable"]').length,
+    hand: Array.from(document.querySelectorAll(".ordwrap--hand [data-order-id]")).map((order) => order.getAttribute("data-order-id") ?? ""),
+  };
+}
+
 async function afterConfirmChecks(page: Page, request: APIRequestContext, roomCode: string, step: string): Promise<void> {
   const ids = await secretIds(request, roomCode);
   const leaks = await page.evaluate((secret) => {
@@ -310,9 +431,12 @@ for (const game of CASES) {
 
     test("plays to the final results through the UI", async ({ page, request }) => {
       test.setTimeout(1_800_000);
-      await resetBackend(request, { seed: game.seed, policy: game.policy });
+      // `KILN_E2E_SEED=<n>` plays another game of this case (to search for seeds).
+      const seed = Number(process.env["KILN_E2E_SEED"] ?? game.seed);
+      await resetBackend(request, { seed, policy: game.policy });
       const errorLog = collectErrors(page);
-      const sent = recordCommands(page);
+      const commands = recordCommands(page);
+      const sent = commands.sent;
 
       // Home: the language through the UI, then a room.
       await page.goto("./");
@@ -337,32 +461,43 @@ for (const game of CASES) {
       let switched = false;
       let reloaded = false;
       let reloadDue = false;
+      // Presses so far: the autopilot's seed, so waiting for the computers does not change a choice.
+      let presses = 0;
+      let stayPresses = 0;
       // Steering state of the current decision (the pane's revision): preferences used, and the
       // sub-editor a steered placement is completed in.
       let decision = -1;
+      let plan: TurnPlan = "place";
       let tried: string[] = [];
       let within: string | undefined;
       let withinPicks = 0;
       let confirmNext = false;
-      for (let tick = 1; tick <= MAX_PICKS; tick += 1) {
+      for (let attempt = 1; attempt <= MAX_PICKS; attempt += 1) {
         if ((await page.locator('form.pane-form[data-window="final"]').count()) > 0) break;
-        if (game.steer === true) {
-          const revision = await revisionOf(page);
-          if (revision !== decision) {
-            decision = revision;
-            tried = [];
-            within = undefined;
-            withinPicks = 0;
-            confirmNext = false;
-          }
-          if (within !== undefined && withinPicks >= MAX_WITHIN_PICKS) within = undefined;
+        const revision = await revisionOf(page);
+        if (revision !== decision) {
+          decision = revision;
+          plan = turnPlanOf(seed, revision, sent);
+          tried = [];
+          within = undefined;
+          withinPicks = 0;
+          confirmNext = false;
         }
+        if (within !== undefined && withinPicks >= MAX_WITHIN_PICKS) within = undefined;
+        // Free actions only in the viewer's own Work turn and Order Phase turn (change 36, R26).
+        const controls = await page.evaluate(freeActionControls);
+        if (controls.window !== "work" && controls.window !== "orders") expect(controls.count, `free-action controls in ${controls.window}`).toBe(0);
+        const leaveOrderPhase = controls.window === "orders" && leavesOrderPhase(plan, sent, controls.lastRound);
         const pick: AutopilotPick = await page.evaluate(autopilotPick, {
-          seed: game.seed,
-          tick,
-          confirmChance: confirmNext ? 1 : 0.55,
-          altChance: confirmNext ? 0 : 0.25,
-          ...(game.steer === true ? { prefer: STEER, tried } : {}),
+          seed,
+          tick: presses + 1,
+          // An Order Phase left for later: Done, so the Flawed ceramic or the Order is still there for the Work turns.
+          confirmChance: leaveOrderPhase ? 0 : confirmNext ? 1 : 0.55,
+          altChance: leaveOrderPhase ? 1 : confirmNext ? 0 : 0.25,
+          // The placement first: more often its second button, so the after-action list is reached.
+          stayChance: plan === "place" ? 0.75 : 0.2,
+          prefer: leaveOrderPhase ? [] : preferencesOf(game, plan, controls.hand),
+          tried,
           ...(within === undefined ? {} : { within }),
         });
         if (pick.kind === "none" && within !== undefined) {
@@ -396,13 +531,16 @@ for (const game of CASES) {
           continue;
         }
         const before = await revisionOf(page);
+        presses += 1;
         if (pick.kind === "choice" && pick.preferred !== undefined) {
           const preferred: string = pick.preferred;
           tried.push(preferred);
           const group = STEER_GROUPS.find((candidate) => candidate.preferences.includes(preferred));
           if (group !== undefined) {
-            // One steered choice of the group per decision.
+            // One steered choice of the group per decision. A free action's form is finished before a
+            // placement is preferred (a Place would move on from it).
             tried.push(...group.preferences);
+            if (group.preferences === FREE_ACTIONS) tried.push(...PLACE_PREFERENCES, ...SWAP_PREFERENCES);
             const form = group.within(preferred);
             if (form !== null) {
               within = form;
@@ -420,6 +558,8 @@ for (const game of CASES) {
           if (pick.describe.startsWith("table place")) placeShortcuts += 1;
           continue;
         }
+        commands.window = controls.step === "" ? controls.window : `${controls.window}:${controls.step}`;
+        if (pick.describe === "Confirm, then free actions") stayPresses += 1;
         // Confirm and the alternative are pressed as a keyboard user would find them focused, so the
         // focus checks mean the same everywhere. Safari (WebKit) does not focus a button on click and
         // its mousedown clears focus to <body>, so there the focused button is pressed with Enter.
@@ -452,9 +592,17 @@ for (const game of CASES) {
       for (const window of ["kiln_selection", "work"]) expect(windows.get(window) ?? 0, window).toBeGreaterThan(0);
       // Every worker was placed from the table (owner review, 2026-10-17).
       expect(placeShortcuts, "Place shortcuts pressed on the table").toBeGreaterThan(0);
+      // D21: some turns ended in the one Confirm, and some went on after a placement's second button.
+      const freeActions = [...sent.entries()].filter(([type]) => type.includes("@")).map(([type, n]) => `${type}×${n}`);
+      const tallies = `endTurn×${sent.get("endTurn") ?? 0}, second buttons×${stayPresses}; ${freeActions.join(", ")}`;
+      test.info().annotations.push({ type: "free actions (D21)", description: tallies });
+      expect(sent.get("endTurn") ?? 0, `a turn ended in one Confirm (${tallies})`).toBeGreaterThan(0);
+      expect(stayPresses, `a second button was pressed (${tallies})`).toBeGreaterThan(0);
       if (game.steer === true) {
         // The Commission Market's look and reservation, and the Shifu's Guild Hall takes, through their forms.
         for (const window of ["commission", "guild_inspection"]) expect(windows.get(window) ?? 0, `${window} (steered)`).toBeGreaterThan(0);
+        // A free action before the placement, after it, and in the Order Phase.
+        for (const window of FREE_ACTION_WINDOWS) expect(freeActionSent(sent, window), `a free action in ${window} (${tallies})`).toBe(true);
         test.info().annotations.push({
           type: "V1.6.2 commands",
           description: [...sent.entries()]

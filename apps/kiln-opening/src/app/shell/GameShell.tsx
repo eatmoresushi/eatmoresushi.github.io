@@ -36,7 +36,7 @@
  * `data-pane="hidden"` and the grid drops the pane's cell: on desktop and tablet the world takes
  * the pane's column, on phones there is no bottom sheet, in short landscape no side column. A slim
  * `bar` row then sits above the world (`decision/PaneOpeners`): the turn cue ("Your turn: place a
- * worker · 3 left") and the openers of the abilities that may come first, if any; the row is
+ * worker · 3 left") and the "Free actions" chips, if any (owner UI decision D21); the row is
  * empty, and so takes no room, while the pane shows. In the markup it comes before the world,
  * where it is drawn. GameScreen passes no `paneBar`, so the shell supplies it.
  */

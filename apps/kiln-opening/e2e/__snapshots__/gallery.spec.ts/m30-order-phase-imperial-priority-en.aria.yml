@@ -1,0 +1,54 @@
+- complementary "Your decision":
+  - paragraph: Order Phase · Your turn
+  - 'heading "Order Phase: free actions" [level=2]'
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
+    - group "Resources":
+      - strong: "3"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "1"
+      - text: Coin
+    - text: /3 Orders in hand Recognition 3\/4 \d+ VP/
+  - 'form "Order Phase: free actions"':
+    - paragraph: "In First Player order, after the firing. Take any number of free actions, one at a time: complete held Orders, sell a Flawed ceramic, use Imperial Priority. The choices are checked again after each one."
+    - group "Free actions":
+      - text: ""
+      - radio "Deliver S04 4 VP 4 Coins any Shape · Moon White · any Decoration · Standard+"
+      - text: Deliver S04 4 VP 4 Coins any Shape · Moon White · any Decoration · Standard+
+      - 'button "Full rules: Order S04"'
+      - radio "Imperial Priority" [checked]
+      - text: Imperial Priority
+    - paragraph: A free action that costs nothing. Not a worker action and not a Glaze & Load action.
+    - 'button "Full rules: Recognition 3 · Imperial Priority"'
+    - paragraph: "This round’s firing is over: the ceramic waits in your Imperial Kiln and is fired in the next round’s firing."
+    - group "Shaped vessel for your Imperial Kiln":
+      - text: ""
+      - radio "Plate, Plain" [checked]
+      - text: Plate, Plain
+    - group "Glaze":
+      - text: ""
+      - radio "White" [checked]
+      - text: White
+      - radio "Celadon"
+      - text: Celadon
+      - radio "Grey-Green"
+      - text: Grey-Green
+      - radio "Moon White"
+      - text: Moon White
+    - group "Imperial modifier":
+      - text: ""
+      - radio "−1" [checked]
+      - text: −1
+      - radio "0"
+      - text: "0"
+      - radio "+1"
+      - text: "+1"
+    - paragraph:
+      - text: "Imperial Priority:"
+      - strong: Plate, Plain
+      - text: → White, Imperial modifier −1
+    - button "Imperial Priority · done"
+    - button "Imperial Priority"
+    - button "Done"

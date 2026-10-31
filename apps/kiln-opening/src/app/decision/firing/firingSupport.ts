@@ -59,11 +59,11 @@ export function firingCeramicFacts(view: PlayerView, stage: FiringStageView | nu
   };
 }
 
-/** The viewer's ceramics of this firing (not sold, R20), in ceramic sequence order. */
+/** The viewer's ceramics of this firing, in ceramic sequence order (none is sold during the firing, R26). */
 export function ownFiringCeramicIds(model: GameModel): CeramicId[] {
   const stage = model.firingStage;
   if (stage === null || model.viewerId === null) return [];
-  return stage.ceramics.filter((ceramic) => ceramic.ownerId === model.viewerId && !ceramic.sold).map((ceramic) => ceramic.id);
+  return stage.ceramics.filter((ceramic) => ceramic.ownerId === model.viewerId).map((ceramic) => ceramic.id);
 }
 
 /**

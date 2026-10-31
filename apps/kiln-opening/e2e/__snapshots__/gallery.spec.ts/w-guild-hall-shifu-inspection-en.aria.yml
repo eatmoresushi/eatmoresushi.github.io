@@ -31,15 +31,15 @@
       - radio "Decorator's Kit 2 Coins" [disabled]
       - text: Decorator's Kit 2 Coins Form & Decorate
       - strong: "Once per round:"
-      - text: a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less. Stacks with the Shifu discount.
+      - text: a vessel you form costs 1 Coin less. Stacks with the Shifu discount.
       - paragraph: You already own a Form & Decorate Tech.
       - radio "Reworking Table 2 Coins" [disabled]
       - text: Reworking Table 2 Coins Form & Decorate
       - strong: "Once per round, when you glaze and load a Shaped vessel:"
       - text: first change its Shape to any other Shape. Pay no Clay; its Decoration stays.
       - paragraph: You already own a Form & Decorate Tech.
-      - radio "Colour Samples 2 Coins"
-      - text: Colour Samples 2 Coins Glazing & Loading
+      - radio "Colour Samples 3 Coins"
+      - text: Colour Samples 3 Coins Glazing & Loading
       - strong: "When acquired:"
       - text: Select 3.
       - strong: "Ongoing:"
@@ -50,8 +50,8 @@
       - text: Kiln Tending 3 Coins Glazing & Loading
       - strong: "Once per round, after a Glaze & Load action that loaded at least 1 ceramic:"
       - text: gain 1 Clay + 1 Wood.
-      - radio "Protective Saggars 3 Coins"
-      - text: Protective Saggars 3 Coins Firing
+      - radio "Protective Saggars 2 Coins"
+      - text: Protective Saggars 2 Coins Firing
       - strong: "Always:"
       - text: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard.
       - strong: "Once per round, after Quality is assigned:"
