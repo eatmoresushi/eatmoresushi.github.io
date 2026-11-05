@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<title>Resume – Luyuan He (Allen)</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<!-- SEO -->
+	<meta name="description"
+		content="Resume of Luyuan He (Allen), Senior Test Automation Specialist in Sydney. WebdriverIO, Playwright, Selenium, Appium, CI/CD." />
+	<link rel="canonical" href="https://luyuan.me/resume.html" />
+
+	<!-- Social sharing -->
+	<meta property="og:title" content="Resume – Luyuan He (Allen)" />
+	<meta property="og:description"
+		content="Senior Test Automation Specialist in Sydney. WebdriverIO, Playwright, Selenium, Appium, CI/CD." />
+	<meta property="og:type" content="profile" />
+	<meta property="og:url" content="https://luyuan.me/resume.html" />
+	<meta property="og:image" content="https://luyuan.me/og-image.png" />
+	<meta name="twitter:card" content="summary_large_image" />
+
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link
+		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+		rel="stylesheet" />
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+	<link rel="stylesheet" href="style.css" />
+
+	<style>
+		body {
+			background-color: #f1f5f9;
+		}
+
+		.resume-toolbar {
+			max-width: 860px;
+		}
+
+		.resume-paper {
+			max-width: 860px;
+			background: var(--surface);
+			border: 1px solid var(--line);
+			border-radius: var(--radius);
+			box-shadow: var(--shadow-sm);
+			padding: 3rem 3.5rem;
+		}
+
+		/* Name + contact line */
+		.resume-paper h1 {
+			text-align: center;
+			font-size: 2.25rem;
+			letter-spacing: 0.04em;
+			padding-bottom: 0.75rem;
+			margin-bottom: 0.75rem;
+			border-bottom: 2px solid var(--ink);
+		}
+
+		.resume-paper h1 + p {
+			text-align: center;
+			color: var(--muted);
+			margin-bottom: 1.25rem;
+		}
+
+		/* Section headings reuse the site's blue accent bar from style.css */
+		.resume-paper h2 {
+			font-size: 1.1rem;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			margin-top: 2rem;
+			margin-bottom: 1rem;
+		}
+
+		.resume-paper h2::after {
+			width: 40px;
+			margin-top: 0.35rem;
+		}
+
+		/* Job title on the left, dates on the right */
+		.role-head {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: baseline;
+			column-gap: 1rem;
+			margin-top: 1.25rem;
+			margin-bottom: 0.25rem;
+		}
+
+		.role-head h3 {
+			font-size: 1.05rem;
+			margin: 0;
+		}
+
+		.role-dates {
+			font-style: italic;
+			color: var(--muted);
+			white-space: nowrap;
+		}
+
+		.role-note {
+			color: var(--muted);
+			margin-bottom: 0.25rem;
+		}
+
+		.resume-paper ul {
+			margin-bottom: 0.5rem;
+		}
+
+		.resume-paper ul li {
+			margin-bottom: 0.3rem;
+		}
+
+		@media (max-width: 576px) {
+			/* Full-bleed sheet on phones */
+			.resume-paper {
+				padding: 1.75rem 1rem;
+				border-radius: 0;
+				box-shadow: none;
+			}
+
+			.resume-paper h1 {
+				font-size: 1.75rem;
+			}
+		}
+
+		/* Printing the web page gives a clean, paper-style resume */
+		@media print {
+			@page {
+				margin: 14mm;
+			}
+
+			body {
+				background: #fff;
+				padding-top: 0;
+				font-size: 10.5pt;
+			}
+
+			.navbar,
+			.resume-toolbar,
+			footer {
+				display: none !important;
+			}
+
+			main {
+				padding: 0 !important;
+			}
+
+			.resume-paper {
+				max-width: none;
+				box-shadow: none;
+				padding: 0;
+			}
+
+			.resume-paper a {
+				color: inherit;
+			}
+
+			.role-head,
+			.resume-paper li {
+				break-inside: avoid;
+			}
+
+			.resume-paper h2,
+			.role-head {
+				break-after: avoid;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<a class="visually-hidden-focusable skip-link" href="#resume-content">Skip to content</a>
+
+	<nav class="navbar navbar-expand-lg sticky-top site-nav" aria-label="Primary navigation">
+		<div class="container">
+			<a class="navbar-brand" href="/">
+				<span class="brand-mark" aria-hidden="true">LH</span>
+				<span>Luyuan He</span>
+			</a>
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNav"
+				aria-controls="siteNav" aria-expanded="false" aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse" id="siteNav">
+				<ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+					<li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+					<li class="nav-item"><a class="nav-link" href="/#skills">Skills</a></li>
+					<li class="nav-item"><a class="nav-link" href="/#experience">Experience</a></li>
+					<li class="nav-item"><a class="nav-link" href="/#projects">Projects</a></li>
+					<li class="nav-item"><a class="nav-link" href="/#contact">Contact</a></li>
+					<li class="nav-item ms-lg-2">
+						<a class="btn btn-sm btn-primary" href="resume.html" aria-current="page">
+							<i class="bi bi-file-earmark-person" aria-hidden="true"></i>Resume
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+	<main class="py-4 py-md-5">
+		<div class="container resume-toolbar d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+			<a href="/" class="text-secondary">
+				<i class="bi bi-arrow-left" aria-hidden="true"></i> Back to luyuan.me
+			</a>
+			<div class="d-flex flex-wrap gap-2">
+				<a class="btn btn-primary" href="resume.pdf" download="Luyuan-He-Resume.pdf">
+					<i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> Download PDF
+				</a>
+				<a class="btn btn-outline-secondary" href="resume.md" download="Luyuan-He-Resume.md">
+					<i class="bi bi-markdown" aria-hidden="true"></i> Markdown
+				</a>
+			</div>
+		</div>
+
+		<!-- Rendered from resume.md; edit that file to change the resume. -->
+		<article id="resume-content" class="container resume-paper" aria-busy="true">
+			<p class="text-secondary mb-0">Loading resume…</p>
+			<noscript>
+				<p class="mt-3 mb-0">
+					This page needs JavaScript to display the resume. You can
+					<a href="resume.pdf">download the PDF</a> or
+					<a href="resume.md">read the Markdown version</a> instead.
+				</p>
+			</noscript>
+		</article>
+	</main>
+
+	<footer class="site-footer">
+		<div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+			<span>&copy; 2026 Luyuan He. All rights reserved.</span>
+			<a href="/">Back to luyuan.me</a>
+		</div>
+	</footer>
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+	<script>
+		(function () {
+			const target = document.getElementById('resume-content');
+
+			// Pair each job title (h3) with the italic dates line that follows it,
+			// so the dates sit on the right like in the PDF.
+			function groupRoles(root) {
+				root.querySelectorAll('h3').forEach(function (heading) {
+					const dates = heading.nextElementSibling;
+					if (!isItalicLine(dates)) return;
+
+					const head = document.createElement('div');
+					head.className = 'role-head';
+					heading.before(head);
+					head.append(heading);
+
+					const span = document.createElement('span');
+					span.className = 'role-dates';
+					span.textContent = dates.textContent.trim();
+					head.append(span);
+					dates.remove();
+
+					// An optional second italic line (e.g. "Working on-site at …").
+					const note = head.nextElementSibling;
+					if (isItalicLine(note)) note.classList.add('role-note');
+				});
+			}
+
+			function isItalicLine(el) {
+				return !!el && el.tagName === 'P' && el.children.length === 1 &&
+					el.firstElementChild.tagName === 'EM' &&
+					el.textContent.trim() === el.firstElementChild.textContent.trim();
+			}
+
+			function openExternalLinksInNewTab(root) {
+				root.querySelectorAll('a[href^="http"]').forEach(function (link) {
+					if (link.host !== location.host) {
+						link.target = '_blank';
+						link.rel = 'noopener';
+					}
+				});
+			}
+
+			fetch('resume.md', { cache: 'no-cache' })
+				.then(function (response) {
+					if (!response.ok) throw new Error('HTTP ' + response.status);
+					return response.text();
+				})
+				.then(function (markdown) {
+					target.innerHTML = marked.parse(markdown);
+					groupRoles(target);
+					openExternalLinksInNewTab(target);
+				})
+				.catch(function () {
+					target.innerHTML =
+						'<p class="mb-0">The resume could not be loaded right now. ' +
+						'You can <a href="resume.pdf">download the PDF</a> instead.</p>';
+				})
+				.finally(function () {
+					target.removeAttribute('aria-busy');
+				});
+		})();
+	</script>
+</body>
+
+</html>
