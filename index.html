@@ -5,7 +5,7 @@
 	<meta charset="UTF-8" />
 	<title>Luyuan He (Allen) - QA Automation Engineer</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<meta name="theme-color" content="#f8fafc" />
+	<meta name="theme-color" content="#fcf8f5" />
 
 	<!-- SEO -->
 	<meta name="description"
@@ -31,15 +31,12 @@
 	<link rel="stylesheet" href="style.css" />
 </head>
 
-<body data-bs-spy="scroll" data-bs-target="#siteNav" data-bs-root-margin="0px 0px -55%">
+<body>
 	<a class="visually-hidden-focusable skip-link" href="#main">Skip to content</a>
 
 	<nav class="navbar navbar-expand-lg sticky-top site-nav" aria-label="Primary navigation">
 		<div class="container">
-			<a class="navbar-brand" href="#top">
-				<span class="brand-mark" aria-hidden="true">LH</span>
-				<span>Luyuan He</span>
-			</a>
+			<a class="navbar-brand" href="#top">Luyuan He<span class="brand-dot" aria-hidden="true"></span></a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNav"
 				aria-controls="siteNav" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
@@ -66,7 +63,7 @@
 			<div class="row align-items-center g-4 g-lg-5">
 				<div class="col-lg-7">
 					<p class="eyebrow"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> Sydney, Australia</p>
-					<h1 class="hero-title">Luyuan He <span class="hero-alias">(Allen)</span></h1>
+					<h1 class="hero-title">Luyuan He <span class="text-gradient">(Allen)</span></h1>
 					<p class="hero-role">QA Automation Engineer</p>
 					<p class="hero-lead">
 						I build test automation frameworks and CI pipelines for web, mobile and TV apps, so teams
@@ -152,19 +149,19 @@
 					<div class="col-lg-5 d-flex align-items-center">
 						<div class="stats">
 							<div class="stat">
-								<span class="stat-value">6+</span>
+								<span class="stat-value text-gradient">6+</span>
 								<span class="stat-label">years in software testing</span>
 							</div>
 							<div class="stat">
-								<span class="stat-value">40%</span>
+								<span class="stat-value text-gradient">40%</span>
 								<span class="stat-label">lower bug-escape rate at Foxtel</span>
 							</div>
 							<div class="stat">
-								<span class="stat-value">55%</span>
+								<span class="stat-value text-gradient">55%</span>
 								<span class="stat-label">less manual test effort on mobile</span>
 							</div>
 							<div class="stat">
-								<span class="stat-value">30%</span>
+								<span class="stat-value text-gradient">30%</span>
 								<span class="stat-label">earlier defect detection with shift-left</span>
 							</div>
 						</div>
@@ -311,7 +308,7 @@
 									<li>Playwright</li>
 									<li>Supabase</li>
 								</ul>
-								<a href="/kiln-opening/" class="btn btn-kiln stretched-link align-self-start">
+								<a href="/kiln-opening/" class="btn btn-primary stretched-link align-self-start">
 									<i class="bi bi-dice-5" aria-hidden="true"></i>Play Kiln Opening
 								</a>
 							</div>
@@ -418,14 +415,14 @@
 					Email is the quickest way to reach me. You can also find me on LinkedIn and GitHub.
 				</p>
 				<div class="d-flex justify-content-center flex-wrap gap-2">
-					<a class="btn btn-light" href="mailto:he@luyuan.me">
+					<a class="btn btn-lg btn-primary" href="mailto:he@luyuan.me">
 						<i class="bi bi-envelope" aria-hidden="true"></i>he@luyuan.me
 					</a>
-					<a class="btn btn-outline-light" href="https://www.linkedin.com/in/luyuanhe/" target="_blank"
+					<a class="btn btn-lg btn-quiet" href="https://www.linkedin.com/in/luyuanhe/" target="_blank"
 						rel="noopener">
 						<i class="bi bi-linkedin" aria-hidden="true"></i>LinkedIn
 					</a>
-					<a class="btn btn-outline-light" href="https://github.com/eatmoresushi" target="_blank" rel="noopener">
+					<a class="btn btn-lg btn-quiet" href="https://github.com/eatmoresushi" target="_blank" rel="noopener">
 						<i class="bi bi-github" aria-hidden="true"></i>GitHub
 					</a>
 				</div>
@@ -458,6 +455,42 @@
 					bootstrap.Collapse.getOrCreateInstance(menu).hide();
 				});
 			});
+		})();
+
+		// Highlight the navbar link for the section you're reading. The last section (Contact)
+		// is too short to reach the top of the screen, so it counts once you hit the bottom.
+		(function () {
+			const links = Array.from(document.querySelectorAll('#siteNav .nav-link[href^="#"]'));
+			const sections = links.map(function (link) { return document.querySelector(link.hash); });
+			const offset = 120; // just below the sticky navbar
+			let queued = false;
+
+			function update() {
+				queued = false;
+				let current = -1;
+				sections.forEach(function (section, i) {
+					if (section && section.getBoundingClientRect().top <= offset) current = i;
+				});
+				const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+				if (atBottom) current = sections.length - 1;
+
+				links.forEach(function (link, i) {
+					const isCurrent = i === current;
+					link.classList.toggle('active', isCurrent);
+					if (isCurrent) link.setAttribute('aria-current', 'location');
+					else link.removeAttribute('aria-current');
+				});
+			}
+
+			function queueUpdate() {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(update);
+			}
+
+			window.addEventListener('scroll', queueUpdate, { passive: true });
+			window.addEventListener('resize', queueUpdate);
+			update();
 		})();
 	</script>
 </body>
