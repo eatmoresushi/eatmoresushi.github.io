@@ -37,7 +37,7 @@ After applying migrations, confirm `kiln-opening-session-retention` appears unde
 
 ## GitHub Pages
 
-In the repository settings, choose **GitHub Actions** as the Pages source. A push to `master` runs engine/backend tests and the production build, preserves the root `CNAME`, and deploys:
+In the repository settings, choose **GitHub Actions** as the Pages source. A push to `master` runs engine/backend tests and the production build, preserves the root `CNAME`, and deploys the sites below. The game's build is cached under a hash of `apps/kiln-opening/` and the workflow file: a push that changes neither reuses the last build and skips the install, test and build steps. After changing the Supabase repository variables, run the workflow by hand (Actions → Build and deploy luyuan.me → Run workflow) with **Rebuild and test Kiln Opening** ticked so the new values are built in.
 
 - Homepage: `https://luyuan.me/`
 - Game: `https://luyuan.me/kiln-opening/`
