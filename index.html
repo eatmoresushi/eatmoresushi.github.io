@@ -314,150 +314,135 @@
 		<section id="projects" class="section section-alt">
 			<div class="container">
 				<h2>Projects</h2>
-				<div class="row g-4">
-					<div class="col-lg-6">
-						<article class="project-card project-featured">
-							<p class="project-kicker"><span class="live-dot" aria-hidden="true"></span>Live · Play in your browser</p>
-							<h3>Kiln Opening / 开窑</h3>
-							<p>
-								A synchronous 2–4 player strategy game about Song Dynasty ceramic workshops, with a
-								server-authoritative rules engine and reconnect-safe multiplayer play.
-							</p>
-							<div class="project-footer">
-								<ul class="tags">
-									<li>React</li>
-									<li>TypeScript</li>
-									<li>Playwright</li>
-									<li>Supabase</li>
-								</ul>
-								<a href="/kiln-opening/" class="btn btn-primary stretched-link align-self-start">
-									<i class="bi bi-dice-5" aria-hidden="true"></i>Play Kiln Opening
-								</a>
-							</div>
-						</article>
-					</div>
+				<!-- Every card is the same size: the grid makes all rows as tall as the tallest card. -->
+				<div class="project-grid">
+					<article class="project-card project-featured">
+						<p class="project-kicker"><span class="live-dot" aria-hidden="true"></span>Live · Browser game</p>
+						<h3>Kiln Opening / 开窑</h3>
+						<p>
+							A 2–4 player strategy game about Song Dynasty ceramic workshops, with a server-authoritative
+							rules engine and reconnect-safe multiplayer.
+						</p>
+						<div class="project-footer">
+							<ul class="tags">
+								<li>React</li>
+								<li>TypeScript</li>
+								<li>Supabase</li>
+							</ul>
+							<a href="/kiln-opening/" class="project-link stretched-link">Play Kiln Opening<i
+									class="bi bi-arrow-right" aria-hidden="true"></i></a>
+						</div>
+					</article>
 
-					<div class="col-md-6 col-lg-3">
-						<article class="project-card">
-							<p class="project-kicker">Work · Bupa</p>
-							<h3>QA_Flow</h3>
-							<p>
-								An AI agent-assisted testing process for Azure DevOps stories, which I designed and my squad
-								adopted. Over four releases it helped draft 380+ test cases and 50+ automated tests.
-							</p>
-							<ol class="flow" aria-label="QA_Flow steps">
-								<li>Read the story ticket</li>
-								<li>Create the ADO test plan</li>
-								<li>Test with Playwright CLI and API checks</li>
-								<li>Capture evidence</li>
-								<li>Comment on the ticket</li>
-								<li>Plan automation if suitable</li>
-								<li>Write the automation</li>
-							</ol>
-							<div class="project-footer">
-								<p class="flow-note">
-									<i class="bi bi-person-check" aria-hidden="true"></i>Human review at every step
-								</p>
-								<ul class="tags">
-									<li>AI agents</li>
-									<li>Azure DevOps</li>
-									<li>Playwright</li>
-								</ul>
-							</div>
-						</article>
-					</div>
+					<article class="project-card">
+						<p class="project-kicker">Work · Bupa</p>
+						<h3>QA_Flow</h3>
+						<p>
+							An AI agent-assisted testing process I designed and my squad adopted: from Azure DevOps story to
+							test plan, evidence and automation, with human review at every step.
+						</p>
+						<div class="project-footer">
+							<ul class="tags">
+								<li>AI agents</li>
+								<li>Azure DevOps</li>
+								<li>Playwright</li>
+							</ul>
+						</div>
+					</article>
 
-					<div class="col-md-6 col-lg-3">
-						<article class="project-card">
-							<p class="project-kicker">Work · Foxtel Group</p>
-							<h3>Automated Regression Suite for Kayo, Binge and Hubbl</h3>
-							<p>
-								A comprehensive WebdriverIO-based regression suite for the web versions of Kayo, Binge and
-								Hubbl, integrated with GitHub Actions for CI/CD.
-							</p>
-							<div class="project-footer">
-								<ul class="tags">
-									<li>WebdriverIO</li>
-									<li>TypeScript</li>
-									<li>GitHub Actions</li>
-								</ul>
-							</div>
-						</article>
-					</div>
+					<article class="project-card">
+						<p class="project-kicker">Work · Foxtel Group</p>
+						<h3>Kayo, Binge and Hubbl Regression Suite</h3>
+						<p>
+							A WebdriverIO regression suite for the web versions of Kayo, Binge and Hubbl, running in CI
+							with GitHub Actions.
+						</p>
+						<div class="project-footer">
+							<ul class="tags">
+								<li>WebdriverIO</li>
+								<li>TypeScript</li>
+								<li>GitHub Actions</li>
+							</ul>
+						</div>
+					</article>
 
-					<div class="col-md-6 col-lg-3">
-						<article class="project-card">
-							<p class="project-kicker"><span class="live-dot" aria-hidden="true"></span>Live · Board game</p>
-							<h3>Ark Nova Placement</h3>
-							<p>
-								Check where the special enclosures fit on all 16 Ark Nova maps, including the alternative
-								layouts. Rotate pieces, toggle upgraded builds, and illegal spots show in red.
-							</p>
-							<div class="project-footer">
-								<ul class="tags">
-									<li>JavaScript</li>
-									<li>Canvas</li>
-									<li>Hex grid</li>
-								</ul>
-								<a href="/ark-nova-placement/" class="project-link stretched-link">Open the tool<i
-										class="bi bi-arrow-right" aria-hidden="true"></i></a>
-							</div>
-						</article>
-					</div>
+					<article class="project-card">
+						<p class="project-kicker"><span class="live-dot" aria-hidden="true"></span>Live · Board game</p>
+						<h3>Ark Nova Placement</h3>
+						<p>
+							Check where the special enclosures fit on all 16 Ark Nova maps. Rotate pieces, toggle upgraded
+							builds, and illegal spots show in red.
+						</p>
+						<div class="project-footer">
+							<ul class="tags">
+								<li>JavaScript</li>
+								<li>Canvas</li>
+								<li>Hex grid</li>
+							</ul>
+							<a href="/ark-nova-placement/" class="project-link stretched-link">Open the tool<i
+									class="bi bi-arrow-right" aria-hidden="true"></i></a>
+						</div>
+					</article>
 
-					<div class="col-md-6 col-lg-3">
-						<article class="project-card">
-							<p class="project-kicker">Side project</p>
-							<h3>Notion Boardgame Gallery</h3>
-							<p>Display your board game collection from BoardGameGeek in Notion as an image gallery.</p>
-							<div class="project-footer">
-								<ul class="tags">
-									<li>Notion</li>
-									<li>API</li>
-									<li>BoardGameGeek</li>
-								</ul>
-								<a href="https://github.com/eatmoresushi/BGG-Notion" class="project-link stretched-link"
-									target="_blank" rel="noopener">View on GitHub<i class="bi bi-arrow-up-right"
-										aria-hidden="true"></i></a>
-							</div>
-						</article>
-					</div>
+					<article class="project-card">
+						<p class="project-kicker">Side project</p>
+						<h3>Notion Boardgame Gallery</h3>
+						<p>Display your board game collection from BoardGameGeek in Notion as an image gallery.</p>
+						<div class="project-footer">
+							<ul class="tags">
+								<li>Notion</li>
+								<li>API</li>
+								<li>BoardGameGeek</li>
+							</ul>
+							<a href="https://github.com/eatmoresushi/BGG-Notion" class="project-link stretched-link"
+								target="_blank" rel="noopener">View on GitHub<i class="bi bi-arrow-up-right"
+									aria-hidden="true"></i></a>
+						</div>
+					</article>
 
-					<div class="col-md-6 col-lg-3">
-						<article class="project-card">
-							<p class="project-kicker">Side project</p>
-							<h3>Vaccination Appointment Availability Helper</h3>
-							<p>A small tool built during COVID to monitor appointment availability and notify users quickly.</p>
-							<div class="project-footer">
-								<ul class="tags">
-									<li>Automation</li>
-									<li>Scripting</li>
-									<li>Notifications</li>
-								</ul>
-								<a href="https://github.com/eatmoresushi/NSWhvam" class="project-link stretched-link"
-									target="_blank" rel="noopener">View on GitHub<i class="bi bi-arrow-up-right"
-										aria-hidden="true"></i></a>
-							</div>
-						</article>
-					</div>
+					<article class="project-card">
+						<p class="project-kicker">Side project</p>
+						<h3>Vaccination Appointment Helper</h3>
+						<p>A small tool built during COVID to monitor appointment availability and notify users quickly.</p>
+						<div class="project-footer">
+							<ul class="tags">
+								<li>Automation</li>
+								<li>Scripting</li>
+								<li>Notifications</li>
+							</ul>
+							<a href="https://github.com/eatmoresushi/NSWhvam" class="project-link stretched-link"
+								target="_blank" rel="noopener">View on GitHub<i class="bi bi-arrow-up-right"
+									aria-hidden="true"></i></a>
+						</div>
+					</article>
 
-					<div class="col-md-6 col-lg-3">
-						<article class="project-card">
-							<p class="project-kicker">UNSW capstone</p>
-							<h3>FilmFinder</h3>
-							<p>Our capstone project at UNSW: a movie database built with Django and SQLite.</p>
-							<div class="project-footer">
-								<ul class="tags">
-									<li>Django</li>
-									<li>SQLite</li>
-									<li>Web App</li>
-								</ul>
-								<a href="https://github.com/eatmoresushi/FilmFinder" class="project-link stretched-link"
-									target="_blank" rel="noopener">View on GitHub<i class="bi bi-arrow-up-right"
-										aria-hidden="true"></i></a>
-							</div>
-						</article>
-					</div>
+					<article class="project-card">
+						<p class="project-kicker">UNSW capstone</p>
+						<h3>FilmFinder</h3>
+						<p>Our capstone project at UNSW: a movie database built with Django and SQLite.</p>
+						<div class="project-footer">
+							<ul class="tags">
+								<li>Django</li>
+								<li>SQLite</li>
+								<li>Web App</li>
+							</ul>
+							<a href="https://github.com/eatmoresushi/FilmFinder" class="project-link stretched-link"
+								target="_blank" rel="noopener">View on GitHub<i class="bi bi-arrow-up-right"
+									aria-hidden="true"></i></a>
+						</div>
+					</article>
+
+					<!-- Fills the eighth slot so the grid ends on a full row -->
+					<article class="project-card project-more">
+						<i class="bi bi-github project-more-icon" aria-hidden="true"></i>
+						<h3>More on GitHub</h3>
+						<p>Scripts, experiments and older projects.</p>
+						<div class="project-footer">
+							<a href="https://github.com/eatmoresushi" class="project-link stretched-link" target="_blank"
+								rel="noopener">github.com/eatmoresushi<i class="bi bi-arrow-up-right"
+									aria-hidden="true"></i></a>
+						</div>
+					</article>
 				</div>
 			</div>
 		</section>
