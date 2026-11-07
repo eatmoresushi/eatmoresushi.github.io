@@ -46,9 +46,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
         run: npm run build
 
-      - name: Stage homepage and game
+      - name: Stage homepage and apps
         run: |
-          mkdir -p _site/kiln-opening
+          mkdir -p _site/kiln-opening _site/ark-nova-placement
           rsync -a ./ _site/ \
             --exclude .git \
             --exclude .github \
@@ -56,6 +56,8 @@ jobs:
             --exclude apps \
             --exclude node_modules
           cp -R apps/kiln-opening/dist/. _site/kiln-opening/
+          # Static page, no build step
+          cp -R apps/ark-nova-placement/. _site/ark-nova-placement/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
