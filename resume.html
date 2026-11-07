@@ -5,6 +5,7 @@
 	<meta charset="UTF-8" />
 	<title>Resume – Luyuan He (Allen)</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="theme-color" content="#0e0b09" />
 
 	<!-- SEO -->
 	<meta name="description"
@@ -31,7 +32,7 @@
 
 	<style>
 		body {
-			background-color: #f6f1ed;
+			background-color: var(--surface);
 		}
 
 		.resume-toolbar {
@@ -40,7 +41,7 @@
 
 		.resume-paper {
 			max-width: 860px;
-			background: var(--surface);
+			background: var(--surface-alt);
 			border: 1px solid var(--line);
 			border-radius: var(--radius);
 			box-shadow: var(--shadow-sm);
@@ -125,10 +126,20 @@
 			}
 		}
 
-		/* Printing the web page gives a clean, paper-style resume */
+		/* Printing the web page gives a clean, paper-style resume: black text on white */
 		@media print {
 			@page {
 				margin: 14mm;
+			}
+
+			:root {
+				--ink: #111;
+				--ink-soft: #222;
+				--muted: #555;
+				--line: #ccc;
+				--surface: #fff;
+				--surface-alt: #fff;
+				color-scheme: light;
 			}
 
 			body {
@@ -149,6 +160,7 @@
 
 			.resume-paper {
 				max-width: none;
+				border: 0;
 				box-shadow: none;
 				padding: 0;
 			}

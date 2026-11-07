@@ -1,35 +1,36 @@
 /* ==========================================================
    luyuan.me: shared styles for index.html and resume.html
    Loaded after Bootstrap 5.3, so it can override Bootstrap's
-   CSS variables.
+   CSS variables. Dark "Ember" theme: near-black background with
+   a red-to-orange accent.
    ========================================================== */
 
 :root {
-  /* Warm neutrals (stone) */
-  --ink: #1c1917;
-  --ink-soft: #44403c;
-  --muted: #78716c;
-  --line: #ebe4de;
-  --line-strong: #d6cdc5;
-  --surface: #ffffff;
-  --surface-alt: #fcf8f5;
+  /* Dark warm neutrals */
+  --ink: #fafaf9;
+  --ink-soft: #d6d3d1;
+  --muted: #a8a29e;
+  --line: #2b2420;
+  --line-strong: #463d37;
+  --surface: #0e0b09;
+  --surface-alt: #15110e;
 
   /* Red / orange accent.
-     --accent is the text colour for links and labels (4.9:1 on white).
-     --grad is decorative only; --grad-strong keeps white text readable. */
-  --accent: #cf3a0f;
-  --accent-strong: #a92e0b;
-  --accent-soft: #fff1ea;
-  --grad: linear-gradient(135deg, #e11d48 0%, #f97316 100%);
-  --grad-text: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+     --accent is the text colour for links and labels.
+     --grad and --grad-text are decorative; --grad-strong keeps white button text readable. */
+  --accent: #fb923c;
+  --accent-strong: #fdba74;
+  --accent-soft: rgba(249, 115, 22, 0.12);
+  --grad: linear-gradient(135deg, #f43f5e 0%, #fb923c 100%);
+  --grad-text: linear-gradient(135deg, #fb7185 0%, #fdba74 100%);
   --grad-strong: linear-gradient(135deg, #dc2626 0%, #d9480f 100%);
   --grad-strong-hover: linear-gradient(135deg, #b91c1c 0%, #c2410c 100%);
 
   /* Shape */
   --radius: 0.875rem;
   --radius-sm: 0.5rem;
-  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
-  --shadow: 0 14px 34px -16px rgba(124, 45, 18, 0.28);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow: 0 20px 44px -20px rgba(249, 115, 22, 0.4);
 
   /* Type */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -39,8 +40,10 @@
   --bs-body-font-family: var(--font-sans);
   --bs-body-color: var(--ink-soft);
   --bs-body-bg: var(--surface);
-  --bs-link-color-rgb: 207, 58, 15;
-  --bs-link-hover-color-rgb: 169, 46, 11;
+  --bs-link-color-rgb: 251, 146, 60;
+  --bs-link-hover-color-rgb: 253, 186, 116;
+
+  color-scheme: dark;
 }
 
 /* ---------- Base ---------- */
@@ -63,8 +66,8 @@ body {
 }
 
 ::selection {
-  background: #fed7aa;
-  color: var(--ink);
+  background: rgba(249, 115, 22, 0.45);
+  color: #fff;
 }
 
 h1,
@@ -175,9 +178,9 @@ h2::after {
   --bs-btn-active-color: #fff;
   --bs-btn-active-bg: #a52a0c;
   --bs-btn-active-border-color: transparent;
-  --bs-btn-focus-shadow-rgb: 207, 58, 15;
+  --bs-btn-focus-shadow-rgb: 251, 146, 60;
   background-image: var(--grad-strong);
-  box-shadow: 0 8px 20px -10px rgba(207, 58, 15, 0.75);
+  box-shadow: 0 10px 30px -10px rgba(244, 63, 94, 0.75);
 }
 
 .btn-primary:hover,
@@ -185,18 +188,18 @@ h2::after {
   background-image: var(--grad-strong-hover);
 }
 
-/* White button with a hairline border, for secondary actions */
+/* Translucent button with a hairline border, for secondary actions */
 .btn-quiet {
   --bs-btn-color: var(--ink);
-  --bs-btn-bg: var(--surface);
+  --bs-btn-bg: rgba(255, 255, 255, 0.04);
   --bs-btn-border-color: var(--line-strong);
-  --bs-btn-hover-color: var(--accent);
-  --bs-btn-hover-bg: var(--accent-soft);
-  --bs-btn-hover-border-color: #fdba74;
-  --bs-btn-active-color: var(--accent-strong);
-  --bs-btn-active-bg: #ffe4d5;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: rgba(249, 115, 22, 0.14);
+  --bs-btn-hover-border-color: #fb923c;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: rgba(249, 115, 22, 0.22);
   --bs-btn-active-border-color: #fb923c;
-  --bs-btn-focus-shadow-rgb: 207, 58, 15;
+  --bs-btn-focus-shadow-rgb: 251, 146, 60;
 }
 
 /* ---------- Navbar ---------- */
@@ -207,7 +210,8 @@ h2::after {
   --bs-navbar-active-color: var(--ink);
   --bs-navbar-brand-color: var(--ink);
   --bs-navbar-brand-hover-color: var(--ink);
-  background-color: rgba(255, 255, 255, 0.86);
+  --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  background-color: rgba(14, 11, 9, 0.78);
   backdrop-filter: saturate(180%) blur(12px);
   -webkit-backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid var(--line);
@@ -256,7 +260,7 @@ h2::after {
 }
 
 .site-nav .navbar-toggler {
-  border-color: var(--line);
+  border-color: var(--line-strong);
 }
 
 /* ---------- Hero ---------- */
@@ -266,9 +270,9 @@ h2::after {
   overflow: hidden;
   padding: 5.5rem 0 5rem;
   background:
-    radial-gradient(54rem 30rem at 90% -14%, rgba(249, 115, 22, 0.32), transparent 62%),
-    radial-gradient(42rem 24rem at -10% 112%, rgba(225, 29, 72, 0.2), transparent 60%),
-    var(--surface-alt);
+    radial-gradient(54rem 30rem at 90% -14%, rgba(249, 115, 22, 0.3), transparent 62%),
+    radial-gradient(42rem 24rem at -10% 112%, rgba(225, 29, 72, 0.26), transparent 60%),
+    var(--surface);
   border-bottom: 1px solid var(--line);
 }
 
@@ -278,7 +282,7 @@ h2::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(124, 45, 18, 0.1) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   background-size: 22px 22px;
   -webkit-mask-image: linear-gradient(to bottom, #000 25%, transparent 85%);
   mask-image: linear-gradient(to bottom, #000 25%, transparent 85%);
@@ -325,8 +329,8 @@ h2::after {
   width: 2.6rem;
   height: 2.6rem;
   border-radius: 0.65rem;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--ink-soft);
   font-size: 1.1rem;
   transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
@@ -334,18 +338,18 @@ h2::after {
 
 .social-links a:hover {
   color: var(--accent);
-  border-color: #fdba74;
+  border-color: #fb923c;
   transform: translateY(-2px);
 }
 
 /* "About me" written as a passing test run */
 .terminal {
   margin: 0;
-  background: #1c1917;
+  background: #050403;
   color: #e7e5e4;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
-  box-shadow: 0 30px 60px -24px rgba(124, 45, 18, 0.55);
+  box-shadow: 0 30px 80px -30px rgba(249, 115, 22, 0.5);
   font-family: var(--font-mono);
   font-size: 0.85rem;
   overflow: hidden;
@@ -471,7 +475,7 @@ h2::after {
 }
 
 .stat {
-  background: var(--surface-alt);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 1.25rem 1.25rem 1.1rem;
@@ -496,7 +500,7 @@ h2::after {
 /* Skill groups */
 .panel {
   height: 100%;
-  background: var(--surface);
+  background: var(--surface-alt);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 1.5rem;
@@ -535,7 +539,7 @@ h2::after {
   padding: 0.2rem 0.55rem;
   border: 1px solid var(--line);
   border-radius: 0.4rem;
-  background: var(--surface-alt);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--ink-soft);
   font-family: var(--font-mono);
   font-size: 0.74rem;
@@ -598,7 +602,7 @@ h2::after {
 .timeline-item:first-child::before {
   border: 0;
   background: var(--grad);
-  box-shadow: 0 0 0 4px #ffe4d5;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.22);
 }
 
 .timeline-item.is-education::before {
@@ -649,7 +653,7 @@ h2::after {
   flex-direction: column;
   height: 100%;
   padding: 1.5rem;
-  background: var(--surface);
+  background: var(--surface-alt);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
@@ -658,7 +662,7 @@ h2::after {
 
 .project-card:hover {
   transform: translateY(-3px);
-  border-color: #fdba74;
+  border-color: rgba(251, 146, 60, 0.6);
   box-shadow: var(--shadow);
 }
 
@@ -703,9 +707,9 @@ h2::after {
 /* Featured card: a warm kiln glow */
 .project-featured {
   background:
-    radial-gradient(30rem 16rem at 100% 0%, rgba(249, 115, 22, 0.16), transparent 70%),
-    linear-gradient(140deg, #fff4ec 0%, var(--surface) 65%);
-  border-color: #fed7aa;
+    radial-gradient(30rem 16rem at 100% 0%, rgba(249, 115, 22, 0.24), transparent 70%),
+    linear-gradient(140deg, #24150d 0%, var(--surface-alt) 65%);
+  border-color: rgba(251, 146, 60, 0.45);
 }
 
 .project-featured:hover {
@@ -738,9 +742,9 @@ h2::after {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(48rem 26rem at 8% -10%, rgba(249, 115, 22, 0.3), transparent 62%),
-    radial-gradient(42rem 24rem at 100% 115%, rgba(225, 29, 72, 0.18), transparent 60%),
-    var(--surface-alt);
+    radial-gradient(48rem 26rem at 8% -10%, rgba(249, 115, 22, 0.28), transparent 62%),
+    radial-gradient(42rem 24rem at 100% 115%, rgba(225, 29, 72, 0.24), transparent 60%),
+    var(--surface);
 }
 
 .contact::before {
@@ -762,7 +766,8 @@ h2::after {
 
 .site-footer {
   padding: 1.25rem 0;
-  background: #1c1917;
+  background: #070504;
+  border-top: 1px solid var(--line);
   color: #a8a29e;
   font-size: 0.875rem;
 }
