@@ -4,6 +4,11 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      rebuild_game:
+        description: Rebuild and test Kiln Opening (use after changing the Supabase variables)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,7 +26,24 @@ jobs:
       - name: Check out site
         uses: actions/checkout@v5
 
+      # Every deploy replaces the whole site, so the game's build output is always needed.
+      # It is cached under a hash of apps/kiln-opening/ and this workflow: when neither has
+      # changed, the last build is reused and the install, test and build steps are skipped.
+      # The key is computed here, before npm ci adds node_modules to the folder.
+      - name: Compute game build key
+        id: game-key
+        run: echo "key=kiln-opening-dist-${{ hashFiles('apps/kiln-opening/**', '.github/workflows/pages.yml') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore game build
+        id: game-cache
+        if: ${{ !inputs.rebuild_game }}
+        uses: actions/cache/restore@v6
+        with:
+          path: apps/kiln-opening/dist
+          key: ${{ steps.game-key.outputs.key }}
+
       - name: Set up Node.js
+        if: steps.game-cache.outputs.cache-hit != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -29,10 +51,12 @@ jobs:
           cache-dependency-path: apps/kiln-opening/package-lock.json
 
       - name: Install game dependencies
+        if: steps.game-cache.outputs.cache-hit != 'true'
         working-directory: apps/kiln-opening
         run: npm ci
 
       - name: Verify rules, backend, and client
+        if: steps.game-cache.outputs.cache-hit != 'true'
         working-directory: apps/kiln-opening
         run: |
           npm run typecheck
@@ -40,11 +64,32 @@ jobs:
           npm test
 
       - name: Build game client
+        if: steps.game-cache.outputs.cache-hit != 'true'
         working-directory: apps/kiln-opening
         env:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
         run: npm run build
+
+      - name: Save game build
+        if: steps.game-cache.outputs.cache-hit != 'true'
+        # A failed cache save (for example the key already exists) must not block the deploy.
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: apps/kiln-opening/dist
+          key: ${{ steps.game-key.outputs.key }}
+
+      - name: Note how the game was built
+        env:
+          CACHE_HIT: ${{ steps.game-cache.outputs.cache-hit }}
+          KEY: ${{ steps.game-key.outputs.key }}
+        run: |
+          if [ "$CACHE_HIT" = "true" ]; then
+            echo "Kiln Opening unchanged: reused the cached build ($KEY)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Kiln Opening built and tested ($KEY)." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Stage homepage and apps
         run: |
